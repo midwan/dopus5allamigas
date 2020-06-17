@@ -210,7 +210,7 @@ BOOL backdrop_stop_drag(BackdropInfo *info)
 					if (object->drag_info)
 					{
 						// Hide object
-						RemVSprite(&object->drag_info->sprite);
+						RemBob(&object->drag_info->bob);
 					}
 				}
 			}
@@ -241,6 +241,16 @@ BOOL backdrop_stop_drag(BackdropInfo *info)
 			// Was object being dragged?
 			if (object->drag_info)
 			{
+				if (info->flags & BDIF_CUSTOM_DRAG)
+				{
+					// Now is the right time to remove the object from the GELs list. This is
+					// done in a different place than RemBob for regular dragging. RemBob
+					// needs to be done _before_ DrawDragList()->DrawGList(). With custom
+					// dragging the object needs to _stay_ in the GELs list before the call to
+					// DrawDragList(..., DRAGF_CUSTOM|DRAGF_REMOVE).
+					// Thus, remove the object from the GELs list here instead.
+					RemVSprite(&object->drag_info->sprite);
+				}
 				// Free drag
 				FreeDragInfo(object->drag_info);
 				object->drag_info=0;
@@ -308,8 +318,17 @@ void backdrop_show_drag(
 			// Not dragging yet?
 			if (!(GUI->flags&GUIF_DRAGGING))
 			{
-				// Add sprite to list
-				AddVSprite(&object->drag_info->sprite,&GUI->drag_screen_rp);
+				// Add bob to list
+				if (!(info->flags & BDIF_CUSTOM_DRAG))
+				{
+					AddBob(&object->drag_info->bob, &GUI->drag_screen_rp);
+				}
+				else
+				{
+					// Custom dragging is abusing the GELs list merely for keeping track of
+					// the dragged objects, thus use AddVSprite() to link it into the list
+					AddVSprite(&object->drag_info->sprite, &GUI->drag_screen_rp);
+				}
 			}
 		}
 	}
