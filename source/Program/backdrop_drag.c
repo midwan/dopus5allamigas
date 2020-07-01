@@ -219,9 +219,6 @@ BOOL backdrop_stop_drag(BackdropInfo *info)
 			SortGList(&GUI->drag_screen_rp);
 			DrawDragList(&GUI->drag_screen_rp,&info->window->WScreen->ViewPort,(info->flags&BDIF_CUSTOM_DRAG)?DRAGF_CUSTOM|DRAGF_REMOVE:0);
 
-			// Clear drag flag
-			GUI->flags&=~GUIF_DRAGGING;
-
 			// Unlock layer
 			UnlockLayers(&info->window->WScreen->LayerInfo);
 
@@ -241,7 +238,8 @@ BOOL backdrop_stop_drag(BackdropInfo *info)
 			// Was object being dragged?
 			if (object->drag_info)
 			{
-				if (info->flags & BDIF_CUSTOM_DRAG)
+				if ((info->flags & BDIF_CUSTOM_DRAG) && // is custom drag?
+					(GUI->flags & GUIF_DRAGGING)) // actually did drag? i.e. AddVSprite called
 				{
 					// Now is the right time to remove the object from the GELs list. This is
 					// done in a different place than RemBob for regular dragging. RemBob
@@ -256,6 +254,9 @@ BOOL backdrop_stop_drag(BackdropInfo *info)
 				object->drag_info=0;
 			}
 		}
+
+		// Clear drag flag
+		GUI->flags &= ~GUIF_DRAGGING;
 
 		// Start menu actions, stop mouse reporting
 		info->window->Flags&=~(WFLG_RMBTRAP|WFLG_REPORTMOUSE);
