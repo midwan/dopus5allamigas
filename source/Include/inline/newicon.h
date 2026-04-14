@@ -5,6 +5,10 @@
 	#define CLIB_NEWICON_PROTOS_H
 #endif
 
+#ifndef __INLINE_MACROS_H
+	#include <inline/macros.h>
+#endif
+
 #ifndef EXEC_TYPES_H
 	#include <exec/types.h>
 #endif
@@ -20,71 +24,23 @@ extern "C" {
 	#define NEWICON_BASE_NAME NewIconBase
 #endif
 
-#define GetNewDiskObject(name)                                                                                 \
-	({                                                                                                         \
-		UBYTE *_GetNewDiskObject_name = (name);                                                                \
-		({                                                                                                     \
-			register char *_GetNewDiskObject__bn __asm("a6") = (char *)(NEWICON_BASE_NAME);                    \
-			((struct NewDiskObject * (*)(char *__asm("a6"), UBYTE *__asm("a0")))(_GetNewDiskObject__bn - 30))( \
-				_GetNewDiskObject__bn, _GetNewDiskObject_name);                                                \
-		});                                                                                                    \
-	})
+#define GetNewDiskObject(name) \
+	LP1(0x1e, struct NewDiskObject *, GetNewDiskObject, UBYTE *, name, a0, , NEWICON_BASE_NAME)
 
-#define PutNewDiskObject(name, newdiskobj)                                                        \
-	({                                                                                            \
-		UBYTE *_PutNewDiskObject_name = (name);                                                   \
-		struct NewDiskObject *_PutNewDiskObject_newdiskobj = (newdiskobj);                        \
-		({                                                                                        \
-			register char *_PutNewDiskObject__bn __asm("a6") = (char *)(NEWICON_BASE_NAME);       \
-			((BOOL(*)(char *__asm("a6"), UBYTE *__asm("a0"), struct NewDiskObject *__asm("a1")))( \
-				_PutNewDiskObject__bn - 36))(                                                     \
-				_PutNewDiskObject__bn, _PutNewDiskObject_name, _PutNewDiskObject_newdiskobj);     \
-		});                                                                                       \
-	})
+#define PutNewDiskObject(name, newdiskobj) \
+	LP2(0x24, BOOL, PutNewDiskObject, UBYTE *, name, a0, struct NewDiskObject *, newdiskobj, a1, , NEWICON_BASE_NAME)
 
-#define FreeNewDiskObject(newdiskobj)                                                                        \
-	({                                                                                                       \
-		struct NewDiskObject *_FreeNewDiskObject_newdiskobj = (newdiskobj);                                  \
-		({                                                                                                   \
-			register char *_FreeNewDiskObject__bn __asm("a6") = (char *)(NEWICON_BASE_NAME);                 \
-			((void (*)(char *__asm("a6"), struct NewDiskObject *__asm("a0")))(_FreeNewDiskObject__bn - 42))( \
-				_FreeNewDiskObject__bn, _FreeNewDiskObject_newdiskobj);                                      \
-		});                                                                                                  \
-	})
+#define FreeNewDiskObject(newdiskobj) \
+	LP1NR(0x2a, FreeNewDiskObject, struct NewDiskObject *, newdiskobj, a0, , NEWICON_BASE_NAME)
 
-#define RemapChunkyImage(chunkyimage, screen)                                                                      \
-	({                                                                                                             \
-		struct ChunkyImage *_RemapChunkyImage_chunkyimage = (chunkyimage);                                         \
-		struct Screen *_RemapChunkyImage_screen = (screen);                                                        \
-		({                                                                                                         \
-			register char *_RemapChunkyImage__bn __asm("a6") = (char *)(NEWICON_BASE_NAME);                        \
-			((struct Image * (*)(char *__asm("a6"), struct ChunkyImage *__asm("a0"), struct Screen *__asm("a1")))( \
-				_RemapChunkyImage__bn - 66))(                                                                      \
-				_RemapChunkyImage__bn, _RemapChunkyImage_chunkyimage, _RemapChunkyImage_screen);                   \
-		});                                                                                                        \
-	})
+#define RemapChunkyImage(chunkyimage, screen) \
+	LP2(0x42, struct Image *, RemapChunkyImage, struct ChunkyImage *, chunkyimage, a0, struct Screen *, screen, a1, , NEWICON_BASE_NAME)
 
-#define FreeRemappedImage(image, screen)                                                          \
-	({                                                                                            \
-		struct Image *_FreeRemappedImage_image = (image);                                         \
-		struct Screen *_FreeRemappedImage_screen = (screen);                                      \
-		({                                                                                        \
-			register char *_FreeRemappedImage__bn __asm("a6") = (char *)(NEWICON_BASE_NAME);      \
-			((VOID(*)(char *__asm("a6"), struct Image *__asm("a0"), struct Screen *__asm("a1")))( \
-				_FreeRemappedImage__bn - 72))(                                                    \
-				_FreeRemappedImage__bn, _FreeRemappedImage_image, _FreeRemappedImage_screen);     \
-		});                                                                                       \
-	})
+#define FreeRemappedImage(image, screen) \
+	LP2NR(0x48, FreeRemappedImage, struct Image *, image, a0, struct Screen *, screen, a1, , NEWICON_BASE_NAME)
 
-#define GetDefNewDiskObject(def_type)                                                                           \
-	({                                                                                                          \
-		LONG _GetDefNewDiskObject_def_type = (def_type);                                                        \
-		({                                                                                                      \
-			register char *_GetDefNewDiskObject__bn __asm("a6") = (char *)(NEWICON_BASE_NAME);                  \
-			((struct NewDiskObject * (*)(char *__asm("a6"), LONG __asm("d0")))(_GetDefNewDiskObject__bn - 78))( \
-				_GetDefNewDiskObject__bn, _GetDefNewDiskObject_def_type);                                       \
-		});                                                                                                     \
-	})
+#define GetDefNewDiskObject(def_type) \
+	LP1(0x4e, struct NewDiskObject *, GetDefNewDiskObject, LONG, def_type, d0, , NEWICON_BASE_NAME)
 
 #ifdef __cplusplus
 }
