@@ -1,0 +1,127 @@
+## version $VER: ListerFormat.catalog 5.61 (08.07.1997)
+## codeset 0
+## language français
+; ************************************************* 
+; Catalog description file for listerformat.module
+; ************************************************* 
+;
+;
+MSG_LISTER_FORMAT_TITLE
+Format de listeur
+; List Format
+;
+MSG_LISTER_AVAILABLE_DISPLAY_ITEMS
+Disponibles...
+; Available...
+;
+MSG_LISTER_SELECTED_DISPLAY_ITEMS
+Afficher/Trier...
+; Display/Sort...
+;
+MSG_LISTER_LIST_FILENAME
+Nom
+; File Name
+;
+MSG_LISTER_LIST_FILESIZE
+Taille
+; File Size
+;
+MSG_LISTER_LIST_PROTECTION
+
+; Protection
+;
+MSG_LISTER_LIST_DATE
+Date\x00
+; File Date
+;
+MSG_LISTER_LIST_COMMENT
+Commentaire
+; Comment
+;
+MSG_LISTER_LIST_FILETYPE
+Type\x00
+; File Type
+;
+MSG_LISTER_LIST_OWNER
+Propriétaire\x00
+; Owner
+;
+MSG_LISTER_LIST_GROUP
+Groupe
+; Group
+;
+MSG_LISTER_LIST_NETPROTECTION
+Accès réseau\x00
+; Net Access
+;
+MSG_LISTER_ENTRY_SEPARATION
+_Séparation
+; _Entry Separation
+;
+MSG_LISTER_REVERSE_SORTING
+_Tri inverse\x00
+; _Reverse Sorting
+;
+MSG_LISTER_SEPARATION_MIX
+Mixer Fich./Rép.\x00
+; Mix Files/Dirs
+;
+MSG_LISTER_SEPARATION_DIRS
+Répertoires
+; Directories First
+;
+MSG_LISTER_SEPARATION_FILES
+Fichiers\x00
+; Files First
+;
+MSG_LISTER_SHOW
+Filtre : _Montrer
+; _Show Filter
+;
+MSG_LISTER_HIDE
+Filtre : Cac_her\x00
+; _Hide Filter
+;
+MSG_LISTER_REJECT_ICONS
+_Filtrer icônes
+; _Filter Icons
+;
+MSG_LISTER_HIDDEN_BIT
+_Cachés
+; H_idden
+;
+MSG_LISTER_USE
+_Utiliser
+; _Use
+;
+MSG_LISTER_CANCEL
+_Annuler\x00
+; _Cancel
+;
+MSG_LISTER_LIST_VERSION
+
+; Version
+;
+MSG_LISTER_SAVE
+_Sauver
+; S_ave
+;
+MSG_DEFAULTS
+_Valeurs par défaut
+; Reset to _Defaults
+;
+MSG_FTP_DEFAULTS
+_Jauge occupation
+; Reset FTP Defaults
+;
+MSG_LISTER_FUEL_GAUGE
+_Hériter\x00
+; Free Space _Gauge
+;
+MSG_LISTER_INHERIT
+
+; I_nherit
+;
+MSG_SET_AS_DEFAULTS
+
+; Set _As Defaults
