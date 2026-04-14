@@ -28,7 +28,7 @@ jobs:
     name: build-os3-${{ matrix.variant }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Build (${{ matrix.variant }})
         uses: addnab/docker-run-action@v3
@@ -39,7 +39,7 @@ jobs:
             cd source
             make os3 release ${{ matrix.make_flags }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
           path: releases/Dopus5_*_os3*.zip
