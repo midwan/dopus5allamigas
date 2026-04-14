@@ -75,6 +75,8 @@ void update_commands(ULONG flag)
 		init_commands_scan(SCAN_USER);
 }
 
+// Initialises the module and command discovery scan.
+// See documents/dopus5/ModuleDiscovery.md for details on the discovery workflow.
 void init_commands_scan(short type)
 {
 	struct AnchorPath *anchor;
@@ -230,7 +232,8 @@ void init_commands_scan(short type)
 			{
 				ModuleInfo *info;
 
-				// Ask module to identify itself
+				// Ask module to identify itself.
+				// This retrieves module-wide metadata (name, function count, flags).
 				if ((info = Module_Identify(-1)))
 				{
 					short num;
