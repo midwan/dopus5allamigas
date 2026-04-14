@@ -560,7 +560,7 @@ void startup_init_gui()
 		GUI->date_length = 9;
 
 	// See if SysIHack is running
-	if (FindTask("« sysihack »"))
+	if (FindTask("ï¿½ sysihack ï¿½"))
 		GUI->flags |= GUIF_SYSIHACK;
 
 	// Allocate a string for spaces, and the global undo buffer
@@ -1228,6 +1228,7 @@ void startup_init_filetypes()
 }
 
 // Initialise file notifications
+// See documents/dopus5/ModuleDiscovery.md for a detailed explanation of the module discovery process.
 void startup_init_notification()
 {
 	// Start notification of filetype directory
