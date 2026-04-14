@@ -1,3 +1,6 @@
 */.qtc_clangd/*
 *.o
 */bin.os3/*
+.omg
+.DS_Store
+releases
