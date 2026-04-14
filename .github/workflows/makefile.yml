@@ -5,44 +5,42 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-os3-debug:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Run the build process with Docker
-      uses: addnab/docker-run-action@v3
-      with:
-        image: amigadev/crosstools:m68k-amigaos
-        options: -v ${{ github.workspace }}:/work
-        run: |
-          cd source
-          make os3 release
-          
-    - uses: actions/upload-artifact@v4
-      with:
-        name: Dopus5_92_dev_os3_debug
-        path: releases/Dopus5_92_dev_os3_debug.zip
-
   build-os3:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: debug
+            make_flags: ""
+            artifact: Dopus5_os3_debug
+          - variant: release
+            make_flags: "debug=no"
+            artifact: Dopus5_os3
+
+    name: build-os3-${{ matrix.variant }}
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Run the build process with Docker
-      uses: addnab/docker-run-action@v3
-      with:
-        image: amigadev/crosstools:m68k-amigaos
-        options: -v ${{ github.workspace }}:/work
-        run: |
-          cd source
-          make os3 release debug=no
-          
-    - uses: actions/upload-artifact@v4
-      with:
-        name: Dopus5_92_os3
-        path: releases/Dopus5_92_os3.zip
+      - uses: actions/checkout@v4
+
+      - name: Build (${{ matrix.variant }})
+        uses: addnab/docker-run-action@v3
+        with:
+          image: sacredbanana/amiga-compiler:m68k-amigaos
+          options: -v ${{ github.workspace }}:/work
+          run: |
+            cd source
+            make os3 release ${{ matrix.make_flags }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: releases/Dopus5_*_os3*.zip
+          if-no-files-found: error
