@@ -144,17 +144,50 @@ void lister_show_name(Lister *lister)
 
 			// Full?
 #ifndef USE_64BIT
-			if (buffer->buf_FreeDiskSpace < 10 || buffer->buf_TotalDiskSpace < 1000)
-				strcat(space_buf, "100");
+			{
+				unsigned long used_blocks, percent;
 
-			// Calculate percentage
-			else
+				// Calculate used blocks
+				used_blocks = buffer->buf_TotalDiskSpace - buffer->buf_FreeDiskSpace;
+
+				// Calculate percentage: (used_blocks * 100) / total_blocks
+				if (buffer->buf_TotalDiskSpace > 0)
+				{
+					percent = UMult32(used_blocks, 100) / buffer->buf_TotalDiskSpace;
+
+					// Cap at 100% (defensive against invalid values from emulators)
+					if (percent > 100)
+						percent = 100;
+
+					// Build percentage string
+					lsprintf(space_buf + strlen(space_buf),
+							 "%ld",
+							 percent);
+				}
+				else
+				{
+					strcpy(space_buf + strlen(space_buf), "100");
+				}
+			}
+#else
+			{
+				// USE_64BIT path - already correct, but add cap for safety
+				UQUAD percent;
+
+				if (buffer->buf_TotalDiskSpace64 > 0)
+				{
+					percent = ((buffer->buf_TotalDiskSpace64 - buffer->buf_FreeDiskSpace64) * 100) /
+							  buffer->buf_TotalDiskSpace64;
+					if (percent > 100)
+						percent = 100;
+					lsprintf(space_buf + strlen(space_buf), "%llu", percent);
+				}
+				else
+				{
+					strcpy(space_buf + strlen(space_buf), "100");
+				}
+			}
 #endif
-				DivideToString(space_buf + strlen(space_buf),
-							   (buffer->buf_TotalDiskSpace / 10) - (buffer->buf_FreeDiskSpace / 10),
-							   buffer->buf_TotalDiskSpace / 1000,
-							   0,
-							   (environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
 
 			// Add percentage string
 			strcat(space_buf, "% ");
