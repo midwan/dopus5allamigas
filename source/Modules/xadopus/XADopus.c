@@ -342,22 +342,39 @@ void RemoveTemp(struct xoData *data)
 void LaunchCommand(struct xoData *data, char *cmd, char *name, char *qual)
 {
 	DOpusCallbackInfo *infoptr = &data->hook;
+	ULONG sigMask, cmdSig, timeoutTicks;
 
 	sprintf(data->buf, "lister set %s busy on wait", data->lists);
 	DC_CALL4(infoptr, dc_SendCommand, DC_REGA0, IPCDATA(data->ipc), DC_REGA1, data->buf, DC_REGA2, NULL, DC_REGD0, 0);
-	// data->hook.dc_SendCommand(IPCDATA(data->ipc),data->buf,NULL,NULL);
 	sprintf(data->buf, "dopus remtrap %s %s", cmd, data->mp_name);
 	DC_CALL4(infoptr, dc_SendCommand, DC_REGA0, IPCDATA(data->ipc), DC_REGA1, data->buf, DC_REGA2, NULL, DC_REGD0, 0);
-	// data->hook.dc_SendCommand(IPCDATA(data->ipc),data->buf,NULL,NULL);
-	sprintf(data->buf, "command wait %s %s %s", cmd, qual, name);
+
+	sprintf(data->buf, "command %s %s %s", cmd, qual, name);
+	sigMask = 1L << data->mp->mp_SigBit;
+	timeoutTicks = 30;
+
 	DC_CALL4(infoptr, dc_SendCommand, DC_REGA0, IPCDATA(data->ipc), DC_REGA1, data->buf, DC_REGA2, NULL, DC_REGD0, 0);
-	// data->hook.dc_SendCommand(IPCDATA(data->ipc),data->buf,NULL,NULL);
+
+	while (timeoutTicks > 0)
+	{
+		cmdSig = Wait(sigMask | SIGBREAKF_CTRL_C);
+		if (cmdSig & sigMask)
+		{
+			struct Message *msg;
+			while ((msg = GetMsg(data->mp)))
+				ReplyMsg(msg);
+			break;
+		}
+		if (cmdSig & SIGBREAKF_CTRL_C)
+			break;
+		timeoutTicks--;
+		Delay(50);
+	}
+
 	sprintf(data->buf, "dopus addtrap %s %s", cmd, data->mp_name);
 	DC_CALL4(infoptr, dc_SendCommand, DC_REGA0, IPCDATA(data->ipc), DC_REGA1, data->buf, DC_REGA2, NULL, DC_REGD0, 0);
-	// data->hook.dc_SendCommand(IPCDATA(data->ipc),data->buf,NULL,NULL);
 	sprintf(data->buf, "lister set %s busy off wait", data->lists);
 	DC_CALL4(infoptr, dc_SendCommand, DC_REGA0, IPCDATA(data->ipc), DC_REGA1, data->buf, DC_REGA2, NULL, DC_REGD0, 0);
-	// data->hook.dc_SendCommand(IPCDATA(data->ipc),data->buf,NULL,NULL);
 }
 
 void _scandir(struct xoData *data, char *listh, char *path)
@@ -387,8 +404,12 @@ void _doubleclick(struct xoData *data, char *name, char *qual)
 	xadERROR err;
 	BOOL retry;
 
-	while (strcmp(tmp->fib.fib_FileName, name))
+	while (tmp && strcmp(tmp->fib.fib_FileName, name))
 		tmp = tmp->Next;
+
+	// File not found in current directory
+	if (!tmp)
+		return;
 
 	if (tmp->fib.fib_DirEntryType > 0)
 	{
@@ -477,7 +498,8 @@ void _viewcommand(struct xoData *data, char *com, char *name)
 	{
 		while (tmp && (sprintf(data->buf, "\"%s\"", tmp->fib.fib_FileName)) && (!strstr(name, data->buf)))
 			tmp = tmp->Next;
-		if (tmp)
+		if (!tmp)
+			break;
 		{
 			if ((tf = AllocVec(sizeof(struct TempFile), MEMF_ANY)))
 			{
@@ -588,7 +610,8 @@ void _copy(struct xoData *data, char *name, char *Dest, BOOL CopyAs)
 	{
 		while (tmp && (sprintf(data->buf, "\"%s\"", tmp->fib.fib_FileName)) && (!strstr(name, data->buf)))
 			tmp = tmp->Next;
-		if (tmp)
+		if (!tmp)
+			break;
 		{
 			strcpy(FileName, Dest);
 			skip = FALSE;
