@@ -59,8 +59,8 @@ jobs:
       - name: Create pre-release or release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "artifacts/*.zip"
-          artifactsIgnore: "artifacts/*_debug.zip"
+          artifacts: "artifacts/Dopus5_os3.zip"
+          tag: ${{ github.ref_name }}
           prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
           generateReleaseNotes: true
         env:
