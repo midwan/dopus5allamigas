@@ -3,6 +3,8 @@ name: Makefile CI
 on:
   push:
     branches: [ "master" ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ "master" ]
   workflow_dispatch:
@@ -31,16 +33,35 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Build (${{ matrix.variant }})
-        uses: addnab/docker-run-action@v3
-        with:
-          image: sacredbanana/amiga-compiler:m68k-amigaos
-          options: -v ${{ github.workspace }}:/work
-          run: |
-            cd source
-            make os3 release ${{ matrix.make_flags }}
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/work sacredbanana/amiga-compiler:m68k-amigaos sh -c "cd /work/source && make os3 release ${{ matrix.make_flags }}"
 
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
           path: releases/Dopus5_*_os3*.zip
           if-no-files-found: error
+
+  release:
+    needs: build-os3
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create pre-release or release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "artifacts/*.zip"
+          artifactsIgnore: "artifacts/*_debug.zip"
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          generateReleaseNotes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
