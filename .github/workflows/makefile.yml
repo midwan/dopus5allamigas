@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
 
     steps:
       - name: Download all artifacts
@@ -56,12 +56,10 @@ jobs:
           path: artifacts
           merge-multiple: true
 
-      - name: Create pre-release or release
+      - name: Create release
         uses: ncipollo/release-action@v1
         with:
           artifacts: "artifacts/Dopus5_os3.zip"
-          tag: ${{ github.ref_name }}
-          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
           generateReleaseNotes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
