@@ -414,7 +414,7 @@ long save_theme(struct Screen *screen, DOpusCallbackInfo *info, char *filename, 
 	APTR file;
 	APTR progress = 0;
 	char build_path[300];
-	struct MsgPort *reply_port;
+	struct MsgPort *reply_port = 0;
 	struct GetPointerPkt pkt;
 	Att_List *list;
 	long res = 0;
@@ -481,7 +481,11 @@ long save_theme(struct Screen *screen, DOpusCallbackInfo *info, char *filename, 
 	}
 
 	// Create a reply port
-	reply_port = CreateMsgPort();
+	if (!(reply_port = CreateMsgPort()))
+	{
+		res = 1;
+		goto cleanup;
+	}
 
 	// Write file introduction
 	write_theme_intro(file, filename);
@@ -495,9 +499,7 @@ long save_theme(struct Screen *screen, DOpusCallbackInfo *info, char *filename, 
 		!save_theme_background(file, info, "req", reply_port, build_path, progress))
 	{
 		res = IoErr();
-		CloseBuf(file);
-		CloseProgressWindow(progress);
-		return res;
+		goto cleanup;
 	}
 	WriteBuf(file, "end\n\n", -1);
 
@@ -542,11 +544,7 @@ long save_theme(struct Screen *screen, DOpusCallbackInfo *info, char *filename, 
 
 		// Failed?
 		if (res)
-		{
-			CloseBuf(file);
-			CloseProgressWindow(progress);
-			return res;
-		}
+			goto cleanup;
 	}
 	WriteBuf(file, "end\n\n", -1);
 
@@ -557,9 +555,7 @@ long save_theme(struct Screen *screen, DOpusCallbackInfo *info, char *filename, 
 		!save_theme_font(file, info, "iconsd", reply_port) || !save_theme_font(file, info, "iconsw", reply_port))
 	{
 		res = IoErr();
-		CloseBuf(file);
-		CloseProgressWindow(progress);
-		return res;
+		goto cleanup;
 	}
 	WriteBuf(file, "end\n\n", -1);
 
@@ -575,18 +571,27 @@ long save_theme(struct Screen *screen, DOpusCallbackInfo *info, char *filename, 
 	{
 		// Failure
 		res = IoErr();
-		CloseBuf(file);
-		CloseProgressWindow(progress);
-		return res;
+		goto cleanup;
 	}
 	WriteBuf(file, "end\n\n", -1);
 
 	// Write file outroduction
 	write_theme_outro(file);
 
+cleanup:
 	// Close file
 	CloseBuf(file);
 	CloseProgressWindow(progress);
+
+	// Free message port
+	if (reply_port)
+	{
+		struct Message *msg;
+		while ((msg = GetMsg(reply_port)))
+			ReplyMsg(msg);
+		DeleteMsgPort(reply_port);
+	}
+
 	return res;
 }
 

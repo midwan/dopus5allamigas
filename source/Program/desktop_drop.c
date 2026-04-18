@@ -388,7 +388,7 @@ BOOL desktop_drop_on_object(BackdropInfo *info, DOpusAppMessage **msg, BackdropO
 				}
 
 				// Restore CD
-				CurrentDir(old);
+				UnLock(CurrentDir(old));
 			}
 		}
 

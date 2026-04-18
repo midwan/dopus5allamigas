@@ -127,6 +127,10 @@ long ASM SAVEDS HookRexxCommand(REG(a0, char *command),
 				stccpy(result, (char *)msg->rm_Result2, length);
 			rc = msg->rm_Result1;
 
+			// Free the result
+			if (msg->rm_Result1 == 0 && msg->rm_Result2 != 0)
+				DeleteArgstring((char *)msg->rm_Result2);
+
 			// Free message
 			FreeRexxMsgEx(msg);
 		}

@@ -136,6 +136,9 @@ short STDARGS rexx_handler_msg_args(char *handler, DirBuffer *buffer, short flag
 		// Get result
 		res = msg->rm_Result1;
 
+		// Clear message
+		ClearRexxMsg(msg, count);
+
 		// Free message
 		DeleteRexxMsg(msg);
 	}

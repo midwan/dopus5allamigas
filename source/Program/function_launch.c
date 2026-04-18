@@ -195,7 +195,11 @@ FunctionHandle *function_new_handle(struct MsgPort *port, BOOL small)
 	// Allocate handle
 	if (!(handle = AllocVec(sizeof(FunctionHandle), MEMF_CLEAR)) ||
 		!(handle->memory = NewMemHandle(2048, 1024, MEMF_CLEAR)))
+	{
+		if (handle)
+			FreeVec(handle);
 		return 0;
+	}
 
 	// Not small?
 	if (!small)
@@ -206,7 +210,19 @@ FunctionHandle *function_new_handle(struct MsgPort *port, BOOL small)
 			!(handle->filereq = AllocAslRequest(ASL_FileRequest, 0)) ||
 			!(handle->s_info = AllocDosObject(DOS_FIB, 0)) || !(handle->d_info = AllocDosObject(DOS_FIB, 0)) ||
 			!(handle->recurse_entry_data = AllocMemH(handle->memory, sizeof(FunctionEntry))))
+		{
+			if (handle->entry_memory)
+				FreeMemHandle(handle->entry_memory);
+			if (handle->filereq)
+				FreeAslRequest(handle->filereq);
+			if (handle->s_info)
+				FreeDosObject(DOS_FIB, handle->s_info);
+			if (handle->d_info)
+				FreeDosObject(DOS_FIB, handle->d_info);
+			FreeMemHandle(handle->memory);
+			FreeVec(handle);
 			return 0;
+		}
 	}
 
 	// Get current requester coordinates
