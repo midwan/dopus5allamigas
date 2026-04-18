@@ -150,7 +150,6 @@ void event_loop()
 						// Free buffer
 						FreeVec(pathname);
 					}
-					break;
 				}
 
 				// Otherwise, re-open program
