@@ -373,7 +373,7 @@ short backdrop_cleanup_list(BackdropInfo *info, long type);
 void backdrop_refresh_drives(BackdropInfo *info, BOOL);
 void backdrop_remove_leftouts(BackdropInfo *info, BackdropObject *disk);
 
-BOOL backdrop_test_rmb(BackdropInfo *, struct IntuiMessage *, struct IntuiMessage *, BOOL);
+BOOL backdrop_test_rmb(BackdropInfo *, struct IntuiMessage *, struct IntuiMessage *, ULONG);
 BOOL backdrop_popup(BackdropInfo *, short, short, UWORD, long, char *, DirEntry *);
 
 #define BPOPF_ICONS (1 << 0)
@@ -517,5 +517,9 @@ BOOL backdrop_goodbad_check(char *device, struct List *dos_list);
 #define CLEANUP_START_X 3
 #define CLEANUP_START_Y 7
 #define ICON_LABEL_SPACE 3
+
+#define BTRM_WINDOW   0
+#define BTRM_NOBORDER 1
+#define BTRM_ICON     2
 
 #endif

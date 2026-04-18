@@ -140,6 +140,9 @@ short STDARGS rexx_handler_msg_args(char *handler, DirBuffer *buffer, short flag
 		DeleteRexxMsg(msg);
 	}
 
+	// Free the reply port
+	DeleteMsgPort(reply_port);
+
 	// Free despatch
 	FreeVec(desp);
 	return res;

@@ -522,24 +522,7 @@ IPC_EntryCode(backdrop_group_handler, static)
 					if (imsg->Class == IDCMP_MENUVERIFY)
 					{
 						// See if we want to swallow it
-						if (!backdrop_test_rmb(group->info, imsg, &msg_copy, TRUE))
-						{
-							// Did event happen over the window?
-							if (imsg->MouseX >= 0 && imsg->MouseY >= 0 && imsg->MouseX < group->window->Width &&
-								imsg->MouseY < group->window->Height && imsg->Qualifier & IEQUALIFIER_RBUTTON)
-							{
-								// Cancel menu event
-								imsg->Code = MENUCANCEL;
-
-								// Change our copy to MOUSEBUTTONS
-								msg_copy.Class = IDCMP_MOUSEBUTTONS;
-								msg_copy.Code = MENUDOWN;
-
-								// Kludge for MagicMenu
-								if (msg_copy.Seconds == 0)
-									CurrentTime(&msg_copy.Seconds, &msg_copy.Micros);
-							}
-						}
+						backdrop_test_rmb(group->info, imsg, &msg_copy, BTRM_WINDOW);
 					}
 
 					// Resize/refresh?

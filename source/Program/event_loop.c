@@ -690,7 +690,7 @@ void event_loop()
 				if (int_msg->Class == IDCMP_MENUVERIFY)
 				{
 					// See if want to swallow it
-					backdrop_test_rmb(GUI->backdrop, int_msg, &msg_copy, TRUE);
+					backdrop_test_rmb(GUI->backdrop, int_msg, &msg_copy, BTRM_ICON);
 				}
 
 				// Reply to message if not refresh
