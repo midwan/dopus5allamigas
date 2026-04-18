@@ -76,6 +76,6 @@
 #define LIB_STRING STRI(LIB_VERSION)"."STRI(LIB_REVISION)" "STRI(PLATFORM)" ("DOPUSDATE")"
 #define CMD_STRING STRI(CMD_VERSION)"."STRI(CMD_REVISION)" "STRI(PLATFORM)" ("DOPUSDATE")"
 
-#define COPYRIGHT  " Copyright (c) 2012-2015 Dopus5 Open Source Team "
+#define COPYRIGHT  " Copyright (c) 2012-2026 Dopus5 Open Source Team "
 
 #endif /* DOPUS_VERSION_H */
