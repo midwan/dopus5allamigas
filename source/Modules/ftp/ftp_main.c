@@ -3082,15 +3082,19 @@ void dopus_ftp(void)
 			// Make sure the script file has been created
 			check_script_file();
 
-			if ((rexport = CreateMsgPort()) && (nfyport = CreateMsgPort()))
+			if ((rexport = CreateMsgPort()))
 			{
 				rexbit = 1 << rexport->mp_SigBit;
-				nfybit = 1 << nfyport->mp_SigBit;
 
 				// Make the ARexx port public so Opus can find it
 				rexport->mp_Node.ln_Name = PORTNAME;
 				AddPort(rexport);
 				D(bug("**** OPUSFTP PORT ADDED ****\n"));
+			}
+
+			if (rexport && (nfyport = CreateMsgPort()))
+			{
+				nfybit = 1 << nfyport->mp_SigBit;
 
 				// Ask Opus to tell us when it will be hidden or revealed
 				if ((notify_req = AddNotifyRequest(DN_OPUS_HIDE | DN_OPUS_SHOW | DN_FLUSH_MEM, 0, nfyport)))

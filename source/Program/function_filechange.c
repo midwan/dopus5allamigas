@@ -104,7 +104,11 @@ static FileChange *alloc_filechange(void *memhandle, BOOL network)
 	FileChange *change;
 
 	if (!(change = AllocMemH(memhandle, sizeof(FileChange))) || !(change->fib = AllocDosObject(DOS_FIB, 0)))
+	{
+		if (change)
+			FreeMemH(change);
 		return NULL;
+	}
 
 	if (network)
 		change->network = AllocMemH(memhandle, sizeof(NetworkInfo));

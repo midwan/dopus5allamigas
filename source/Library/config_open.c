@@ -305,7 +305,11 @@ Cfg_ButtonBank *LIBFUNC L_OpenButtonBank(REG(a0, char *name))
 					if (iff_button_id == ID_OPUS)
 					{
 						if (!convert_button_window(iff, &current_bank->window))
-							return NULL;
+						{
+							L_CloseButtonBank(current_bank);
+							current_bank = 0;
+							goto bank_cleanup;
+						}
 					}
 					else
 						L_IFFReadChunkBytes(iff, &current_bank->window, sizeof(CFG_BTNW));
@@ -383,6 +387,7 @@ Cfg_ButtonBank *LIBFUNC L_OpenButtonBank(REG(a0, char *name))
 			}
 		}
 
+bank_cleanup:
 		L_IFFClose(iff);
 	}
 

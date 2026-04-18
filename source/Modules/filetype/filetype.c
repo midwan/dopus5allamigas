@@ -2731,6 +2731,10 @@ static Cfg_FiletypeList *creator_generic(char *args,
 		}
 		// Free file requester
 		FreeAslRequest(data->filereq);
+
+		// Free message port
+		DeleteMsgPort(data->app_port);
+
 		FreeVec(data);
 	}
 
