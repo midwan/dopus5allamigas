@@ -35,7 +35,7 @@ For more information on Directory Opus for Windows please see:
 #define BPF_NOFORMAT (1 << 9)
 #define BPF_DIRECTORY (1 << 10)
 
-BOOL backdrop_test_rmb(BackdropInfo *info, struct IntuiMessage *msg, struct IntuiMessage *msg_copy, BOOL only_icon)
+BOOL backdrop_test_rmb(BackdropInfo *info, struct IntuiMessage *msg, struct IntuiMessage *msg_copy, ULONG mode)
 {
 	short x, y;
 	BOOL ret = 0;
@@ -58,8 +58,9 @@ BOOL backdrop_test_rmb(BackdropInfo *info, struct IntuiMessage *msg, struct Intu
 		lock_listlock(&info->objects, 0);
 
 		// Check if we can swallow this
-		if ((only_icon && backdrop_get_object(info, msg->MouseX, msg->MouseY, 0)) ||
-			(!only_icon && !cx_mouse_outside(info->window, msg->MouseX, msg->MouseY)))
+		if (!mode ||
+			(mode & BTRM_ICON && backdrop_get_object(info, msg->MouseX, msg->MouseY, 0)) ||
+			(mode & BTRM_NOBORDER && !cx_mouse_outside(info->window, msg->MouseX, msg->MouseY)))
 		{
 			// Cancel menu event
 			msg->Code = MENUCANCEL;

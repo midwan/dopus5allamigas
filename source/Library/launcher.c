@@ -1045,7 +1045,7 @@ LaunchProc *launcher_launch(struct LibData *data, LaunchPacket *packet, struct M
 
 	// Change current directory
 #ifndef __AROS__
-	old_dir = CurrentDir(launch->startup.sm_ArgList[0].wa_Lock);
+	old_dir = CurrentDir(DupLock(launch->startup.sm_ArgList[0].wa_Lock));
 #endif
 
 	// Get process name
@@ -1181,7 +1181,7 @@ LaunchProc *launcher_launch(struct LibData *data, LaunchPacket *packet, struct M
 
 	// Restore current directory
 #ifndef __AROS__
-	CurrentDir(old_dir);
+	UnLock(CurrentDir(old_dir));
 #endif
 	if (cur_dir)
 		UnLock(cur_dir);
