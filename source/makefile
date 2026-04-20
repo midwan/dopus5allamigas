@@ -98,8 +98,7 @@ ARCDEST := /releases/
 LHA := lha a -a -r -q
 else ifeq ($(SYSTEM), linux)
 ARCDEST := $(DEST)
-LHAEXT := lha -xfw=./ 
-ZIP := zip -r 
+LHA := lha a -q
 else
 ARCDEST := $(DEST)
 LHA := lha ao5q
@@ -209,14 +208,12 @@ ifeq ($(log), yes)
 	@$(COPY) ../ChangeLog Dopus5
 endif
 ifeq ($(SYSTEM), linux)
-# lhasa on Linux seems not to be able to pack, so use zip instead
-# first unpack the base archive, then zip up everything
-	@$(LHAEXT) ../archive/$(BASEARC) 
-	@$(ZIP) -r $(ARCDEST)Dopus5$(VERSION)$(NAME)$(TYPE).zip Dopus5
-else
+# Ensure Amiga executables carry the Unix +x bit so lha records it
+# (Amiga LHA maps it back to the Amiga `e` protection flag on extract).
+	@chmod +x Dopus5/DirectoryOpus Dopus5/C/DOpusRT5 Dopus5/C/LoadDB Dopus5/C/viewfont
+endif
 	@$(COPY) ../archive/$(BASEARC) $(DEST)Dopus5$(VERSION)$(NAME)$(TYPE).lha
 	@$(LHA) $(ARCDEST)Dopus5$(VERSION)$(NAME)$(TYPE).lha Dopus5
-endif
 	@$(REMOVE) Dopus5
 	@echo ">>>>>Release date:" $(shell $(DATE) "+%m/%d/%Y")
 

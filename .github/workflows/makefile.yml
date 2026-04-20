@@ -40,7 +40,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact }}
-          path: releases/Dopus5_*_os3*.zip
+          path: releases/Dopus5_*_os3*.lha
           if-no-files-found: error
 
   release:
@@ -60,7 +60,7 @@ jobs:
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "artifacts/Dopus5_*_os3.zip"
+          artifacts: "artifacts/Dopus5_*_os3.lha"
           generateReleaseNotes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
