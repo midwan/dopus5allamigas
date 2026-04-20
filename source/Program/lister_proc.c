@@ -86,6 +86,7 @@ IPC_StartupCode(lister_init, Lister *, lister, static)
 	lister->flags |= LISTERF_FIRST_TIME;
 	lister->flags2 |= LISTERF2_UNAVAILABLE;
 	lister->tool_sel = -1;
+	lister->tool_hover_but = -1;
 	lister->toolbar_offset = 0;
 
 	// Fix priority

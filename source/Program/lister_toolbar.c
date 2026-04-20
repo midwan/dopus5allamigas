@@ -828,3 +828,199 @@ void lister_toolbar_edit(short which)
 	// Edit this bank
 	buttons_edit_bank(buttons, which, 0, 0, 0, TRUE);
 }
+
+// ---------------------------------------------------------------------------
+// Toolbar tooltips
+//
+// On each IntuiTick (~10Hz), tooltip_tick() polls the mouse position. If it
+// stays over the same button for TOOLTIP_DELAY_TICKS ticks, a small borderless
+// popup lists the LMB/RMB/MMB function labels bound to that button.
+// ---------------------------------------------------------------------------
+
+#define TOOLTIP_DELAY_TICKS 8
+
+static void lister_toolbar_tooltip_show(Lister *lister, short but);
+
+// Close the tooltip window (if any) and reset hover state
+void lister_toolbar_tooltip_hide(Lister *lister)
+{
+	if (!lister)
+		return;
+
+	if (lister->tool_tip_window)
+	{
+		CloseWindow(lister->tool_tip_window);
+		lister->tool_tip_window = 0;
+	}
+	lister->tool_hover_but = -1;
+	lister->tool_hover_ticks = 0;
+}
+
+// Poll hover state; called once per IDCMP_INTUITICKS
+void lister_toolbar_tooltip_tick(Lister *lister)
+{
+	short but = -1;
+	short x, y;
+	Cfg_Button *button;
+
+	// Skip if window gone, no valid toolbar, or user is busy with a gadget/button
+	if (lister->window && lister_valid_toolbar(lister) && !lister->down_gadget && lister->tool_sel == -1)
+	{
+		x = lister->window->MouseX;
+		y = lister->window->MouseY;
+
+		if (point_in_element(&lister->toolbar_area, x, y))
+		{
+			button = lister_get_toolbar_button(lister, x, y, &but);
+			// Arrow gadget or miss = not a tooltip target
+			if (!button || button == (Cfg_Button *)-1)
+				but = -1;
+		}
+	}
+
+	// Hover moved off previous button (or onto a different one)?
+	if (but != lister->tool_hover_but)
+	{
+		if (lister->tool_tip_window)
+		{
+			CloseWindow(lister->tool_tip_window);
+			lister->tool_tip_window = 0;
+		}
+		lister->tool_hover_but = but;
+		lister->tool_hover_ticks = 0;
+		return;
+	}
+
+	// Nothing to do if not over a button or the tooltip is already showing
+	if (but < 0 || lister->tool_tip_window)
+		return;
+
+	if (++lister->tool_hover_ticks < TOOLTIP_DELAY_TICKS)
+		return;
+
+	// Clamp counter so a failed show() doesn't retry every tick
+	lister->tool_hover_ticks = TOOLTIP_DELAY_TICKS;
+	lister_toolbar_tooltip_show(lister, but);
+}
+
+// Open a popup window listing the LMB/RMB/MMB labels for the hovered button
+static void lister_toolbar_tooltip_show(Lister *lister, short but)
+{
+	static const char *prefix[3] = {"LMB: ", "RMB: ", "MMB: "};
+	static const UWORD types[3] = {FTYPE_LEFT_BUTTON, FTYPE_RIGHT_BUTTON, FTYPE_MID_BUTTON};
+	char labels[3][96];
+	struct Window *win;
+	struct RastPort *rp, *measure_rp;
+	struct TextFont *font;
+	Cfg_Button *button;
+	Cfg_ButtonFunction *func;
+	short i, num, width, height, line_h, baseline, x, y, pw, lw;
+	LONG screen_w, screen_h;
+
+	// Walk buttons list to find the hovered one
+	button = (Cfg_Button *)lister->toolbar->buttons->buttons.lh_Head;
+	for (i = 0; i < but && button->node.ln_Succ; i++)
+		button = (Cfg_Button *)button->node.ln_Succ;
+	if (!button->node.ln_Succ)
+		return;
+
+	// Gather function names (empty if a slot is unbound or has no name)
+	num = 0;
+	for (i = 0; i < 3; i++)
+	{
+		char *name;
+
+		labels[i][0] = 0;
+		if ((func = (Cfg_ButtonFunction *)FindFunctionType((struct List *)&button->function_list, types[i])) &&
+			(name = function_label(func)) && *name)
+		{
+			stccpy(labels[i], name, (LONG)sizeof(labels[i]));
+			num++;
+		}
+	}
+	if (num == 0)
+		return;
+
+	// Measure using the screen's RastPort (has screen font set)
+	measure_rp = &GUI->screen_pointer->RastPort;
+	font = measure_rp->Font;
+	line_h = font->tf_YSize;
+	baseline = font->tf_Baseline;
+
+	width = 0;
+	for (i = 0; i < 3; i++)
+	{
+		if (!labels[i][0])
+			continue;
+		pw = TextLength(measure_rp, (STRPTR)prefix[i], strlen(prefix[i]));
+		lw = pw + TextLength(measure_rp, labels[i], strlen(labels[i]));
+		if (lw > width)
+			width = lw;
+	}
+
+	width += 8;				  // 4px padding each side
+	height = num * line_h + 4;  // 2px padding top/bottom
+
+	// Position near the mouse, clamped inside the screen
+	x = lister->window->LeftEdge + lister->window->MouseX + 12;
+	y = lister->window->TopEdge + lister->window->MouseY + 16;
+
+	screen_w = GUI->screen_pointer->Width;
+	screen_h = GUI->screen_pointer->Height;
+	if (x + width > screen_w)
+		x = screen_w - width;
+	if (y + height > screen_h)
+		y = screen_h - height;
+	if (x < 0)
+		x = 0;
+	if (y < 0)
+		y = 0;
+
+	// Open borderless popup window on the Opus screen
+	if (!(win = OpenWindowTags(0,
+							   WA_Left, x,
+							   WA_Top, y,
+							   WA_Width, width,
+							   WA_Height, height,
+							   WA_Borderless, TRUE,
+							   WA_SimpleRefresh, TRUE,
+							   WA_CustomScreen, GUI->screen_pointer,
+							   WA_WindowName, DOPUS_WIN_NAME,
+							   WA_IDCMP, IDCMP_REFRESHWINDOW,
+							   TAG_END)))
+		return;
+
+	lister->tool_tip_window = win;
+
+	// Render tooltip contents
+	rp = win->RPort;
+	SetFont(rp, font);
+
+	// Fill background
+	SetAPen(rp, GUI->draw_info->dri_Pens[BACKGROUNDPEN]);
+	RectFill(rp, 0, 0, width - 1, height - 1);
+
+	// Draw 1px shadow-coloured frame
+	SetAPen(rp, GUI->draw_info->dri_Pens[SHADOWPEN]);
+	Move(rp, 0, 0);
+	Draw(rp, width - 1, 0);
+	Draw(rp, width - 1, height - 1);
+	Draw(rp, 0, height - 1);
+	Draw(rp, 0, 0);
+
+	// Draw text lines
+	SetAPen(rp, GUI->draw_info->dri_Pens[TEXTPEN]);
+	SetBPen(rp, GUI->draw_info->dri_Pens[BACKGROUNDPEN]);
+	SetDrMd(rp, JAM1);
+
+	y = 2 + baseline;
+	for (i = 0; i < 3; i++)
+	{
+		if (!labels[i][0])
+			continue;
+		Move(rp, 4, y);
+		Text(rp, (STRPTR)prefix[i], strlen(prefix[i]));
+		Text(rp, labels[i], strlen(labels[i]));
+		y += line_h;
+	}
+}

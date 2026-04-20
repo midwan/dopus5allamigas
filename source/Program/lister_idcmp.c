@@ -52,6 +52,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 
 	// Size/position changed
 	case IDCMP_CHANGEWINDOW:
+		lister_toolbar_tooltip_hide(lister);
 		lister_refresh_callback(IDCMP_CHANGEWINDOW, 0, lister);
 		break;
 
@@ -201,6 +202,9 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 
 	// Key press
 	case IDCMP_RAWKEY:
+
+		// Dismiss any toolbar tooltip on keyboard activity
+		lister_toolbar_tooltip_hide(lister);
 
 		// Send to editor
 		if (lister_edit_key(lister, msg))
@@ -921,6 +925,9 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 
 		if (msg->Class == IDCMP_INTUITICKS)
 		{
+			// Tick toolbar tooltip hover tracking (fires on every active-window tick)
+			lister_toolbar_tooltip_tick(lister);
+
 			// No gadget down?
 			if (!lister->down_gadget || lister->down_gadget->GadgetID == GAD_VERT_SCROLLER ||
 				lister->down_gadget->GadgetID == GAD_HORIZ_SCROLLER)
@@ -1116,13 +1123,15 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 	// Mouse button
 	case IDCMP_MOUSEBUTTONS:
 
+		// Dismiss any toolbar tooltip immediately
+		lister_toolbar_tooltip_hide(lister);
+
 		// Pass to editor
 		if (lister_edit_key(lister, msg))
 			break;
 
-		// Clear down gadget
+		// Clear down gadget (IDCMP_INTUITICKS stays on for hover tracking)
 		lister->down_gadget = 0;
-		ModifyIDCMP(lister->window, lister->window->IDCMPFlags & ~IDCMP_INTUITICKS);
 
 		// Hot name requester open?
 		if (lister->hot_name_req)

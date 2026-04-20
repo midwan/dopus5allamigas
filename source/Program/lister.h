@@ -278,7 +278,10 @@ typedef struct ListerWindow
 	ULONG sep_old_seconds;	// Old event seconds
 	ULONG sep_old_micros;	// Old event micros
 
-	char pad2[50];
+	short tool_hover_but;			 // Hovered toolbar button (-1 = none)
+	short tool_hover_ticks;			 // IntuiTicks elapsed on current hover
+	struct Window *tool_tip_window;	 // Tooltip popup (0 = not shown)
+	char pad2[42];
 
 	DragInfo *drag_info;	   // File drag information
 	struct MsgPort *app_port;  // Application message port
@@ -628,6 +631,8 @@ void lister_build_menu(Lister *lister);
 void lister_get_toolbar(BOOL, Cfg_ButtonBank *);
 void lister_toolbar_free_cache(void);
 Cfg_Button *lister_get_toolbar_button(Lister *, short, short, short *);
+void lister_toolbar_tooltip_tick(Lister *);
+void lister_toolbar_tooltip_hide(Lister *);
 
 // lister_icons.c
 struct _FunctionHandle;

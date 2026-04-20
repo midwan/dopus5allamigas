@@ -183,8 +183,8 @@ struct Window *lister_open_window(Lister *lister, struct Screen *screen)
 							 (ULONG)&lister->dimensions.wd_Zoomed,
 							 WA_IDCMP,
 							 IDCMP_ACTIVEWINDOW | IDCMP_CHANGEWINDOW | IDCMP_CLOSEWINDOW | IDCMP_GADGETDOWN |
-								 IDCMP_GADGETUP | IDCMP_INACTIVEWINDOW | IDCMP_MENUHELP | IDCMP_MENUPICK |
-								 IDCMP_MENUVERIFY | IDCMP_MOUSEBUTTONS | IDCMP_MOUSEMOVE |
+								 IDCMP_GADGETUP | IDCMP_INACTIVEWINDOW | IDCMP_INTUITICKS | IDCMP_MENUHELP |
+								 IDCMP_MENUPICK | IDCMP_MENUVERIFY | IDCMP_MOUSEBUTTONS | IDCMP_MOUSEMOVE |
 #ifdef __amigaos4__
 								 IDCMP_EXTENDEDMOUSE |
 #endif
@@ -468,6 +468,9 @@ void lister_close(Lister *lister, BOOL run_script)
 void lister_close_window(Lister *lister, BOOL run_script)
 {
 	short a;
+
+	// Close toolbar tooltip (if any)
+	lister_toolbar_tooltip_hide(lister);
 
 	// If busy, hide progress window
 	if (lister->progress_window)
