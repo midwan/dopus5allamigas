@@ -698,8 +698,31 @@ void function_unlock_paths(FunctionHandle *handle, PathList *list, int locker)
 		// Valid lister?
 		if (node->lister)
 		{
+			struct MinNode *lnode;
+			BOOL still_listed = FALSE;
+
+			// The stored lister pointer may be stale if the lister was closed while
+			// we held it busy. Confirm it is still in GUI->lister_list before any
+			// dereference; the list lock keeps a found lister alive until we release.
+			for (lnode = (struct MinNode *)GUI->lister_list.list.lh_Head;
+				 lnode->mln_Succ;
+				 lnode = lnode->mln_Succ)
+			{
+				if (node->lister == (Lister *)IPCDATA(((IPCData *)lnode)))
+				{
+					still_listed = TRUE;
+					break;
+				}
+			}
+
+			if (!still_listed)
+			{
+				node->flags &= ~LISTNF_LOCKED;
+				node->lister = 0;
+			}
+
 			// Check list is locked by us
-			if (node->flags & LISTNF_LOCKED)
+			else if (node->flags & LISTNF_LOCKED)
 			{
 				ULONG ref;
 
