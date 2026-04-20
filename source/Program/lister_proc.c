@@ -46,10 +46,12 @@ IPC_StartupCode(lister_init, Lister *, lister, static)
 	// Initialise reselection
 	InitReselect(&lister->reselect);
 	lister->abort_signal = -1;
+	lister->filter_name_bit = -1;
 
 	// Create message ports and signals
 	if (!(lister->app_port = CreateMsgPort()) || !(lister->timer_port = CreateMsgPort()) ||
-		(lister->hot_name_bit = AllocSignal(-1)) == -1 || (lister->abort_signal = AllocSignal(-1)) == -1)
+		(lister->hot_name_bit = AllocSignal(-1)) == -1 || (lister->abort_signal = AllocSignal(-1)) == -1 ||
+		(lister->filter_name_bit = AllocSignal(-1)) == -1)
 		return 0;
 
 	// Allocate some timers
@@ -1529,6 +1531,7 @@ IPC_EntryCode(lister_code)
 			ULONG res =
 				Wait(1 << lister->ipc->command_port->mp_SigBit | 1 << lister->app_port->mp_SigBit |
 					 1 << lister->timer_port->mp_SigBit | 1 << lister->abort_signal | 1 << lister->hot_name_bit |
+					 1 << lister->filter_name_bit |
 					 ((lister->window) ? 1 << lister->window->UserPort->mp_SigBit : 0) |
 					 ((lister->backdrop_info->notify_req) ? 1 << lister->backdrop_info->notify_port->mp_SigBit : 0));
 
@@ -1539,6 +1542,10 @@ IPC_EntryCode(lister_code)
 			// Hot name?
 			if (res & (1 << lister->hot_name_bit))
 				lister_handle_hotname(lister);
+
+			// Live filter?
+			if (res & (1 << lister->filter_name_bit))
+				lister_handle_filter(lister);
 		}
 	}
 
@@ -1651,6 +1658,8 @@ void lister_cleanup(Lister *lister, BOOL bye)
 		FreeSignal(lister->abort_signal);
 	if (lister->hot_name_bit != -1)
 		FreeSignal(lister->hot_name_bit);
+	if (lister->filter_name_bit != -1)
+		FreeSignal(lister->filter_name_bit);
 
 	// Free timer stuff
 	if (lister->timer_port)

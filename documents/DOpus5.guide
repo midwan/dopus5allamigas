@@ -118,16 +118,17 @@ that item and then press the help key before selecting it.
   @{" Lister, Close                  " link "Lister - Close"}  @{" Lister, Close All              " link "Lister - Close All"}
   @{" Lister, Edit                   " link "Lister - Edit"}  @{" Lister, Edit Menu              " link "Lister - Edit Menu"}
   @{" Lister, Edit ToolBar           " link "Lister - Edit Toolbar"}  @{" Lister, File Count             " link "Lister File Count"}
-  @{" Lister, Format                 " link "Lister Format"}  @{" Lister, Iconify                " link "Lister - Iconify"}
-  @{" Lister, Lock Dest              " link "Lister - Lock Dest"}  @{" Lister, Lock Position          " link "Lister - Lock Position"}
-  @{" Lister, Lock Source            " link "Lister - Lock Source"}  @{" Lister, Make Dest              " link "Lister - Make Dest"}
-  @{" Lister, Make Source            " link "Lister - Make Source"}  @{" Lister, Menu                   " link "ListerMenu"}
-  @{" Lister, Menu Popup             " link "Lister Menu PopUp"}  @{" Lister, New                    " link "Lister - New"}
-  @{" Lister, Off                    " link "Lister - Off"}  @{" Lister, Open Parent            " link "Lister - Open Parent"}
-  @{" Lister, Path Popup             " link "Lister Path PopUp"}  @{" Lister, Snapshot               " link "Lister - Snapshot"}
-  @{" Lister, Status Popup           " link "Lister Status PopUp"}  @{" Lister, Tile                   " link "Lister - Tile"}
-  @{" Lister, Unlock                 " link "Lister - Unlock"}  @{" Lister, Unlock All             " link "Lister - Unlock All"}
-  @{" Lister, UnSnapshot             " link "Lister - UnSnapshot"}  @{" Lister, View As                " link "Lister - View As"}
+  @{" Lister, Filter                 " link "Lister - Filter"}  @{" Lister, Format                 " link "Lister Format"}
+  @{" Lister, Iconify                " link "Lister - Iconify"}  @{" Lister, Lock Dest              " link "Lister - Lock Dest"}
+  @{" Lister, Lock Position          " link "Lister - Lock Position"}  @{" Lister, Lock Source            " link "Lister - Lock Source"}
+  @{" Lister, Make Dest              " link "Lister - Make Dest"}  @{" Lister, Make Source            " link "Lister - Make Source"}
+  @{" Lister, Menu                   " link "ListerMenu"}  @{" Lister, Menu Popup             " link "Lister Menu PopUp"}
+  @{" Lister, New                    " link "Lister - New"}  @{" Lister, Off                    " link "Lister - Off"}
+  @{" Lister, Open Parent            " link "Lister - Open Parent"}  @{" Lister, Path Popup             " link "Lister Path PopUp"}
+  @{" Lister, Snapshot               " link "Lister - Snapshot"}  @{" Lister, Status Popup           " link "Lister Status PopUp"}
+  @{" Lister, Tile                   " link "Lister - Tile"}  @{" Lister, Unlock                 " link "Lister - Unlock"}
+  @{" Lister, Unlock All             " link "Lister - Unlock All"}  @{" Lister, UnSnapshot             " link "Lister - UnSnapshot"}
+  @{" Lister, View As                " link "Lister - View As"}
   @{" LoadButtons                    " link "LoadButtons"}  @{" LoadEnvironment                " link "LoadEnvironment"}
   @{" LoadFonts                      " link "LoadFonts"}  @{" LoadTheme                      " link "LoadTheme"}
   @{" MakeDir                        " link "MakeDir"}  @{" MakeLink                       " link "MakeLink"}
@@ -941,7 +942,7 @@ Manual Ref: 5.8 - 106
 FTPSetVar             VAR, VALUE/F
 
   The @{b}FTPSetVar@{ub} command lets you set the value of the internal
-  OpusFTPßvariables.
+  OpusFTPï¿½variables.
 
   * Note that this command can be used only with Arexx at present.
     See the provided buttons for examples of use.
@@ -957,25 +958,25 @@ FTPSetVar             VAR, VALUE/F
 
   * @{b}LogFile [name]@{ub}
     If name is specified, a new log will be opened using the new
-    name.ßIf a log was already open, it will be closed. If no name is
-    specified,ßthe log will be toggled between open/closed using the
-    original name inßthe configuration file:
+    name.ï¿½If a log was already open, it will be closed. If no name is
+    specified,ï¿½the log will be toggled between open/closed using the
+    original name inï¿½the configuration file:
 
   FTPSetVar LogFile "CON:////FTP Log"
   FTPSetVar LogFile
 
   * @{b}Debug [n]@{ub}
     If n is provided, the debugging level will be set to this new
-    value.ßIf n is not provided, the debugging level will be toggled
-    between 0ßand 1. n must be a decimal integer:
+    value.ï¿½If n is not provided, the debugging level will be toggled
+    between 0ï¿½and 1. n must be a decimal integer:
 
   FTPSetVar Debug 1
   FTPSetVar Debug
 
   * @{b}Timeout n@{ub}
     n must be provided. This sets the maximum number of seconds
-    OpusFTPßwill wait for replies from the server before giving up
-    andßdisconnecting:
+    OpusFTPï¿½will wait for replies from the server before giving up
+    andï¿½disconnecting:
 
   FTPSetVar Timeout 60
 
@@ -2365,6 +2366,28 @@ will display all the files and directories using pseudo-icons for those
 which do not have real icons, using filetype icons wherever possible.
 
 Manual Ref: 5.5 - 62
+@endnode
+
+@node "Lister - Filter" "Lister - Filter"
+ Lister - Filter
+
+Opens a live filter requester anchored over the active lister's path field.
+As you type, the lister's show pattern is updated on the fly and display
+rejection is re-applied against the already-buffered entries, so filtering
+is instant and does not trigger a directory re-read.
+
+Standard Amiga wildcards are supported (for example "#?.info" to hide all
+but .info files, or "~(#?.info)" to hide them).  The pattern persists in
+the lister's format, exactly like the @{" Show " link "Set"} setting - closing the requester
+leaves the filter in effect.
+
+The requester closes when you click outside it, click on the path field,
+or select another menu item.  The filter is only available in name-mode
+listers; icon mode uses a different path widget.
+
+Available as: View menu -> Filter... (right-Amiga + F).
+
+(dopus5allamigas extension)
 @endnode
 
 @node "Lister - Iconify" "Lister - Iconify"

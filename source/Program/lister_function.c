@@ -225,6 +225,11 @@ int lister_do_function(Lister *lister, ULONG func)
 		lister_configure(lister);
 		break;
 
+	// Open live filter requester
+	case MENU_LISTER_FILTER:
+		lister_add_filter(lister);
+		break;
+
 	// Leave objects out
 	case MENU_ICON_LEAVE_OUT:
 

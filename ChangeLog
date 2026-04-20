@@ -1,3 +1,14 @@
+[dopus5allamigas] Live filter overlay
+Added a live filter overlay (View menu -> Filter..., right-Amiga + F) that
+opens a string gadget over the active lister's path field. Typing updates
+the lister's show pattern in real time and re-applies display rejection
+against the buffered entries without re-reading the directory. The pattern
+persists in the lister's format (same storage as the existing Show
+setting), so closing the overlay keeps the filter in effect. Clicking the
+path field or outside the overlay dismisses it.
+Only applies to name-mode listers (icon view uses a different path widget).
+2026-04-20 by Dimitris Panokostas <midwan@gmail.com>
+
 r[1080] by paraxenic
 Added Themes directory to basedata.lha so distribution archives will
 have a Themes directory.

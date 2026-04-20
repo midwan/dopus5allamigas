@@ -398,6 +398,11 @@ typedef struct ListerWindow
 	short hot_name_bit;
 	struct Hook *hot_name_hook;
 
+	char filter_name[40];			// Live filter pattern edit buffer
+	struct Requester *filter_name_req;
+	short filter_name_bit;
+	struct Hook *filter_name_hook;
+
 	ListFormat user_format;	 // User-defined format
 
 	ULONG more_flags;  // Some more flags
@@ -728,6 +733,10 @@ void lister_fix_cd(Lister *lister);
 void lister_add_hotname(Lister *lister, char);
 void lister_rem_hotname(Lister *lister);
 void lister_handle_hotname(Lister *lister);
+
+void lister_add_filter(Lister *lister);
+void lister_rem_filter(Lister *lister);
+void lister_handle_filter(Lister *lister);
 
 #define LISTERPOPUP_CLOSE 0
 

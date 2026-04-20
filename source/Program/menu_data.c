@@ -84,6 +84,11 @@ MenuData dopus_menus[] = {
 	 MENU_LISTER_SHOW_ALL,
 	 MSG_LISTER_SHOW_ALL,
 	 CHECKIT | MENUTOGGLE | MENUFLAG_USE_SEQ | MENUFLAG_MAKE_SEQ(';')},
+	{NM_ITEM, 0, (ULONG)NM_BARLABEL, 0},
+	{NM_ITEM,
+	 MENU_LISTER_FILTER,
+	 (ULONG) "Filter...",
+	 MENUFLAG_TEXT_STRING | MENUFLAG_USE_SEQ | MENUFLAG_MAKE_SEQ('F')},
 
 	// Icons
 	{NM_TITLE, MENU_ICON_MENU, MSG_ICONS_MENU, 0},
@@ -193,6 +198,7 @@ MenuHelp menu_help_data[] = {
 	{MENU_LISTER_SHOW_ALL, "View As"},
 	{MENU_LISTER_ICONIFY, "Iconify"},
 	{MENU_LISTER_LOCK_POS, "Lock Position"},
+	{MENU_LISTER_FILTER, "Filter"},
 
 	{0, "Icons"},
 	{MENU_ICON_MAKEDIR, "New Drawer"},

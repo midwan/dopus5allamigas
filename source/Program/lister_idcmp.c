@@ -1024,6 +1024,13 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 				lister_rem_hotname(lister);
 			}
 
+			// Live filter requester shown?
+			else if (lister->filter_name_req)
+			{
+				// Remove it
+				lister_rem_filter(lister);
+			}
+
 			// Check not locked
 			else if (!(lister->flags & LISTERF_LOCK))
 			{
@@ -1138,6 +1145,13 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 		{
 			// Remove it
 			lister_rem_hotname(lister);
+		}
+
+		// Live filter requester open?
+		if (lister->filter_name_req)
+		{
+			// Remove it
+			lister_rem_filter(lister);
 		}
 
 		// Title button selected?

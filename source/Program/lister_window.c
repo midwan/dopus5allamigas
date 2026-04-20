@@ -491,6 +491,9 @@ void lister_close_window(Lister *lister, BOOL run_script)
 		// Remove 'hot name' requester
 		lister_rem_hotname(lister);
 
+		// Remove live filter requester
+		lister_rem_filter(lister);
+
 		// Run script?
 		if (run_script)
 		{

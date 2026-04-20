@@ -81,6 +81,7 @@ COMMON_OBJS =	data.o \
 	lister_clip.o \
 	lister_menus.o \
 	lister_hotname.o \
+	lister_filter.o \
 	lister_edit.o \
 	lister_ftp.o \
 	buttons.o \
