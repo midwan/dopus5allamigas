@@ -1,6 +1,10 @@
 */.qtc_clangd/*
 *.o
 */bin.os3/*
+*/bin.os4/*
+*/bin.mos/*
+*/bin.i386-aros/*
+*/bin.arm-aros/*
 .omg
 .DS_Store
 releases
