@@ -598,8 +598,22 @@ BOOL function_lock_paths(FunctionHandle *handle, PathList *list, int locker)
 		// Check path not already locked
 		if (node->lister && !(node->flags & LISTNF_LOCKED))
 		{
+			Lister *lister;
+
+			// Validate the lister before dereferencing it. The stored pointer may be
+			// stale if the lister was closed while this function was pending; the
+			// shared lock on GUI->lister_list keeps a validated lister alive until we
+			// either lock it busy or release the list lock.
+			lister = function_valid_lister(handle, node->lister);
+
+			// Lister is gone (freed or closing)
+			if (!lister)
+			{
+				node->lister = 0;
+			}
+
 			// Lister not available first time unless this is a read dir op
-			if (node->lister->flags2 & LISTERF2_UNAVAILABLE && locker != 3)
+			else if (lister->flags2 & LISTERF2_UNAVAILABLE && locker != 3)
 			{
 				// Clear lister
 				node->lister = 0;
@@ -612,10 +626,12 @@ BOOL function_lock_paths(FunctionHandle *handle, PathList *list, int locker)
 				node->lister = 0;
 			}
 
-			// Check lister is valid
-			else if ((node->lister = function_valid_lister(handle, node->lister)))
+			// Lister is valid, lock it
+			else
 			{
 				IPCMessage *msg;
+
+				node->lister = lister;
 
 				// Make lister busy
 				IPC_Command(node->lister->ipc, LISTER_BUSY, 0, (APTR)1, 0, handle->reply_port);
