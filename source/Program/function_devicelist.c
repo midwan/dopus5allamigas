@@ -395,7 +395,9 @@ DOPUS_FUNC(function_devicelist)
 						{
 							ULONG disktype;
 
-							// Get percent used
+							// Get percent used. Widen through ULONG (not via direct (UQUAD)
+							// sign-extension) and cap at 100% so misbehaving filesystems that
+							// report id_NumBlocksUsed > id_NumBlocks don't produce "1208%".
 							if (info->id_NumBlocks == 0)
 							{
 								strcpy(data->full, "100");
@@ -403,57 +405,71 @@ DOPUS_FUNC(function_devicelist)
 							else
 							{
 #ifdef USE_64BIT
-								UQUAD usedblocks = (UQUAD)(info->id_NumBlocksUsed);
-								usedblocks = usedblocks * 100;
-								DivideToString64(
-									data->full,
-									6,
-									&usedblocks,  // info->id_NumBlocksUsed*100,
-									info->id_NumBlocks,
-									0,
-									(environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
+								UQUAD u_used = (UQUAD)(ULONG)info->id_NumBlocksUsed;
+								UQUAD u_num = (UQUAD)(ULONG)info->id_NumBlocks;
+								UQUAD percent;
+								if (u_used > u_num)
+									u_used = u_num;
+								percent = (u_used * 100) / u_num;
+								if (percent > 100)
+									percent = 100;
+								lsprintf(data->full, "%lu", (ULONG)percent);
 #else
-								DivideToString(
-									data->full,
-									info->id_NumBlocksUsed * 100,
-									info->id_NumBlocks,
-									0,
-									(environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
+								ULONG u_used = (ULONG)info->id_NumBlocksUsed;
+								ULONG u_num = (ULONG)info->id_NumBlocks;
+								ULONG percent;
+								if (u_used > u_num)
+									u_used = u_num;
+								percent = UMult32(u_used, 100) / u_num;
+								if (percent > 100)
+									percent = 100;
+								lsprintf(data->full, "%lu", percent);
 #endif
 							}
 
-							// Get space free and used
-#ifdef USE_64BIT
+							// Get space free and used. If the filesystem reports
+							// id_NumBlocksUsed > id_NumBlocks (seen on amiberry
+							// directory-mounts whose host-reported values are
+							// inconsistent), subtraction wraps to a 64-bit garbage
+							// value that would render as tens of terabytes. Show
+							// "?" in that case rather than a nonsense size.
+							if ((ULONG)info->id_NumBlocksUsed > (ULONG)info->id_NumBlocks)
 							{
+								strcpy(data->free, "?");
+								strcpy(data->used, "?");
+							}
+							else
+							{
+#ifdef USE_64BIT
 								UQUAD tmp;
-								tmp = ((UQUAD)info->id_NumBlocks - (UQUAD)info->id_NumBlocksUsed) *
-									  (UQUAD)info->id_BytesPerBlock;
+								tmp = ((UQUAD)(ULONG)info->id_NumBlocks - (UQUAD)(ULONG)info->id_NumBlocksUsed) *
+									  (UQUAD)(ULONG)info->id_BytesPerBlock;
 								BytesToString64(
 									&tmp,
 									data->free,
 									sizeof(data->free),
 									1,
 									(environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
-								tmp = (UQUAD)info->id_NumBlocksUsed * (UQUAD)info->id_BytesPerBlock;
+								tmp = (UQUAD)(ULONG)info->id_NumBlocksUsed * (UQUAD)(ULONG)info->id_BytesPerBlock;
 								BytesToString64(
 									&tmp,
 									data->used,
 									sizeof(data->used),
 									1,
 									(environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
-							}
 #else
-							BytesToString(
-								(info->id_NumBlocks - info->id_NumBlocksUsed) * info->id_BytesPerBlock,
-								data->free,
-								1,
-								(environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
-							BytesToString(
-								info->id_NumBlocksUsed * info->id_BytesPerBlock,
-								data->used,
-								1,
-								(environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
+								BytesToString(
+									((ULONG)info->id_NumBlocks - (ULONG)info->id_NumBlocksUsed) * (ULONG)info->id_BytesPerBlock,
+									data->free,
+									1,
+									(environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
+								BytesToString(
+									(ULONG)info->id_NumBlocksUsed * (ULONG)info->id_BytesPerBlock,
+									data->used,
+									1,
+									(environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
 #endif
+							}
 
 							// Check widths
 							if ((len = lister_get_length(lister, data->full)) > max_full_width)

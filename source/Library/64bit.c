@@ -157,9 +157,16 @@ void LIBFUNC L_BytesToString64(REG(a0, UQUAD *bytes),
 	// Convert to kilobytes
 	numbytes >>= 10;
 
-	// Fucking huge?
-	if (numbytes > 1073741824)
+	// Petabyte-plus? (genuinely absurd, bail out)
+	if (numbytes > (UQUAD)1024 * 1024 * 1024 * 1024)
 		strncpy(string, "HUGE", str_size);
+
+	// Terabyte range?
+	else if (numbytes > 1073741824)
+	{
+		div = 1073741824;
+		size_str = "T";
+	}
 
 	// Gigabyte range?
 	else if (numbytes > 1048576)

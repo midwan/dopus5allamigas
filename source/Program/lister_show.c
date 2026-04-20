@@ -1005,23 +1005,29 @@ void lister_update_name(Lister *lister)
 		// Get disk info
 		GetDiskInfo(buffer->buf_Path, info);
 
-		// Get total size
-#ifdef USE_64BIT
-		buffer->buf_TotalDiskSpace = info->id_NumBlocks;
-		buffer->buf_TotalDiskSpace64 = (UQUAD)info->id_BytesPerBlock * (UQUAD)info->id_NumBlocks;
-#else
-		buffer->buf_TotalDiskSpace = UMult32(info->id_BytesPerBlock, info->id_NumBlocks);
-#endif
+		// If the filesystem reports id_NumBlocksUsed > id_NumBlocks
+		// (seen on amiberry directory-mounts with inconsistent host
+		// stats), clamp used to total so the title bar doesn't display
+		// a wrap-around tens-of-terabytes "free" figure.
+		{
+			ULONG num_blocks = (ULONG)info->id_NumBlocks;
+			ULONG used_blocks = (ULONG)info->id_NumBlocksUsed;
+			ULONG bytes_per_block = (ULONG)info->id_BytesPerBlock;
+			if (used_blocks > num_blocks)
+				used_blocks = num_blocks;
 
-		// Get free space
 #ifdef USE_64BIT
-		buffer->buf_FreeDiskSpace = info->id_NumBlocks - info->id_NumBlocksUsed;
-		buffer->buf_FreeDiskSpace64 =
-			buffer->buf_TotalDiskSpace64 - ((UQUAD)info->id_BytesPerBlock * (UQUAD)info->id_NumBlocksUsed);
+			buffer->buf_TotalDiskSpace = num_blocks;
+			buffer->buf_TotalDiskSpace64 = (UQUAD)bytes_per_block * (UQUAD)num_blocks;
+			buffer->buf_FreeDiskSpace = num_blocks - used_blocks;
+			buffer->buf_FreeDiskSpace64 =
+				buffer->buf_TotalDiskSpace64 - ((UQUAD)bytes_per_block * (UQUAD)used_blocks);
 #else
-		buffer->buf_FreeDiskSpace =
-			buffer->buf_TotalDiskSpace - UMult32(info->id_BytesPerBlock, info->id_NumBlocksUsed);
+			buffer->buf_TotalDiskSpace = UMult32(bytes_per_block, num_blocks);
+			buffer->buf_FreeDiskSpace =
+				buffer->buf_TotalDiskSpace - UMult32(bytes_per_block, used_blocks);
 #endif
+		}
 
 		// Is this the RAM disk?
 		if (buffer->buf_FreeDiskSpace == 0 && strncmp(buffer->buf_Path, "RAM:", 4) == 0)
