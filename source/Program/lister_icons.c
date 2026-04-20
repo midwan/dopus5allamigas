@@ -595,9 +595,13 @@ void lister_show_icon(Lister *lister, BackdropObject *object)
 	// Lock icon list
 	lock_listlock(&lister->backdrop_info->objects, 0);
 
-	// Look for icon in list
-	for (test = (BackdropObject *)lister->backdrop_info->objects.list.lh_Head; test->node.ln_Succ;
-		 test = (BackdropObject *)test->node.ln_Succ)
+	// Walk the list from the tail: new icons are AddTail'd during populate,
+	// so the one we're looking for is almost always at TailPred. That makes
+	// the common populate path O(1) per incoming icon instead of O(N), where
+	// calling this N times during a drawer-open cost O(N^2).
+	for (test = (BackdropObject *)lister->backdrop_info->objects.list.lh_TailPred;
+		 test->node.ln_Pred;
+		 test = (BackdropObject *)test->node.ln_Pred)
 	{
 		// Found?
 		if (test == object)
