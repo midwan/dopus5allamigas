@@ -40,6 +40,8 @@ void lister_get_icons(FunctionHandle *handle, Lister *lister, char *add_name, sh
 	BackdropInfo *info = lister->backdrop_info;
 	BOOL shown = 0;
 	char *path;
+	struct MsgPort *icon_reply_port = 0;
+	long icons_pending = 0;
 
 	// Initialise positions
 	info->last_x_pos = 0;
@@ -69,6 +71,14 @@ void lister_get_icons(FunctionHandle *handle, Lister *lister, char *add_name, sh
 
 	// Create a list for icons
 	icon_list = Att_NewList(0);
+
+	// If running on the handle (function) task, use an async reply port so
+	// IPC_Command(LISTER_SHOW_ICON) does not block until the lister finishes
+	// drawing. That lets us keep loading icons from disk while the lister
+	// renders the previous one. If the port can't be created we fall back
+	// to the synchronous REPLY_NO_PORT path below.
+	if (handle && (icon_reply_port = CreateMsgPort()))
+		icon_reply_port->mp_Node.ln_Pri = PORT_ASYNC_MAGIC;
 
 	// If not adding a specific file, get first entry
 	if (!add_name && !((entry = (DirEntry *)buffer->entry_list.mlh_Head)->de_Node.dn_Succ))
@@ -236,7 +246,15 @@ void lister_get_icons(FunctionHandle *handle, Lister *lister, char *add_name, sh
 					if (object && !(object->flags & BDOF_NO_POSITION))
 					{
 						if (handle)
-							IPC_Command(lister->ipc, LISTER_SHOW_ICON, 0, object, 0, REPLY_NO_PORT);
+						{
+							if (icon_reply_port)
+							{
+								if (IPC_Command(lister->ipc, LISTER_SHOW_ICON, 0, object, 0, icon_reply_port))
+									++icons_pending;
+							}
+							else
+								IPC_Command(lister->ipc, LISTER_SHOW_ICON, 0, object, 0, REPLY_NO_PORT);
+						}
 						else
 							lister_show_icon(lister, object);
 					}
@@ -290,6 +308,28 @@ void lister_get_icons(FunctionHandle *handle, Lister *lister, char *add_name, sh
 				}
 			}
 		} while (entry->de_Node.dn_Succ);
+
+	// Drain any outstanding async LISTER_SHOW_ICON replies from this loop.
+	// Matches the pattern in L_IPC_ListCommand: wake, pull one reply, clear
+	// its reply port, free it via IPC_Reply. We wait for every reply before
+	// returning so the lister has finished drawing before any subsequent
+	// repaint/recalc steps run.
+	if (icon_reply_port)
+	{
+		while (icons_pending > 0)
+		{
+			IPCMessage *msg;
+			WaitPort(icon_reply_port);
+			if ((msg = (IPCMessage *)GetMsg(icon_reply_port)))
+			{
+				msg->msg.mn_ReplyPort = 0;
+				IPC_Reply(msg);
+			}
+			--icons_pending;
+		}
+		DeleteMsgPort(icon_reply_port);
+		icon_reply_port = 0;
+	}
 
 	// Free temporary icon list
 	Att_RemList(icon_list, 0);
