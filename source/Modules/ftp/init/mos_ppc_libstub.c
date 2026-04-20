@@ -1,5 +1,10 @@
 #include "module_deps.h"
 
+// libnix pulls in some startup-dependent helpers (errno.o, malloc.o, timezone.o)
+// even when we build with -nostartfiles. Provide stubs so the link succeeds.
+int ThisRequiresConstructorHandling;
+void *libnix_mempool;
+
 LIBSTUB(L_Module_Identify, ModuleInfo *, REG(d0, int num))
 {
 	return L_Module_Identify((int)REG_D0);

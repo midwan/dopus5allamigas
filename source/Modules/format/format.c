@@ -765,7 +765,11 @@ BOOL do_format(format_data *data, DiskHandle *disk, unsigned short type, short *
 		SetProgressWindowTags(status, PW_Info, (IPTR)GetString(locale, MSG_FORMAT_INITIALISING), TAG_END);
 
 		// Initialise disk
+#ifdef __amigaos4__
+		if (!(Format(disk->dh_name, data->default_name, data->dos_type, 0)))
+#else
 		if (!(Format(disk->dh_name, data->default_name, data->dos_type)))
+#endif
 			suc = 0;
 
 		// Make bootable?

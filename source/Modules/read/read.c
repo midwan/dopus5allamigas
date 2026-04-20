@@ -28,7 +28,7 @@ For more information on Directory Opus for Windows please see:
 #include <dopus/common.h>
 #include <dopus/lib_macros.h>
 
-#if defined(__amigaos3__) || defined(__AROS__)
+#if defined(__amigaos3__) || defined(__AROS__) || defined(__amigaos4__)
 struct Device *InputBase = NULL;
 #else
 struct Library *InputBase = NULL;
@@ -88,7 +88,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 	if (!OpenDevice("input.device", 0, (struct IORequest *)&data->input_req, 0))
 		InputBase = (APTR)(/*data->input_base =*/(APTR)data->input_req.io_Device);
 #ifdef __amigaos4__
-	IInput = (struct InputIFace *)GetInterface(/*data->input_base*/ InputBase, "main", 1, NULL);
+	IInput = (struct InputIFace *)GetInterface((struct Library *)InputBase, "main", 1, NULL);
 #endif
 
 	// Initial search?

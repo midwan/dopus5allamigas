@@ -24,7 +24,7 @@ For more information on Directory Opus for Windows please see:
 #include <dopus/common.h>
 #include <proto/dopus5.h>
 
-#if defined(__amigaos3__) || defined(__AROS__)
+#if defined(__amigaos3__) || defined(__AROS__) || defined(__amigaos4__)
 struct Device *InputBase = NULL;
 #else
 struct Library *InputBase = NULL;
@@ -122,7 +122,7 @@ int main(int argc, char **arg_string)
 		// Get input base
 		InputBase = (APTR)input_req.io_Device;
 #ifdef __amigaos4__
-		IInput = (struct InputIFace *)GetInterface(InputBase, "main", 1, NULL);
+		IInput = (struct InputIFace *)GetInterface((struct Library *)InputBase, "main", 1, NULL);
 #endif
 
 		// See if shift is held down

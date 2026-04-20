@@ -355,7 +355,11 @@ void startup_open_libraries()
 		!(IconBase = main_open_library("icon.library", 37)) ||
 		!(WorkbenchBase = main_open_library("workbench.library", 37)) ||
 		!(CxBase = main_open_library("commodities.library", 37)) ||
+#if defined(__amigaos4__) || defined(__AROS__)
 		!(UtilityBase = (struct UtilityBase *)main_open_library("utility.library", 37)) ||
+#else
+		!(UtilityBase = main_open_library("utility.library", 37)) ||
+#endif
 		!(GadToolsBase = main_open_library("gadtools.library", 37)) ||
 		!(RexxSysBase = main_open_library("rexxsyslib.library", 0)) ||
 		!(AslBase = main_open_library("asl.library", 37)))
@@ -380,7 +384,7 @@ void startup_open_libraries()
 	// Some other useful libraries
 	DataTypesBase = OpenLibrary("datatypes.library", 0);
 	AmigaGuideBase = OpenLibrary("amigaguide.library", 0);
-	NewIconBase = OpenLibrary("newicon.library", 0);
+	NewIconBase = (struct NewIconBase *)OpenLibrary("newicon.library", 0);
 #ifdef __amigaos4__
 	IDataTypes = (struct DataTypesIFace *)GetInterface(DataTypesBase, "main", 1, NULL);
 	IAmigaGuide = (struct AmigaGuideIFace *)GetInterface(AmigaGuideBase, "main", 1, NULL);
@@ -402,9 +406,11 @@ void startup_open_libraries()
 #endif
 	if (!OpenDevice("input.device", 0, (struct IORequest *)&input_req, 0))
 	{
-		InputBase = (struct Library *)input_req.io_Device;
 #ifdef __amigaos4__
-		IInput = (struct InputIFace *)GetInterface(InputBase, "main", 1, NULL);
+		InputBase = input_req.io_Device;
+		IInput = (struct InputIFace *)GetInterface((struct Library *)InputBase, "main", 1, NULL);
+#else
+		InputBase = (struct Library *)input_req.io_Device;
 #endif
 	}
 
@@ -560,7 +566,7 @@ void startup_init_gui()
 		GUI->date_length = 9;
 
 	// See if SysIHack is running
-	if (FindTask("« sysihack »"))
+	if (FindTask("ï¿½ sysihack ï¿½"))
 		GUI->flags |= GUIF_SYSIHACK;
 
 	// Allocate a string for spaces, and the global undo buffer
@@ -915,9 +921,9 @@ void startup_show_startup_picture(IPCData **startup_pic)
 
 			// Open "loading" status window
 			main_status = OpenProgressWindowTags(PW_Title,
-												 dopus_name,
+												 (IPTR)dopus_name,
 												 PW_FileName,
-												 GetString(&locale, MSG_PROGRAM_LOADING),
+												 (IPTR)GetString(&locale, MSG_PROGRAM_LOADING),
 												 PW_FileCount,
 												 INIT_STEPS,
 												 PW_FileSize,

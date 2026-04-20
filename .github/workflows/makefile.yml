@@ -15,36 +15,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-os3:
+  build:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - variant: debug
-            make_flags: ""
-            artifact: Dopus5_os3_debug
-          - variant: release
-            make_flags: "debug=no"
-            artifact: Dopus5_os3
+        platform:
+          - { name: os3, image: "sacredbanana/amiga-compiler:m68k-amigaos" }
+          - { name: os4, image: "sacredbanana/amiga-compiler:ppc-amigaos" }
+          - { name: mos, image: "sacredbanana/amiga-compiler:ppc-morphos" }
+        variant:
+          - { name: debug,   flags: "",          suffix: "_debug" }
+          - { name: release, flags: "debug=no",  suffix: "" }
 
-    name: build-os3-${{ matrix.variant }}
+    name: build-${{ matrix.platform.name }}-${{ matrix.variant.name }}
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Build (${{ matrix.variant }})
+      - name: Build (${{ matrix.platform.name }} ${{ matrix.variant.name }})
         run: |
-          docker run --rm -v ${{ github.workspace }}:/work sacredbanana/amiga-compiler:m68k-amigaos sh -c "cd /work/source && make os3 release ${{ matrix.make_flags }}"
+          docker run --rm -v ${{ github.workspace }}:/work ${{ matrix.platform.image }} sh -c "cd /work/source && make ${{ matrix.platform.name }} release ${{ matrix.variant.flags }}"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.artifact }}
-          path: releases/Dopus5_*_os3*.lha
+          name: Dopus5_${{ matrix.platform.name }}${{ matrix.variant.suffix }}
+          path: releases/Dopus5_*_${{ matrix.platform.name }}*.lha
           if-no-files-found: error
 
   release:
-    needs: build-os3
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -60,7 +60,7 @@ jobs:
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "artifacts/Dopus5_*_os3.lha"
+          artifacts: "artifacts/Dopus5_*_os3.lha,artifacts/Dopus5_*_os4.lha,artifacts/Dopus5_*_mos.lha"
           generateReleaseNotes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

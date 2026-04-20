@@ -94,7 +94,7 @@ struct Library *RexxSysBase = NULL;
 struct Library *GadToolsBase = NULL;
 struct Library *AslBase = NULL;
 struct Library *DataTypesBase = NULL;
-#if defined(__amigaos3__) || defined(__AROS__)
+#if defined(__amigaos3__) || defined(__AROS__) || defined(__amigaos4__)
 struct Device *InputBase = NULL;
 #else
 struct Library *InputBase = NULL;
@@ -179,7 +179,7 @@ const UWORD arrow_hi_data[11][2] = {0xffe0, 0x8020, 0x8fa0, 0x87a0, 0x8fa0, 0x9e
 									0xbc08, 0x8008, 0xfff8, 0x0000, 0x7ff0, 0x7010, 0x7810, 0x7010,
 									0x6090, 0x41f0, 0x43f0, 0x43f0, 0x7ff0, 0x0000};
 
-struct Image arrow_image[2] = {{0, 0, 11, 11, 2, arrow_hi_data, 3, 0, 0}, {0, 0, 13, 11, 2, arrow_lo_data, 3, 0, 0}};
+struct Image arrow_image[2] = {{0, 0, 11, 11, 2, (UWORD *)arrow_hi_data, 3, 0, 0}, {0, 0, 13, 11, 2, (UWORD *)arrow_lo_data, 3, 0, 0}};
 
 // used in graphics.c
 const UWORD small_arrow[7] = {0x8000, 0xc000, 0xe000, 0xf000, 0xe000, 0xc000, 0x8000},

@@ -23,10 +23,10 @@ DEBUGSYM := -gstabs
 OPTIONS  := $(C_LIB) -D__USE_INLINE__ -D__USE_OLD_TIMEVAL__ -D__OBSOLETE_MEMHANDLER_FLAGS__ -DUSE_OLD_ANCHORPATH -DUSE_64BIT -DCOMPDATE=$(NEWDATE)
 INCLUDES := -I../ -I../Include
 LDFLAGS  := $(C_LIB) -nostartfiles
-WARNINGS := -Wall -fno-strict-aliasing
+WARNINGS := -Wall -fno-strict-aliasing -fcommon
 CC       := ppc-amigaos-gcc
 CFLAGS   := $(OPTIONS) $(DEBUG) $(DEBUGSYM) $(OPTIMIZE)
-LIBS     := -lamiga
+LIBS     :=
 
 REMOVE = rm -f
 MAKEDIR := mkdir -p

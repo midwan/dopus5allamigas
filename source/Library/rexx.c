@@ -28,6 +28,52 @@ For more information on Directory Opus for Windows please see:
 	#define rm_avail rm_Unused1
 #endif
 
+#ifdef __amigaos4__
+/* OS4 newlib does not provide amiga.lib's SetRexxVar/GetRexxVar. Wrap the
+ * rexxsyslib interface (IRexxSys->Set/GetRexxVarFromMsg) to preserve the
+ * classic API that the DOpus library uses. */
+LONG SetRexxVar(struct RexxMsg *rexxmsg, CONST_STRPTR name, CONST_STRPTR value, LONG length)
+{
+	if (!IRexxSys)
+		return 10;
+
+	if (value && length >= 0)
+	{
+		STRPTR tmp = AllocVec(length + 1, MEMF_ANY);
+		LONG rc;
+		if (!tmp)
+			return 3;
+		CopyMem((APTR)value, tmp, length);
+		tmp[length] = '\0';
+		rc = SetRexxVarFromMsg(name, tmp, rexxmsg);
+		FreeVec(tmp);
+		return rc;
+	}
+	return SetRexxVarFromMsg(name, value, rexxmsg);
+}
+
+LONG GetRexxVar(CONST struct RexxMsg *rexxmsg, CONST_STRPTR name, STRPTR *result)
+{
+	/* Classic amiga.lib returned a pointer to ARexx-internal storage valid
+	 * for the lifetime of the message. We emulate that with a per-call static
+	 * buffer: callers in DOpus consume the value immediately before issuing
+	 * another rexx call. */
+	static char buf[4096];
+	LONG rc;
+
+	if (!result)
+		return 10;
+	*result = NULL;
+	if (!IRexxSys)
+		return 10;
+
+	rc = GetRexxVarFromMsg(name, buf, (struct RexxMsg *)rexxmsg);
+	if (rc == 0)
+		*result = buf;
+	return rc;
+}
+#endif
+
 static char *RexxMsgIdentifier = "DOPUS";
 
 // Free an ARexx message

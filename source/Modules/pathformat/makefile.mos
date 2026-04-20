@@ -21,7 +21,7 @@ DEBUGSYM :=
 OPTIONS  := -DAROS_ALMOST_COMPATIBLE -DCOMPDATE=$(NEWDATE)
 INCLUDES := -I../../Include -Iinit -Iinit/../ -I../../
 LDFLAGS  := -nostartfiles -Wl,-Map=$(TARGET).map
-WARNINGS := -Wall
+WARNINGS := -Wall -Wno-error=incompatible-pointer-types -Wno-error=int-conversion
 CC       := ppc-morphos-gcc -noixemul
 CFLAGS   := $(OPTIONS) $(DEBUG) $(DEBUGSYM) $(OPTIMIZE)
 LIBS     := -ldebug

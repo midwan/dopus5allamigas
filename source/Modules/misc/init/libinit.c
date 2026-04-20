@@ -51,6 +51,15 @@ int _start(void)  // must be first for 68k library
 }
 #endif
 
+#if defined(__MORPHOS__)
+void exit(int status) __attribute__((noreturn));
+void exit(int status)
+{
+	Exit(status);
+	__builtin_unreachable();
+}
+#endif
+
 #ifdef FBASEREL
 void __restore_a4(void)
 {
@@ -167,6 +176,8 @@ struct Device  			*ConsoleDevice = NULL;
 struct UtilityBase *UtilityBase = NULL;
 #elif defined(__libnix__)
 extern struct Library *UtilityBase;
+#elif defined(__amigaos4__)
+struct Library *UtilityBase = NULL;
 #else
 struct UtilityBase *UtilityBase = NULL;
 extern struct Library __UtilityBase = NULL;	 // required by clib2

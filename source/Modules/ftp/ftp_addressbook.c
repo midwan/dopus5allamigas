@@ -67,7 +67,7 @@ For more information on Directory Opus for Windows please see:
 #define FlagIsSet(v, f) (((v) & (f)) != 0)
 #define FlagIsClear(v, f) (((v) & (f)) == 0)
 
-#if defined(__amigaos3__) || defined(__AROS__)
+#if defined(__amigaos3__) || defined(__AROS__) || defined(__amigaos4__)
 struct Device *InputBase = NULL;
 #else
 struct Library *InputBase = NULL;
@@ -104,10 +104,11 @@ static BOOL get_qualified(VOID)
 	if (!(OpenDevice("input.device", 0, (struct IORequest *)&input_req, 0)))
 	{
 		// Get input base
-		InputBase = (struct Library *)input_req.io_Device;
-
 #ifdef __amigaos4__
-		IInput = (struct InputIFace *)GetInterface(InputBase, "main", 1, NULL);
+		InputBase = input_req.io_Device;
+		IInput = (struct InputIFace *)GetInterface((struct Library *)InputBase, "main", 1, NULL);
+#else
+		InputBase = (struct Library *)input_req.io_Device;
 #endif
 
 		// See if shift is held down

@@ -23,7 +23,7 @@ DEBUGSYM :=
 OPTIONS  := -DAROS_ALMOST_COMPATIBLE -D_DOPUSBASE_H -DUSE_64BIT -DUSE_SCREENTITLE -DCOMPDATE=$(NEWDATE)
 INCLUDES := -I../ -I../Include
 LDFLAGS  := -Wl,-Map=$(TARGET).map
-WARNINGS := -Wall
+WARNINGS := -Wall -Wno-error=incompatible-pointer-types -Wno-error=int-conversion
 CC       := ppc-morphos-gcc -noixemul
 CFLAGS   := $(OPTIONS) $(DEBUG) $(DEBUGSYM) $(OPTIMIZE)
 LIBS     := -ldebug

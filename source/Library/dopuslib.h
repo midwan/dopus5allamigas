@@ -35,7 +35,7 @@ For more information on Directory Opus for Windows please see:
 	#include "dopus_inlines.h"
 	#include <cybergraphics/cybergraphics.h>
 #elif defined(__amigaos4__)
-	#include <cybergraphics/cybergraphics.h>
+	#include <cybergraphx/cybergraphics.h>
 #elif defined(__MORPHOS__) || defined(__AROS__)
 	#include <cybergraphx/cybergraphics.h>
 	#include <exec/execbase.h>

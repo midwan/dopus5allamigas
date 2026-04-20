@@ -673,6 +673,15 @@ int unix_line_to_entryinfo(struct entry_info *entry, const char *line, ULONG fla
 	// Hour/Minute format?
 	if (p[1] == ':' || p[2] == ':')
 	{
+#ifdef __MORPHOS__
+		struct DateStamp ds;
+		struct ClockData cd;
+		DateStamp(&ds);
+		Amiga2Date(ds.ds_Days * 86400 + ds.ds_Minute * 60 + ds.ds_Tick / TICKS_PER_SECOND, &cd);
+		filedate.year = cd.year;
+		if (filedate.month > cd.month)
+			--filedate.year;
+#else
 		time_t tt = time(0);
 		today = localtime(&tt);
 
@@ -684,6 +693,7 @@ int unix_line_to_entryinfo(struct entry_info *entry, const char *line, ULONG fla
 		// ** ClockDate month starts at 1, time_t month starts at 0!!
 		if (filedate.month > (today->tm_mon + 1))
 			--filedate.year;
+#endif
 
 		filedate.hour = atoi(p);
 		filedate.min = atoi(p + 3);
