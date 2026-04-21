@@ -62,5 +62,6 @@ jobs:
         with:
           artifacts: "artifacts/Dopus5_*_os3.lha,artifacts/Dopus5_*_os4.lha,artifacts/Dopus5_*_mos.lha"
           generateReleaseNotes: true
+          allowUpdates: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
