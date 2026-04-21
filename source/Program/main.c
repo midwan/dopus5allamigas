@@ -209,15 +209,9 @@ void startup_check_assign()
 {
 	BPTR lock;
 
-#if !defined(__amigaos3__) && !defined(__amigaos4__)
-	// See if we have a DOPUS5: lock
-	if ((lock = Lock("DOPUS5:", ACCESS_READ)))
-		UnLock(lock);
-
-	// We don't; assign it to PROGDIR:
-	else
-#endif
-		if ((lock = DupLock(GetProgramDir())))
+	// Always force DOPUS5: to PROGDIR: so we never pick up libs/modules
+	// from a prior 5.x install that left an assign behind.
+	if ((lock = DupLock(GetProgramDir())))
 	{
 		if (!(AssignLock("DOPUS5", lock)))
 			UnLock(lock);

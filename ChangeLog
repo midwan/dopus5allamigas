@@ -1,3 +1,13 @@
+[dopus5allamigas 5.94.1] Fix MorphOS/AROS freeze when an old DOPUS5: assign is present
+Harmonised startup_check_assign() across all platforms: DOPUS5: is now
+always forced to PROGDIR: on startup, matching what OS3/OS4 already did
+since 2014. Previously MorphOS and AROS skipped the reassign when a
+DOPUS5: assign already existed, which meant launching our binary with
+a leftover assign from a 5.82/5.92 install would load the old library
+and modules, causing a hang during startup. Library/modules ABI
+unchanged, binaries still report 5.94 internally.
+2026-04-21 by Dimitris Panokostas <midwan@gmail.com>
+
 [dopus5allamigas] Live filter overlay
 Added a live filter overlay (View menu -> Filter..., right-Amiga + F) that
 opens a string gadget over the active lister's path field. Typing updates
