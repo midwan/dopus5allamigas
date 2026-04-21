@@ -2748,22 +2748,20 @@ typedef struct
 
 /*********************************************************************/
 
-#if defined(__MORPHOS__)
-	#define IPC_StartupCode(name, t2, n2, ...)                                              \
-		STATIC ULONG name##PPC(IPCData *ipc, t2 n2);                                        \
-		STATIC ULONG name##stubs(void) { return name##PPC((IPCData *)REG_A0, (t2)REG_A1); } \
-		__VA_ARGS__ struct EmulLibEntry name = {TRAP_LIB, 0, (APTR)&name##stubs};           \
-		STATIC ULONG name##PPC(IPCData *ipc, t2 n2)
-	#define IPC_EntryCode(name, ...)                                              \
-		STATIC VOID name##PPC();                                                  \
-		__VA_ARGS__ struct EmulLibEntry name = {TRAP_LIBNR, 0, (APTR)&name##PPC}; \
-		STATIC VOID name##PPC()
-	#define IPC_EntryProto(name, ...) __VA_ARGS__ struct EmulLibEntry name
-#else
-	#define IPC_StartupCode(name, t2, n2, ...) ULONG __VA_ARGS__ ASM SAVEDS name(REG(a0, IPCData *ipc), REG(a1, t2 n2))
-	#define IPC_EntryCode(name, ...) __VA_ARGS__ VOID SAVEDS name()
-	#define IPC_EntryProto(name, ...) __VA_ARGS__ VOID SAVEDS name(void)
-#endif
+// All supported Amiga flavours (OS3/OS4/MOS/AROS) now compile IPC entry
+// points and startup callbacks as direct functions in the host architecture
+// (PPC on MOS/OS4, m68k on OS3, native on AROS). The old MorphOS-specific
+// EmulLibEntry/TRAP_LIBNR trampolines — which launched child processes as
+// m68k and let the kernel trap back to PPC — don't reliably survive modern
+// MorphOS process startup and caused the 5.94 MorphOS build to hang partway
+// through the init progress bar (first observable at step 7, the ARexx
+// handler launch). Using native functions everywhere requires L_IPC_Launch
+// to set NP_CodeType=CODETYPE_PPC on MorphOS (handled in ipc.c) and
+// CallStartupCode to invoke the callback directly instead of via
+// EmulCallDirect68k.
+#define IPC_StartupCode(name, t2, n2, ...) ULONG __VA_ARGS__ ASM SAVEDS name(REG(a0, IPCData *ipc), REG(a1, t2 n2))
+#define IPC_EntryCode(name, ...) __VA_ARGS__ VOID SAVEDS name()
+#define IPC_EntryProto(name, ...) __VA_ARGS__ VOID SAVEDS name(void)
 
 /*********************************************************************/
 

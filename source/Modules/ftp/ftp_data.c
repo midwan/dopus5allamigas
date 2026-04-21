@@ -24,7 +24,6 @@ For more information on Directory Opus for Windows please see:
 #include "ftp.h"
 #include "ftp_opusftp.h"
 
-#ifdef __AROS__
 ModuleInfo_7 module_info = {1,				// Version
 							"ftp.module",	// Module name
 							"ftp.catalog",	// Catalog name
@@ -37,28 +36,6 @@ ModuleInfo_7 module_info = {1,				// Version
 							 {4, "FTPOptions", MSG_FTP_OPTIONS, FUNCF_WANT_SOURCE, OPTIONS_TEMPLATE},
 							 {5, "FTPAdd", MSG_FTP_FTPADD, FUNCF_NEED_SOURCE, ADD_TEMPLATE},
 							 {6, "FTPQuit", MSG_FTP_QUIT, 0, QUIT_TEMPLATE}}};
-#else
-/* This structure is used to identify the module */
-ModuleInfo module_info = {1,			  // Version
-						  "ftp.module",	  // Module name
-						  "ftp.catalog",  // Catalog name
-						  0,			  // Flags (0 for now)
-						  7,			  // Number of functions in module
-
-						  /* The first function definition is part of the ModuleInfo structure */
-						  {0, "FTPAddressBook", MSG_FTP_ADDRBOOK, 0, ADDRBOOK_TEMPLATE}};
-
-/* Any additional functions must be defined separately from the ModuleInfo
-   structure, and their definitions MUST follow the ModuleInfo structure
-   in memory */
-
-ModuleFunction more_functions[] = {{1, "FTPConnect", MSG_FTP_CONNECT_SITE, 0, CONNECT_TEMPLATE},
-								   {2, "FTPCommand", MSG_FTP_COMMAND, FUNCF_NEED_SOURCE, COMMAND_TEMPLATE},
-								   {3, "FTPSetVar", MSG_FTP_SETVAR, FUNCF_WANT_SOURCE, SETVAR_TEMPLATE},
-								   {4, "FTPOptions", MSG_FTP_OPTIONS, FUNCF_WANT_SOURCE, OPTIONS_TEMPLATE},
-								   {5, "FTPAdd", MSG_FTP_FTPADD, FUNCF_NEED_SOURCE, ADD_TEMPLATE},
-								   {6, "FTPQuit", MSG_FTP_QUIT, 0, QUIT_TEMPLATE}};
-#endif
 
 /************** gui stuff *****************************/
 

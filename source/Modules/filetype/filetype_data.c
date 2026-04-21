@@ -25,7 +25,6 @@ For more information on Directory Opus for Windows please see:
 
 /* This structure is used to identify the module */
 
-#ifdef __AROS__
 ModuleInfo_2 module_info = {0,					/* Version */
 							"filetype.module",	/* Module name */
 							"filetype.catalog", /* Catalog name */
@@ -33,26 +32,6 @@ ModuleInfo_2 module_info = {0,					/* Version */
 							2,					/* Number of functions in module */
 							{{0, "FindFileType", MSG_FIND_DESC, FUNCF_NEED_FILES, 0},
 							 {1, "CreateFileType", MSG_CREATE_DESC, FUNCF_NEED_ENTRIES, 0}}};
-#else
-ModuleInfo module_info = {0,				  /* Version */
-						  "filetype.module",  /* Module name */
-						  "filetype.catalog", /* Catalog name */
-						  0,				  /* Flags (0 for now) */
-						  2,				  /* Number of functions in module */
-
-						  /* The first function definition is part of the ModuleInfo structure */
-						  {{0, "FindFileType", MSG_FIND_DESC, FUNCF_NEED_FILES, 0}}};
-
-/*
- * Any additional functions must be defined separately from the ModuleInfo
- *  structure, and their definitions MUST follow the ModuleInfo structure
- *  in memory
- */
-
-ModuleFunction more_functions[] = {
-	//	{ 1, "CreateFileType", MSG_CREATE_DESC, FUNCF_WANT_ENTRIES, 0 }
-	{1, "CreateFileType", MSG_CREATE_DESC, FUNCF_NEED_ENTRIES, 0}};
-#endif
 
 #define GAP (2)
 #define GAP2 (4)

@@ -79,11 +79,12 @@ int LIBFUNC L_IPC_Launch(REG(a0, struct ListLock *list),
 	tags[4].ti_Data = 0;
 
 #if defined(__MORPHOS__)
-	if (IPC_GET_CODETYPE(entry) == CODETYPE_PPC)
-	{
-		tags[3].ti_Tag = NP_CodeType;  // Overwriting NP_StackSize (it is not required in PPC native code)
-		tags[3].ti_Data = IPC_GET_CODETYPE(entry);
-	}
+	// All Dopus5 code is compiled PPC on MorphOS, and IPC entry points are
+	// now native PPC functions (see IPC_EntryCode in libraries/dopus5.h).
+	// Force NP_CodeType=CODETYPE_PPC unconditionally; the old IPCF_NATIVE
+	// flag is preserved for source compatibility but no longer required.
+	tags[3].ti_Tag = NP_CodeType;  // Overwriting NP_StackSize (not required in PPC native code)
+	tags[3].ti_Data = CODETYPE_PPC;
 #endif
 
 	// Want a path?
@@ -174,13 +175,12 @@ STATIC ULONG CallStartupCode(ULONG (*ASM code)(REG(a0, IPCData *), REG(a1, APTR)
 
 	if (code)
 	{
-#if defined(__MORPHOS__)
-		REG_A0 = (ULONG)ipc;
-		REG_A1 = (ULONG)data;
-		rc = MyEmulHandle->EmulCallDirect68k(code);
-#else
+		// IPC_StartupCode() generates a native function on every target
+		// (including MorphOS since the trampoline redesign), so we can
+		// call it directly. The old MorphOS EmulCallDirect68k() path went
+		// through an EmulLibEntry{TRAP_LIB} trampoline that no longer
+		// exists.
 		rc = code(ipc, data);
-#endif
 	}
 
 	return rc;

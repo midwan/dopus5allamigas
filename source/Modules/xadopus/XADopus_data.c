@@ -20,12 +20,11 @@
 #include "XADopus.h"
 
 // Definition of the module
-#ifdef __AROS__
 ModuleInfo_2 module_info = {
 	1,					// Version
 	"XADopus.module",	// Module name
 	"XADopus.catalog",	// Catalog name
-	NULL,				// Flags
+	0,					// Flags
 	2,					// Number of functions
 	{{0, "XADOpen", MSG_XADOPEN_DESC, FUNCF_NEED_SOURCE | FUNCF_NEED_FILES | FUNCF_SINGLE_SOURCE, 0},
 	 {1,
@@ -33,18 +32,3 @@ ModuleInfo_2 module_info = {
 	  MSG_XADEXTRACT_DESC,
 	  FUNCF_NEED_SOURCE | FUNCF_NEED_DEST | FUNCF_NEED_FILES | FUNCF_SINGLE_SOURCE,
 	  0}}};
-#else
-ModuleInfo module_info = {
-	1,					// Version
-	"XADopus.module",	// Module name
-	"XADopus.catalog",	// Catalog name
-	0,					// Flags
-	2,					// Number of functions
-	{{0, "XADOpen", MSG_XADOPEN_DESC, FUNCF_NEED_SOURCE | FUNCF_NEED_FILES | FUNCF_SINGLE_SOURCE, 0}}};
-
-ModuleFunction module_func = {1,
-							  "XADExtract",
-							  MSG_XADEXTRACT_DESC,
-							  FUNCF_NEED_SOURCE | FUNCF_NEED_DEST | FUNCF_NEED_FILES | FUNCF_SINGLE_SOURCE,
-							  0};
-#endif

@@ -1071,7 +1071,7 @@ ModuleInfo *LIBFUNC L_Module_Identify(REG(d0, int num))
 {
 	// Return module information
 	if (num == -1)
-		return &module_info;
+		return (ModuleInfo *)&module_info;
 
 	// Valid function number?
 	if (num > module_info.function_count || !(module_info.function[num].desc))

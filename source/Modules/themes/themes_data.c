@@ -29,7 +29,6 @@ For more information on Directory Opus for Windows please see:
 
 char *func_templates[] = {ARG_1, ARG_2, ARG_1, ARG_3};
 
-#ifdef __AROS__
 ModuleInfo_4 module_info = {1,
 							"themes.module",
 							"themes.catalog",
@@ -39,14 +38,6 @@ ModuleInfo_4 module_info = {1,
 							 {LOADTHEME, "LoadTheme", MSG_LOAD_THEME_DESC, FUNCF_WANT_ENTRIES, ARG_2},
 							 {BUILDTHEME, "BuildTheme", MSG_BUILD_THEME_DESC, 0, ARG_1},
 							 {CONVERTTHEME, "ConvertTheme", MSG_CONVERT_THEME_DESC, 0, ARG_3}}};
-#else
-ModuleInfo module_info =
-	{1, "themes.module", "themes.catalog", 0, 4, {{SAVETHEME, "SaveTheme", MSG_SAVE_THEME_DESC, 0, ARG_1}}};
-
-ModuleFunction more_functions[] = {{LOADTHEME, "LoadTheme", MSG_LOAD_THEME_DESC, FUNCF_WANT_ENTRIES, ARG_2},
-								   {BUILDTHEME, "BuildTheme", MSG_BUILD_THEME_DESC, 0, ARG_1},
-								   {CONVERTTHEME, "ConvertTheme", MSG_CONVERT_THEME_DESC, 0, ARG_3}};
-#endif
 
 char *pen_settings[] =
 	{"icons", "files", "dirs", "selfiles", "seldirs", "devices", "assigns", "source", "dest", "gauge", "user", 0};

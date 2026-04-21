@@ -28,7 +28,6 @@ For more information on Directory Opus for Windows please see:
 
 char *func_templates[] = {ARG_1, ARG_2};
 
-#ifdef __AROS__
 ModuleInfo_2 module_info = {1,
 							"join.module",
 							"join.catalog",
@@ -36,16 +35,6 @@ ModuleInfo_2 module_info = {1,
 							2,
 							{{JOIN, "Join", MSG_JOIN_DESC, FUNCF_WANT_ENTRIES | FUNCF_WANT_DEST, ARG_1},
 							 {SPLIT, "Split", MSG_SPLIT_DESC, FUNCF_WANT_ENTRIES | FUNCF_WANT_DEST, ARG_2}}};
-#else
-ModuleInfo module_info = {1,
-						  "join.module",
-						  "join.catalog",
-						  0,
-						  2,
-						  {{JOIN, "Join", MSG_JOIN_DESC, FUNCF_WANT_ENTRIES | FUNCF_WANT_DEST, ARG_1}}};
-
-ModuleFunction more_functions[] = {{SPLIT, "Split", MSG_SPLIT_DESC, FUNCF_WANT_ENTRIES | FUNCF_WANT_DEST, ARG_2}};
-#endif
 
 ConfigWindow join_window = {{POS_CENTER, POS_CENTER, 45, 12}, {0, 0, 16, 40}},
 

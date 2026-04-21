@@ -1,3 +1,20 @@
+[dopus5allamigas 5.95] Fix MorphOS startup hang in module discovery
+Converted the five modules that stored functions past index 0 in a
+separate `more_functions[]`/`module_func` global (themes, ftp, misc,
+join, filetype, plus xadopus for safety) to use a properly-sized
+`ModuleInfo_N` struct with all entries inline. The old pattern relied
+on the linker placing the auxiliary array immediately after
+`module_info` in memory; the MorphOS PPC toolchain does not guarantee
+that, so `info->function[n]` for n>=1 read garbage, which hung
+DirectoryOpus during startup step 8 (init_commands_scan) on the first
+module that had multiple functions (themes).
+Also modernised the MorphOS IPC entry-point dispatch: IPC_EntryCode /
+IPC_StartupCode / IPC_EntryProto now expand to plain PPC-native
+functions on MorphOS (matching OS4/AROS), and IPC_Launch forces
+NP_CodeType=CODETYPE_PPC unconditionally. The IPCF_NATIVE flag is
+retained for source compatibility but no longer required.
+2026-04-21 by Dimitris Panokostas <midwan@gmail.com>
+
 [dopus5allamigas 5.94.1] Fix MorphOS/AROS freeze when an old DOPUS5: assign is present
 Harmonised startup_check_assign() across all platforms: DOPUS5: is now
 always forced to PROGDIR: on startup, matching what OS3/OS4 already did

@@ -6,7 +6,6 @@
 #include <proto/module.h>
 
 extern struct DOpusLocale *locale;
-#ifdef __AROS__
 typedef struct
 {
 	ULONG ver;					 // Module version
@@ -17,9 +16,6 @@ typedef struct
 	ModuleFunction function[3];	 // All the module functions
 } ModuleInfo_3;
 extern ModuleInfo_3 module_info;
-#else
-extern ModuleInfo module_info;
-#endif
 
 #define VALID_QUALIFIERS                                                                                           \
 	(IEQUALIFIER_LCOMMAND | IEQUALIFIER_RCOMMAND | IEQUALIFIER_CONTROL | IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT | \
