@@ -316,6 +316,13 @@ struct Window *lister_open_window(Lister *lister, struct Screen *screen)
 		// Otherwise, change gadget type
 		else
 		{
+			// Save originals so we can restore them before CloseWindow
+			// (Intuition only frees gadgets it still recognises as system gadgets;
+			// clearing GTYP_SYSGADGET or changing GadgetID permanently leaks them.)
+			lister->hijacked_zoom = gadget;
+			lister->hijacked_zoom_type = gadget->GadgetType;
+			lister->hijacked_zoom_id = gadget->GadgetID;
+
 			// Clear zoom flag, set ID
 			gadget->GadgetType &= ~(GTYP_SYSTYPEMASK | GTYP_SYSGADGET);
 			gadget->GadgetID = GAD_ZOOM;
@@ -548,6 +555,14 @@ void lister_close_window(Lister *lister, BOOL run_script)
 			// Free it
 			FreeDragInfo(lister->drag_info);
 			lister->drag_info = 0;
+		}
+
+		// Restore hijacked system zoom gadget so Intuition can free it on CloseWindow
+		if (lister->hijacked_zoom)
+		{
+			lister->hijacked_zoom->GadgetType = lister->hijacked_zoom_type;
+			lister->hijacked_zoom->GadgetID = lister->hijacked_zoom_id;
+			lister->hijacked_zoom = 0;
 		}
 
 		// Close window

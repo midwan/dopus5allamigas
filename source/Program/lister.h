@@ -354,6 +354,10 @@ typedef struct ListerWindow
 	struct Gadget size_cover_gadget;  // Covers sizing gadget
 	struct Gadget zoom_cover_gadget;  // Covers zoom gadget
 
+	struct Gadget *hijacked_zoom;	  // System zoom gadget we repurposed (to restore on close)
+	UWORD		   hijacked_zoom_type;
+	UWORD		   hijacked_zoom_id;
+
 	struct ListLock user_data_list;	 // User data list
 
 	short history_count;
