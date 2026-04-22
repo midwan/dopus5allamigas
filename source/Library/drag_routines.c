@@ -393,6 +393,7 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 					LONG yy, xx;
 					UWORD w = drag->sprite.Width;
 					UWORD h = drag->sprite.Height;
+					BOOL unknown_fmt = FALSE;
 
 					if (srcmem)
 					{
@@ -451,6 +452,14 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 									}
 									break;
 
+								// Hicolor cases: store each channel with only the top
+								// 5 (or 6) bits and the low bits zero, so the byte we
+								// stored matches the masked colour0 below
+								// (colour0[n] &= 0xf8 / 0xfc). Bit-replicating the
+								// low bits here would expand e.g. 5-bit 16 to 132
+								// while the pen side stays 128 after & 0xf8, and the
+								// compare would wrongly flag transparent pixels as
+								// foreground on non-black backgrounds.
 								case RGBFB_R5G6B5:
 									for (xx = 0; xx < w; xx++)
 									{
@@ -458,9 +467,9 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 										UBYTE rr = (pix >> 11) & 0x1f;
 										UBYTE gg = (pix >> 5) & 0x3f;
 										UBYTE bb = pix & 0x1f;
-										dr[0] = (rr << 3) | (rr >> 2);
-										dr[1] = (gg << 2) | (gg >> 4);
-										dr[2] = (bb << 3) | (bb >> 2);
+										dr[0] = rr << 3;
+										dr[1] = gg << 2;
+										dr[2] = bb << 3;
 										sr += 2; dr += 3;
 									}
 									break;
@@ -472,9 +481,9 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 										UBYTE rr = (pix >> 11) & 0x1f;
 										UBYTE gg = (pix >> 5) & 0x3f;
 										UBYTE bb = pix & 0x1f;
-										dr[0] = (rr << 3) | (rr >> 2);
-										dr[1] = (gg << 2) | (gg >> 4);
-										dr[2] = (bb << 3) | (bb >> 2);
+										dr[0] = rr << 3;
+										dr[1] = gg << 2;
+										dr[2] = bb << 3;
 										sr += 2; dr += 3;
 									}
 									break;
@@ -486,9 +495,9 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 										UBYTE bb = (pix >> 11) & 0x1f;
 										UBYTE gg = (pix >> 5) & 0x3f;
 										UBYTE rr = pix & 0x1f;
-										dr[0] = (rr << 3) | (rr >> 2);
-										dr[1] = (gg << 2) | (gg >> 4);
-										dr[2] = (bb << 3) | (bb >> 2);
+										dr[0] = rr << 3;
+										dr[1] = gg << 2;
+										dr[2] = bb << 3;
 										sr += 2; dr += 3;
 									}
 									break;
@@ -500,9 +509,9 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 										UBYTE rr = (pix >> 10) & 0x1f;
 										UBYTE gg = (pix >> 5) & 0x1f;
 										UBYTE bb = pix & 0x1f;
-										dr[0] = (rr << 3) | (rr >> 2);
-										dr[1] = (gg << 3) | (gg >> 2);
-										dr[2] = (bb << 3) | (bb >> 2);
+										dr[0] = rr << 3;
+										dr[1] = gg << 3;
+										dr[2] = bb << 3;
 										sr += 2; dr += 3;
 									}
 									break;
@@ -514,9 +523,9 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 										UBYTE rr = (pix >> 10) & 0x1f;
 										UBYTE gg = (pix >> 5) & 0x1f;
 										UBYTE bb = pix & 0x1f;
-										dr[0] = (rr << 3) | (rr >> 2);
-										dr[1] = (gg << 3) | (gg >> 2);
-										dr[2] = (bb << 3) | (bb >> 2);
+										dr[0] = rr << 3;
+										dr[1] = gg << 3;
+										dr[2] = bb << 3;
 										sr += 2; dr += 3;
 									}
 									break;
@@ -528,34 +537,42 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 										UBYTE bb = (pix >> 10) & 0x1f;
 										UBYTE gg = (pix >> 5) & 0x1f;
 										UBYTE rr = pix & 0x1f;
-										dr[0] = (rr << 3) | (rr >> 2);
-										dr[1] = (gg << 3) | (gg >> 2);
-										dr[2] = (bb << 3) | (bb >> 2);
+										dr[0] = rr << 3;
+										dr[1] = gg << 3;
+										dr[2] = bb << 3;
 										sr += 2; dr += 3;
 									}
 									break;
 
 								default:
-									// Unknown format - ask the P96 driver to
-									// unpack it for us. p96ReadPixelArray is
-									// void-return so we cannot verify it, but
-									// the bitmap is locked and srcmem is
-									// valid here, so the call has a real
-									// chance of doing useful work.
-									{
-										struct RenderInfo ri;
-										ri.Memory = image_array;
-										ri.BytesPerRow = w * 3;
-										ri.pad = 0;
-										ri.RGBFormat = RGBFB_R8G8B8;
-										p96ReadPixelArray(&ri, 0, 0, &drag->drag_rp, 0, 0, w, h);
-									}
+									// Unknown format - do NOT call back into
+									// the P96 API while the bitmap is locked
+									// (P96 autodoc: touched bitmaps are
+									// locked internally; re-entering risks
+									// dead-locking or blocked screen
+									// switches). Exit the loop without
+									// setting got_pixels so ok stays 0 and
+									// the outer sequential fallback chain
+									// tries CGX / tempbm / opaque silhouette
+									// next.
 									yy = h;
+									unknown_fmt = TRUE;
 									break;
 							}
+
+							if (unknown_fmt)
+								break;
 						}
 
-						got_pixels = TRUE;
+						// Only trust the capture when every row went through
+						// a known-format branch. p96ReadPixelArray is void
+						// return so even a "successful" call can't be
+						// verified, and a zero-filled image_array would
+						// build a mask that treats the whole sprite as
+						// either fully transparent or fully opaque depending
+						// on colour0.
+						if (!unknown_fmt)
+							got_pixels = TRUE;
 					}
 
 					p96UnlockBitMap(imagebm, lock);
