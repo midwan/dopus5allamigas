@@ -150,6 +150,12 @@ BOOL backdrop_idcmp(BackdropInfo *info, struct IntuiMessage *msg, unsigned short
 				// tooltip timer runs off it. Stripping it here (backdrop is
 				// the primary handler in icon view) permanently killed the
 				// tooltip once the user returned to name mode.
+				//
+				// Also let the dispatcher fall through to lister_process_msg
+				// so the tooltip tick handler runs in icon/icon-action mode
+				// too - otherwise hovering the toolbar in Icon Action never
+				// fires tooltip_tick because backdrop_idcmp returned "handled".
+				handled = 0;
 				break;
 			}
 
