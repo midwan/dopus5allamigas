@@ -515,16 +515,15 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 	if (!dest_is_p96 && CyberGfxBase && GetCyberMapAttr(dest, CYBRMATTR_ISCYBERGFX))
 		dest_is_cgx = TRUE;
 
-	// 24-bit ILBM into a non-RTG destination is unrepresentable: the
-	// planar copy fallbacks below can only carry `dest_depth` planes of a
-	// 24-plane source (silently truncating the colour data into garbage),
-	// and the chunky DIF_WRITEPIX path needs a P96 or CGX destination to
-	// land. Bail out explicitly rather than write a corrupt image - the
-	// caller (typically show.c) will see an unpopulated bitmap and can
-	// decide how to react, which is a better failure mode than silent
-	// pixel corruption.
-	if (planes == 24 && !dest_is_p96 && !dest_is_cgx)
-		return;
+	// Note: 24-plane ILBMs decoded into a non-RTG destination fall through
+	// to the planar copy path below. That path correctly populates a true
+	// 24-plane planar destination (the L_ReadILBM ILBMF_GET_BITMAP /
+	// ILBMF_GET_PLANES callers create one); it is lossy only when
+	// dest_depth < planes, which is the same behaviour as master. The
+	// 24-bit DIF_WRITEPIX-into-8-bit-buffer overflow is prevented separately
+	// by the buffer-allocation guard right below: 24-bit only allocates a
+	// chunky buffer when an RTG dest is available, otherwise leaves
+	// `buffer` NULL so DIF_WRITEPIX is cleared and the planar copy runs.
 
 	if (flags & DIF_WRITEPIX)
 	{
