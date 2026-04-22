@@ -465,12 +465,21 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 	UBYTE *buffer = 0;
 	signed char *src = (signed char *)source;  // needed for signedness issue
 	BOOL dest_is_p96, dest_is_cgx;
+	unsigned short colour_planes;
 
 	// Check valid source and destination
 	if (!source || !dest)
 		return;
 
-	// Masking?
+	// `planes` arrives as the BMHD nPlanes (colour planes only). DIF_MASK
+	// then bumps it by one so the per-plane decoder also walks the mask
+	// row in the source stream. Capture the colour-plane count separately:
+	// every "is this 24-bit RGB?" decision below (buffer sizing, RGBFormat
+	// selection, RECTFMT_RGB vs RECTFMT_LUT8) must look at the colour
+	// planes, NOT the mask-inflated total - otherwise a masked 24-bit
+	// ILBM (planes == 25) silently falls through the 8-bit branch and
+	// renders as corrupt indexed data on RTG destinations.
+	colour_planes = planes;
 	if (flags & DIF_MASK)
 		++planes;
 
@@ -527,7 +536,7 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 
 	if (flags & DIF_WRITEPIX)
 	{
-		if (planes == 24)
+		if (colour_planes == 24)
 		{
 			// 24-bit ILBM rows are RGB triples - that needs a P96 or
 			// CGX destination able to take 3 bytes per pixel. The planar
@@ -584,16 +593,21 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 			for (plane = 0; plane < planes; plane++)
 			{
 				// Decode this plane if either:
-				//   - DIF_WRITEPIX is set: every source plane goes into the
-				//     chunky `buffer`, which is sized for `planes` (not
-				//     `dest_depth`). Skipping source planes >= dest_depth
-				//     here would silently drop colour bits before the RTG
-				//     writer (e.g. a 24-bit ILBM into an 8-bit RTG dest
-				//     would only get the low 8 bits of R), then ship a
-				//     corrupt RGB row through p96/CGX WritePixelArray.
+				//   - DIF_WRITEPIX is set AND it is a colour plane: every
+				//     source colour plane goes into the chunky `buffer`,
+				//     which is sized for `colour_planes` (not `dest_depth`).
+				//     Skipping colour planes here would silently drop bits
+				//     before the RTG writer (e.g. a 24-bit ILBM into an
+				//     8-bit RTG dest would only get the low 8 bits of R)
+				//     and ship a corrupt RGB row through p96/CGX
+				//     WritePixelArray. Mask planes (plane >= colour_planes)
+				//     fall through to the source-byte consume branch
+				//     below - we must not OR mask bits into the chunky
+				//     buffer.
 				//   - Else (legacy planar copy): the destination must
 				//     actually have a plane pointer at this index.
-				if ((flags & DIF_WRITEPIX) || (plane < dest_depth && dest->Planes[plane]))
+				if (((flags & DIF_WRITEPIX) && plane < colour_planes) ||
+					(!(flags & DIF_WRITEPIX) && plane < dest_depth && dest->Planes[plane]))
 				{
 					register char *ptr;
 					register short copy, col, count;
@@ -603,7 +617,7 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 					if (flags & DIF_WRITEPIX)
 					{
 						// 24 bit?
-						if (planes == 24)
+						if (colour_planes == 24)
 						{
 							// Get start
 							if (plane < 8)
@@ -647,7 +661,7 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 									val = *src++;
 
 									// 24 bit?
-									if (planes == 24)
+									if (colour_planes == 24)
 									{
 										// 8 pixels in value
 										for (a = 0; a < 8; a++, ptr += 3)
@@ -684,7 +698,7 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 									register short a;
 
 									// 24 bit?
-									if (planes == 24)
+									if (colour_planes == 24)
 									{
 										// 8 pixels in value
 										for (a = 0; a < 8; a++, ptr += 3)
@@ -742,9 +756,9 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 				{
 					struct RenderInfo ri;
 					ri.Memory = buffer;
-					ri.BytesPerRow = (planes == 24) ? width * 3 : width;
+					ri.BytesPerRow = (colour_planes == 24) ? width * 3 : width;
 					ri.pad = 0;
-					ri.RGBFormat = (planes == 24) ? RGBFB_R8G8B8 : RGBFB_CLUT;
+					ri.RGBFormat = (colour_planes == 24) ? RGBFB_R8G8B8 : RGBFB_CLUT;
 					p96WritePixelArray(&ri, 0, 0, &rp, 0, row, width, 1);
 				}
 				else
@@ -763,7 +777,7 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 									row,
 									width,
 									1,
-									(planes == 24) ? RECTFMT_RGB : RECTFMT_LUT8);
+									(colour_planes == 24) ? RECTFMT_RGB : RECTFMT_LUT8);
 				}
 
 				// Planar tempbm path (destination isn't RTG-capable)
@@ -802,12 +816,16 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 
 			for (plane = 0; plane < planes; plane++)
 			{
-				// Same rule as the comp == 1 branch above: when
-				// DIF_WRITEPIX is set we must decode every source plane
-				// into the chunky `buffer` regardless of dest_depth, or
-				// 24-bit RGB would be corrupted on RTG destinations whose
-				// own depth is below 24.
-				if ((flags & DIF_WRITEPIX) || (plane < dest_depth && dest->Planes[plane]))
+				// Same gating rule as the comp == 1 branch above:
+				//   DIF_WRITEPIX colour-plane (plane < colour_planes) -> decode
+				//                into chunky buffer (regardless of dest_depth,
+				//                so 24-bit RGB stays intact on smaller RTG dests)
+				//   DIF_WRITEPIX mask-plane (plane >= colour_planes) -> consume
+				//                source bytes only, do NOT touch the buffer
+				//   !DIF_WRITEPIX -> legacy planar copy gated on the destination's
+				//                actual plane pointer
+				if (((flags & DIF_WRITEPIX) && plane < colour_planes) ||
+					(!(flags & DIF_WRITEPIX) && plane < dest_depth && dest->Planes[plane]))
 				{
 					if (flags & DIF_WRITEPIX)
 					{
@@ -817,7 +835,7 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 
 						// Same chunky-buffer plane-byte / pixel-bit
 						// layout as the RLE branch above.
-						if (planes == 24)
+						if (colour_planes == 24)
 						{
 							if (plane < 8)        { ptr = (char *)buffer;     pnum = plane; }
 							else if (plane < 16)  { ptr = (char *)buffer + 1; pnum = plane - 8; }
@@ -844,7 +862,7 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 							else if (bits < 0)
 								bits = 0;
 
-							if (planes == 24)
+							if (colour_planes == 24)
 							{
 								for (a = 0; a < bits; a++, ptr += 3)
 									if (val & (1 << (7 - a)))
@@ -880,9 +898,9 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 				{
 					struct RenderInfo ri;
 					ri.Memory = buffer;
-					ri.BytesPerRow = (planes == 24) ? width * 3 : width;
+					ri.BytesPerRow = (colour_planes == 24) ? width * 3 : width;
 					ri.pad = 0;
-					ri.RGBFormat = (planes == 24) ? RGBFB_R8G8B8 : RGBFB_CLUT;
+					ri.RGBFormat = (colour_planes == 24) ? RGBFB_R8G8B8 : RGBFB_CLUT;
 					p96WritePixelArray(&ri, 0, 0, &rp, 0, row, width, 1);
 				}
 				else
@@ -898,7 +916,7 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 									row,
 									width,
 									1,
-									(planes == 24) ? RECTFMT_RGB : RECTFMT_LUT8);
+									(colour_planes == 24) ? RECTFMT_RGB : RECTFMT_LUT8);
 				}
 				else
 				{
