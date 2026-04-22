@@ -107,22 +107,25 @@ DragInfo *LIBFUNC L_GetDragInfo(REG(a0, struct Window *window),
 	// Custom rendering?
 	if (drag->flags & DRAGF_CUSTOM)
 	{
-		// Allocate an RTG-native BitMap via P96 (matching the screen's pixel
-		// format). Using AllocBitMap with a friend bitmap does not guarantee
-		// the allocated bitmap shares the friend's RTG pixel format on OS3,
-		// which forces every per-move blit through a slow format-conversion
-		// path and makes the drag sprite appear invisible during motion.
-		if (!(drag->sprite.ImageData = (WORD *)p96AllocBitMap(
-				  drag->width, drag->height, drag->sprite.Depth, 0, window->WScreen->RastPort.BitMap, 0)))
+		// Use AllocBitMap (not p96AllocBitMap) here on purpose. The drag
+		// sprite is composited via BltMaskBitMapRastPort + a 1-bit shadow
+		// mask, and on this target the RTG-native p96 bitmap layout breaks
+		// that legacy mask-blit path - the sprite becomes invisible during
+		// motion and only shows when the mouse stops. graphics.library's
+		// AllocBitMap(..., BMF_MINPLANES, friend) yields a layout the mask
+		// blit still renders correctly on OS3 + P96.
+		if (!(drag->sprite.ImageData = (WORD *)AllocBitMap(
+				  drag->width, drag->height, drag->sprite.Depth, BMF_MINPLANES, window->WScreen->RastPort.BitMap)))
 		{
 			FreeVec(drag);
 			return 0;
 		}
 
-		// Allocate backup buffer (same format, so save/restore blits stay fast)
+		// Allocate backup buffer (same layout; save/restore paired with the
+		// mask blit above).
 		if (real &&
-			!(drag->bob.SaveBuffer = (WORD *)p96AllocBitMap(
-				  drag->width, drag->height, drag->sprite.Depth, 0, window->WScreen->RastPort.BitMap, 0)))
+			!(drag->bob.SaveBuffer = (WORD *)AllocBitMap(
+				  drag->width, drag->height, drag->sprite.Depth, BMF_MINPLANES, window->WScreen->RastPort.BitMap)))
 		{
 			L_FreeDragInfo(drag);
 			return 0;
@@ -213,11 +216,9 @@ void LIBFUNC L_FreeDragInfo(REG(a0, DragInfo *drag))
 	// Used custom rendering?
 	if (drag->flags & DRAGF_CUSTOM)
 	{
-		// Free bitmaps (must match p96AllocBitMap allocator above)
-		if (drag->sprite.ImageData)
-			p96FreeBitMap((struct BitMap *)drag->sprite.ImageData);
-		if (drag->bob.SaveBuffer)
-			p96FreeBitMap((struct BitMap *)drag->bob.SaveBuffer);
+		// Free bitmaps (must match AllocBitMap allocator above)
+		FreeBitMap((struct BitMap *)drag->sprite.ImageData);
+		FreeBitMap((struct BitMap *)drag->bob.SaveBuffer);
 	}
 
 	// Standard BOBs
