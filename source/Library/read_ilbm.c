@@ -771,22 +771,119 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 	// No encoding
 	else if (comp == 0)
 	{
-		// The uncompressed branch only knows how to write to traditional
-		// planar plane pointers. RTG destinations (chunky P96/CGX bitmaps)
-		// don't have valid Planes[plane] pointers, and there is no
-		// DIF_WRITEPIX-style chunky write path here yet. Guarding on
-		// dest->Planes[plane] keeps a CopyMem from corrupting RTG bitmap
-		// internals. The corresponding RLE branch above already has this
-		// guard (it is wrapped in `(flags & DIF_WRITEPIX || dest->Planes[plane])`).
+		// Two sub-paths, mirroring the RLE branch above:
+		//   - DIF_WRITEPIX  : decode planar source rows into the chunky
+		//                     `buffer`, then dispatch through the same
+		//                     P96 / CGX / WritePixelLine8 writers. This
+		//                     is what makes uncompressed ILBM into an
+		//                     RTG destination work.
+		//   - !DIF_WRITEPIX : legacy per-plane CopyMem into dest->Planes,
+		//                     guarded by `dest->Planes[plane]` so an RTG
+		//                     dest (NULL plane pointers) isn't corrupted
+		//                     if a caller somehow lands here without
+		//                     DIF_WRITEPIX.
 		for (row = 0; row < height; row++)
 		{
+			if (flags & DIF_WRITEPIX)
+			{
+				short col;
+				for (col = 0; col < bufsize; col++)
+					buffer[col] = 0;
+			}
+
 			for (plane = 0; plane < planes; plane++)
 			{
-				if (plane < dest_depth && dest->Planes[plane])
-					CopyMem(src, (char *)dest->Planes[plane] + bmoffset, bpr);
-				src += bpr;
+				if (plane < dest_depth && (flags & DIF_WRITEPIX || dest->Planes[plane]))
+				{
+					if (flags & DIF_WRITEPIX)
+					{
+						register char *ptr;
+						register short col;
+						short pnum = 0;
+
+						// Same chunky-buffer plane-byte / pixel-bit
+						// layout as the RLE branch above.
+						if (planes == 24)
+						{
+							if (plane < 8)        { ptr = (char *)buffer;     pnum = plane; }
+							else if (plane < 16)  { ptr = (char *)buffer + 1; pnum = plane - 8; }
+							else                  { ptr = (char *)buffer + 2; pnum = plane - 16; }
+						}
+						else
+							ptr = (char *)buffer;
+
+						for (col = 0; col < bpr; col++)
+						{
+							register unsigned char val;
+							register short a;
+
+							val = *src++;
+
+							if (planes == 24)
+							{
+								for (a = 0; a < 8; a++, ptr += 3)
+									if (val & (1 << (7 - a)))
+										*ptr |= 1 << pnum;
+							}
+							else
+							{
+								for (a = 0; a < 8; a++, ptr++)
+									if (val & (1 << (7 - a)))
+										*ptr |= 1 << plane;
+							}
+						}
+					}
+					else
+					{
+						CopyMem(src, (char *)dest->Planes[plane] + bmoffset, bpr);
+						src += bpr;
+					}
+				}
+				else
+				{
+					// Skip this plane in the source stream (caller had
+					// no destination room for it, or RTG dest with NULL
+					// plane pointers and !DIF_WRITEPIX).
+					src += bpr;
+				}
 			}
-			bmoffset += dest->BytesPerRow;
+
+			if (flags & DIF_WRITEPIX)
+			{
+#if !defined(__AROS__)
+				if (dest_is_p96)
+				{
+					struct RenderInfo ri;
+					ri.Memory = buffer;
+					ri.BytesPerRow = (planes == 24) ? width * 3 : width;
+					ri.pad = 0;
+					ri.RGBFormat = (planes == 24) ? RGBFB_R8G8B8 : RGBFB_CLUT;
+					p96WritePixelArray(&ri, 0, 0, &rp, 0, row, width, 1);
+				}
+				else
+#endif
+				if (dest_is_cgx)
+				{
+					WritePixelArray(buffer,
+									0,
+									0,
+									width,
+									&rp,
+									0,
+									row,
+									width,
+									1,
+									(planes == 24) ? RECTFMT_RGB : RECTFMT_LUT8);
+				}
+				else
+				{
+					WritePixelLine8(&rp, 0, row, width, buffer, &temprp);
+				}
+			}
+			else
+			{
+				bmoffset += dest->BytesPerRow;
+			}
 		}
 	}
 
