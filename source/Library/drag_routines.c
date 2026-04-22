@@ -1220,8 +1220,11 @@ BOOL LIBFUNC L_DragCustomOk(REG(a0, struct BitMap *bm), REG(a6, struct MyLibrary
 	data = (struct LibData *)libbase->ml_UserData;
 
 	// Ok to custom drag?
+	// Use p96GetBitMapAttr(P96BMA_ISP96) for RTG detection: BMF_STANDARD
+	// is a graphics.library V45+ flag and unreliable on OS3.1. This keeps
+	// the probe consistent with L_GetDragMask above.
 	if (!(data->flags & LIBDF_NO_CUSTOM_DRAG) && ((struct Library *)GfxBase)->lib_Version >= 39 && P96Base &&
-		!(GetBitMapAttr(bm, BMA_FLAGS) & BMF_STANDARD))
+		p96GetBitMapAttr(bm, P96BMA_ISP96))
 		ok = 1;
 
 	return ok;
