@@ -352,8 +352,18 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 		{
 			UBYTE *image_array;
 
+			// Use drag->width / drag->height (NOT sprite.Width/Height) for
+			// every mask-build dimension below. ImageShadow itself was
+			// allocated as RASSIZE(drag->width, drag->height) (see
+			// L_GetDragInfo); for DRAGF_CUSTOM (the only path that reaches
+			// the RTG branches) sprite.Width/Height happen to equal
+			// drag->width/height, but normalising on the alloc-side pair
+			// removes the lurking inconsistency Codex flagged and bounds
+			// every ImageShadow word write by the same dimension used to
+			// size it.
+
 			// Allocate image array
-			if ((image_array = AllocVec(drag->sprite.Width * drag->sprite.Height * 3, MEMF_CLEAR)))
+			if ((image_array = AllocVec(drag->width * drag->height * 3, MEMF_CLEAR)))
 			{
 				short mask[2] = {0xff, 0xff}, bit_pos, x_count;
 				long pixfmt, count, num, array_pos, word_pos;
@@ -405,8 +415,8 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 						UBYTE *srcmem = (UBYTE *)ri.Memory;
 						LONG srcbpr = ri.BytesPerRow;
 						LONG yy, xx;
-						UWORD w = drag->sprite.Width;
-						UWORD h = drag->sprite.Height;
+						UWORD w = drag->width;
+						UWORD h = drag->height;
 						BOOL unknown_fmt = FALSE;
 						LONG bpp = 0;
 
@@ -639,8 +649,10 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 				// (invisible or unmasked drag depending on colour0).
 				if (got_pixels)
 				{
-					// Get number of pixels
-					count = drag->sprite.Width * drag->sprite.Height;
+					// Get number of pixels (drag->width/height: matches the
+					// image_array allocation and the ImageShadow sizing -
+					// see comment at the start of this RTG branch)
+					count = drag->width * drag->height;
 
 					// Go through image array
 					for (num = 0, array_pos = 0, bit_pos = 15, word_data = 0, word_pos = 0, x_count = 0; num < count;
@@ -655,7 +667,7 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 						}
 
 						// Reached the end of a word?
-						if ((++x_count) == drag->sprite.Width)
+						if ((++x_count) == drag->width)
 						{
 							// Reset count
 							x_count = 0;
@@ -707,8 +719,14 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 		{
 			UBYTE *image_array;
 
+			// Same dimension-normalisation rule as the P96 branch above:
+			// use drag->width / drag->height for everything (image_array
+			// alloc, CGX read, iteration, mask sizing) so every write into
+			// ImageShadow stays bounded by its RASSIZE(drag->width,
+			// drag->height) allocation.
+
 			// Allocate image array
-			if ((image_array = AllocVec(drag->sprite.Width * drag->sprite.Height * 3, MEMF_CLEAR)))
+			if ((image_array = AllocVec(drag->width * drag->height * 3, MEMF_CLEAR)))
 			{
 				short mask[2] = {0xff, 0xff}, bit_pos, x_count;
 				long pixfmt, count, num, array_pos, word_pos;
@@ -741,16 +759,16 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 				ReadPixelArray(image_array,
 							   0,
 							   0,
-							   drag->sprite.Width * 3,
+							   drag->width * 3,
 							   &drag->drag_rp,
 							   0,
 							   0,
-							   drag->sprite.Width,
-							   drag->sprite.Height,
+							   drag->width,
+							   drag->height,
 							   RECTFMT_RGB);
 
 				// Get number of pixels
-				count = drag->sprite.Width * drag->sprite.Height;
+				count = drag->width * drag->height;
 
 				// Go through image array (identical to the P96 branch)
 				for (num = 0, array_pos = 0, bit_pos = 15, word_data = 0, word_pos = 0, x_count = 0; num < count;
@@ -762,7 +780,7 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 						word_data |= 1 << bit_pos;
 					}
 
-					if ((++x_count) == drag->sprite.Width)
+					if ((++x_count) == drag->width)
 					{
 						x_count = 0;
 						bit_pos = 0;
