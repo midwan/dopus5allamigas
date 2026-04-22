@@ -517,13 +517,24 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 
 	if (flags & DIF_WRITEPIX)
 	{
-		// Hardware RTG destination, 24bit?
-		if ((dest_is_p96 || dest_is_cgx) && planes == 24)
-			buffer = AllocVec((bufsize = bpr * 24), 0);
-
-		// Otherwise, 8bpp path via RTG write or planar tempbm
-		else if ((dest_is_p96 || dest_is_cgx || (tempbm = L_NewBitMap(width, 1, dest_depth, 0, 0))))
+		if (planes == 24)
+		{
+			// 24-bit ILBM rows are RGB triples - that needs a P96 or
+			// CGX destination able to take 3 bytes per pixel. The planar
+			// tempbm + WritePixelLine8 path can only hold 1 byte per
+			// pixel; trying to feed it the 24-bit decode would overrun
+			// an 8-bit buffer (the decoder always advances ptr += 3 in
+			// the 24-bit branch). If no RTG dest is available, leave
+			// `buffer` NULL so DIF_WRITEPIX gets cleared below and the
+			// decoder falls back to the legacy planar copy path.
+			if (dest_is_p96 || dest_is_cgx)
+				buffer = AllocVec((bufsize = bpr * 24), 0);
+		}
+		// 8bpp path: RTG write or planar tempbm fallback
+		else if (dest_is_p96 || dest_is_cgx || (tempbm = L_NewBitMap(width, 1, dest_depth, 0, 0)))
+		{
 			buffer = AllocVec((bufsize = bpr << 3), 0);
+		}
 
 		// Got buffer?
 		if (buffer)
