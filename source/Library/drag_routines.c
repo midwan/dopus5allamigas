@@ -342,8 +342,13 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 		// AROS has no Picasso96API.library; compile the P96 branch out
 		// there so the p96* symbols never reach the AROS linker. The
 		// CGX branch below covers AROS (and any other CGX-only install).
+		//
+		// Sequential fallback: if P96 is eligible but its pixel read
+		// fails (lock failure, P96BMA_MEMORY NULL), leave `ok` at 0 so
+		// the next capability check (CGX) can still attempt the capture
+		// before we give up and fill the mask with 0xffff.
 #if !defined(__AROS__)
-		if (P96Base && depth > 8 && p96GetBitMapAttr(imagebm, P96BMA_ISP96))
+		if (!ok && P96Base && depth > 8 && p96GetBitMapAttr(imagebm, P96BMA_ISP96))
 		{
 			UBYTE *image_array;
 
@@ -620,15 +625,13 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 					FreeVec(image_array);
 			}
 		}
-		else
 #endif /* !__AROS__ */
 
-		// CyberGraphX fallback (no P96 resident, but CGX is). Mirrors the
-		// pre-P96-migration code path from master so users on CGX-only
-		// installs (older OS3, some PPC accelerators, AROS) keep getting
-		// transparent drag masks instead of the opaque-silhouette final
-		// fallback. This is the only RTG branch reached on AROS.
-		if (CyberGfxBase && depth > 8 && GetCyberMapAttr(imagebm, CYBRMATTR_ISCYBERGFX))
+		// CyberGraphX fallback. Runs when either the P96 branch was not
+		// eligible (no P96Base, or bitmap is not a P96 surface) or the
+		// P96 pixel read failed (ok still 0). On AROS this is the only
+		// RTG branch.
+		if (!ok && CyberGfxBase && depth > 8 && GetCyberMapAttr(imagebm, CYBRMATTR_ISCYBERGFX))
 		{
 			UBYTE *image_array;
 
@@ -720,8 +723,10 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 			}
 		}
 
-		// (Semi)-normal mode; Allocate temporary bitmap
-		else if ((tempbm = AllocBitMap(drag->sprite.Width, drag->sprite.Height, depth, BMF_CLEAR, 0)))
+		// (Semi)-normal mode; Allocate temporary bitmap.
+		// Standalone if (not else-if) so we still reach it when the P96 or
+		// CGX branches were eligible but their pixel read failed.
+		if (!ok && (tempbm = AllocBitMap(drag->sprite.Width, drag->sprite.Height, depth, BMF_CLEAR, 0)))
 		{
 			short columns;
 

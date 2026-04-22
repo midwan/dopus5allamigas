@@ -464,6 +464,7 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 	struct BitMap *tempbm = 0;
 	UBYTE *buffer = 0;
 	signed char *src = (signed char *)source;  // needed for signedness issue
+	BOOL dest_is_p96, dest_is_cgx;
 
 	// Check valid source and destination
 	if (!source || !dest)
@@ -496,17 +497,32 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 		height = dest_rows;
 
 	// Allocate temporary bitmap if WritePixel needed.
-	// Prefer P96's WritePixelArray path; if P96 is not resident fall back
-	// to cybergraphics.library's WritePixelArray; otherwise use a planar
-	// temp bitmap + WritePixelLine8 (cannot carry 24-bit data).
+	// Prefer P96's WritePixelArray path on a P96 destination; if the
+	// destination isn't a P96 bitmap but cybergraphics claims it, use
+	// CGX's WritePixelArray; otherwise use a planar temp bitmap +
+	// WritePixelLine8 (cannot carry 24-bit data).
+	//
+	// Probing the destination bitmap itself (not just "is any library
+	// resident?") matters on mixed setups where Picasso96API is loaded
+	// but a given BitMap was allocated through CyberGraphX or is plain
+	// planar - routing the row through the wrong API corrupts output.
+	dest_is_p96 = FALSE;
+	dest_is_cgx = FALSE;
+#if !defined(__AROS__)
+	if (P96Base && p96GetBitMapAttr(dest, P96BMA_ISP96))
+		dest_is_p96 = TRUE;
+#endif
+	if (!dest_is_p96 && CyberGfxBase && GetCyberMapAttr(dest, CYBRMATTR_ISCYBERGFX))
+		dest_is_cgx = TRUE;
+
 	if (flags & DIF_WRITEPIX)
 	{
-		// Hardware RTG (P96 or CGX), 24bit?
-		if ((P96Base || CyberGfxBase) && planes == 24)
+		// Hardware RTG destination, 24bit?
+		if ((dest_is_p96 || dest_is_cgx) && planes == 24)
 			buffer = AllocVec((bufsize = bpr * 24), 0);
 
 		// Otherwise, 8bpp path via RTG write or planar tempbm
-		else if ((P96Base || CyberGfxBase || (tempbm = L_NewBitMap(width, 1, dest_depth, 0, 0))))
+		else if ((dest_is_p96 || dest_is_cgx || (tempbm = L_NewBitMap(width, 1, dest_depth, 0, 0))))
 			buffer = AllocVec((bufsize = bpr << 3), 0);
 
 		// Got buffer?
@@ -687,11 +703,12 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 			// Writepixel?
 			if (flags & DIF_WRITEPIX)
 			{
-				// P96 (preferred on modern setups: OS3.2+, MorphOS, OS4).
-				// Compile out on AROS - no Picasso96API.library there, so
-				// the p96* call would leave an unresolved symbol at link.
+				// Dispatch by destination capability (decided once above).
+				// Using the dest-specific probe instead of "is the library
+				// resident?" avoids misrouting rows on mixed setups where
+				// P96 is loaded but this particular BitMap came from CGX.
 #if !defined(__AROS__)
-				if (P96Base)
+				if (dest_is_p96)
 				{
 					struct RenderInfo ri;
 					ri.Memory = buffer;
@@ -703,9 +720,9 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 				else
 #endif
 
-				// CyberGraphX fallback for CGX-only installs (older OS3,
-				// PPC accelerators without Picasso96 layer, AROS)
-				if (CyberGfxBase)
+				// CyberGraphX destination (CGX-only installs, or P96 resident
+				// but this BitMap is a CGX one)
+				if (dest_is_cgx)
 				{
 					WritePixelArray(buffer,
 									0,
@@ -719,7 +736,7 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 									(planes == 24) ? RECTFMT_RGB : RECTFMT_LUT8);
 				}
 
-				// Planar tempbm path (no RTG library available)
+				// Planar tempbm path (destination isn't RTG-capable)
 				else
 					WritePixelLine8(&rp, 0, row, width, buffer, &temprp);
 			}
