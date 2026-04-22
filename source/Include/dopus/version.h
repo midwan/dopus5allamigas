@@ -16,15 +16,15 @@
 
 // set the program version/revision
 #define PROG_VERSION    5
-#define PROG_REVISION   95
+#define PROG_REVISION   96
 
 // set the library & modules version/revision
 #define LIB_VERSION    73
-#define LIB_REVISION   0
+#define LIB_REVISION   1
 
 // set the commands version/revision (viewfont, dopusrt5, loadwb)
 #define CMD_VERSION    65
-#define CMD_REVISION   0
+#define CMD_REVISION   1
 
 // set platform identification
 #ifdef DEBUG
@@ -76,6 +76,6 @@
 #define LIB_STRING STRI(LIB_VERSION)"."STRI(LIB_REVISION)" "STRI(PLATFORM)" ("DOPUSDATE")"
 #define CMD_STRING STRI(CMD_VERSION)"."STRI(CMD_REVISION)" "STRI(PLATFORM)" ("DOPUSDATE")"
 
-#define COPYRIGHT  " Copyright (c) 2012-2026 Dopus5 Open Source Team "
+#define COPYRIGHT  " Copyright (c) 1993-2012 Jonathan Potter & GP Software, 2012-2013 DOPUS5 Open Source Team, 2023-2026 Dimitris Panokostas "
 
 #endif /* DOPUS_VERSION_H */
