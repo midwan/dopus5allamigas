@@ -583,8 +583,17 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 			// Go through planes
 			for (plane = 0; plane < planes; plane++)
 			{
-				// Check this plane is ok to decode into
-				if (plane < dest_depth && (flags & DIF_WRITEPIX || dest->Planes[plane]))
+				// Decode this plane if either:
+				//   - DIF_WRITEPIX is set: every source plane goes into the
+				//     chunky `buffer`, which is sized for `planes` (not
+				//     `dest_depth`). Skipping source planes >= dest_depth
+				//     here would silently drop colour bits before the RTG
+				//     writer (e.g. a 24-bit ILBM into an 8-bit RTG dest
+				//     would only get the low 8 bits of R), then ship a
+				//     corrupt RGB row through p96/CGX WritePixelArray.
+				//   - Else (legacy planar copy): the destination must
+				//     actually have a plane pointer at this index.
+				if ((flags & DIF_WRITEPIX) || (plane < dest_depth && dest->Planes[plane]))
 				{
 					register char *ptr;
 					register short copy, col, count;
@@ -793,7 +802,12 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 
 			for (plane = 0; plane < planes; plane++)
 			{
-				if (plane < dest_depth && (flags & DIF_WRITEPIX || dest->Planes[plane]))
+				// Same rule as the comp == 1 branch above: when
+				// DIF_WRITEPIX is set we must decode every source plane
+				// into the chunky `buffer` regardless of dest_depth, or
+				// 24-bit RGB would be corrupted on RTG destinations whose
+				// own depth is below 24.
+				if ((flags & DIF_WRITEPIX) || (plane < dest_depth && dest->Planes[plane]))
 				{
 					if (flags & DIF_WRITEPIX)
 					{
