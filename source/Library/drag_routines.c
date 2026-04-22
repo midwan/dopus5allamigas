@@ -448,6 +448,16 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 
 							switch (pixfmt)
 							{
+								// Byte order for the 24/32-bit cases follows the Picasso96
+								// ABI as documented in <libraries/Picasso96.h>:
+								//   RGBFB_R8G8B8   = "TrueColor RGB (8 bit each)"
+								//   RGBFB_B8G8R8   = "TrueColor BGR (8 bit each)"
+								//   RGBFB_A8R8G8B8 = "4 Byte TrueColor ARGB"
+								//   RGBFB_R8G8B8A8 = "4 Byte TrueColor RGBA"
+								//   RGBFB_A8B8G8R8 = "4 Byte TrueColor ABGR"
+								//   RGBFB_B8G8R8A8 = "4 Byte TrueColor BGRA"
+								// Output buffer (image_array) is canonical R,G,B
+								// triples - what GetRGB32 + the colour0 compare expect.
 								case RGBFB_R8G8B8:
 									for (xx = 0; xx < w; xx++)
 									{
