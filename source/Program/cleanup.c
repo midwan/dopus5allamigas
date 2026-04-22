@@ -252,9 +252,9 @@ void quit(BOOL script)
 #endif
 
 #ifdef __amigaos4__
-	DropInterface((struct Interface *)ICyberGfx);
+	DropInterface((struct Interface *)IP96);
 #endif
-	CloseLibrary(CyberGfxBase);
+	CloseLibrary(P96Base);
 
 #ifdef __amigaos4__
 	DropInterface((struct Interface *)IAmigaGuide);

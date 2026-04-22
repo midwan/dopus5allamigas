@@ -33,16 +33,11 @@ For more information on Directory Opus for Windows please see:
 
 #ifdef __amigaos3__
 	#include "dopus_inlines.h"
-	#include <cybergraphics/cybergraphics.h>
-#elif defined(__amigaos4__)
-	#include <cybergraphx/cybergraphics.h>
 #elif defined(__MORPHOS__) || defined(__AROS__)
-	#include <cybergraphx/cybergraphics.h>
 	#include <exec/execbase.h>
 	#include <proto/alib.h>
-#else
-	#include <cybergraphx/cybergraphics.h>
 #endif
+#include <proto/Picasso96.h>
 
 // 64-bit types QUAD and UQUAD, duplicated from libraries/dopus5.h
 #ifdef __amigaos4__

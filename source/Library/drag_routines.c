@@ -23,7 +23,6 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopuslib.h"
 
-#include <proto/cybergraphics.h>
 #ifdef __AROS__
 	#include <proto/commodities.h>
 #endif
@@ -108,18 +107,22 @@ DragInfo *LIBFUNC L_GetDragInfo(REG(a0, struct Window *window),
 	// Custom rendering?
 	if (drag->flags & DRAGF_CUSTOM)
 	{
-		// Allocate BitMap
-		if (!(drag->sprite.ImageData = (WORD *)AllocBitMap(
-				  drag->width, drag->height, drag->sprite.Depth, BMF_MINPLANES, window->WScreen->RastPort.BitMap)))
+		// Allocate an RTG-native BitMap via P96 (matching the screen's pixel
+		// format). Using AllocBitMap with a friend bitmap does not guarantee
+		// the allocated bitmap shares the friend's RTG pixel format on OS3,
+		// which forces every per-move blit through a slow format-conversion
+		// path and makes the drag sprite appear invisible during motion.
+		if (!(drag->sprite.ImageData = (WORD *)p96AllocBitMap(
+				  drag->width, drag->height, drag->sprite.Depth, 0, window->WScreen->RastPort.BitMap, 0)))
 		{
 			FreeVec(drag);
 			return 0;
 		}
 
-		// Allocate backup buffer
+		// Allocate backup buffer (same format, so save/restore blits stay fast)
 		if (real &&
-			!(drag->bob.SaveBuffer = (WORD *)AllocBitMap(
-				  drag->width, drag->height, drag->sprite.Depth, BMF_MINPLANES, window->WScreen->RastPort.BitMap)))
+			!(drag->bob.SaveBuffer = (WORD *)p96AllocBitMap(
+				  drag->width, drag->height, drag->sprite.Depth, 0, window->WScreen->RastPort.BitMap, 0)))
 		{
 			L_FreeDragInfo(drag);
 			return 0;
@@ -210,9 +213,11 @@ void LIBFUNC L_FreeDragInfo(REG(a0, DragInfo *drag))
 	// Used custom rendering?
 	if (drag->flags & DRAGF_CUSTOM)
 	{
-		// Free bitmaps
-		FreeBitMap((struct BitMap *)drag->sprite.ImageData);
-		FreeBitMap((struct BitMap *)drag->bob.SaveBuffer);
+		// Free bitmaps (must match p96AllocBitMap allocator above)
+		if (drag->sprite.ImageData)
+			p96FreeBitMap((struct BitMap *)drag->sprite.ImageData);
+		if (drag->bob.SaveBuffer)
+			p96FreeBitMap((struct BitMap *)drag->bob.SaveBuffer);
 	}
 
 	// Standard BOBs
@@ -332,8 +337,8 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 		imagebm = (struct BitMap *)drag->sprite.ImageData;
 		depth = GetBitMapAttr(imagebm, BMA_DEPTH);
 
-		// Do we have CyberGfx, and is it a Cyber mode greater than 256 colours?
-		if (CyberGfxBase && depth > 8 && GetCyberMapAttr(imagebm, CYBRMATTR_ISCYBERGFX))
+		// Do we have Picasso96 and an RTG bitmap with >256 colours?
+		if (P96Base && depth > 8 && p96GetBitMapAttr(imagebm, P96BMA_ISP96))
 		{
 			UBYTE *image_array;
 
@@ -344,18 +349,19 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 				long pixfmt, count, num, array_pos, word_pos;
 				ULONG colour0[3];
 				UWORD word_data;
+				LONG lock;
 
 				// Get the palette value of colour 0
 				GetRGB32(drag->viewport->ColorMap, 0, 1, colour0);
 
 				// Calculate mask for pixel format
-				pixfmt = GetCyberMapAttr(imagebm, CYBRMATTR_PIXFMT);
-				if (pixfmt >= PIXFMT_RGB15 && pixfmt <= PIXFMT_BGR15PC)
+				pixfmt = p96GetBitMapAttr(imagebm, P96BMA_RGBFORMAT);
+				if (pixfmt == RGBFB_R5G5B5 || pixfmt == RGBFB_R5G5B5PC || pixfmt == RGBFB_B5G5R5PC)
 				{
 					mask[0] = 0xf8;
 					mask[1] = 0xf8;
 				}
-				else if (pixfmt >= PIXFMT_RGB16 && pixfmt <= PIXFMT_BGR16PC)
+				else if (pixfmt == RGBFB_R5G6B5 || pixfmt == RGBFB_R5G6B5PC || pixfmt == RGBFB_B5G6R5PC)
 				{
 					mask[0] = 0xf8;
 					mask[1] = 0xfc;
@@ -366,17 +372,176 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 				colour0[1] &= mask[1];
 				colour0[2] &= mask[0];
 
-				// Read the image
-				ReadPixelArray(image_array,
-							   0,
-							   0,
-							   drag->sprite.Width * 3,
-							   &drag->drag_rp,
-							   0,
-							   0,
-							   drag->sprite.Width,
-							   drag->sprite.Height,
-							   RECTFMT_RGB);
+				// Read the image via direct bitmap memory access. p96ReadPixelArray
+				// has proven unreliable on layerless rastports on some OS3 P96
+				// installations, so we do the format conversion ourselves.
+				if ((lock = p96LockBitMap(imagebm, NULL, 0)))
+				{
+					UBYTE *srcmem = (UBYTE *)p96GetBitMapAttr(imagebm, P96BMA_MEMORY);
+					LONG srcbpr = p96GetBitMapAttr(imagebm, P96BMA_BYTESPERROW);
+					LONG yy, xx;
+					UWORD w = drag->sprite.Width;
+					UWORD h = drag->sprite.Height;
+
+					if (srcmem)
+					{
+						for (yy = 0; yy < h; yy++)
+						{
+							UBYTE *sr = srcmem + yy * srcbpr;
+							UBYTE *dr = image_array + yy * w * 3;
+
+							switch (pixfmt)
+							{
+								case RGBFB_R8G8B8:
+									for (xx = 0; xx < w; xx++)
+									{
+										dr[0] = sr[0]; dr[1] = sr[1]; dr[2] = sr[2];
+										sr += 3; dr += 3;
+									}
+									break;
+
+								case RGBFB_B8G8R8:
+									for (xx = 0; xx < w; xx++)
+									{
+										dr[0] = sr[2]; dr[1] = sr[1]; dr[2] = sr[0];
+										sr += 3; dr += 3;
+									}
+									break;
+
+								case RGBFB_A8R8G8B8:
+									for (xx = 0; xx < w; xx++)
+									{
+										dr[0] = sr[1]; dr[1] = sr[2]; dr[2] = sr[3];
+										sr += 4; dr += 3;
+									}
+									break;
+
+								case RGBFB_R8G8B8A8:
+									for (xx = 0; xx < w; xx++)
+									{
+										dr[0] = sr[0]; dr[1] = sr[1]; dr[2] = sr[2];
+										sr += 4; dr += 3;
+									}
+									break;
+
+								case RGBFB_A8B8G8R8:
+									for (xx = 0; xx < w; xx++)
+									{
+										dr[0] = sr[3]; dr[1] = sr[2]; dr[2] = sr[1];
+										sr += 4; dr += 3;
+									}
+									break;
+
+								case RGBFB_B8G8R8A8:
+									for (xx = 0; xx < w; xx++)
+									{
+										dr[0] = sr[2]; dr[1] = sr[1]; dr[2] = sr[0];
+										sr += 4; dr += 3;
+									}
+									break;
+
+								case RGBFB_R5G6B5:
+									for (xx = 0; xx < w; xx++)
+									{
+										UWORD pix = (sr[0] << 8) | sr[1];
+										UBYTE rr = (pix >> 11) & 0x1f;
+										UBYTE gg = (pix >> 5) & 0x3f;
+										UBYTE bb = pix & 0x1f;
+										dr[0] = (rr << 3) | (rr >> 2);
+										dr[1] = (gg << 2) | (gg >> 4);
+										dr[2] = (bb << 3) | (bb >> 2);
+										sr += 2; dr += 3;
+									}
+									break;
+
+								case RGBFB_R5G6B5PC:
+									for (xx = 0; xx < w; xx++)
+									{
+										UWORD pix = sr[0] | (sr[1] << 8);
+										UBYTE rr = (pix >> 11) & 0x1f;
+										UBYTE gg = (pix >> 5) & 0x3f;
+										UBYTE bb = pix & 0x1f;
+										dr[0] = (rr << 3) | (rr >> 2);
+										dr[1] = (gg << 2) | (gg >> 4);
+										dr[2] = (bb << 3) | (bb >> 2);
+										sr += 2; dr += 3;
+									}
+									break;
+
+								case RGBFB_B5G6R5PC:
+									for (xx = 0; xx < w; xx++)
+									{
+										UWORD pix = sr[0] | (sr[1] << 8);
+										UBYTE bb = (pix >> 11) & 0x1f;
+										UBYTE gg = (pix >> 5) & 0x3f;
+										UBYTE rr = pix & 0x1f;
+										dr[0] = (rr << 3) | (rr >> 2);
+										dr[1] = (gg << 2) | (gg >> 4);
+										dr[2] = (bb << 3) | (bb >> 2);
+										sr += 2; dr += 3;
+									}
+									break;
+
+								case RGBFB_R5G5B5:
+									for (xx = 0; xx < w; xx++)
+									{
+										UWORD pix = (sr[0] << 8) | sr[1];
+										UBYTE rr = (pix >> 10) & 0x1f;
+										UBYTE gg = (pix >> 5) & 0x1f;
+										UBYTE bb = pix & 0x1f;
+										dr[0] = (rr << 3) | (rr >> 2);
+										dr[1] = (gg << 3) | (gg >> 2);
+										dr[2] = (bb << 3) | (bb >> 2);
+										sr += 2; dr += 3;
+									}
+									break;
+
+								case RGBFB_R5G5B5PC:
+									for (xx = 0; xx < w; xx++)
+									{
+										UWORD pix = sr[0] | (sr[1] << 8);
+										UBYTE rr = (pix >> 10) & 0x1f;
+										UBYTE gg = (pix >> 5) & 0x1f;
+										UBYTE bb = pix & 0x1f;
+										dr[0] = (rr << 3) | (rr >> 2);
+										dr[1] = (gg << 3) | (gg >> 2);
+										dr[2] = (bb << 3) | (bb >> 2);
+										sr += 2; dr += 3;
+									}
+									break;
+
+								case RGBFB_B5G5R5PC:
+									for (xx = 0; xx < w; xx++)
+									{
+										UWORD pix = sr[0] | (sr[1] << 8);
+										UBYTE bb = (pix >> 10) & 0x1f;
+										UBYTE gg = (pix >> 5) & 0x1f;
+										UBYTE rr = pix & 0x1f;
+										dr[0] = (rr << 3) | (rr >> 2);
+										dr[1] = (gg << 3) | (gg >> 2);
+										dr[2] = (bb << 3) | (bb >> 2);
+										sr += 2; dr += 3;
+									}
+									break;
+
+								default:
+									// Unknown format - p96ReadPixelArray as fallback
+									{
+										struct RenderInfo ri;
+										ri.Memory = image_array;
+										ri.BytesPerRow = w * 3;
+										ri.pad = 0;
+										ri.RGBFormat = RGBFB_R8G8B8;
+										p96ReadPixelArray(&ri, 0, 0, &drag->drag_rp, 0, 0, w, h);
+									}
+									yy = h;
+									break;
+							}
+						}
+					}
+
+					p96UnlockBitMap(imagebm, lock);
+				}
 
 				// Get number of pixels
 				count = drag->sprite.Width * drag->sprite.Height;
@@ -1055,8 +1220,8 @@ BOOL LIBFUNC L_DragCustomOk(REG(a0, struct BitMap *bm), REG(a6, struct MyLibrary
 	data = (struct LibData *)libbase->ml_UserData;
 
 	// Ok to custom drag?
-	if (!(data->flags & LIBDF_NO_CUSTOM_DRAG) && ((struct Library *)GfxBase)->lib_Version >= 39 && CyberGfxBase &&
-		GetCyberMapAttr(bm, CYBRMATTR_ISCYBERGFX))
+	if (!(data->flags & LIBDF_NO_CUSTOM_DRAG) && ((struct Library *)GfxBase)->lib_Version >= 39 && P96Base &&
+		!(GetBitMapAttr(bm, BMA_FLAGS) & BMF_STANDARD))
 		ok = 1;
 
 	return ok;

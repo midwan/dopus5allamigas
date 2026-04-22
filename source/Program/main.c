@@ -385,12 +385,12 @@ void startup_open_libraries()
 	INewIcon = (struct NewIconIFace *)GetInterface(NewIconBase, "main", 1, NULL);
 #endif
 
-	// Is CyberGfx library already in system? If so, open it for ourselves
-	if (FindName(&SysBase->LibList, "cybergraphics.library"))
+	// Is Picasso96API already in system? If so, open it for ourselves
+	if (FindName(&SysBase->LibList, "Picasso96API.library"))
 	{
-		CyberGfxBase = OpenLibrary("cybergraphics.library", 0);
+		P96Base = OpenLibrary("Picasso96API.library", 2);
 #ifdef __amigaos4__
-		ICyberGfx = (struct CyberGfxIFace *)GetInterface(CyberGfxBase, "main", 1, NULL);
+		IP96 = (struct P96IFace *)GetInterface(P96Base, "main", 1, NULL);
 #endif
 	}
 

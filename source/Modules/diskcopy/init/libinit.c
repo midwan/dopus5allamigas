@@ -127,7 +127,7 @@ struct UtilityIFace *IUtility = NULL;
 struct LocaleIFace *ILocale = NULL;
 // struct ConsoleIFace 	*IConsole = NULL;
 struct GraphicsIFace *IGraphics = NULL;
-struct CyberGfxIFace *ICyberGfx = NULL;
+struct P96IFace *IP96 = NULL;
 struct IntuitionIFace *IIntuition = NULL;
 struct GadToolsIFace *IGadTools = NULL;
 struct AslIFace *IAsl = NULL;
@@ -163,7 +163,7 @@ struct LocaleBase *LocaleBase = NULL;
 struct RxsLib *RexxSysBase = NULL;
 #endif
 
-struct Library *CyberGfxBase = NULL;
+struct Library *P96Base = NULL;
 struct Library *GadToolsBase = NULL;
 struct Library *AslBase = NULL;
 struct Library *LayersBase = NULL;
@@ -833,12 +833,12 @@ ULONG freeBase(struct LibraryHeader *lib)
 {
 	UserLibCleanup();
 
-	// close cybergarphics.library
-	if (CyberGfxBase != NULL)
+	// close Picasso96API.library
+	if (P96Base != NULL)
 	{
-		DROPINTERFACE(ICyberGfx);
-		CloseLibrary((struct Library *)CyberGfxBase);
-		CyberGfxBase = NULL;
+		DROPINTERFACE(IP96);
+		CloseLibrary((struct Library *)P96Base);
+		P96Base = NULL;
 	}
 
 	// close newicon.library

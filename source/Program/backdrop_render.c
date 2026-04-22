@@ -24,6 +24,9 @@ For more information on Directory Opus for Windows please see:
 #include "dopus.h"
 
 #if defined(__MORPHOS__)
+	/* MOS-only alpha blit / tint API lives in cybergraphics.library; P96 has no equivalent. */
+	#include <proto/cybergraphics.h>
+	#include <cybergraphx/cybergraphics.h>
 	/*
 	 * This is from Ambient source code.
 	 */

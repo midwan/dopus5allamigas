@@ -33,6 +33,12 @@ For more information on Directory Opus for Windows please see:
 */
 
 #include "icon.h"
+
+#if defined(__MORPHOS__)
+/* MOS-only alpha blit API lives in cybergraphics.library; P96 has no equivalent. */
+#include <proto/cybergraphics.h>
+#include <cybergraphx/cybergraphics.h>
+#endif
 #include <proto/newicon.h>
 #include <libraries/newicon.h>
 
@@ -372,16 +378,16 @@ void icon_build_tooltypes(icon_data *data)
 				if (!*data->author)
 				{
 					// Author string?
-					//				if	(*data->icon->do_ToolTypes[num]/*[0]*/=='»' ||
-					//					*data->icon->do_ToolTypes[num]/*[0]*/=='«')
-					if ('»' == (char)*data->icon->do_ToolTypes[num] /*[0]*/ ||
-						'«' == (char)*data->icon->do_ToolTypes[num] /*[0]*/)
+					//				if	(*data->icon->do_ToolTypes[num]/*[0]*/=='ï¿½' ||
+					//					*data->icon->do_ToolTypes[num]/*[0]*/=='ï¿½')
+					if ('ï¿½' == (char)*data->icon->do_ToolTypes[num] /*[0]*/ ||
+						'ï¿½' == (char)*data->icon->do_ToolTypes[num] /*[0]*/)
 					{
 						char *ptr;
 
 						// Skip through
 						ptr = data->icon->do_ToolTypes[num];
-						while (*ptr == '»' || *ptr == '«')
+						while (*ptr == 'ï¿½' || *ptr == 'ï¿½')
 							++ptr;
 
 						// Find 'Icon by' string
@@ -399,7 +405,7 @@ void icon_build_tooltypes(icon_data *data)
 							ptr = data->author + strlen(data->author) - 1;
 
 							// Strip trailing characters
-							while (*ptr == '«' || *ptr == '»' || *ptr == ' ')
+							while (*ptr == 'ï¿½' || *ptr == 'ï¿½' || *ptr == ' ')
 								*(ptr--) = 0;
 
 							// Get next tooltype
@@ -3297,20 +3303,20 @@ BOOL icon_save(icon_data *data, char *save_name, BOOL err)
 int tooltype_strcmp(char *name1, char *name2, ULONG flags)
 {
 	// Ignore euro quotes if both are authors
-	if ((name1[0] == '«' || name1[0] == '»') && (name2[0] == '«' || name2[0] == '»'))
+	if ((name1[0] == 'ï¿½' || name1[0] == 'ï¿½') && (name2[0] == 'ï¿½' || name2[0] == 'ï¿½'))
 	{
-		while (*name1 == '«' || *name1 == '»')
+		while (*name1 == 'ï¿½' || *name1 == 'ï¿½')
 			++name1;
 
-		while (*name2 == '«' || *name2 == '»')
+		while (*name2 == 'ï¿½' || *name2 == 'ï¿½')
 			++name2;
 	}
 
 	// Author comes before all else
-	else if (name1[0] == '«' || name1[0] == '»')
+	else if (name1[0] == 'ï¿½' || name1[0] == 'ï¿½')
 		return -1;
 
-	else if (name2[0] == '«' || name2[0] == '»')
+	else if (name2[0] == 'ï¿½' || name2[0] == 'ï¿½')
 		return 1;
 
 	// Enabled tooltypes at top when seperated

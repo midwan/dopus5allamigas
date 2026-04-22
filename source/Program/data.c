@@ -53,7 +53,7 @@ struct LocaleIFace *ILocale = NULL;
 struct CommoditiesIFace *ICommodities = NULL;
 struct ConsoleIFace *IConsole = NULL;
 struct GraphicsIFace *IGraphics = NULL;
-struct CyberGfxIFace *ICyberGfx = NULL;
+struct P96IFace *IP96 = NULL;
 struct IntuitionIFace *IIntuition = NULL;
 struct InputIFace *IInput = NULL;
 struct GadToolsIFace *IGadTools = NULL;
@@ -112,7 +112,7 @@ struct Library *ConsoleDevice = NULL;
 struct Device *ConsoleDevice = NULL;
 #endif
 struct Library *AmigaGuideBase = NULL;
-struct Library *CyberGfxBase = NULL;
+struct Library *P96Base = NULL;
 struct NewIconBase *NewIconBase = NULL;
 struct Library *muBase = NULL;
 

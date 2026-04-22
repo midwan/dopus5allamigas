@@ -23,8 +23,6 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopuslib.h"
 
-#include <proto/cybergraphics.h>
-
 // Read an ILBM image
 ILBMHandle *LIBFUNC L_ReadILBM(REG(a0, char *name), REG(d0, ULONG flags))
 {
@@ -500,12 +498,12 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 	// Allocate temporary bitmap if WritePixel needed
 	if (flags & DIF_WRITEPIX)
 	{
-		// Cybergraphics, 24bit?
-		if (CyberGfxBase && planes == 24)
+		// P96, 24bit?
+		if (P96Base && planes == 24)
 			buffer = AllocVec((bufsize = bpr * 24), 0);
 
 		// Otherwise
-		else if ((CyberGfxBase || (tempbm = L_NewBitMap(width, 1, dest_depth, 0, 0))))
+		else if ((P96Base || (tempbm = L_NewBitMap(width, 1, dest_depth, 0, 0))))
 			buffer = AllocVec((bufsize = bpr << 3), 0);
 
 		// Got buffer?
@@ -686,12 +684,16 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 			// Writepixel?
 			if (flags & DIF_WRITEPIX)
 			{
-				// CyberGfx?
-				if (CyberGfxBase)
+				// P96?
+				if (P96Base)
 				{
 					// Write pixel array
-					WritePixelArray(
-						buffer, 0, 0, width, &rp, 0, row, width, 1, (planes == 24) ? RECTFMT_RGB : RECTFMT_LUT8);
+					struct RenderInfo ri;
+					ri.Memory = buffer;
+					ri.BytesPerRow = (planes == 24) ? width * 3 : width;
+					ri.pad = 0;
+					ri.RGBFormat = (planes == 24) ? RGBFB_R8G8B8 : RGBFB_CLUT;
+					p96WritePixelArray(&ri, 0, 0, &rp, 0, row, width, 1);
 				}
 
 				// Write to bitmap

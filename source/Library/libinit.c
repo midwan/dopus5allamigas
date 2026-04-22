@@ -143,7 +143,7 @@ struct UtilityIFace *IUtility = NULL;
 struct LocaleIFace *ILocale = NULL;
 // struct ConsoleIFace 	*IConsole = NULL;
 struct GraphicsIFace *IGraphics = NULL;
-struct CyberGfxIFace *ICyberGfx = NULL;
+struct P96IFace *IP96 = NULL;
 struct IntuitionIFace *IIntuition = NULL;
 struct GadToolsIFace *IGadTools = NULL;
 struct AslIFace *IAsl = NULL;
@@ -176,7 +176,7 @@ struct LocaleBase *LocaleBase = NULL;
 struct RxsLib *RexxSysBase = NULL;
 #endif
 
-struct Library *CyberGfxBase = NULL;
+struct Library *P96Base = NULL;
 struct Library *GadToolsBase = NULL;
 struct Library *AslBase = NULL;
 struct Library *LayersBase = NULL;
@@ -995,12 +995,12 @@ ULONG freeBase(struct MyLibrary *lib)
 	if (lib)
 		UserLibCleanup((struct MyLibrary *)lib);
 
-	// close cybergarphics.library
-	if (CyberGfxBase != NULL)
+	// close Picasso96API.library
+	if (P96Base != NULL)
 	{
-		DROPINTERFACE(ICyberGfx);
-		CloseLibrary((struct Library *)CyberGfxBase);
-		CyberGfxBase = NULL;
+		DROPINTERFACE(IP96);
+		CloseLibrary((struct Library *)P96Base);
+		P96Base = NULL;
 	}
 
 	// close newicon.library
@@ -1219,12 +1219,12 @@ int UserLibInit(REG(a6, struct MyLibrary *libbase))
 		return 1;
 	data->TimerBase = (struct Library *)data->timer_io.io_Device;
 
-	// Is CyberGfx library already in system? If so, open it for ourselves
-	if (FindName(&((struct ExecBase *)SysBase)->LibList, "cybergraphics.library"))
+	// Is Picasso96API already in system? If so, open it for ourselves
+	if (FindName(&((struct ExecBase *)SysBase)->LibList, "Picasso96API.library"))
 	{
-		CyberGfxBase = OpenLibrary("cybergraphics.library", 0);
+		P96Base = OpenLibrary("Picasso96API.library", 2);
 #ifdef __amigaos4__
-		GETINTERFACE(ICyberGfx, CyberGfxBase);
+		GETINTERFACE(IP96, P96Base);
 #endif
 	}
 
