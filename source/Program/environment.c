@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas (dopus5allamigas fork)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -524,8 +526,12 @@ int environment_save(Cfg_Environment *env, char *name, short snapshot, CFG_ENVR 
 				if (!(SaveListerDef(iff, (Cfg_Lister *)lister->lister)))
 					break;
 
+				// Free lister data
+				FreeListerDef((Cfg_Lister *)lister->lister);
+
 				// Remove this node, get next
 				Remove((struct Node *)lister);
+				FreeMemH(lister);
 				lister = next;
 			}
 

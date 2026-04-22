@@ -1,3 +1,28 @@
+/*
+
+Directory Opus 5
+Original APL release version 5.82
+Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas (dopus5allamigas fork)
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the AROS Public License version 1.1.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+AROS Public License for more details.
+
+The release of Directory Opus 5 under the GPL in NO WAY affects
+the existing commercial status of Directory Opus for Windows.
+
+For more information on Directory Opus for Windows please see:
+
+				 http://www.gpsoft.com.au
+
+*/
+
 #include "font.h"
 
 int main(int argc, char **argv)
@@ -53,15 +78,9 @@ int main(int argc, char **argv)
 	{
 		BPTR lock;
 
-		// Change PROGDIR: to dopus5:
+		// Change PROGDIR: to dopus5:, save old PROGDIR for restore on exit
 		if ((lock = Lock("dopus5:", ACCESS_READ)))
-#ifdef __AROS__
-			// the lock returned here is the initial PROGDIR: which belongs to the system,
-			// so it's not a very good idea to just UnLock it
-			SetProgramDir(lock);
-#else
-			UnLock(SetProgramDir(lock));
-#endif
+			data->lock = SetProgramDir(lock);
 
 		// Initialise
 		data->locale.li_LocaleBase = LocaleBase;
@@ -437,6 +456,10 @@ void font_free(font_data *data)
 			CloseLocale(data->locale.li_Locale);
 			CloseCatalog(data->locale.li_Catalog);
 		}
+
+		// Restore PROGDIR: and unlock our dopus5: lock
+		if (data->lock)
+			UnLock(SetProgramDir(data->lock));
 
 		// Free args
 		FreeArgs(data->args);
@@ -976,7 +999,7 @@ void font_show_about(font_data *data)
 	easy.es_StructSize = sizeof(easy);
 	easy.es_Flags = 0;
 	easy.es_Title = 0;
-	easy.es_TextFormat = "Directory Opus 5 Font Viewer\nv55.0 (01.08.96)\n\n© 1996 Jonathan Potter";
+	easy.es_TextFormat = "Directory Opus 5 Font Viewer\nv55.0 (01.08.96)\n\nï¿½ 1996 Jonathan Potter";
 	easy.es_GadgetFormat = GetString(&data->locale, MSG_OK);
 
 	// Open requester

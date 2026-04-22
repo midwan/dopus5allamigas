@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas (dopus5allamigas fork)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -89,6 +91,13 @@ BOOL GetToolBarCache(ToolBarInfo *toolbar, BOOL real)
 
 	// Free existing cache
 	FreeToolBarCache(toolbar);
+
+	// Free existing position array
+	if (toolbar->button_array)
+	{
+		FreeVec(toolbar->button_array);
+		toolbar->button_array = 0;
+	}
 
 	// Remap toolbar if this is for real
 	if (real && !toolbar->done_remap)

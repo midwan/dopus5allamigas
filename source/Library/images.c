@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas (dopus5allamigas fork)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -1083,16 +1085,14 @@ void free_image(Image_Data *image)
 			// Free image planes
 			for (b = 0; b < 2; b++)
 			{
-				// Only free image data from normal image if not an ILBM
-				if (!(image->flags & IMAGEF_ILBM))
+				// Primary plane?
+				if (image->planes[b][0])
 				{
-					// Primary plane?
-					if (image->planes[b][0])
+					for (a = 0; a < image->depth; a++)
 					{
-						for (a = 0; a < image->depth; a++)
-						{
+						// For ILBM only free what FreeILBM would leave behind
+						if (b == 1 || !(image->flags & IMAGEF_ILBM))
 							FreeVec(image->planes[b][a]);
-						}
 					}
 				}
 			}

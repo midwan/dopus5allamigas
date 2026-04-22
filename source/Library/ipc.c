@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas (dopus5allamigas fork)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -39,6 +41,7 @@ int LIBFUNC L_IPC_Launch(REG(a0, struct ListLock *list),
 	IPCData *ipc;
 	BOOL path = 0;
 	struct TagItem *tags;
+	BPTR pathlist = 0;
 
 #ifdef __amigaos4__
 	libbase = dopuslibbase_global;
@@ -90,8 +93,6 @@ int LIBFUNC L_IPC_Launch(REG(a0, struct ListLock *list),
 	// Want a path?
 	if (path)
 	{
-		BPTR pathlist;
-
 #define DOpusBase (libdata->dopus_base)
 		// Lock path list
 		GetSemaphore(&libdata->path_lock, SEMF_SHARED, 0);
@@ -124,6 +125,8 @@ int LIBFUNC L_IPC_Launch(REG(a0, struct ListLock *list),
 	// Failed to launch?
 	if (!ipc->proc)
 	{
+		if (path)
+			L_FreeDosPathList(pathlist);
 		FreeVec(ipc);
 		return 0;
 	}
