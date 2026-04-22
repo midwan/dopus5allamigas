@@ -16,7 +16,7 @@
 
 // set the program version/revision
 #define PROG_VERSION    5
-#define PROG_REVISION   96
+#define PROG_REVISION   97
 
 // set the library & modules version/revision
 #define LIB_VERSION    73
