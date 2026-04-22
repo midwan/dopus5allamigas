@@ -252,12 +252,17 @@ void quit(BOOL script)
 #endif
 
 #ifdef __amigaos4__
-	DropInterface((struct Interface *)IP96);
+	// Guard DropInterface: interface acquisition in startup can fail and
+	// leave IP96/ICyberGfx at NULL even though the base pointer is also
+	// NULL. DropInterface(NULL) is not safe on all OS4 SDK versions.
+	if (IP96)
+		DropInterface((struct Interface *)IP96);
 #endif
 	CloseLibrary(P96Base);
 
 #ifdef __amigaos4__
-	DropInterface((struct Interface *)ICyberGfx);
+	if (ICyberGfx)
+		DropInterface((struct Interface *)ICyberGfx);
 #endif
 	CloseLibrary(CyberGfxBase);
 

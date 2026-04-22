@@ -1232,13 +1232,23 @@ int UserLibInit(REG(a6, struct MyLibrary *libbase))
 		return 1;
 	data->TimerBase = (struct Library *)data->timer_io.io_Device;
 
-	// Is Picasso96API already in system? If so, open it for ourselves
+	// Is Picasso96API already in system? If so, open it for ourselves.
+	// On OS4 require the interface to come up too; roll the library back
+	// on failure so the "base non-NULL implies interface non-NULL"
+	// invariant holds, and the cleanup path's DROPINTERFACE(IP96) is safe.
 	if (FindName(&((struct ExecBase *)SysBase)->LibList, "Picasso96API.library"))
 	{
-		P96Base = OpenLibrary("Picasso96API.library", 2);
+		if ((P96Base = OpenLibrary("Picasso96API.library", 2)))
+		{
 #ifdef __amigaos4__
-		GETINTERFACE(IP96, P96Base);
+			GETINTERFACE(IP96, P96Base);
+			if (!IP96)
+			{
+				CloseLibrary((struct Library *)P96Base);
+				P96Base = NULL;
+			}
 #endif
+		}
 	}
 
 	// Also check for cybergraphics.library - used as a fallback in the
@@ -1246,12 +1256,20 @@ int UserLibInit(REG(a6, struct MyLibrary *libbase))
 	// PPC accelerators with CGX but no Picasso96, etc.). On most modern
 	// setups P96 ships a cybergraphics compat wrapper so both are resident
 	// and P96 wins; the fallback only matters on CGX-only installs.
+	// Same interface-acquisition contract as P96 above.
 	if (FindName(&((struct ExecBase *)SysBase)->LibList, "cybergraphics.library"))
 	{
-		CyberGfxBase = OpenLibrary("cybergraphics.library", 0);
+		if ((CyberGfxBase = OpenLibrary("cybergraphics.library", 0)))
+		{
 #ifdef __amigaos4__
-		GETINTERFACE(ICyberGfx, CyberGfxBase);
+			GETINTERFACE(ICyberGfx, CyberGfxBase);
+			if (!ICyberGfx)
+			{
+				CloseLibrary((struct Library *)CyberGfxBase);
+				CyberGfxBase = NULL;
+			}
 #endif
+		}
 	}
 
 	// Get topaz font

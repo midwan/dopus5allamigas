@@ -385,13 +385,23 @@ void startup_open_libraries()
 	INewIcon = (struct NewIconIFace *)GetInterface(NewIconBase, "main", 1, NULL);
 #endif
 
-	// Is Picasso96API already in system? If so, open it for ourselves
+	// Is Picasso96API already in system? If so, open it for ourselves.
+	// On OS4 we also need a usable interface - if GetInterface fails (SDK
+	// mismatch, allocation failure, whatever), roll the library back so
+	// the rest of the program sees a fully-closed state (both NULL) and
+	// cleanup does not try to DropInterface a NULL pointer.
 	if (FindName(&SysBase->LibList, "Picasso96API.library"))
 	{
-		P96Base = OpenLibrary("Picasso96API.library", 2);
+		if ((P96Base = OpenLibrary("Picasso96API.library", 2)))
+		{
 #ifdef __amigaos4__
-		IP96 = (struct P96IFace *)GetInterface(P96Base, "main", 1, NULL);
+			if (!(IP96 = (struct P96IFace *)GetInterface(P96Base, "main", 1, NULL)))
+			{
+				CloseLibrary(P96Base);
+				P96Base = NULL;
+			}
 #endif
+		}
 	}
 
 	// Also open cybergraphics.library if resident. backdrop_render.c's
@@ -399,12 +409,19 @@ void startup_open_libraries()
 	// ProcessPixelArray, which live in cybergraphics.library and have no
 	// Picasso96 equivalent. On CGX-only installs this is also what keeps
 	// the library-side CGX fallback (read_ilbm / drag_routines) working.
+	// Same interface-acquisition contract as P96Base above.
 	if (FindName(&SysBase->LibList, "cybergraphics.library"))
 	{
-		CyberGfxBase = OpenLibrary("cybergraphics.library", 0);
+		if ((CyberGfxBase = OpenLibrary("cybergraphics.library", 0)))
+		{
 #ifdef __amigaos4__
-		ICyberGfx = (struct CyberGfxIFace *)GetInterface(CyberGfxBase, "main", 1, NULL);
+			if (!(ICyberGfx = (struct CyberGfxIFace *)GetInterface(CyberGfxBase, "main", 1, NULL)))
+			{
+				CloseLibrary(CyberGfxBase);
+				CyberGfxBase = NULL;
+			}
 #endif
+		}
 	}
 
 	// Get input.device base
