@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas (dopus5allamigas fork)
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -821,6 +823,9 @@ void lister_zoom_window(Lister *lister)
 
 		// Set window limits
 		WindowLimits(lister->window, lister->win_limits.Left, lister->win_limits.Top, (UWORD)~0, (UWORD)~0);
+
+		// Restore pointer to current lister
+		GUI->current_lister = lister;
 	}
 
 	// Ben Vost zoom mode?
@@ -850,6 +855,12 @@ void lister_zoom_window(Lister *lister)
 
 		// Set flag
 		lister->more_flags |= LISTERF_TITLEBARRED;
+
+		// Clear pointer to current lister (titlebar-minimized listers aren't eligible)
+		Forbid();
+		if (GUI->current_lister == lister)
+			GUI->current_lister = 0;
+		Permit();
 	}
 
 	// Normal mode
