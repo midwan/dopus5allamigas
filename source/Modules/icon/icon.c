@@ -378,16 +378,16 @@ void icon_build_tooltypes(icon_data *data)
 				if (!*data->author)
 				{
 					// Author string?
-					//				if	(*data->icon->do_ToolTypes[num]/*[0]*/=='ï¿½' ||
-					//					*data->icon->do_ToolTypes[num]/*[0]*/=='ï¿½')
-					if ('ï¿½' == (char)*data->icon->do_ToolTypes[num] /*[0]*/ ||
-						'ï¿½' == (char)*data->icon->do_ToolTypes[num] /*[0]*/)
+					//				if	(*data->icon->do_ToolTypes[num]/*[0]*/=='»' ||
+					//					*data->icon->do_ToolTypes[num]/*[0]*/=='«')
+					if ('»' == (char)*data->icon->do_ToolTypes[num] /*[0]*/ ||
+						'«' == (char)*data->icon->do_ToolTypes[num] /*[0]*/)
 					{
 						char *ptr;
 
 						// Skip through
 						ptr = data->icon->do_ToolTypes[num];
-						while (*ptr == 'ï¿½' || *ptr == 'ï¿½')
+						while (*ptr == '»' || *ptr == '«')
 							++ptr;
 
 						// Find 'Icon by' string
@@ -405,7 +405,7 @@ void icon_build_tooltypes(icon_data *data)
 							ptr = data->author + strlen(data->author) - 1;
 
 							// Strip trailing characters
-							while (*ptr == 'ï¿½' || *ptr == 'ï¿½' || *ptr == ' ')
+							while (*ptr == '«' || *ptr == '»' || *ptr == ' ')
 								*(ptr--) = 0;
 
 							// Get next tooltype
@@ -3303,20 +3303,20 @@ BOOL icon_save(icon_data *data, char *save_name, BOOL err)
 int tooltype_strcmp(char *name1, char *name2, ULONG flags)
 {
 	// Ignore euro quotes if both are authors
-	if ((name1[0] == 'ï¿½' || name1[0] == 'ï¿½') && (name2[0] == 'ï¿½' || name2[0] == 'ï¿½'))
+	if ((name1[0] == '«' || name1[0] == '»') && (name2[0] == '«' || name2[0] == '»'))
 	{
-		while (*name1 == 'ï¿½' || *name1 == 'ï¿½')
+		while (*name1 == '«' || *name1 == '»')
 			++name1;
 
-		while (*name2 == 'ï¿½' || *name2 == 'ï¿½')
+		while (*name2 == '«' || *name2 == '»')
 			++name2;
 	}
 
 	// Author comes before all else
-	else if (name1[0] == 'ï¿½' || name1[0] == 'ï¿½')
+	else if (name1[0] == '«' || name1[0] == '»')
 		return -1;
 
-	else if (name2[0] == 'ï¿½' || name2[0] == 'ï¿½')
+	else if (name2[0] == '«' || name2[0] == '»')
 		return 1;
 
 	// Enabled tooltypes at top when seperated

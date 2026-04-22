@@ -761,11 +761,18 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 	// No encoding
 	else if (comp == 0)
 	{
+		// The uncompressed branch only knows how to write to traditional
+		// planar plane pointers. RTG destinations (chunky P96/CGX bitmaps)
+		// don't have valid Planes[plane] pointers, and there is no
+		// DIF_WRITEPIX-style chunky write path here yet. Guarding on
+		// dest->Planes[plane] keeps a CopyMem from corrupting RTG bitmap
+		// internals. The corresponding RLE branch above already has this
+		// guard (it is wrapped in `(flags & DIF_WRITEPIX || dest->Planes[plane])`).
 		for (row = 0; row < height; row++)
 		{
 			for (plane = 0; plane < planes; plane++)
 			{
-				if (plane < dest_depth)
+				if (plane < dest_depth && dest->Planes[plane])
 					CopyMem(src, (char *)dest->Planes[plane] + bmoffset, bpr);
 				src += bpr;
 			}
