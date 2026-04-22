@@ -617,6 +617,103 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 			}
 		}
 
+		// CyberGraphX fallback (no P96 resident, but CGX is). Mirrors the
+		// pre-P96-migration code path from master so users on CGX-only
+		// installs (older OS3, some PPC accelerators) keep getting
+		// transparent drag masks instead of the opaque-silhouette final
+		// fallback.
+		else if (CyberGfxBase && depth > 8 && GetCyberMapAttr(imagebm, CYBRMATTR_ISCYBERGFX))
+		{
+			UBYTE *image_array;
+
+			// Allocate image array
+			if ((image_array = AllocVec(drag->sprite.Width * drag->sprite.Height * 3, MEMF_CLEAR)))
+			{
+				short mask[2] = {0xff, 0xff}, bit_pos, x_count;
+				long pixfmt, count, num, array_pos, word_pos;
+				ULONG colour0[3];
+				UWORD word_data;
+
+				// Get the palette value of colour 0
+				GetRGB32(drag->viewport->ColorMap, 0, 1, colour0);
+
+				// Calculate mask for pixel format
+				pixfmt = GetCyberMapAttr(imagebm, CYBRMATTR_PIXFMT);
+				if (pixfmt >= PIXFMT_RGB15 && pixfmt <= PIXFMT_BGR15PC)
+				{
+					mask[0] = 0xf8;
+					mask[1] = 0xf8;
+				}
+				else if (pixfmt >= PIXFMT_RGB16 && pixfmt <= PIXFMT_BGR16PC)
+				{
+					mask[0] = 0xf8;
+					mask[1] = 0xfc;
+				}
+
+				// Convert to 8 bit, masked colour
+				colour0[0] &= mask[0];
+				colour0[1] &= mask[1];
+				colour0[2] &= mask[0];
+
+				// Read the image via CGX (unlike the P96 path we trust this
+				// call, mirroring master's pre-migration behaviour)
+				ReadPixelArray(image_array,
+							   0,
+							   0,
+							   drag->sprite.Width * 3,
+							   &drag->drag_rp,
+							   0,
+							   0,
+							   drag->sprite.Width,
+							   drag->sprite.Height,
+							   RECTFMT_RGB);
+
+				// Get number of pixels
+				count = drag->sprite.Width * drag->sprite.Height;
+
+				// Go through image array (identical to the P96 branch)
+				for (num = 0, array_pos = 0, bit_pos = 15, word_data = 0, word_pos = 0, x_count = 0; num < count;
+					 num++, array_pos += 3, --bit_pos)
+				{
+					if (image_array[array_pos + 0] != colour0[0] || image_array[array_pos + 1] != colour0[1] ||
+						image_array[array_pos + 2] != colour0[2])
+					{
+						word_data |= 1 << bit_pos;
+					}
+
+					if ((++x_count) == drag->sprite.Width)
+					{
+						x_count = 0;
+						bit_pos = 0;
+					}
+
+					if (bit_pos == 0)
+					{
+#ifdef __AROS__
+						((UWORD *)drag->bob.ImageShadow)[word_pos++] = AROS_BE2WORD(word_data);
+#else
+						((UWORD *)drag->bob.ImageShadow)[word_pos++] = word_data;
+#endif
+						word_data = 0;
+						bit_pos = 16;
+					}
+				}
+
+				// Get mask size
+				count = RASSIZE((((drag->width + 15) >> 4) << 4), drag->height) >> 1;
+
+				// Fill rest of the mask
+				while (word_pos < count)
+				{
+					((UWORD *)drag->bob.ImageShadow)[word_pos++] = word_data;
+					word_data = 0;
+				}
+
+				FreeVec(image_array);
+				ok = 1;
+			}
+		}
+
 		// (Semi)-normal mode; Allocate temporary bitmap
 		else if ((tempbm = AllocBitMap(drag->sprite.Width, drag->sprite.Height, depth, BMF_CLEAR, 0)))
 		{
@@ -1237,12 +1334,18 @@ BOOL LIBFUNC L_DragCustomOk(REG(a0, struct BitMap *bm), REG(a6, struct MyLibrary
 	data = (struct LibData *)libbase->ml_UserData;
 
 	// Ok to custom drag?
-	// Use p96GetBitMapAttr(P96BMA_ISP96) for RTG detection: BMF_STANDARD
-	// is a graphics.library V45+ flag and unreliable on OS3.1. This keeps
-	// the probe consistent with L_GetDragMask above.
-	if (!(data->flags & LIBDF_NO_CUSTOM_DRAG) && ((struct Library *)GfxBase)->lib_Version >= 39 && P96Base &&
-		p96GetBitMapAttr(bm, P96BMA_ISP96))
-		ok = 1;
+	// Prefer P96's P96BMA_ISP96 probe - it's the reliable RTG check on
+	// OS3.1+ (BMF_STANDARD is a graphics.library V45+ flag and missing
+	// from OS3.1). Fall back to CyberGraphX's ISCYBERGFX probe on
+	// installs that only have CGX resident, so custom drag still gets
+	// enabled there.
+	if (!(data->flags & LIBDF_NO_CUSTOM_DRAG) && ((struct Library *)GfxBase)->lib_Version >= 39)
+	{
+		if (P96Base && p96GetBitMapAttr(bm, P96BMA_ISP96))
+			ok = 1;
+		else if (CyberGfxBase && GetCyberMapAttr(bm, CYBRMATTR_ISCYBERGFX))
+			ok = 1;
+	}
 
 	return ok;
 }
