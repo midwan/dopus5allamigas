@@ -408,8 +408,38 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 						UWORD w = drag->sprite.Width;
 						UWORD h = drag->sprite.Height;
 						BOOL unknown_fmt = FALSE;
+						LONG bpp = 0;
 
-					if (srcmem)
+						// Bytes-per-pixel for the selected RGB format.
+						// We need this up front to validate that the P96
+						// driver's reported row stride is large enough to
+						// cover width*bpp, before the per-row walk reads
+						// past the row. If the format is unknown or the
+						// stride is too tight, skip straight to the
+						// outer CGX/tempbm fallback via unknown_fmt.
+						switch (pixfmt)
+						{
+							case RGBFB_R8G8B8:
+							case RGBFB_B8G8R8:
+								bpp = 3; break;
+							case RGBFB_A8R8G8B8:
+							case RGBFB_R8G8B8A8:
+							case RGBFB_A8B8G8R8:
+							case RGBFB_B8G8R8A8:
+								bpp = 4; break;
+							case RGBFB_R5G6B5:
+							case RGBFB_R5G6B5PC:
+							case RGBFB_B5G6R5PC:
+							case RGBFB_R5G5B5:
+							case RGBFB_R5G5B5PC:
+							case RGBFB_B5G5R5PC:
+								bpp = 2; break;
+							default:
+								unknown_fmt = TRUE;
+								break;
+						}
+
+					if (!unknown_fmt && srcmem && srcbpr > 0 && srcbpr >= (LONG)w * bpp)
 					{
 						for (yy = 0; yy < h; yy++)
 						{
