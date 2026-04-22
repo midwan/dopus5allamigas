@@ -339,6 +339,10 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 		depth = GetBitMapAttr(imagebm, BMA_DEPTH);
 
 		// Do we have Picasso96 and an RTG bitmap with >256 colours?
+		// AROS has no Picasso96API.library; compile the P96 branch out
+		// there so the p96* symbols never reach the AROS linker. The
+		// CGX branch below covers AROS (and any other CGX-only install).
+#if !defined(__AROS__)
 		if (P96Base && depth > 8 && p96GetBitMapAttr(imagebm, P96BMA_ISP96))
 		{
 			UBYTE *image_array;
@@ -616,13 +620,15 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 					FreeVec(image_array);
 			}
 		}
+		else
+#endif /* !__AROS__ */
 
 		// CyberGraphX fallback (no P96 resident, but CGX is). Mirrors the
 		// pre-P96-migration code path from master so users on CGX-only
-		// installs (older OS3, some PPC accelerators) keep getting
+		// installs (older OS3, some PPC accelerators, AROS) keep getting
 		// transparent drag masks instead of the opaque-silhouette final
-		// fallback.
-		else if (CyberGfxBase && depth > 8 && GetCyberMapAttr(imagebm, CYBRMATTR_ISCYBERGFX))
+		// fallback. This is the only RTG branch reached on AROS.
+		if (CyberGfxBase && depth > 8 && GetCyberMapAttr(imagebm, CYBRMATTR_ISCYBERGFX))
 		{
 			UBYTE *image_array;
 
@@ -1341,9 +1347,12 @@ BOOL LIBFUNC L_DragCustomOk(REG(a0, struct BitMap *bm), REG(a6, struct MyLibrary
 	// enabled there.
 	if (!(data->flags & LIBDF_NO_CUSTOM_DRAG) && ((struct Library *)GfxBase)->lib_Version >= 39)
 	{
+#if !defined(__AROS__)
 		if (P96Base && p96GetBitMapAttr(bm, P96BMA_ISP96))
 			ok = 1;
-		else if (CyberGfxBase && GetCyberMapAttr(bm, CYBRMATTR_ISCYBERGFX))
+		else
+#endif
+		if (CyberGfxBase && GetCyberMapAttr(bm, CYBRMATTR_ISCYBERGFX))
 			ok = 1;
 	}
 

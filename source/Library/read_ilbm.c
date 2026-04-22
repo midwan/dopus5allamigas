@@ -687,7 +687,10 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 			// Writepixel?
 			if (flags & DIF_WRITEPIX)
 			{
-				// P96 (preferred on modern setups: OS3.2+, MorphOS, OS4)
+				// P96 (preferred on modern setups: OS3.2+, MorphOS, OS4).
+				// Compile out on AROS - no Picasso96API.library there, so
+				// the p96* call would leave an unresolved symbol at link.
+#if !defined(__AROS__)
 				if (P96Base)
 				{
 					struct RenderInfo ri;
@@ -697,10 +700,12 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 					ri.RGBFormat = (planes == 24) ? RGBFB_R8G8B8 : RGBFB_CLUT;
 					p96WritePixelArray(&ri, 0, 0, &rp, 0, row, width, 1);
 				}
+				else
+#endif
 
 				// CyberGraphX fallback for CGX-only installs (older OS3,
-				// PPC accelerators without Picasso96 layer)
-				else if (CyberGfxBase)
+				// PPC accelerators without Picasso96 layer, AROS)
+				if (CyberGfxBase)
 				{
 					WritePixelArray(buffer,
 									0,
