@@ -121,7 +121,6 @@ struct LocaleIFace *ILocale = NULL;
 // struct ConsoleIFace 	*IConsole = NULL;
 struct CommoditiesIFace *ICommodities = NULL;
 struct GraphicsIFace *IGraphics = NULL;
-struct P96IFace *IP96 = NULL;
 struct IntuitionIFace *IIntuition = NULL;
 struct GadToolsIFace *IGadTools = NULL;
 struct AslIFace *IAsl = NULL;
@@ -158,7 +157,6 @@ struct RxsLib *RexxSysBase = NULL;
 #endif
 
 struct Library *CxBase = NULL;
-struct Library *P96Base = NULL;
 struct Library *GadToolsBase = NULL;
 struct Library *AslBase = NULL;
 struct Library *LayersBase = NULL;
@@ -827,14 +825,6 @@ static BPTR LIBFUNC LibClose(REG(a6, struct LibraryHeader *base))
 ULONG freeBase(struct LibraryHeader *lib)
 {
 	UserLibCleanup();
-
-	// close Picasso96API.library
-	if (P96Base != NULL)
-	{
-		DROPINTERFACE(IP96);
-		CloseLibrary((struct Library *)P96Base);
-		P96Base = NULL;
-	}
 
 	// close newicon.library
 	/*if(NewIconBase != NULL)
