@@ -826,22 +826,33 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 						else
 							ptr = (char *)buffer;
 
+						// ILBM rows are padded to a 16-bit boundary, so bpr can
+						// cover more bits than `width`. Only decode the leading
+						// `width` pixels per plane; consume but ignore any
+						// trailing padding bits so they don't poison the
+						// chunky buffer beyond pixel `width`.
 						for (col = 0; col < bpr; col++)
 						{
 							register unsigned char val;
-							register short a;
+							register short a, bits;
 
 							val = *src++;
 
+							bits = (short)(width - col * 8);
+							if (bits > 8)
+								bits = 8;
+							else if (bits < 0)
+								bits = 0;
+
 							if (planes == 24)
 							{
-								for (a = 0; a < 8; a++, ptr += 3)
+								for (a = 0; a < bits; a++, ptr += 3)
 									if (val & (1 << (7 - a)))
 										*ptr |= 1 << pnum;
 							}
 							else
 							{
-								for (a = 0; a < 8; a++, ptr++)
+								for (a = 0; a < bits; a++, ptr++)
 									if (val & (1 << (7 - a)))
 										*ptr |= 1 << plane;
 							}
