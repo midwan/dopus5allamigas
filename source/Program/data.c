@@ -54,6 +54,7 @@ struct CommoditiesIFace *ICommodities = NULL;
 struct ConsoleIFace *IConsole = NULL;
 struct GraphicsIFace *IGraphics = NULL;
 struct P96IFace *IP96 = NULL;
+struct CyberGfxIFace *ICyberGfx = NULL;
 struct IntuitionIFace *IIntuition = NULL;
 struct InputIFace *IInput = NULL;
 struct GadToolsIFace *IGadTools = NULL;
@@ -113,6 +114,10 @@ struct Device *ConsoleDevice = NULL;
 #endif
 struct Library *AmigaGuideBase = NULL;
 struct Library *P96Base = NULL;
+/* Kept alongside P96Base: backdrop_render.c on MorphOS still uses
+ * BltBitMapRastPortAlpha / ProcessPixelArray, which live in
+ * cybergraphics.library (no P96 equivalent). */
+struct Library *CyberGfxBase = NULL;
 struct NewIconBase *NewIconBase = NULL;
 struct Library *muBase = NULL;
 

@@ -394,6 +394,19 @@ void startup_open_libraries()
 #endif
 	}
 
+	// Also open cybergraphics.library if resident. backdrop_render.c's
+	// MorphOS-only alpha / tint path calls BltBitMapRastPortAlpha and
+	// ProcessPixelArray, which live in cybergraphics.library and have no
+	// Picasso96 equivalent. On CGX-only installs this is also what keeps
+	// the library-side CGX fallback (read_ilbm / drag_routines) working.
+	if (FindName(&SysBase->LibList, "cybergraphics.library"))
+	{
+		CyberGfxBase = OpenLibrary("cybergraphics.library", 0);
+#ifdef __amigaos4__
+		ICyberGfx = (struct CyberGfxIFace *)GetInterface(CyberGfxBase, "main", 1, NULL);
+#endif
+	}
+
 	// Get input.device base
 #ifdef __AROS__
 	input_req.io_Message.mn_Length = sizeof(input_req);
