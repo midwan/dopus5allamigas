@@ -1,3 +1,19 @@
+[dopus5allamigas 5.98] Finish the tooltip regression fix (backdrop side)
+Follow-up to the tooltip fix in 5.97. That fix only covered the lister's
+own IDCMP handler; the backdrop IDCMP handler (used in icon view, same
+window handle as the lister) had the same pattern and was also stripping
+IDCMP_INTUITICKS on every idle tick, gadget-up, mouse-button click, and
+drag end. As the primary handler in icon mode, it re-killed the hover
+timer as soon as any click or even an idle tick arrived, so returning
+to name mode left tooltips permanently disabled.
+
+Removed the five IDCMP_INTUITICKS strip calls in backdrop_idcmp.c
+(idle-tick, GADGETUP, MOUSEBUTTONS) and backdrop_drag.c (rubberband end,
+drag end). The mask stays subscribed for the lifetime of the window;
+the tick handler still short-circuits (tooltip_tick returns early when
+the toolbar isn't valid) so the cost is a no-op ~10Hz IDCMP message.
+2026-04-22 by Dimitris Panokostas <midwan@gmail.com>
+
 [dopus5allamigas 5.97] Window-close leak + tooltip regression fixes
 Two targeted fixes to the lister window machinery, unrelated to each
 other but both worth shipping together:
