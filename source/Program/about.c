@@ -33,8 +33,11 @@ char *_version_str = "\0$VER: DirectoryOpus " PROG_STRING;
 // Show about requester
 void show_about(struct Screen *screen, IPCData *ipc)
 {
-	static const char about_1[] = COPYRIGHT;
-	static const char about_2[] = "Written by Jonathan Potter";
+	// Copyright is split across two lines here because the full COPYRIGHT
+	// macro (used verbatim for library/module $VER strings) no longer
+	// fits inside the About window's fixed-width copyright area.
+	static const char about_1[] = "(c) 1993-2012 Jonathan Potter & GP Software";
+	static const char about_2[] = "(c) 2023-2026 Dimitris Panokostas";
 
 	char buf[80], *buffer;
 	struct Library *ModuleBase;
