@@ -50,6 +50,14 @@
 #include <proto/layers.h>
 #include <proto/rexxsyslib.h>
 #include <proto/Picasso96.h>
+/* cybergraphics.library kept as a fallback for systems without Picasso96;
+ * 24-bit ILBM write path in read_ilbm.c uses it when P96Base is NULL.
+ * MorphOS / AROS need the cybergraphx header explicitly for RECTFMT_*
+ * constants; on OS3 / OS4 the proto header pulls them in. */
+#if defined(__MORPHOS__) || defined(__AROS__)
+	#include <cybergraphx/cybergraphics.h>
+#endif
+#include <proto/cybergraphics.h>
 
 #ifdef __amigaos4__
 	#include <dos/obsolete.h>

@@ -144,6 +144,7 @@ struct LocaleIFace *ILocale = NULL;
 // struct ConsoleIFace 	*IConsole = NULL;
 struct GraphicsIFace *IGraphics = NULL;
 struct P96IFace *IP96 = NULL;
+struct CyberGfxIFace *ICyberGfx = NULL;
 struct IntuitionIFace *IIntuition = NULL;
 struct GadToolsIFace *IGadTools = NULL;
 struct AslIFace *IAsl = NULL;
@@ -177,6 +178,10 @@ struct RxsLib *RexxSysBase = NULL;
 #endif
 
 struct Library *P96Base = NULL;
+/* cybergraphics.library kept as a fallback for systems without Picasso96
+ * (older OS3 setups, PPC accelerators with CyberStorm+CGX, etc.). Opened
+ * below only if resident; read_ilbm.c prefers P96 and falls back to this. */
+struct Library *CyberGfxBase = NULL;
 struct Library *GadToolsBase = NULL;
 struct Library *AslBase = NULL;
 struct Library *LayersBase = NULL;
@@ -1003,6 +1008,14 @@ ULONG freeBase(struct MyLibrary *lib)
 		P96Base = NULL;
 	}
 
+	// close cybergraphics.library (fallback path for read_ilbm.c)
+	if (CyberGfxBase != NULL)
+	{
+		DROPINTERFACE(ICyberGfx);
+		CloseLibrary((struct Library *)CyberGfxBase);
+		CyberGfxBase = NULL;
+	}
+
 	// close newicon.library
 	if (NewIconBase != NULL)
 	{
@@ -1225,6 +1238,19 @@ int UserLibInit(REG(a6, struct MyLibrary *libbase))
 		P96Base = OpenLibrary("Picasso96API.library", 2);
 #ifdef __amigaos4__
 		GETINTERFACE(IP96, P96Base);
+#endif
+	}
+
+	// Also check for cybergraphics.library - used as a fallback in the
+	// 24-bit ILBM write path when P96 is unavailable (older OS3 setups,
+	// PPC accelerators with CGX but no Picasso96, etc.). On most modern
+	// setups P96 ships a cybergraphics compat wrapper so both are resident
+	// and P96 wins; the fallback only matters on CGX-only installs.
+	if (FindName(&((struct ExecBase *)SysBase)->LibList, "cybergraphics.library"))
+	{
+		CyberGfxBase = OpenLibrary("cybergraphics.library", 0);
+#ifdef __amigaos4__
+		GETINTERFACE(ICyberGfx, CyberGfxBase);
 #endif
 	}
 

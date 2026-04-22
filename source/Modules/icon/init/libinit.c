@@ -128,7 +128,7 @@ struct UtilityIFace *IUtility = NULL;
 struct LocaleIFace *ILocale = NULL;
 // struct ConsoleIFace 	*IConsole = NULL;
 struct GraphicsIFace *IGraphics = NULL;
-struct P96IFace *IP96 = NULL;
+struct CyberGfxIFace *ICyberGfx = NULL;
 struct IntuitionIFace *IIntuition = NULL;
 struct GadToolsIFace *IGadTools = NULL;
 struct AslIFace *IAsl = NULL;
@@ -164,7 +164,10 @@ struct LocaleBase *LocaleBase = NULL;
 struct RxsLib *RexxSysBase = NULL;
 #endif
 
-struct Library *P96Base = NULL;
+// Icon module keeps its own CyberGfxBase (not P96) because the MorphOS-only
+// BltBitMapRastPortAlpha path in icon.c lives in cybergraphics.library;
+// Picasso96 has no equivalent call.
+struct Library *CyberGfxBase = NULL;
 struct Library *GadToolsBase = NULL;
 struct Library *AslBase = NULL;
 struct Library *LayersBase = NULL;
@@ -835,12 +838,12 @@ ULONG freeBase(struct LibraryHeader *lib)
 {
 	UserLibCleanup();
 
-	// close Picasso96API.library
-	if (P96Base != NULL)
+	// close cybergraphics.library (MorphOS alpha-blit path in icon.c)
+	if (CyberGfxBase != NULL)
 	{
-		DROPINTERFACE(IP96);
-		CloseLibrary((struct Library *)P96Base);
-		P96Base = NULL;
+		DROPINTERFACE(ICyberGfx);
+		CloseLibrary((struct Library *)CyberGfxBase);
+		CyberGfxBase = NULL;
 	}
 
 	// close newicon.library
@@ -1020,7 +1023,8 @@ int UserLibInit()
 	}
 
 #if defined(__MORPHOS__)
-	if ((P96Base = OpenLibrary("Picasso96API.library", 2)) == NULL)
+	// Needed for BltBitMapRastPortAlpha in icon.c; P96 has no equivalent.
+	if ((CyberGfxBase = OpenLibrary("cybergraphics.library", 51)) == NULL)
 		return 10;
 #endif
 

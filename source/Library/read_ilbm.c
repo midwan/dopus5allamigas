@@ -495,15 +495,18 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 	if (height > dest_rows)
 		height = dest_rows;
 
-	// Allocate temporary bitmap if WritePixel needed
+	// Allocate temporary bitmap if WritePixel needed.
+	// Prefer P96's WritePixelArray path; if P96 is not resident fall back
+	// to cybergraphics.library's WritePixelArray; otherwise use a planar
+	// temp bitmap + WritePixelLine8 (cannot carry 24-bit data).
 	if (flags & DIF_WRITEPIX)
 	{
-		// P96, 24bit?
-		if (P96Base && planes == 24)
+		// Hardware RTG (P96 or CGX), 24bit?
+		if ((P96Base || CyberGfxBase) && planes == 24)
 			buffer = AllocVec((bufsize = bpr * 24), 0);
 
-		// Otherwise
-		else if ((P96Base || (tempbm = L_NewBitMap(width, 1, dest_depth, 0, 0))))
+		// Otherwise, 8bpp path via RTG write or planar tempbm
+		else if ((P96Base || CyberGfxBase || (tempbm = L_NewBitMap(width, 1, dest_depth, 0, 0))))
 			buffer = AllocVec((bufsize = bpr << 3), 0);
 
 		// Got buffer?
@@ -684,10 +687,9 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 			// Writepixel?
 			if (flags & DIF_WRITEPIX)
 			{
-				// P96?
+				// P96 (preferred on modern setups: OS3.2+, MorphOS, OS4)
 				if (P96Base)
 				{
-					// Write pixel array
 					struct RenderInfo ri;
 					ri.Memory = buffer;
 					ri.BytesPerRow = (planes == 24) ? width * 3 : width;
@@ -696,7 +698,23 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 					p96WritePixelArray(&ri, 0, 0, &rp, 0, row, width, 1);
 				}
 
-				// Write to bitmap
+				// CyberGraphX fallback for CGX-only installs (older OS3,
+				// PPC accelerators without Picasso96 layer)
+				else if (CyberGfxBase)
+				{
+					WritePixelArray(buffer,
+									0,
+									0,
+									width,
+									&rp,
+									0,
+									row,
+									width,
+									1,
+									(planes == 24) ? RECTFMT_RGB : RECTFMT_LUT8);
+				}
+
+				// Planar tempbm path (no RTG library available)
 				else
 					WritePixelLine8(&rp, 0, row, width, buffer, &temprp);
 			}
