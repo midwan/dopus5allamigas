@@ -999,9 +999,8 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 		// End a direct edit
 		lister_end_edit(lister, 0);
 
-		// Clear down gadget
+		// Clear down gadget (IDCMP_INTUITICKS stays on for hover tracking)
 		lister->down_gadget = 0;
-		ModifyIDCMP(lister->window, lister->window->IDCMPFlags & ~IDCMP_INTUITICKS);
 		lister->window->Flags &= ~WFLG_REPORTMOUSE;
 
 		// Look at GadgetID
