@@ -67,7 +67,10 @@ $(NAME) : all
 endif
 ###########################################################
 # Sets archive type & version.
-REVISION := 95
+# REVISION is derived from PROG_REVISION in Include/dopus/version.h so the
+# release archive filename (Dopus5_<REV>_<platform>.lha) always matches the
+# binary's reported version. Bumping the version.h value is the only step.
+REVISION := $(shell awk '/^\#define[ \t]+PROG_REVISION/ {print $$3; exit}' Include/dopus/version.h)
 ifeq ($(debug), no)
 TYPE :=
 VERSION := _$(REVISION)_
