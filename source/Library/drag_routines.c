@@ -386,14 +386,28 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 				// Read the image via direct bitmap memory access. p96ReadPixelArray
 				// has proven unreliable on layerless rastports on some OS3 P96
 				// installations, so we do the format conversion ourselves.
-				if ((lock = p96LockBitMap(imagebm, NULL, 0)))
+				//
+				// Pass a struct RenderInfo to p96LockBitMap and read Memory /
+				// BytesPerRow from that buffer. The P96 autodoc forbids calling
+				// any P96 API (including p96GetBitMapAttr) on the same bitmap
+				// while a lock is held - touched bitmaps are locked internally,
+				// so a re-entrant query risks dead-lock or blocking the screen
+				// switcher mid-drag.
 				{
-					UBYTE *srcmem = (UBYTE *)p96GetBitMapAttr(imagebm, P96BMA_MEMORY);
-					LONG srcbpr = p96GetBitMapAttr(imagebm, P96BMA_BYTESPERROW);
-					LONG yy, xx;
-					UWORD w = drag->sprite.Width;
-					UWORD h = drag->sprite.Height;
-					BOOL unknown_fmt = FALSE;
+					struct RenderInfo ri;
+					ri.Memory = NULL;
+					ri.BytesPerRow = 0;
+					ri.pad = 0;
+					ri.RGBFormat = RGBFB_NONE;
+
+					if ((lock = p96LockBitMap(imagebm, (UBYTE *)&ri, sizeof(ri))))
+					{
+						UBYTE *srcmem = (UBYTE *)ri.Memory;
+						LONG srcbpr = ri.BytesPerRow;
+						LONG yy, xx;
+						UWORD w = drag->sprite.Width;
+						UWORD h = drag->sprite.Height;
+						BOOL unknown_fmt = FALSE;
 
 					if (srcmem)
 					{
@@ -575,7 +589,8 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 							got_pixels = TRUE;
 					}
 
-					p96UnlockBitMap(imagebm, lock);
+						p96UnlockBitMap(imagebm, lock);
+					}
 				}
 
 				// Only build the mask if we actually captured pixel data.
