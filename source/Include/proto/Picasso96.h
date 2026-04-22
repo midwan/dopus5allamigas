@@ -27,11 +27,18 @@
     #include <libraries/Picasso96.h>
 
     #ifdef __GNUC__
-        #ifdef __PPC__
-            #include <ppcinline/Picasso96.h>
-        #else
-            #include <inline/Picasso96.h>
-        #endif
+        #ifndef __AROS__
+            /* AROS uses native C calling conventions; the m68k-style inline
+             * wrappers below are wrong for i386-aros / arm-aros. AROS builds
+             * rely on the plain prototypes from <clib/Picasso96_protos.h>
+             * together with whatever AROS-side Picasso96 implementation is
+             * linked at build time. */
+            #ifdef __PPC__
+                #include <ppcinline/Picasso96.h>
+            #else
+                #include <inline/Picasso96.h>
+            #endif
+        #endif /* !__AROS__ */
     #else
         #include <pragmas/Picasso96_pragmas.h>
     #endif

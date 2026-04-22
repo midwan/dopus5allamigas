@@ -351,6 +351,7 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 				ULONG colour0[3];
 				UWORD word_data;
 				LONG lock;
+				BOOL got_pixels = FALSE;
 
 				// Get the palette value of colour 0
 				GetRGB32(drag->viewport->ColorMap, 0, 1, colour0);
@@ -526,7 +527,12 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 									break;
 
 								default:
-									// Unknown format - p96ReadPixelArray as fallback
+									// Unknown format - ask the P96 driver to
+									// unpack it for us. p96ReadPixelArray is
+									// void-return so we cannot verify it, but
+									// the bitmap is locked and srcmem is
+									// valid here, so the call has a real
+									// chance of doing useful work.
 									{
 										struct RenderInfo ri;
 										ri.Memory = image_array;
@@ -539,65 +545,75 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 									break;
 							}
 						}
+
+						got_pixels = TRUE;
 					}
 
 					p96UnlockBitMap(imagebm, lock);
 				}
 
-				// Get number of pixels
-				count = drag->sprite.Width * drag->sprite.Height;
-
-				// Go through image array
-				for (num = 0, array_pos = 0, bit_pos = 15, word_data = 0, word_pos = 0, x_count = 0; num < count;
-					 num++, array_pos += 3, --bit_pos)
+				// Only build the mask if we actually captured pixel data.
+				// Otherwise image_array is still zero-fill from MEMF_CLEAR
+				// and the colour0 compare below would produce a bogus mask
+				// (invisible or unmasked drag depending on colour0).
+				if (got_pixels)
 				{
-					// See if colour is not the background colour
-					if (image_array[array_pos + 0] != colour0[0] || image_array[array_pos + 1] != colour0[1] ||
-						image_array[array_pos + 2] != colour0[2])
-					{
-						// Set bit in word data
-						word_data |= 1 << bit_pos;
-					}
+					// Get number of pixels
+					count = drag->sprite.Width * drag->sprite.Height;
 
-					// Reached the end of a word?
-					if ((++x_count) == drag->sprite.Width)
+					// Go through image array
+					for (num = 0, array_pos = 0, bit_pos = 15, word_data = 0, word_pos = 0, x_count = 0; num < count;
+						 num++, array_pos += 3, --bit_pos)
 					{
-						// Reset count
-						x_count = 0;
-						bit_pos = 0;
-					}
+						// See if colour is not the background colour
+						if (image_array[array_pos + 0] != colour0[0] || image_array[array_pos + 1] != colour0[1] ||
+							image_array[array_pos + 2] != colour0[2])
+						{
+							// Set bit in word data
+							word_data |= 1 << bit_pos;
+						}
 
-					// Reached end of a mask word?
-					if (bit_pos == 0)
-					{
-						// Set word in mask
+						// Reached the end of a word?
+						if ((++x_count) == drag->sprite.Width)
+						{
+							// Reset count
+							x_count = 0;
+							bit_pos = 0;
+						}
+
+						// Reached end of a mask word?
+						if (bit_pos == 0)
+						{
+							// Set word in mask
 #ifdef __AROS__
-						((UWORD *)drag->bob.ImageShadow)[word_pos++] = AROS_BE2WORD(word_data);
+							((UWORD *)drag->bob.ImageShadow)[word_pos++] = AROS_BE2WORD(word_data);
 #else
-						((UWORD *)drag->bob.ImageShadow)[word_pos++] = word_data;
+							((UWORD *)drag->bob.ImageShadow)[word_pos++] = word_data;
 #endif
 
-						// Reset word
-						word_data = 0;
-						bit_pos = 16;
+							// Reset word
+							word_data = 0;
+							bit_pos = 16;
+						}
 					}
+
+					// Get mask size
+					count = RASSIZE((((drag->width + 15) >> 4) << 4), drag->height) >> 1;
+
+					// Fill rest of the mask
+					while (word_pos < count)
+					{
+						((UWORD *)drag->bob.ImageShadow)[word_pos++] = word_data;
+						word_data = 0;
+					}
+
+					// Set ok flag
+					ok = 1;
 				}
 
-				// Get mask size
-				count = RASSIZE((((drag->width + 15) >> 4) << 4), drag->height) >> 1;
-
-				// Fill rest of the mask
-				while (word_pos < count)
-				{
-					((UWORD *)drag->bob.ImageShadow)[word_pos++] = word_data;
-					word_data = 0;
-				}
-
-				// Free image array
-				FreeVec(image_array);
-
-				// Set ok flag
-				ok = 1;
+				// Free image array (released either way - mask built or not)
+				if (image_array)
+					FreeVec(image_array);
 			}
 		}
 
