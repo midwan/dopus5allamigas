@@ -146,9 +146,16 @@ BOOL backdrop_idcmp(BackdropInfo *info, struct IntuiMessage *msg, unsigned short
 			// No gadget down?
 			if (!info->down_gadget)
 			{
-				// Turn ticks off if not dragging
-				if (!(info->flags & (BDIF_DRAGGING | BDIF_RUBBERBAND)))
-					ModifyIDCMP(info->window, info->window->IDCMPFlags & ~IDCMP_INTUITICKS);
+				// IDCMP_INTUITICKS must stay subscribed: the lister's toolbar
+				// tooltip timer runs off it. Stripping it here (backdrop is
+				// the primary handler in icon view) permanently killed the
+				// tooltip once the user returned to name mode.
+				//
+				// Also let the dispatcher fall through to lister_process_msg
+				// so the tooltip tick handler runs in icon/icon-action mode
+				// too - otherwise hovering the toolbar in Icon Action never
+				// fires tooltip_tick because backdrop_idcmp returned "handled".
+				handled = 0;
 				break;
 			}
 
@@ -217,9 +224,9 @@ BOOL backdrop_idcmp(BackdropInfo *info, struct IntuiMessage *msg, unsigned short
 
 	// Gadget up
 	case IDCMP_GADGETUP:
+		// IDCMP_INTUITICKS stays subscribed for lister tooltip hover tracking.
 		info->down_gadget = 0;
 		info->flags &= ~BDIF_IGNORE_GADGET;
-		ModifyIDCMP(info->window, info->window->IDCMPFlags & ~IDCMP_INTUITICKS);
 
 		// Look at gadget ID
 		switch (((struct Gadget *)msg->IAddress)->GadgetID)
@@ -248,10 +255,9 @@ BOOL backdrop_idcmp(BackdropInfo *info, struct IntuiMessage *msg, unsigned short
 		if (busy)
 			break;
 
-		// Clear down gadget
+		// Clear down gadget (IDCMP_INTUITICKS stays on for hover tracking)
 		info->down_gadget = 0;
 		info->flags &= ~BDIF_IGNORE_GADGET;
-		ModifyIDCMP(info->window, info->window->IDCMPFlags & ~IDCMP_INTUITICKS);
 
 		// Handle button
 		handled = backdrop_handle_button(info, msg, flags);

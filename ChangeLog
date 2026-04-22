@@ -1,3 +1,75 @@
+[dopus5allamigas 5.98] Finish the tooltip regression fix (backdrop side)
+Follow-up to the tooltip fix in 5.97. That fix only covered the lister's
+own IDCMP handler; the backdrop IDCMP handler (used in icon view, same
+window handle as the lister) had the same pattern and was also stripping
+IDCMP_INTUITICKS on every idle tick, gadget-up, mouse-button click, and
+drag end. As the primary handler in icon mode, it re-killed the hover
+timer as soon as any click or even an idle tick arrived, so returning
+to name mode left tooltips permanently disabled.
+
+Removed the five IDCMP_INTUITICKS strip calls in backdrop_idcmp.c
+(idle-tick, GADGETUP, MOUSEBUTTONS) and backdrop_drag.c (rubberband end,
+drag end). The mask stays subscribed for the lifetime of the window;
+the tick handler still short-circuits (tooltip_tick returns early when
+the toolbar isn't valid) so the cost is a no-op ~10Hz IDCMP message.
+2026-04-22 by Dimitris Panokostas <midwan@gmail.com>
+
+[dopus5allamigas 5.97] Window-close leak + tooltip regression fixes
+Two targeted fixes to the lister window machinery, unrelated to each
+other but both worth shipping together:
+
+- Fix a per-open memory leak on the system zoom gadget. lister_open_window
+  hijacks the screen's zoom gadget by clearing GTYP_SYSGADGET |
+  GTYP_SYSTYPEMASK and setting GadgetID = GAD_ZOOM so our IDCMP handler
+  can route it. Intuition only frees gadgets it still recognises as
+  system gadgets, so after this mutation the storage leaked on every
+  open/close cycle. The original GadgetType and GadgetID are now saved
+  on open and restored immediately before CloseWindow so Intuition can
+  clean up normally; custom IDCMP routing stays intact for the window's
+  lifetime.
+
+- Fix tooltips silently disappearing after any gadget click. The
+  IDCMP_GADGETUP handler was stripping IDCMP_INTUITICKS from the
+  window's IDCMP mask on every release, which turned off the toolbar
+  tooltip hover timer for the remaining lifetime of the lister. A
+  freshly opened Name-mode lister showed tooltips (INTUITICKS is in
+  the initial IDCMP mask), but the moment the user clicked anything -
+  including the menu-driven Icon<->Name mode switch - they stopped.
+  GADGETUP now keeps INTUITICKS subscribed, matching the intent already
+  documented in the neighbouring IDCMP_MOUSEBUTTONS path.
+2026-04-22 by Dimitris Panokostas <midwan@gmail.com>
+
+[dopus5allamigas 5.96] Leak/resource fixes and Galileo UI/UX ports
+Program bumps to 5.96, library and dopus5.module to v73r1, commands to
+v65r1, copyright notice extended to 2026. Groups two bodies of work
+ported from the Hagbard-Celin/galileo fork plus one fix found during
+review:
+
+Leak and resource fixes:
+- ViewFont: save and restore PROGDIR: lock on exit (font.c/font.h)
+- clock_task: free ScreenDrawInfo after use
+- start_menu: free ScreenDrawInfo on hide
+- environment: free outer lister node in FreeListerNode
+- cleanup/event_loop/ipc/images/toolbar/filetype: plug small leaks
+  around pool/port/drawinfo ownership on failure and teardown paths
+Covers all 10 v0.1 + v0.2 leak fixes from Galileo plus one additional
+OpenListerNode wrapper leak found during review. Copyright headers on
+each affected file were extended to credit the DOPUS5 Open Source Team
+and the dopus5allamigas fork.
+
+UI/UX fixes:
+- lister/lister_idcmp: do not track titlebar-minimised listers as
+  GUI->current_lister (Galileo faf369c). Prevents actions targeting a
+  lister the user can no longer see.
+- lister_function: ActivateWindow after Lock/Unlock Position reopens
+  the lister (Galileo 5564d91). Restores focus that the close+open
+  cycle drops.
+- lister_window: parent button gains GACT_LEFTBORDER so Intuition
+  treats it as part of the border (Galileo 33041d4).
+- boopsi: scrollbar gadgets gain GA_RightBorder / GA_BottomBorder on
+  all six NewObject sites in L_AddScrollBars for the same reason.
+2026-04-22 by Dimitris Panokostas <midwan@gmail.com>
+
 [dopus5allamigas 5.95] Fix MorphOS startup hang in module discovery
 Converted the five modules that stored functions past index 0 in a
 separate `more_functions[]`/`module_func` global (themes, ftp, misc,

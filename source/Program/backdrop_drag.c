@@ -164,12 +164,10 @@ BOOL backdrop_stop_drag(BackdropInfo *info)
 		// Erase box
 		backdrop_rubber_band(info, 0);
 
-		// Clear flag and mouse reporting
+		// Clear flag and mouse reporting (IDCMP_INTUITICKS stays on for
+		// lister toolbar tooltip hover tracking)
 		info->flags &= ~BDIF_RUBBERBAND;
 		info->window->Flags &= ~(WFLG_REPORTMOUSE | WFLG_RMBTRAP);
-
-		// Turn ticks off
-		ModifyIDCMP(info->window, info->window->IDCMPFlags & ~IDCMP_INTUITICKS);
 
 		// If icon positioning, unlock layers
 		if (GUI->flags & GUIF_DRAGGING)
@@ -254,11 +252,9 @@ BOOL backdrop_stop_drag(BackdropInfo *info)
 		// Clear drag flag
 		GUI->flags &= ~GUIF_DRAGGING;
 
-		// Start menu actions, stop mouse reporting
+		// Start menu actions, stop mouse reporting (IDCMP_INTUITICKS stays
+		// on for lister toolbar tooltip hover tracking)
 		info->window->Flags &= ~(WFLG_RMBTRAP | WFLG_REPORTMOUSE);
-
-		// Turn ticks off
-		ModifyIDCMP(info->window, info->window->IDCMPFlags & ~IDCMP_INTUITICKS);
 
 		// Unlock backdrop list
 		unlock_listlock(&info->objects);
