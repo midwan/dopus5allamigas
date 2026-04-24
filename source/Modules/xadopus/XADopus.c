@@ -229,10 +229,17 @@ void BuildTree(struct xoData *data)
 			xadConvertDates(
 				XAD_DATEXADDATE, (IPTR)&xfi->xfi_Date, XAD_GETDATEDATESTAMP, (IPTR)&tree->fib.fib_Date, TAG_DONE);
 			tree->fib.fib_Protection = xfi->xfi_Protection;
-			if (xfi->xfi_Flags & XADFIF_DIRECTORY)
-				tree->fib.fib_DirEntryType = 1;
-			else
-				tree->fib.fib_DirEntryType = -1;
+			/* Detect directory entries: use XADFIF_DIRECTORY flag, but also
+			   check for trailing '/' as a fallback for non-Amiga LHA archives
+			   (e.g. created on Linux) where xadMaster may not set the flag. */
+			{
+				ULONG namelen = strlen(xfi->xfi_FileName);
+				if ((xfi->xfi_Flags & XADFIF_DIRECTORY) ||
+					(namelen > 0 && xfi->xfi_FileName[namelen - 1] == '/'))
+					tree->fib.fib_DirEntryType = 1;
+				else
+					tree->fib.fib_DirEntryType = -1;
+			}
 			tree->fib.fib_Size = xfi->xfi_Size;
 			tree->fib.fib_OwnerUID = xfi->xfi_OwnerUID;
 			tree->fib.fib_OwnerGID = xfi->xfi_OwnerGID;
@@ -737,8 +744,12 @@ void _copy(struct xoData *data, char *name, char *Dest, BOOL CopyAs)
 												  PW_FileSize,
 												  xfi->xfi_Size,
 												  TAG_DONE);
-							if (!(xfi->xfi_Flags & (XADFIF_INFOTEXT | XADFIF_NOFILENAME)) &&
-								(xfi->xfi_Flags & XADFIF_DIRECTORY))
+							if (xfi->xfi_Flags & (XADFIF_INFOTEXT | XADFIF_NOFILENAME))
+							{
+							}
+							else if ((xfi->xfi_Flags & XADFIF_DIRECTORY) ||
+									 (strlen(xfi->xfi_FileName) > 0 &&
+									  xfi->xfi_FileName[strlen(xfi->xfi_FileName) - 1] == '/'))
 							{
 								if ((dir = CreateDir(TreeName)))
 									UnLock(dir);
@@ -1010,7 +1021,9 @@ BOOL ExtractF(struct xoData *data)
 
 		if (xfi->xfi_Flags & (XADFIF_INFOTEXT | XADFIF_NOFILENAME))
 			;
-		else if (xfi->xfi_Flags & XADFIF_DIRECTORY)
+		else if ((xfi->xfi_Flags & XADFIF_DIRECTORY) ||
+				 (strlen(xfi->xfi_FileName) > 0 &&
+				  xfi->xfi_FileName[strlen(xfi->xfi_FileName) - 1] == '/'))
 		{
 			if ((dir = CreateDir(FileName)))
 				UnLock(dir);
