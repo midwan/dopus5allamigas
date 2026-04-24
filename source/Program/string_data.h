@@ -2380,7 +2380,7 @@ static const char CatCompBlock[] = {"\x00\x00\x00\x00\x00\x0C" MSG_ABORTED_STR
 									"\x00"
 									"\x00\x00\x0E\x16\x00\x1C" MSG_MEMORY_COUNTER_LOC_CLOCK_STR
 									"\x00"
-									"\x00\x00\x0E\x17\x00\x0B" MSG_MEMORY_FREE_OS4_STR
+									"\x00\x00\x0E\x17\x00\x0C" MSG_MEMORY_FREE_OS4_STR
 									"\x00"
 									"\x00\x00\x0E\x74\x00\x06" MSG_LISTER_STATUS_SOURCE_STR
 									"\x00\x00"
