@@ -23,6 +23,9 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopus.h"
 
+// Title buffer size (allocated in lister.c)
+#define LISTER_TITLE_SIZE 300
+
 // Display disk name and size
 // Called from the LISTER PROCESS
 void lister_show_name(Lister *lister)
@@ -38,22 +41,22 @@ void lister_show_name(Lister *lister)
 
 	// Custom title?
 	if (buffer->buf_CustomTitle[0])
-		strcpy(lister->title, buffer->buf_CustomTitle);
+		stccpy(lister->title, buffer->buf_CustomTitle, LISTER_TITLE_SIZE);
 
 	// If invalid path
 	else if (!(buffer->flags & DWF_VALID))
 	{
 		// Save status?
 		if (buffer->flags & DWF_SAVE_STATUS)
-			strcpy(lister->title, buffer->last_status);
+			stccpy(lister->title, buffer->last_status, LISTER_TITLE_SIZE);
 
 		// Device list?
 		else if (buffer->more_flags & DWF_DEVICE_LIST)
-			strcpy(lister->title, GetString(&locale, MSG_DEVICE_LIST));
+			stccpy(lister->title, GetString(&locale, MSG_DEVICE_LIST), LISTER_TITLE_SIZE);
 
 		// Cache list?
 		else if (buffer->more_flags & DWF_CACHE_LIST)
-			strcpy(lister->title, GetString(&locale, MSG_BUFFER_LIST));
+			stccpy(lister->title, GetString(&locale, MSG_BUFFER_LIST), LISTER_TITLE_SIZE);
 
 		// Invalid
 		else
@@ -71,12 +74,12 @@ void lister_show_name(Lister *lister)
 		// Full path in title?
 		if (environment->env->lister_options & LISTEROPTF_FULL_PATH)
 		{
-			stccpy(lister->title, buffer->buf_ExpandedPath, 256);
+			stccpy(lister->title, buffer->buf_ExpandedPath, LISTER_TITLE_SIZE);
 		}
 		else
 		{
 			// Copy disk name in
-			strcpy(lister->title, buffer->buf_VolumeLabel);
+			stccpy(lister->title, buffer->buf_VolumeLabel, LISTER_TITLE_SIZE);
 
 			// Find out directory level (by number of slashes)
 			for (pos = 0, count = 0; buffer->buf_ExpandedPath[pos] && count < 2; pos++)
@@ -86,8 +89,8 @@ void lister_show_name(Lister *lister)
 			// Sub-directory?
 			if (buffer->buf_ExpandedPath[0] && buffer->buf_ExpandedPath[strlen(buffer->buf_ExpandedPath) - 1] != ':')
 			{
-				strcat(lister->title, (count > 1) ? ":.." : ":");
-				strcat(lister->title, buffer->buf_ObjectName);
+				strncat(lister->title, (count > 1) ? ":.." : ":", LISTER_TITLE_SIZE - strlen(lister->title) - 1);
+				strncat(lister->title, buffer->buf_ObjectName, LISTER_TITLE_SIZE - strlen(lister->title) - 1);
 			}
 		}
 
@@ -205,9 +208,16 @@ void lister_show_name(Lister *lister)
 			if (buffer->flags & DWF_READONLY)
 				strcat(space_buf, ") ");
 
-			// Tack on to end of title
-			strcat(lister->title, ",  ");
-			strcat(lister->title, space_buf);
+			// Tack on to end of title (only if it fits)
+			{
+				int tlen = strlen(lister->title);
+				int slen = 3 + strlen(space_buf);
+				if (tlen + slen < LISTER_TITLE_SIZE)
+				{
+					strcat(lister->title, ",  ");
+					strcat(lister->title, space_buf);
+				}
+			}
 
 			// Got gauge gadget?
 			if (lister->gauge_gadget)
@@ -422,7 +432,7 @@ void lister_status(Lister *lister, char *text)
 		lister_set_title(lister);
 
 		// Copy to buffer
-		strcpy(lister->cur_buffer->last_status, lister->title);
+		stccpy(lister->cur_buffer->last_status, lister->title, sizeof(lister->cur_buffer->last_status));
 		lister->cur_buffer->flags |= DWF_SAVE_STATUS;
 	}
 }
