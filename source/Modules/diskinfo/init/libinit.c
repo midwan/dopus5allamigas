@@ -124,7 +124,6 @@ struct UtilityIFace *IUtility = NULL;
 struct LocaleIFace *ILocale = NULL;
 // struct ConsoleIFace 	*IConsole = NULL;
 struct GraphicsIFace *IGraphics = NULL;
-struct CyberGfxIFace *ICyberGfx = NULL;
 struct IntuitionIFace *IIntuition = NULL;
 struct GadToolsIFace *IGadTools = NULL;
 struct AslIFace *IAsl = NULL;
@@ -174,7 +173,6 @@ struct Library *MathIeeeDoubBasBase = NULL;
 struct Library *MathIeeeDoubTransBase = NULL;
 #endif
 
-struct Library *CyberGfxBase = NULL;
 struct Library *GadToolsBase = NULL;
 struct Library *AslBase = NULL;
 struct Library *LayersBase = NULL;
@@ -865,14 +863,6 @@ ULONG freeBase(struct LibraryHeader *lib)
 	{
 		CloseLibrary(MathIeeeDoubTransBase);
 		MathIeeeDoubTransBase = NULL;
-	}
-
-	// close cybergarphics.library
-	if (CyberGfxBase != NULL)
-	{
-		DROPINTERFACE(ICyberGfx);
-		CloseLibrary((struct Library *)CyberGfxBase);
-		CyberGfxBase = NULL;
 	}
 
 	// close newicon.library

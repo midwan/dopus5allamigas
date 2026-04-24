@@ -26,7 +26,6 @@ For more information on Directory Opus for Windows please see:
 #include "dopuslib.h"
 
 #include <intuition/intuitionbase.h>
-#include <proto/cybergraphics.h>
 #include <proto/newicon.h>
 
 // Open an image

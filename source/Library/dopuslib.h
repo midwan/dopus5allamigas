@@ -33,16 +33,21 @@ For more information on Directory Opus for Windows please see:
 
 #ifdef __amigaos3__
 	#include "dopus_inlines.h"
-	#include <cybergraphics/cybergraphics.h>
-#elif defined(__amigaos4__)
-	#include <cybergraphx/cybergraphics.h>
 #elif defined(__MORPHOS__) || defined(__AROS__)
-	#include <cybergraphx/cybergraphics.h>
 	#include <exec/execbase.h>
 	#include <proto/alib.h>
+#endif
+#include <proto/Picasso96.h>
+/* cybergraphics.library is kept as a fallback for CGX-only installs;
+ * its header provides RECTFMT_* constants used by the fallback path in
+ * read_ilbm.c. The OS3 SDK exposes the header at <cybergraphics/...>;
+ * every other target uses the <cybergraphx/...> alias. */
+#ifdef __amigaos3__
+	#include <cybergraphics/cybergraphics.h>
 #else
 	#include <cybergraphx/cybergraphics.h>
 #endif
+#include <proto/cybergraphics.h>
 
 // 64-bit types QUAD and UQUAD, duplicated from libraries/dopus5.h
 #ifdef __amigaos4__

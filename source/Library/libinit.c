@@ -143,6 +143,7 @@ struct UtilityIFace *IUtility = NULL;
 struct LocaleIFace *ILocale = NULL;
 // struct ConsoleIFace 	*IConsole = NULL;
 struct GraphicsIFace *IGraphics = NULL;
+struct P96IFace *IP96 = NULL;
 struct CyberGfxIFace *ICyberGfx = NULL;
 struct IntuitionIFace *IIntuition = NULL;
 struct GadToolsIFace *IGadTools = NULL;
@@ -176,6 +177,10 @@ struct LocaleBase *LocaleBase = NULL;
 struct RxsLib *RexxSysBase = NULL;
 #endif
 
+struct Library *P96Base = NULL;
+/* cybergraphics.library kept as a fallback for systems without Picasso96
+ * (older OS3 setups, PPC accelerators with CyberStorm+CGX, etc.). Opened
+ * below only if resident; read_ilbm.c prefers P96 and falls back to this. */
 struct Library *CyberGfxBase = NULL;
 struct Library *GadToolsBase = NULL;
 struct Library *AslBase = NULL;
@@ -995,7 +1000,15 @@ ULONG freeBase(struct MyLibrary *lib)
 	if (lib)
 		UserLibCleanup((struct MyLibrary *)lib);
 
-	// close cybergarphics.library
+	// close Picasso96API.library
+	if (P96Base != NULL)
+	{
+		DROPINTERFACE(IP96);
+		CloseLibrary((struct Library *)P96Base);
+		P96Base = NULL;
+	}
+
+	// close cybergraphics.library (fallback path for read_ilbm.c)
 	if (CyberGfxBase != NULL)
 	{
 		DROPINTERFACE(ICyberGfx);
@@ -1219,13 +1232,44 @@ int UserLibInit(REG(a6, struct MyLibrary *libbase))
 		return 1;
 	data->TimerBase = (struct Library *)data->timer_io.io_Device;
 
-	// Is CyberGfx library already in system? If so, open it for ourselves
+	// Is Picasso96API already in system? If so, open it for ourselves.
+	// On OS4 require the interface to come up too; roll the library back
+	// on failure so the "base non-NULL implies interface non-NULL"
+	// invariant holds, and the cleanup path's DROPINTERFACE(IP96) is safe.
+	if (FindName(&((struct ExecBase *)SysBase)->LibList, "Picasso96API.library"))
+	{
+		if ((P96Base = OpenLibrary("Picasso96API.library", 2)))
+		{
+#ifdef __amigaos4__
+			GETINTERFACE(IP96, P96Base);
+			if (!IP96)
+			{
+				CloseLibrary((struct Library *)P96Base);
+				P96Base = NULL;
+			}
+#endif
+		}
+	}
+
+	// Also check for cybergraphics.library - used as a fallback in the
+	// 24-bit ILBM write path when P96 is unavailable (older OS3 setups,
+	// PPC accelerators with CGX but no Picasso96, etc.). On most modern
+	// setups P96 ships a cybergraphics compat wrapper so both are resident
+	// and P96 wins; the fallback only matters on CGX-only installs.
+	// Same interface-acquisition contract as P96 above.
 	if (FindName(&((struct ExecBase *)SysBase)->LibList, "cybergraphics.library"))
 	{
-		CyberGfxBase = OpenLibrary("cybergraphics.library", 0);
+		if ((CyberGfxBase = OpenLibrary("cybergraphics.library", 0)))
+		{
 #ifdef __amigaos4__
-		GETINTERFACE(ICyberGfx, CyberGfxBase);
+			GETINTERFACE(ICyberGfx, CyberGfxBase);
+			if (!ICyberGfx)
+			{
+				CloseLibrary((struct Library *)CyberGfxBase);
+				CyberGfxBase = NULL;
+			}
 #endif
+		}
 	}
 
 	// Get topaz font

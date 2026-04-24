@@ -164,6 +164,9 @@ struct LocaleBase *LocaleBase = NULL;
 struct RxsLib *RexxSysBase = NULL;
 #endif
 
+// Icon module keeps its own CyberGfxBase (not P96) because the MorphOS-only
+// BltBitMapRastPortAlpha path in icon.c lives in cybergraphics.library;
+// Picasso96 has no equivalent call.
 struct Library *CyberGfxBase = NULL;
 struct Library *GadToolsBase = NULL;
 struct Library *AslBase = NULL;
@@ -835,7 +838,7 @@ ULONG freeBase(struct LibraryHeader *lib)
 {
 	UserLibCleanup();
 
-	// close cybergarphics.library
+	// close cybergraphics.library (MorphOS alpha-blit path in icon.c)
 	if (CyberGfxBase != NULL)
 	{
 		DROPINTERFACE(ICyberGfx);
@@ -1020,6 +1023,7 @@ int UserLibInit()
 	}
 
 #if defined(__MORPHOS__)
+	// Needed for BltBitMapRastPortAlpha in icon.c; P96 has no equivalent.
 	if ((CyberGfxBase = OpenLibrary("cybergraphics.library", 51)) == NULL)
 		return 10;
 #endif

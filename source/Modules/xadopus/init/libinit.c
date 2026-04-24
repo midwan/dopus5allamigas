@@ -128,7 +128,6 @@ struct UtilityIFace *IUtility = NULL;
 struct LocaleIFace *ILocale = NULL;
 // struct ConsoleIFace 	*IConsole = NULL;
 struct GraphicsIFace *IGraphics = NULL;
-struct CyberGfxIFace *ICyberGfx = NULL;
 struct IntuitionIFace *IIntuition = NULL;
 struct GadToolsIFace *IGadTools = NULL;
 struct AslIFace *IAsl = NULL;
@@ -169,7 +168,6 @@ struct Library *TimerBase = NULL;
 #else
 struct Device *TimerBase = NULL;
 #endif
-struct Library *CyberGfxBase = NULL;
 struct Library *GadToolsBase = NULL;
 struct Library *AslBase = NULL;
 struct Library *LayersBase = NULL;
@@ -845,14 +843,6 @@ static BPTR LIBFUNC LibClose(REG(a6, struct LibraryHeader *base))
 ULONG freeBase(struct LibraryHeader *lib)
 {
 	UserLibCleanup();
-
-	// close cybergarphics.library
-	if (CyberGfxBase != NULL)
-	{
-		DROPINTERFACE(ICyberGfx);
-		CloseLibrary((struct Library *)CyberGfxBase);
-		CyberGfxBase = NULL;
-	}
 
 	// close newicon.library
 	/*if(NewIconBase != NULL)
