@@ -1,3 +1,53 @@
+[dopus5allamigas 5.99] Picasso96 migration, OS4 bug fixes and features
+Program bumps to 5.99, library and dopus5.module to v73r3, commands
+remain at v65r1.
+
+Picasso96 / RTG display overhaul:
+- Migrated the RTG (retargetable graphics) subsystem from
+  cybergraphics.library to Picasso96API.library with a CyberGraphX
+  fallback, fixing drag-mask rendering and 24-bit ILBM decoding on
+  modern graphics cards across all platforms.
+- Fixed 24-bit ILBM handling: route decisions through colour-plane
+  count, clamp uncompressed chunky decode to width, decode all source
+  planes into chunky buffer for DIF_WRITEPIX, prevent 24-bit decode
+  into 8-bit fallback buffer.
+- Drag mask: validate P96 stride before per-row read, read
+  Memory/BytesPerRow via p96LockBitMap, fix hicolor compare, stop
+  P96 re-entry under lock, probe RTG via p96GetBitMapAttr.
+- OS4: validate interface acquisition for both P96 and CGX, guard NULL
+  in teardown.
+- AROS: compile out p96 call sites, route RTG through CyberGraphX.
+- Cleaned up dead P96Base/IP96 globals from all module init files.
+- Added full Picasso96 SDK headers (proto, inline, ppcinline, pragmas).
+Covers PR #2 (p96-migration), 26 non-merge commits.
+
+OS4 bug fixes ported from derfsss/dopus5-os4 fork:
+- Fix filetype editor crash: remove spurious REG(a2) from OS4 proc_init.
+- Fix anti-aliased font progressive bolding: use JAM2 draw mode instead
+  of JAM1 so previous weight layers accumulate correctly.
+- Fix Escape key not closing requesters on OS4.
+- Fix backdrop disappearing on settings save: FUNKOFF ifdef was
+  mistyped as FUNK0FF, so the backdrop-off code never compiled in.
+- Port defensive lock validation and 255-char filename support.
+Covers PR #5 (port/derfsss-os4-bugfixes), 5 commits.
+
+OS4 features ported from derfsss/dopus5-os4 fork:
+- Raise font requester cap from 30pt to 96pt for 4K/HiDPI displays.
+- Add full-path-in-lister-title option: new LISTEROPTF_FULL_PATH flag
+  shows the complete expanded path instead of volume:objectname.
+- Show human-readable free memory on OS4 screen title bar using
+  BytesToString (e.g. "324.5 MB free").
+- Fix CatCompBlock binary encoding for the two new catalog strings
+  (length must include null separator bytes).
+- Fix pre-existing buffer overflow in lister title construction:
+  unbounded strcpy/strcat into 300-byte title buffer, and overflow
+  of last_status[80] from the 300-byte title.
+Covers PR #6 (port/derfsss-os4-features), 6 commits.
+
+Other fixes:
+- XADOpus: handle non-Amiga LHA directory entries during extraction.
+2026-04-25 by Dimitris Panokostas <midwan@gmail.com>
+
 [dopus5allamigas 5.98] Finish the tooltip regression fix (backdrop side)
 Follow-up to the tooltip fix in 5.97. That fix only covered the lister's
 own IDCMP handler; the backdrop IDCMP handler (used in icon view, same

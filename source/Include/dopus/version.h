@@ -16,11 +16,11 @@
 
 // set the program version/revision
 #define PROG_VERSION    5
-#define PROG_REVISION   98
+#define PROG_REVISION   99
 
 // set the library & modules version/revision
 #define LIB_VERSION    73
-#define LIB_REVISION   2
+#define LIB_REVISION   3
 
 // set the commands version/revision (viewfont, dopusrt5, loadwb)
 #define CMD_VERSION    65
