@@ -157,6 +157,10 @@ void image_draw(Class *cl, struct Image *image, BoopsiImageData *data, struct im
 	case IM_CHECK:
 	case IM_CROSS:
 
+		// Clear background first (prevents progressive bolding with anti-aliased rendering)
+		SetAPen(rp, pens[(draw->imp_State == IDS_SELECTED) ? FILLPEN : BACKGROUNDPEN]);
+		RectFill(rp, box.Left, box.Top, box.Left + box.Width - 1, box.Top + box.Height - 1);
+
 		// Draw checkmark
 		SetAPen(rp, (data->fpen == -1) ? pens[TEXTPEN] : data->fpen);
 		SetDrMd(rp, JAM1);

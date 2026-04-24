@@ -554,7 +554,21 @@ ULONG LIBFUNC button_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, 
 
 		// Let string gadget handle itself
 		if (data->flags & BUTTONF_STRING)
+		{
+#ifdef __amigaos4__
+			// OS4 strgclass swallows Escape — intercept before super
+			struct gpInput *input = (struct gpInput *)msg;
+			if (input->gpi_IEvent &&
+				input->gpi_IEvent->ie_Class == IECLASS_RAWKEY &&
+				input->gpi_IEvent->ie_Code == 0x45)
+			{
+				*input->gpi_Termination = 0x45;
+				retval = GMR_NOREUSE | GMR_VERIFY;
+				break;
+			}
+#endif
 			retval = DoSuperMethodA(cl, obj, msg);
+		}
 
 		// Button
 		else
@@ -1186,9 +1200,16 @@ void button_render(Class *cl, struct Gadget *gadget, ButtonData *data, struct gp
 
 		// Set pen for text
 		if (data->place == PLACETEXT_IN)
+		{
 			SetAPen(rp, pens[(gadget->Flags & GFLG_SELECTED) ? FILLTEXTPEN : TEXTPEN]);
+			SetBPen(rp, pens[(gadget->Flags & GFLG_SELECTED) ? FILLPEN : BACKGROUNDPEN]);
+		}
 		else
+		{
 			SetAPen(rp, pens[TEXTPEN]);
+			SetBPen(rp, pens[BACKGROUNDPEN]);
+		}
+		SetDrMd(rp, JAM2);
 		if (data->font)
 			SetFont(rp, data->font);
 		if (data->flags & BUTTONF_BOLD)
@@ -1245,6 +1266,9 @@ void button_render(Class *cl, struct Gadget *gadget, ButtonData *data, struct gp
 			Move(rp, x + pos, y + 1);
 			Draw(rp, x + pos + len - 1, y + 1);
 		}
+
+		// Restore JAM1 draw mode
+		SetDrMd(rp, JAM1);
 
 		// Restore style
 		if (old_style != rp->AlgoStyle)
