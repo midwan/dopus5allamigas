@@ -203,7 +203,7 @@ BackdropObject *backdrop_leave_out(BackdropInfo *info, char *name, ULONG flags, 
 			return 0;
 
 		// Isolate filename
-		stccpy(fib->fib_FileName, FilePart(name), 108);
+		stccpy(fib->fib_FileName, FilePart(name), sizeof(fib->fib_FileName));
 	}
 
 	// Locked object, get some info
@@ -605,7 +605,7 @@ BackdropObject *backdrop_create_shortcut(BackdropInfo *info, char *name, short x
 			return 0;
 
 		// Isolate filename
-		stccpy(fib->fib_FileName, FilePart(name), 108);
+		stccpy(fib->fib_FileName, FilePart(name), sizeof(fib->fib_FileName));
 	}
 
 	// Locked object, get some info

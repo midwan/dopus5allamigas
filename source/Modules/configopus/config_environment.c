@@ -872,7 +872,7 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 
 					// Max. filename
 					case GAD_SETTINGS_MAX_FILENAME:
-						BoundsCheckGadget(data->option_list, GAD_SETTINGS_MAX_FILENAME, 30, 107);
+						BoundsCheckGadget(data->option_list, GAD_SETTINGS_MAX_FILENAME, 30, MAX_FILENAME_LEN);
 						break;
 
 					// NewIcons precision
@@ -1641,7 +1641,7 @@ BOOL _config_env_open(config_env_data *data, struct Screen *screen)
 		// Create option list
 		data->option_list = AddObjectList(data->window, _environment_options[data->option_node->data].objects);
 
-#ifdef FUNKOFF
+#ifndef FUNKOFF
 		// Initialise gadgets
 		_config_env_set(data, data->option);
 #endif
@@ -2544,8 +2544,8 @@ void _config_env_store(config_env_data *data, short option)
 		data->config->settings.max_filename = GetGadgetValue(data->option_list, GAD_SETTINGS_MAX_FILENAME);
 		if (data->config->settings.max_filename < 30)
 			data->config->settings.max_filename = 30;
-		else if (data->config->settings.max_filename > 107)
-			data->config->settings.max_filename = 107;
+		else if (data->config->settings.max_filename > MAX_FILENAME_LEN)
+			data->config->settings.max_filename = MAX_FILENAME_LEN;
 		break;
 
 	// Date
