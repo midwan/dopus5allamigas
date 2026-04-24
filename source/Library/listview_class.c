@@ -1214,7 +1214,8 @@ void listview_render(Class *cl, struct Gadget *gadget, ListViewData *data, struc
 
 			// Draw title
 			SetAPen(rp, pens[TEXTPEN]);
-			SetDrMd(rp, JAM1);
+			SetBPen(rp, pens[BACKGROUNDPEN]);
+			SetDrMd(rp, JAM2);
 			Move(rp, x, y);
 			Text(rp, data->title, len);
 

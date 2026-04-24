@@ -30,6 +30,12 @@
 #include <ctype.h>
 #include <stddef.h>
 
+#ifdef __amigaos4__
+#define MAX_FILENAME_LEN	255
+#else
+#define MAX_FILENAME_LEN	107
+#endif
+
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/locale.h>

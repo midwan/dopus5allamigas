@@ -956,11 +956,18 @@ struct Gadget *LIBFUNC L_FindKeyEquivalent(REG(a0, ObjectList *first_list),
 									// Store the key we use
 									msg->Code = key;
 								}
-							}
 						}
 					}
 
-					// Escape/lcommand b?
+					// Escape rawkey — look for cancel button
+					else if (key == 0x45)
+					{
+						if (use_object->flags & BUTTONFLAG_CANCEL_BUTTON)
+							gadget = GADGET(use_object);
+					}
+				}
+
+				// Escape/lcommand b?
 					else if (key == 0x1b || (key == 'b' && L_QualValid(msg->Qualifier) == IEQUALIFIER_LCOMMAND))
 					{
 						// See if gadget is a "cancel" button

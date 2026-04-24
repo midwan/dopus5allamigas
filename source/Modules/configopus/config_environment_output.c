@@ -135,7 +135,8 @@ IPCMessage *_config_env_output_window_set(config_env_data *data, UWORD id)
 
 	// Display instructions
 	SetAPen(window->RPort, 1);
-	SetDrMd(window->RPort, JAM1);
+	SetBPen(window->RPort, 0);
+	SetDrMd(window->RPort, JAM2);
 	SetFont(window->RPort, data->window->RPort->Font);
 	_config_env_size_instructions(window, id);
 

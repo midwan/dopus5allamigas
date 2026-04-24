@@ -237,6 +237,16 @@ short LIBFUNC L_DoSimpleRequest(REG(a0, struct Window *parent),
 							break_flag = 1;
 						}
 					}
+
+					// Raw key press (OS4 strgclass swallows Escape before VANILLAKEY)
+					else if (copy_msg.Class == IDCMP_RAWKEY)
+					{
+						if (copy_msg.Code == 0x45)
+						{
+							gadgetid = 0;
+							break_flag = 1;
+						}
+					}
 				}
 			}
 
