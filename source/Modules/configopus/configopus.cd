@@ -1,6 +1,6 @@
 ; ************************************************* 
 ; Catalog description file for ConfigOpus
-; Copyright © 1994 Jonathan Potter
+; Copyright ï¿½ 1994 Jonathan Potter
 ; ************************************************* 
 ;
 ;
@@ -874,6 +874,9 @@ Ma_x. CLL:
 ;
 MSG_ENVIRONMENT_VOSTY_ZOOM (//)
 Window _Zooms to Title Bar
+;
+MSG_ENVIRONMENT_FULL_PATH (23023//)
+Show Full _Path in Lister Title
 ;
 ;
 MSG_ENVIRONMENT_PICTURE_STRETCHED (//)
