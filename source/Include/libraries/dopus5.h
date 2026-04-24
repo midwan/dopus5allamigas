@@ -399,6 +399,7 @@ enum {
 #define LISTEROPTF_SUBDROP (1 << 9)			 // Drop into sub-directories
 #define LISTEROPTF_NOACTIVESELECT (1 << 10)	 // No file select on window activation
 #define LISTEROPTF_VOSTY_ZOOM (1 << 11)		 // Ben Vost zoom mode
+#define LISTEROPTF_FULL_PATH (1 << 12)		 // Show full path in lister title
 
 // desktop flags
 #define DESKTOPF_DISTINCT (1 << 0)		  // Distinct icon positions

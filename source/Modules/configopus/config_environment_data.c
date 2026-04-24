@@ -846,11 +846,21 @@ const ObjectDef _config_environment_objects[] =
 			 GAD_ENVIRONMENT_VOSTY_ZOOM,
 			 _environment_relative_taglist},
 
+			// Full path in lister title
+			{OD_GADGET,
+			 CHECKBOX_KIND,
+			 {4, 10, 0, 1},
+			 {5, 52, 26, 4},
+			 MSG_ENVIRONMENT_FULL_PATH,
+			 PLACETEXT_RIGHT,
+			 GAD_ENVIRONMENT_FULL_PATH,
+			 _environment_relative_taglist},
+
 			// Lister editing
 			{OD_GADGET,
 			 CYCLE_KIND,
-			 {4, 10, 16, 1},
-			 {5, 60, 24, 6},
+			 {4, 11, 16, 1},
+			 {5, 58, 24, 6},
 			 MSG_ENVIRONMENT_LISTER_EDITING,
 			 PLACETEXT_RIGHT,
 			 GAD_ENVIRONMENT_LISTER_EDITING,

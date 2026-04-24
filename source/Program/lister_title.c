@@ -68,19 +68,27 @@ void lister_show_name(Lister *lister)
 		// Clear save status flag
 		buffer->flags &= ~DWF_SAVE_STATUS;
 
-		// Copy disk name in
-		strcpy(lister->title, buffer->buf_VolumeLabel);
-
-		// Find out directory level (by number of slashes)
-		for (pos = 0, count = 0; buffer->buf_ExpandedPath[pos] && count < 2; pos++)
-			if (buffer->buf_ExpandedPath[pos] == '/')
-				++count;
-
-		// Sub-directory?
-		if (buffer->buf_ExpandedPath[0] && buffer->buf_ExpandedPath[strlen(buffer->buf_ExpandedPath) - 1] != ':')
+		// Full path in title?
+		if (environment->env->lister_options & LISTEROPTF_FULL_PATH)
 		{
-			strcat(lister->title, (count > 1) ? ":.." : ":");
-			strcat(lister->title, buffer->buf_ObjectName);
+			stccpy(lister->title, buffer->buf_ExpandedPath, 256);
+		}
+		else
+		{
+			// Copy disk name in
+			strcpy(lister->title, buffer->buf_VolumeLabel);
+
+			// Find out directory level (by number of slashes)
+			for (pos = 0, count = 0; buffer->buf_ExpandedPath[pos] && count < 2; pos++)
+				if (buffer->buf_ExpandedPath[pos] == '/')
+					++count;
+
+			// Sub-directory?
+			if (buffer->buf_ExpandedPath[0] && buffer->buf_ExpandedPath[strlen(buffer->buf_ExpandedPath) - 1] != ':')
+			{
+				strcat(lister->title, (count > 1) ? ":.." : ":");
+				strcat(lister->title, buffer->buf_ObjectName);
+			}
 		}
 
 		// Displaying free space?
