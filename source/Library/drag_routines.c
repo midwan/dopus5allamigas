@@ -23,7 +23,6 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopuslib.h"
 
-#include <proto/cybergraphics.h>
 #ifdef __AROS__
 	#include <proto/commodities.h>
 #endif
@@ -108,7 +107,13 @@ DragInfo *LIBFUNC L_GetDragInfo(REG(a0, struct Window *window),
 	// Custom rendering?
 	if (drag->flags & DRAGF_CUSTOM)
 	{
-		// Allocate BitMap
+		// Use AllocBitMap (not p96AllocBitMap) here on purpose. The drag
+		// sprite is composited via BltMaskBitMapRastPort + a 1-bit shadow
+		// mask, and on this target the RTG-native p96 bitmap layout breaks
+		// that legacy mask-blit path - the sprite becomes invisible during
+		// motion and only shows when the mouse stops. graphics.library's
+		// AllocBitMap(..., BMF_MINPLANES, friend) yields a layout the mask
+		// blit still renders correctly on OS3 + P96.
 		if (!(drag->sprite.ImageData = (WORD *)AllocBitMap(
 				  drag->width, drag->height, drag->sprite.Depth, BMF_MINPLANES, window->WScreen->RastPort.BitMap)))
 		{
@@ -116,7 +121,8 @@ DragInfo *LIBFUNC L_GetDragInfo(REG(a0, struct Window *window),
 			return 0;
 		}
 
-		// Allocate backup buffer
+		// Allocate backup buffer (same layout; save/restore paired with the
+		// mask blit above).
 		if (real &&
 			!(drag->bob.SaveBuffer = (WORD *)AllocBitMap(
 				  drag->width, drag->height, drag->sprite.Depth, BMF_MINPLANES, window->WScreen->RastPort.BitMap)))
@@ -210,7 +216,7 @@ void LIBFUNC L_FreeDragInfo(REG(a0, DragInfo *drag))
 	// Used custom rendering?
 	if (drag->flags & DRAGF_CUSTOM)
 	{
-		// Free bitmaps
+		// Free bitmaps (must match AllocBitMap allocator above)
 		FreeBitMap((struct BitMap *)drag->sprite.ImageData);
 		FreeBitMap((struct BitMap *)drag->bob.SaveBuffer);
 	}
@@ -332,13 +338,395 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 		imagebm = (struct BitMap *)drag->sprite.ImageData;
 		depth = GetBitMapAttr(imagebm, BMA_DEPTH);
 
-		// Do we have CyberGfx, and is it a Cyber mode greater than 256 colours?
-		if (CyberGfxBase && depth > 8 && GetCyberMapAttr(imagebm, CYBRMATTR_ISCYBERGFX))
+		// Do we have Picasso96 and an RTG bitmap with >256 colours?
+		// AROS has no Picasso96API.library; compile the P96 branch out
+		// there so the p96* symbols never reach the AROS linker. The
+		// CGX branch below covers AROS (and any other CGX-only install).
+		//
+		// Sequential fallback: if P96 is eligible but its pixel read
+		// fails (lock failure, P96BMA_MEMORY NULL), leave `ok` at 0 so
+		// the next capability check (CGX) can still attempt the capture
+		// before we give up and fill the mask with 0xffff.
+#if !defined(__AROS__)
+		if (!ok && P96Base && depth > 8 && p96GetBitMapAttr(imagebm, P96BMA_ISP96))
 		{
 			UBYTE *image_array;
 
+			// Use drag->width / drag->height (NOT sprite.Width/Height) for
+			// every mask-build dimension below. ImageShadow itself was
+			// allocated as RASSIZE(drag->width, drag->height) (see
+			// L_GetDragInfo); for DRAGF_CUSTOM (the only path that reaches
+			// the RTG branches) sprite.Width/Height happen to equal
+			// drag->width/height, but normalising on the alloc-side pair
+			// removes the lurking inconsistency Codex flagged and bounds
+			// every ImageShadow word write by the same dimension used to
+			// size it.
+
 			// Allocate image array
-			if ((image_array = AllocVec(drag->sprite.Width * drag->sprite.Height * 3, MEMF_CLEAR)))
+			if ((image_array = AllocVec(drag->width * drag->height * 3, MEMF_CLEAR)))
+			{
+				short mask[2] = {0xff, 0xff}, bit_pos, x_count;
+				long pixfmt, count, num, array_pos, word_pos;
+				ULONG colour0[3];
+				UWORD word_data;
+				LONG lock;
+				BOOL got_pixels = FALSE;
+
+				// Get the palette value of colour 0
+				GetRGB32(drag->viewport->ColorMap, 0, 1, colour0);
+
+				// Calculate mask for pixel format
+				pixfmt = p96GetBitMapAttr(imagebm, P96BMA_RGBFORMAT);
+				if (pixfmt == RGBFB_R5G5B5 || pixfmt == RGBFB_R5G5B5PC || pixfmt == RGBFB_B5G5R5PC)
+				{
+					mask[0] = 0xf8;
+					mask[1] = 0xf8;
+				}
+				else if (pixfmt == RGBFB_R5G6B5 || pixfmt == RGBFB_R5G6B5PC || pixfmt == RGBFB_B5G6R5PC)
+				{
+					mask[0] = 0xf8;
+					mask[1] = 0xfc;
+				}
+
+				// Convert to 8 bit, masked colour
+				colour0[0] &= mask[0];
+				colour0[1] &= mask[1];
+				colour0[2] &= mask[0];
+
+				// Read the image via direct bitmap memory access. p96ReadPixelArray
+				// has proven unreliable on layerless rastports on some OS3 P96
+				// installations, so we do the format conversion ourselves.
+				//
+				// Pass a struct RenderInfo to p96LockBitMap and read Memory /
+				// BytesPerRow from that buffer. The P96 autodoc forbids calling
+				// any P96 API (including p96GetBitMapAttr) on the same bitmap
+				// while a lock is held - touched bitmaps are locked internally,
+				// so a re-entrant query risks dead-lock or blocking the screen
+				// switcher mid-drag.
+				{
+					struct RenderInfo ri;
+					ri.Memory = NULL;
+					ri.BytesPerRow = 0;
+					ri.pad = 0;
+					ri.RGBFormat = RGBFB_NONE;
+
+					if ((lock = p96LockBitMap(imagebm, (UBYTE *)&ri, sizeof(ri))))
+					{
+						UBYTE *srcmem = (UBYTE *)ri.Memory;
+						LONG srcbpr = ri.BytesPerRow;
+						LONG yy, xx;
+						UWORD w = drag->width;
+						UWORD h = drag->height;
+						BOOL unknown_fmt = FALSE;
+						LONG bpp = 0;
+
+						// Bytes-per-pixel for the selected RGB format.
+						// We need this up front to validate that the P96
+						// driver's reported row stride is large enough to
+						// cover width*bpp, before the per-row walk reads
+						// past the row. If the format is unknown or the
+						// stride is too tight, skip straight to the
+						// outer CGX/tempbm fallback via unknown_fmt.
+						switch (pixfmt)
+						{
+							case RGBFB_R8G8B8:
+							case RGBFB_B8G8R8:
+								bpp = 3; break;
+							case RGBFB_A8R8G8B8:
+							case RGBFB_R8G8B8A8:
+							case RGBFB_A8B8G8R8:
+							case RGBFB_B8G8R8A8:
+								bpp = 4; break;
+							case RGBFB_R5G6B5:
+							case RGBFB_R5G6B5PC:
+							case RGBFB_B5G6R5PC:
+							case RGBFB_R5G5B5:
+							case RGBFB_R5G5B5PC:
+							case RGBFB_B5G5R5PC:
+								bpp = 2; break;
+							default:
+								unknown_fmt = TRUE;
+								break;
+						}
+
+					if (!unknown_fmt && srcmem && srcbpr > 0 && srcbpr >= (LONG)w * bpp)
+					{
+						for (yy = 0; yy < h; yy++)
+						{
+							UBYTE *sr = srcmem + yy * srcbpr;
+							UBYTE *dr = image_array + yy * w * 3;
+
+							switch (pixfmt)
+							{
+								// Byte order for the 24/32-bit cases follows the Picasso96
+								// ABI as documented in <libraries/Picasso96.h>:
+								//   RGBFB_R8G8B8   = "TrueColor RGB (8 bit each)"
+								//   RGBFB_B8G8R8   = "TrueColor BGR (8 bit each)"
+								//   RGBFB_A8R8G8B8 = "4 Byte TrueColor ARGB"
+								//   RGBFB_R8G8B8A8 = "4 Byte TrueColor RGBA"
+								//   RGBFB_A8B8G8R8 = "4 Byte TrueColor ABGR"
+								//   RGBFB_B8G8R8A8 = "4 Byte TrueColor BGRA"
+								// Output buffer (image_array) is canonical R,G,B
+								// triples - what GetRGB32 + the colour0 compare expect.
+								case RGBFB_R8G8B8:
+									for (xx = 0; xx < w; xx++)
+									{
+										dr[0] = sr[0]; dr[1] = sr[1]; dr[2] = sr[2];
+										sr += 3; dr += 3;
+									}
+									break;
+
+								case RGBFB_B8G8R8:
+									for (xx = 0; xx < w; xx++)
+									{
+										dr[0] = sr[2]; dr[1] = sr[1]; dr[2] = sr[0];
+										sr += 3; dr += 3;
+									}
+									break;
+
+								case RGBFB_A8R8G8B8:
+									for (xx = 0; xx < w; xx++)
+									{
+										dr[0] = sr[1]; dr[1] = sr[2]; dr[2] = sr[3];
+										sr += 4; dr += 3;
+									}
+									break;
+
+								case RGBFB_R8G8B8A8:
+									for (xx = 0; xx < w; xx++)
+									{
+										dr[0] = sr[0]; dr[1] = sr[1]; dr[2] = sr[2];
+										sr += 4; dr += 3;
+									}
+									break;
+
+								case RGBFB_A8B8G8R8:
+									for (xx = 0; xx < w; xx++)
+									{
+										dr[0] = sr[3]; dr[1] = sr[2]; dr[2] = sr[1];
+										sr += 4; dr += 3;
+									}
+									break;
+
+								case RGBFB_B8G8R8A8:
+									for (xx = 0; xx < w; xx++)
+									{
+										dr[0] = sr[2]; dr[1] = sr[1]; dr[2] = sr[0];
+										sr += 4; dr += 3;
+									}
+									break;
+
+								// Hicolor cases: store each channel with only the top
+								// 5 (or 6) bits and the low bits zero, so the byte we
+								// stored matches the masked colour0 below
+								// (colour0[n] &= 0xf8 / 0xfc). Bit-replicating the
+								// low bits here would expand e.g. 5-bit 16 to 132
+								// while the pen side stays 128 after & 0xf8, and the
+								// compare would wrongly flag transparent pixels as
+								// foreground on non-black backgrounds.
+								case RGBFB_R5G6B5:
+									for (xx = 0; xx < w; xx++)
+									{
+										UWORD pix = (sr[0] << 8) | sr[1];
+										UBYTE rr = (pix >> 11) & 0x1f;
+										UBYTE gg = (pix >> 5) & 0x3f;
+										UBYTE bb = pix & 0x1f;
+										dr[0] = rr << 3;
+										dr[1] = gg << 2;
+										dr[2] = bb << 3;
+										sr += 2; dr += 3;
+									}
+									break;
+
+								case RGBFB_R5G6B5PC:
+									for (xx = 0; xx < w; xx++)
+									{
+										UWORD pix = sr[0] | (sr[1] << 8);
+										UBYTE rr = (pix >> 11) & 0x1f;
+										UBYTE gg = (pix >> 5) & 0x3f;
+										UBYTE bb = pix & 0x1f;
+										dr[0] = rr << 3;
+										dr[1] = gg << 2;
+										dr[2] = bb << 3;
+										sr += 2; dr += 3;
+									}
+									break;
+
+								case RGBFB_B5G6R5PC:
+									for (xx = 0; xx < w; xx++)
+									{
+										UWORD pix = sr[0] | (sr[1] << 8);
+										UBYTE bb = (pix >> 11) & 0x1f;
+										UBYTE gg = (pix >> 5) & 0x3f;
+										UBYTE rr = pix & 0x1f;
+										dr[0] = rr << 3;
+										dr[1] = gg << 2;
+										dr[2] = bb << 3;
+										sr += 2; dr += 3;
+									}
+									break;
+
+								case RGBFB_R5G5B5:
+									for (xx = 0; xx < w; xx++)
+									{
+										UWORD pix = (sr[0] << 8) | sr[1];
+										UBYTE rr = (pix >> 10) & 0x1f;
+										UBYTE gg = (pix >> 5) & 0x1f;
+										UBYTE bb = pix & 0x1f;
+										dr[0] = rr << 3;
+										dr[1] = gg << 3;
+										dr[2] = bb << 3;
+										sr += 2; dr += 3;
+									}
+									break;
+
+								case RGBFB_R5G5B5PC:
+									for (xx = 0; xx < w; xx++)
+									{
+										UWORD pix = sr[0] | (sr[1] << 8);
+										UBYTE rr = (pix >> 10) & 0x1f;
+										UBYTE gg = (pix >> 5) & 0x1f;
+										UBYTE bb = pix & 0x1f;
+										dr[0] = rr << 3;
+										dr[1] = gg << 3;
+										dr[2] = bb << 3;
+										sr += 2; dr += 3;
+									}
+									break;
+
+								case RGBFB_B5G5R5PC:
+									for (xx = 0; xx < w; xx++)
+									{
+										UWORD pix = sr[0] | (sr[1] << 8);
+										UBYTE bb = (pix >> 10) & 0x1f;
+										UBYTE gg = (pix >> 5) & 0x1f;
+										UBYTE rr = pix & 0x1f;
+										dr[0] = rr << 3;
+										dr[1] = gg << 3;
+										dr[2] = bb << 3;
+										sr += 2; dr += 3;
+									}
+									break;
+
+								default:
+									// Unknown format - do NOT call back into
+									// the P96 API while the bitmap is locked
+									// (P96 autodoc: touched bitmaps are
+									// locked internally; re-entering risks
+									// dead-locking or blocked screen
+									// switches). Exit the loop without
+									// setting got_pixels so ok stays 0 and
+									// the outer sequential fallback chain
+									// tries CGX / tempbm / opaque silhouette
+									// next.
+									yy = h;
+									unknown_fmt = TRUE;
+									break;
+							}
+
+							if (unknown_fmt)
+								break;
+						}
+
+						// Only trust the capture when every row went through
+						// a known-format branch. p96ReadPixelArray is void
+						// return so even a "successful" call can't be
+						// verified, and a zero-filled image_array would
+						// build a mask that treats the whole sprite as
+						// either fully transparent or fully opaque depending
+						// on colour0.
+						if (!unknown_fmt)
+							got_pixels = TRUE;
+					}
+
+						p96UnlockBitMap(imagebm, lock);
+					}
+				}
+
+				// Only build the mask if we actually captured pixel data.
+				// Otherwise image_array is still zero-fill from MEMF_CLEAR
+				// and the colour0 compare below would produce a bogus mask
+				// (invisible or unmasked drag depending on colour0).
+				if (got_pixels)
+				{
+					// Get number of pixels (drag->width/height: matches the
+					// image_array allocation and the ImageShadow sizing -
+					// see comment at the start of this RTG branch)
+					count = drag->width * drag->height;
+
+					// Go through image array
+					for (num = 0, array_pos = 0, bit_pos = 15, word_data = 0, word_pos = 0, x_count = 0; num < count;
+						 num++, array_pos += 3, --bit_pos)
+					{
+						// See if colour is not the background colour
+						if (image_array[array_pos + 0] != colour0[0] || image_array[array_pos + 1] != colour0[1] ||
+							image_array[array_pos + 2] != colour0[2])
+						{
+							// Set bit in word data
+							word_data |= 1 << bit_pos;
+						}
+
+						// Reached the end of a word?
+						if ((++x_count) == drag->width)
+						{
+							// Reset count
+							x_count = 0;
+							bit_pos = 0;
+						}
+
+						// Reached end of a mask word?
+						if (bit_pos == 0)
+						{
+							// Set word in mask
+#ifdef __AROS__
+							((UWORD *)drag->bob.ImageShadow)[word_pos++] = AROS_BE2WORD(word_data);
+#else
+							((UWORD *)drag->bob.ImageShadow)[word_pos++] = word_data;
+#endif
+
+							// Reset word
+							word_data = 0;
+							bit_pos = 16;
+						}
+					}
+
+					// Get mask size
+					count = RASSIZE((((drag->width + 15) >> 4) << 4), drag->height) >> 1;
+
+					// Fill rest of the mask
+					while (word_pos < count)
+					{
+						((UWORD *)drag->bob.ImageShadow)[word_pos++] = word_data;
+						word_data = 0;
+					}
+
+					// Set ok flag
+					ok = 1;
+				}
+
+				// Free image array (released either way - mask built or not)
+				if (image_array)
+					FreeVec(image_array);
+			}
+		}
+#endif /* !__AROS__ */
+
+		// CyberGraphX fallback. Runs when either the P96 branch was not
+		// eligible (no P96Base, or bitmap is not a P96 surface) or the
+		// P96 pixel read failed (ok still 0). On AROS this is the only
+		// RTG branch.
+		if (!ok && CyberGfxBase && depth > 8 && GetCyberMapAttr(imagebm, CYBRMATTR_ISCYBERGFX))
+		{
+			UBYTE *image_array;
+
+			// Same dimension-normalisation rule as the P96 branch above:
+			// use drag->width / drag->height for everything (image_array
+			// alloc, CGX read, iteration, mask sizing) so every write into
+			// ImageShadow stays bounded by its RASSIZE(drag->width,
+			// drag->height) allocation.
+
+			// Allocate image array
+			if ((image_array = AllocVec(drag->width * drag->height * 3, MEMF_CLEAR)))
 			{
 				short mask[2] = {0xff, 0xff}, bit_pos, x_count;
 				long pixfmt, count, num, array_pos, word_pos;
@@ -366,52 +754,45 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 				colour0[1] &= mask[1];
 				colour0[2] &= mask[0];
 
-				// Read the image
+				// Read the image via CGX (unlike the P96 path we trust this
+				// call, mirroring master's pre-migration behaviour)
 				ReadPixelArray(image_array,
 							   0,
 							   0,
-							   drag->sprite.Width * 3,
+							   drag->width * 3,
 							   &drag->drag_rp,
 							   0,
 							   0,
-							   drag->sprite.Width,
-							   drag->sprite.Height,
+							   drag->width,
+							   drag->height,
 							   RECTFMT_RGB);
 
 				// Get number of pixels
-				count = drag->sprite.Width * drag->sprite.Height;
+				count = drag->width * drag->height;
 
-				// Go through image array
+				// Go through image array (identical to the P96 branch)
 				for (num = 0, array_pos = 0, bit_pos = 15, word_data = 0, word_pos = 0, x_count = 0; num < count;
 					 num++, array_pos += 3, --bit_pos)
 				{
-					// See if colour is not the background colour
 					if (image_array[array_pos + 0] != colour0[0] || image_array[array_pos + 1] != colour0[1] ||
 						image_array[array_pos + 2] != colour0[2])
 					{
-						// Set bit in word data
 						word_data |= 1 << bit_pos;
 					}
 
-					// Reached the end of a word?
-					if ((++x_count) == drag->sprite.Width)
+					if ((++x_count) == drag->width)
 					{
-						// Reset count
 						x_count = 0;
 						bit_pos = 0;
 					}
 
-					// Reached end of a mask word?
 					if (bit_pos == 0)
 					{
-						// Set word in mask
 #ifdef __AROS__
 						((UWORD *)drag->bob.ImageShadow)[word_pos++] = AROS_BE2WORD(word_data);
 #else
 						((UWORD *)drag->bob.ImageShadow)[word_pos++] = word_data;
 #endif
-
-						// Reset word
 						word_data = 0;
 						bit_pos = 16;
 					}
@@ -427,16 +808,15 @@ void LIBFUNC L_GetDragMask(REG(a0, DragInfo *drag))
 					word_data = 0;
 				}
 
-				// Free image array
 				FreeVec(image_array);
-
-				// Set ok flag
 				ok = 1;
 			}
 		}
 
-		// (Semi)-normal mode; Allocate temporary bitmap
-		else if ((tempbm = AllocBitMap(drag->sprite.Width, drag->sprite.Height, depth, BMF_CLEAR, 0)))
+		// (Semi)-normal mode; Allocate temporary bitmap.
+		// Standalone if (not else-if) so we still reach it when the P96 or
+		// CGX branches were eligible but their pixel read failed.
+		if (!ok && (tempbm = AllocBitMap(drag->sprite.Width, drag->sprite.Height, depth, BMF_CLEAR, 0)))
 		{
 			short columns;
 
@@ -1055,9 +1435,21 @@ BOOL LIBFUNC L_DragCustomOk(REG(a0, struct BitMap *bm), REG(a6, struct MyLibrary
 	data = (struct LibData *)libbase->ml_UserData;
 
 	// Ok to custom drag?
-	if (!(data->flags & LIBDF_NO_CUSTOM_DRAG) && ((struct Library *)GfxBase)->lib_Version >= 39 && CyberGfxBase &&
-		GetCyberMapAttr(bm, CYBRMATTR_ISCYBERGFX))
-		ok = 1;
+	// Prefer P96's P96BMA_ISP96 probe - it's the reliable RTG check on
+	// OS3.1+ (BMF_STANDARD is a graphics.library V45+ flag and missing
+	// from OS3.1). Fall back to CyberGraphX's ISCYBERGFX probe on
+	// installs that only have CGX resident, so custom drag still gets
+	// enabled there.
+	if (!(data->flags & LIBDF_NO_CUSTOM_DRAG) && ((struct Library *)GfxBase)->lib_Version >= 39)
+	{
+#if !defined(__AROS__)
+		if (P96Base && p96GetBitMapAttr(bm, P96BMA_ISP96))
+			ok = 1;
+		else
+#endif
+		if (CyberGfxBase && GetCyberMapAttr(bm, CYBRMATTR_ISCYBERGFX))
+			ok = 1;
+	}
 
 	return ok;
 }

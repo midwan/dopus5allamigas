@@ -20,7 +20,7 @@
 
 // set the library & modules version/revision
 #define LIB_VERSION    73
-#define LIB_REVISION   1
+#define LIB_REVISION   2
 
 // set the commands version/revision (viewfont, dopusrt5, loadwb)
 #define CMD_VERSION    65

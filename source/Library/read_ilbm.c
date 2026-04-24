@@ -23,8 +23,6 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopuslib.h"
 
-#include <proto/cybergraphics.h>
-
 // Read an ILBM image
 ILBMHandle *LIBFUNC L_ReadILBM(REG(a0, char *name), REG(d0, ULONG flags))
 {
@@ -466,12 +464,22 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 	struct BitMap *tempbm = 0;
 	UBYTE *buffer = 0;
 	signed char *src = (signed char *)source;  // needed for signedness issue
+	BOOL dest_is_p96, dest_is_cgx;
+	unsigned short colour_planes;
 
 	// Check valid source and destination
 	if (!source || !dest)
 		return;
 
-	// Masking?
+	// `planes` arrives as the BMHD nPlanes (colour planes only). DIF_MASK
+	// then bumps it by one so the per-plane decoder also walks the mask
+	// row in the source stream. Capture the colour-plane count separately:
+	// every "is this 24-bit RGB?" decision below (buffer sizing, RGBFormat
+	// selection, RECTFMT_RGB vs RECTFMT_LUT8) must look at the colour
+	// planes, NOT the mask-inflated total - otherwise a masked 24-bit
+	// ILBM (planes == 25) silently falls through the 8-bit branch and
+	// renders as corrupt indexed data on RTG destinations.
+	colour_planes = planes;
 	if (flags & DIF_MASK)
 		++planes;
 
@@ -497,16 +505,55 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 	if (height > dest_rows)
 		height = dest_rows;
 
-	// Allocate temporary bitmap if WritePixel needed
+	// Allocate temporary bitmap if WritePixel needed.
+	// Prefer P96's WritePixelArray path on a P96 destination; if the
+	// destination isn't a P96 bitmap but cybergraphics claims it, use
+	// CGX's WritePixelArray; otherwise use a planar temp bitmap +
+	// WritePixelLine8 (cannot carry 24-bit data).
+	//
+	// Probing the destination bitmap itself (not just "is any library
+	// resident?") matters on mixed setups where Picasso96API is loaded
+	// but a given BitMap was allocated through CyberGraphX or is plain
+	// planar - routing the row through the wrong API corrupts output.
+	dest_is_p96 = FALSE;
+	dest_is_cgx = FALSE;
+#if !defined(__AROS__)
+	if (P96Base && p96GetBitMapAttr(dest, P96BMA_ISP96))
+		dest_is_p96 = TRUE;
+#endif
+	if (!dest_is_p96 && CyberGfxBase && GetCyberMapAttr(dest, CYBRMATTR_ISCYBERGFX))
+		dest_is_cgx = TRUE;
+
+	// Note: 24-plane ILBMs decoded into a non-RTG destination fall through
+	// to the planar copy path below. That path correctly populates a true
+	// 24-plane planar destination (the L_ReadILBM ILBMF_GET_BITMAP /
+	// ILBMF_GET_PLANES callers create one); it is lossy only when
+	// dest_depth < planes, which is the same behaviour as master. The
+	// 24-bit DIF_WRITEPIX-into-8-bit-buffer overflow is prevented separately
+	// by the buffer-allocation guard right below: 24-bit only allocates a
+	// chunky buffer when an RTG dest is available, otherwise leaves
+	// `buffer` NULL so DIF_WRITEPIX is cleared and the planar copy runs.
+
 	if (flags & DIF_WRITEPIX)
 	{
-		// Cybergraphics, 24bit?
-		if (CyberGfxBase && planes == 24)
-			buffer = AllocVec((bufsize = bpr * 24), 0);
-
-		// Otherwise
-		else if ((CyberGfxBase || (tempbm = L_NewBitMap(width, 1, dest_depth, 0, 0))))
+		if (colour_planes == 24)
+		{
+			// 24-bit ILBM rows are RGB triples - that needs a P96 or
+			// CGX destination able to take 3 bytes per pixel. The planar
+			// tempbm + WritePixelLine8 path can only hold 1 byte per
+			// pixel; trying to feed it the 24-bit decode would overrun
+			// an 8-bit buffer (the decoder always advances ptr += 3 in
+			// the 24-bit branch). If no RTG dest is available, leave
+			// `buffer` NULL so DIF_WRITEPIX gets cleared below and the
+			// decoder falls back to the legacy planar copy path.
+			if (dest_is_p96 || dest_is_cgx)
+				buffer = AllocVec((bufsize = bpr * 24), 0);
+		}
+		// 8bpp path: RTG write or planar tempbm fallback
+		else if (dest_is_p96 || dest_is_cgx || (tempbm = L_NewBitMap(width, 1, dest_depth, 0, 0)))
+		{
 			buffer = AllocVec((bufsize = bpr << 3), 0);
+		}
 
 		// Got buffer?
 		if (buffer)
@@ -545,8 +592,22 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 			// Go through planes
 			for (plane = 0; plane < planes; plane++)
 			{
-				// Check this plane is ok to decode into
-				if (plane < dest_depth && (flags & DIF_WRITEPIX || dest->Planes[plane]))
+				// Decode this plane if either:
+				//   - DIF_WRITEPIX is set AND it is a colour plane: every
+				//     source colour plane goes into the chunky `buffer`,
+				//     which is sized for `colour_planes` (not `dest_depth`).
+				//     Skipping colour planes here would silently drop bits
+				//     before the RTG writer (e.g. a 24-bit ILBM into an
+				//     8-bit RTG dest would only get the low 8 bits of R)
+				//     and ship a corrupt RGB row through p96/CGX
+				//     WritePixelArray. Mask planes (plane >= colour_planes)
+				//     fall through to the source-byte consume branch
+				//     below - we must not OR mask bits into the chunky
+				//     buffer.
+				//   - Else (legacy planar copy): the destination must
+				//     actually have a plane pointer at this index.
+				if (((flags & DIF_WRITEPIX) && plane < colour_planes) ||
+					(!(flags & DIF_WRITEPIX) && plane < dest_depth && dest->Planes[plane]))
 				{
 					register char *ptr;
 					register short copy, col, count;
@@ -556,7 +617,7 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 					if (flags & DIF_WRITEPIX)
 					{
 						// 24 bit?
-						if (planes == 24)
+						if (colour_planes == 24)
 						{
 							// Get start
 							if (plane < 8)
@@ -600,7 +661,7 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 									val = *src++;
 
 									// 24 bit?
-									if (planes == 24)
+									if (colour_planes == 24)
 									{
 										// 8 pixels in value
 										for (a = 0; a < 8; a++, ptr += 3)
@@ -637,7 +698,7 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 									register short a;
 
 									// 24 bit?
-									if (planes == 24)
+									if (colour_planes == 24)
 									{
 										// 8 pixels in value
 										for (a = 0; a < 8; a++, ptr += 3)
@@ -686,15 +747,40 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 			// Writepixel?
 			if (flags & DIF_WRITEPIX)
 			{
-				// CyberGfx?
-				if (CyberGfxBase)
+				// Dispatch by destination capability (decided once above).
+				// Using the dest-specific probe instead of "is the library
+				// resident?" avoids misrouting rows on mixed setups where
+				// P96 is loaded but this particular BitMap came from CGX.
+#if !defined(__AROS__)
+				if (dest_is_p96)
 				{
-					// Write pixel array
-					WritePixelArray(
-						buffer, 0, 0, width, &rp, 0, row, width, 1, (planes == 24) ? RECTFMT_RGB : RECTFMT_LUT8);
+					struct RenderInfo ri;
+					ri.Memory = buffer;
+					ri.BytesPerRow = (colour_planes == 24) ? width * 3 : width;
+					ri.pad = 0;
+					ri.RGBFormat = (colour_planes == 24) ? RGBFB_R8G8B8 : RGBFB_CLUT;
+					p96WritePixelArray(&ri, 0, 0, &rp, 0, row, width, 1);
+				}
+				else
+#endif
+
+				// CyberGraphX destination (CGX-only installs, or P96 resident
+				// but this BitMap is a CGX one)
+				if (dest_is_cgx)
+				{
+					WritePixelArray(buffer,
+									0,
+									0,
+									width,
+									&rp,
+									0,
+									row,
+									width,
+									1,
+									(colour_planes == 24) ? RECTFMT_RGB : RECTFMT_LUT8);
 				}
 
-				// Write to bitmap
+				// Planar tempbm path (destination isn't RTG-capable)
 				else
 					WritePixelLine8(&rp, 0, row, width, buffer, &temprp);
 			}
@@ -708,15 +794,139 @@ void LIBFUNC L_DecodeILBM(REG(a0, char *source),
 	// No encoding
 	else if (comp == 0)
 	{
+		// Two sub-paths, mirroring the RLE branch above:
+		//   - DIF_WRITEPIX  : decode planar source rows into the chunky
+		//                     `buffer`, then dispatch through the same
+		//                     P96 / CGX / WritePixelLine8 writers. This
+		//                     is what makes uncompressed ILBM into an
+		//                     RTG destination work.
+		//   - !DIF_WRITEPIX : legacy per-plane CopyMem into dest->Planes,
+		//                     guarded by `dest->Planes[plane]` so an RTG
+		//                     dest (NULL plane pointers) isn't corrupted
+		//                     if a caller somehow lands here without
+		//                     DIF_WRITEPIX.
 		for (row = 0; row < height; row++)
 		{
+			if (flags & DIF_WRITEPIX)
+			{
+				short col;
+				for (col = 0; col < bufsize; col++)
+					buffer[col] = 0;
+			}
+
 			for (plane = 0; plane < planes; plane++)
 			{
-				if (plane < dest_depth)
-					CopyMem(src, (char *)dest->Planes[plane] + bmoffset, bpr);
-				src += bpr;
+				// Same gating rule as the comp == 1 branch above:
+				//   DIF_WRITEPIX colour-plane (plane < colour_planes) -> decode
+				//                into chunky buffer (regardless of dest_depth,
+				//                so 24-bit RGB stays intact on smaller RTG dests)
+				//   DIF_WRITEPIX mask-plane (plane >= colour_planes) -> consume
+				//                source bytes only, do NOT touch the buffer
+				//   !DIF_WRITEPIX -> legacy planar copy gated on the destination's
+				//                actual plane pointer
+				if (((flags & DIF_WRITEPIX) && plane < colour_planes) ||
+					(!(flags & DIF_WRITEPIX) && plane < dest_depth && dest->Planes[plane]))
+				{
+					if (flags & DIF_WRITEPIX)
+					{
+						register char *ptr;
+						register short col;
+						short pnum = 0;
+
+						// Same chunky-buffer plane-byte / pixel-bit
+						// layout as the RLE branch above.
+						if (colour_planes == 24)
+						{
+							if (plane < 8)        { ptr = (char *)buffer;     pnum = plane; }
+							else if (plane < 16)  { ptr = (char *)buffer + 1; pnum = plane - 8; }
+							else                  { ptr = (char *)buffer + 2; pnum = plane - 16; }
+						}
+						else
+							ptr = (char *)buffer;
+
+						// ILBM rows are padded to a 16-bit boundary, so bpr can
+						// cover more bits than `width`. Only decode the leading
+						// `width` pixels per plane; consume but ignore any
+						// trailing padding bits so they don't poison the
+						// chunky buffer beyond pixel `width`.
+						for (col = 0; col < bpr; col++)
+						{
+							register unsigned char val;
+							register short a, bits;
+
+							val = *src++;
+
+							bits = (short)(width - col * 8);
+							if (bits > 8)
+								bits = 8;
+							else if (bits < 0)
+								bits = 0;
+
+							if (colour_planes == 24)
+							{
+								for (a = 0; a < bits; a++, ptr += 3)
+									if (val & (1 << (7 - a)))
+										*ptr |= 1 << pnum;
+							}
+							else
+							{
+								for (a = 0; a < bits; a++, ptr++)
+									if (val & (1 << (7 - a)))
+										*ptr |= 1 << plane;
+							}
+						}
+					}
+					else
+					{
+						CopyMem(src, (char *)dest->Planes[plane] + bmoffset, bpr);
+						src += bpr;
+					}
+				}
+				else
+				{
+					// Skip this plane in the source stream (caller had
+					// no destination room for it, or RTG dest with NULL
+					// plane pointers and !DIF_WRITEPIX).
+					src += bpr;
+				}
 			}
-			bmoffset += dest->BytesPerRow;
+
+			if (flags & DIF_WRITEPIX)
+			{
+#if !defined(__AROS__)
+				if (dest_is_p96)
+				{
+					struct RenderInfo ri;
+					ri.Memory = buffer;
+					ri.BytesPerRow = (colour_planes == 24) ? width * 3 : width;
+					ri.pad = 0;
+					ri.RGBFormat = (colour_planes == 24) ? RGBFB_R8G8B8 : RGBFB_CLUT;
+					p96WritePixelArray(&ri, 0, 0, &rp, 0, row, width, 1);
+				}
+				else
+#endif
+				if (dest_is_cgx)
+				{
+					WritePixelArray(buffer,
+									0,
+									0,
+									width,
+									&rp,
+									0,
+									row,
+									width,
+									1,
+									(colour_planes == 24) ? RECTFMT_RGB : RECTFMT_LUT8);
+				}
+				else
+				{
+					WritePixelLine8(&rp, 0, row, width, buffer, &temprp);
+				}
+			}
+			else
+			{
+				bmoffset += dest->BytesPerRow;
+			}
 		}
 	}
 
