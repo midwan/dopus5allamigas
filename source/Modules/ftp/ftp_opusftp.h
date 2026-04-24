@@ -47,7 +47,11 @@ For more information on Directory Opus for Windows please see:
 #define USERNAMELEN 32
 #define FILENAMELEN 256								// Unix allows greater than Amiga's 30
 #define AMIFILENAMELEN 29							// 30 including null terminator
-#define FIBFILENAMELEN 107							// 108 including null terminator
+#ifdef __amigaos4__
+#define FIBFILENAMELEN	255							// 256 including null terminator
+#else
+#define FIBFILENAMELEN	107							// 108 including null terminator
+#endif
 #define COMMENTLEN 79								// 80 including null terminator
 #define HANDLELEN 12								// lister handle
 #define HOSTNAMELEN 96								// eg, 'planet.earth'

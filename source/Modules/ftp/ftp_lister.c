@@ -171,7 +171,7 @@ void lister_add(struct ftp_node *node, char *name, int size, int type, ULONG sec
 
 	fib->fib_DirEntryType = etype;
 
-	stccpy(fib->fib_FileName, name, 108);
+	stccpy(fib->fib_FileName, name, sizeof(fib->fib_FileName));
 
 	if (comment)
 		stccpy(fib->fib_Comment, comment, COMMENTLEN);
