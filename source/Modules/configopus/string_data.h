@@ -2318,8 +2318,8 @@ STATIC CONST UBYTE CatCompBlock[] = {"\x00\x00\x00\x01\x00\x04" MSG_OKAY_STR
 									 "\x00\x00"
 									 "\x00\x00\x13\xBF\x00\x1C" MSG_ENVIRONMENT_VOSTY_ZOOM_STR
 									 "\x00\x00"
-									 "\x00\x00\x59\xEF\x00\x20" MSG_ENVIRONMENT_FULL_PATH_STR
-									 "\x00"
+									 "\x00\x00\x59\xEF\x00\x1F" MSG_ENVIRONMENT_FULL_PATH_STR
+									 "\x00\x00"
 									 "\x00\x00\x13\xC0\x00\x10" MSG_ENVIRONMENT_PICTURE_STRETCHED_STR
 									 "\x00"
 									 "\x00\x00\x13\xC1\x00\x06" MSG_ENVIRONMENT_PICTURE_TILED_STR
