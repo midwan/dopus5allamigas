@@ -42,8 +42,11 @@ For more information on Directory Opus for Windows please see:
 #include <netdb.h>
 #include <time.h>
 
+#include "ftp_tls.h"
+
 #define CMDBUFSIZE 256
 #define REPLYTIMEOUT 60
+#define FTP_TLS_HOST_BUFSIZE 256
 
 #define IOBUFSIZE (8 * 1024)  // What is the most effective size for this
 							  // depends on speed of link. Largest observed
@@ -93,6 +96,11 @@ struct ftp_info
 	int fi_doing_noop;		  // GP Flag to suppress log output
 	int fi_buffer_left;		  // GP
 	char *fi_buffer_pos;	  // GP
+
+	int fi_tls_mode;						// FTP_TLS_MODE_*
+	int fi_tls_verify_peer;					// Verify TLS certificates when non-zero
+	char fi_tls_host[FTP_TLS_HOST_BUFSIZE];	// Hostname for SNI/certificate checks
+	struct ftp_tls_session fi_control_tls;	// Protected control connection
 };
 #ifndef __amigaos3__
 	#pragma pack()
@@ -154,6 +162,7 @@ enum {
 	FTPERR_FAKE_421,		  // getreply() returns 421 but didn't read it in
 	FTPERR_BAD_COMMAND,		  // A formatted FTP command was rejected locally
 	FTPERR_COMMAND_TOO_LONG,  // A formatted FTP command was too long
+	FTPERR_TLS_FAIL,		  // TLS negotiation failed
 
 	FTPERR_XFER_SRCERR = 1 << 15,  // Error on source end of get(), put(), getput()
 	FTPERR_XFER_DSTERR = 1 << 16,  // Error on destination end of get(), put(), getput()

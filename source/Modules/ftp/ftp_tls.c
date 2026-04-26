@@ -364,6 +364,19 @@ int ftp_tls_read(struct ftp_tls_session *session, void *buf, int len)
 #endif
 }
 
+int ftp_tls_pending(struct ftp_tls_session *session)
+{
+#if defined(FTP_TLS_HAVE_OPENSSL_API)
+	if (!session || !session->active || !session->ssl)
+		return 0;
+
+	return SSL_pending((SSL *)session->ssl);
+#else
+	(void)session;
+	return 0;
+#endif
+}
+
 int ftp_tls_write(struct ftp_tls_session *session, const void *buf, int len)
 {
 #if defined(FTP_TLS_HAVE_OPENSSL_API)

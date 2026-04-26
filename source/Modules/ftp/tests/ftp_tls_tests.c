@@ -84,6 +84,7 @@ static void test_tls_mode_properties(void)
 static void test_tls_session_defaults(void)
 {
 	struct ftp_tls_session session;
+	int mode = 0;
 
 	session.ctx = (void *)1;
 	session.ssl = (void *)2;
@@ -95,6 +96,8 @@ static void test_tls_session_defaults(void)
 	check_true("tls session clears ssl", session.ssl == NULL);
 	check_int("tls session clears socket", session.socket, -1);
 	check_false("tls session inactive", session.active);
+	check_int("tls inactive pending", ftp_tls_pending(&session), 0);
+	check_int("tls inactive read fails", ftp_tls_read(&session, &mode, sizeof(mode)), -1);
 }
 
 int main(void)

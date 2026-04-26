@@ -265,6 +265,8 @@ static UWORD allow_resume_labels[] = {MSG_REPLACE_ALWAYS, MSG_REPLACE_NEVER, MSG
 
 			 copy_type_labels[] = {MSG_COPY_DEFAULT, MSG_COPY_UPDATE, MSG_COPY_NEWER, 0},
 
+			 tls_mode_labels[] = {MSG_FTP_TLS_PLAIN, MSG_FTP_TLS_EXPLICIT, 0},
+
 			 addr_dc_labels[] = {MSG_ADR_CONNECT, MSG_ADR_EDIT, 0};
 
 // Tags for gadgets
@@ -292,6 +294,10 @@ static struct TagItem
 	copy_type_taglist[] = {{GTCustom_LocaleLabels, (ULONG)copy_type_labels},
 						   {GTCustom_CopyTags, TRUE},
 						   {TAG_MORE, (ULONG)ftp_relative_taglist}},
+
+	tls_mode_taglist[] = {{GTCustom_LocaleLabels, (ULONG)tls_mode_labels},
+						  {GTCustom_CopyTags, TRUE},
+						  {TAG_MORE, (ULONG)ftp_relative_taglist}},
 
 	unklinks_taglist[] = {{GTCustom_LocaleLabels, (ULONG)unklinks_labels},
 						  {GTCustom_CopyTags, TRUE},
@@ -417,6 +423,16 @@ ObjectDef ftp_options_objects[] =
 				   PLACETEXT_RIGHT,
 				   GAD_ENV_NOOPS,
 				   ftp_relative_taglist},
+
+				  // FTP security mode
+				  {OD_GADGET,
+				   CYCLE_KIND,
+				   {LEFT_EDGE_GAD, 7, 15, 1},
+				   {4, 46, 24, 6},
+				   MSG_FTP_SECURITY,
+				   PLACETEXT_LEFT,
+				   GAD_ENV_TLS_MODE,
+				   tls_mode_taglist},
 				  {OD_END}},
 
 		  ftp_opt_misc[] =

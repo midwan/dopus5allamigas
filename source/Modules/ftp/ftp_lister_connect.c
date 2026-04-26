@@ -36,6 +36,8 @@ For more information on Directory Opus for Windows please see:
  *
  */
 
+#include <ctype.h>
+
 #include "ftp.h"
 #include "ftp_arexx.h"
 #include "ftp_ipc.h"
@@ -367,6 +369,26 @@ static int connect_cwd(struct ftp_node *ftpnode,
 
 /********************************/
 
+static char *lister_server_error_text(struct opusftp_globals *og, struct ftp_node *node)
+{
+	char *errmsg;
+
+	if (!node || !*node->fn_ftp.fi_serverr)
+		return NULL;
+
+	if ((errmsg = strchr(node->fn_ftp.fi_serverr + 4, '\r')))
+		*errmsg = 0;
+
+	if (!og->og_oc.oc_log_debug && isdigit((unsigned char)node->fn_ftp.fi_serverr[0]) &&
+		isdigit((unsigned char)node->fn_ftp.fi_serverr[1]) &&
+		isdigit((unsigned char)node->fn_ftp.fi_serverr[2]) && node->fn_ftp.fi_serverr[3] == ' ')
+		return node->fn_ftp.fi_serverr + 4;
+
+	return node->fn_ftp.fi_serverr;
+}
+
+/********************************/
+
 //
 //	Attempt to connect and login.
 //
@@ -478,14 +500,7 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 				else if (errno)
 					cld->cld_errmsg = sockerr();
 				else if (*node->fn_ftp.fi_serverr)
-				{
-					// Remove \r\n from end of line
-					if ((cld->cld_errmsg = strchr(node->fn_ftp.fi_serverr + 4, '\r')))
-						*cld->cld_errmsg = 0;
-
-					// Include error number or message only?
-					cld->cld_errmsg = node->fn_ftp.fi_serverr + (og->og_oc.oc_log_debug ? 0 : 4);
-				}
+					cld->cld_errmsg = lister_server_error_text(og, node);
 				else if (loginerr == -1)
 					cld->cld_errmsg = GetString(locale, MSG_FTP_USERNAME_FAILED);
 				else
@@ -531,6 +546,8 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 				cld->cld_errmsg = sockerr();
 			else if (connected == -2)
 				cld->cld_errmsg = (char *)GetString(locale, MSG_SITE_NOT_FOUND);
+			else if (*node->fn_ftp.fi_serverr)
+				cld->cld_errmsg = lister_server_error_text(og, node);
 			else
 				cld->cld_errmsg = (char *)GetString(locale, MSG_FTP_COULD_NOT_CONNECT);
 		}
@@ -539,6 +556,8 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 			// Set error message
 			if (errno)
 				cld->cld_errmsg = sockerr();
+			else if (*node->fn_ftp.fi_serverr)
+				cld->cld_errmsg = lister_server_error_text(og, node);
 
 			choice = lister_retry_connect_requester(node, cld);
 
@@ -858,8 +877,13 @@ static struct ftp_node *lister_create_node(struct opusftp_globals *ogp, IPCData 
 	if ((node = AllocVec(sizeof(struct ftp_node), MEMF_CLEAR)))
 	{
 		node->fn_ipc = ipc;
-		node->fn_ftp.fi_og = node->fn_og = ogp;	 // MUST set this to access hook fns
-		node->fn_ftp.fi_task = FindTask(0);		 // To check against cross-task usage
+		node->fn_ftp.fi_og = node->fn_og = ogp;	// MUST set this to access hook fns
+		node->fn_ftp.fi_task = FindTask(0);		// To check against cross-task usage
+		node->fn_ftp.fi_cs = -1;
+		node->fn_ftp.fi_tls_mode =
+			ftp_tls_mode_uses_control_tls(cm->cm_site.se_env->e_tls_mode) ? FTP_TLS_MODE_EXPLICIT : FTP_TLS_MODE_OFF;
+		node->fn_ftp.fi_tls_verify_peer = 0;
+		ftp_tls_session_init(&node->fn_ftp.fi_control_tls);
 
 		stccpy(node->fn_opus, cm->cm_opus, PORTNAMELEN + 1);
 

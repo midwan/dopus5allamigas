@@ -33,6 +33,7 @@ int ftp_tls_mode_uses_data_tls(int mode);
 void ftp_tls_session_init(struct ftp_tls_session *session);
 void ftp_tls_session_cleanup(struct ftp_tls_session *session);
 int ftp_tls_connect(struct ftp_tls_session *session, int socket, const char *host, int verify_peer);
+int ftp_tls_pending(struct ftp_tls_session *session);
 int ftp_tls_read(struct ftp_tls_session *session, void *buf, int len);
 int ftp_tls_write(struct ftp_tls_session *session, const void *buf, int len);
 

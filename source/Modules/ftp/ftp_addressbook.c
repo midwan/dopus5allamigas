@@ -1697,6 +1697,9 @@ static void display_options_gadgets(struct window_params *wp)
 		SetGadgetValue(objlist, GAD_ENV_RETRY_DELAY, env->e_retry_delay);
 		SetGadgetValue(objlist, GAD_ENV_ENABLE_RETRY_LOST, env->e_retry_lost);
 		SetGadgetValue(objlist, GAD_ENV_NOOPS, env->e_noops);
+		SetGadgetValue(objlist,
+					   GAD_ENV_TLS_MODE,
+					   ftp_tls_mode_uses_control_tls(env->e_tls_mode) ? FTP_TLS_MODE_EXPLICIT : FTP_TLS_MODE_OFF);
 
 		DisableObject(objlist, GAD_ENV_RETRY_COUNT, !env->e_retry);
 		DisableObject(objlist, GAD_ENV_RETRY_DELAY, !env->e_retry);
@@ -1858,6 +1861,7 @@ static void store_options_gadgets(struct window_params *wp)
 		env->e_retry_delay = GetGadgetValue(objlist, GAD_ENV_RETRY_DELAY);
 		env->e_retry_lost = GetGadgetValue(objlist, GAD_ENV_ENABLE_RETRY_LOST);
 		env->e_noops = GetGadgetValue(objlist, GAD_ENV_NOOPS);
+		env->e_tls_mode = GetGadgetValue(objlist, GAD_ENV_TLS_MODE);
 		break;
 
 	default:

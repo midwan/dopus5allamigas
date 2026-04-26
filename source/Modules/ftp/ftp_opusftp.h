@@ -199,7 +199,7 @@ struct ftp_environment
 			unsigned int e_show_dir : 1;
 			unsigned int e_progress_window : 1;	 // Display progress bars while scanning dirs
 
-			unsigned int oldpad : 2;
+			unsigned int e_tls_mode : 2;  // FTP_TLS_MODE_*
 
 			unsigned int e_script_connect_ok : 1;
 			unsigned int e_script_connect_fail : 1;
@@ -438,6 +438,7 @@ enum {
 	GAD_ENV_RETRY_DELAY,
 	GAD_ENV_ENABLE_RETRY_LOST,
 	GAD_ENV_NOOPS,
+	GAD_ENV_TLS_MODE,
 	GAD_ENV_PASSIVE,
 
 	GAD_ENV_TIMEOUT,

@@ -1065,3 +1065,18 @@ MSG_ABORT_COMMENT_END (//)
 MSG_FTP_SERVER_ERROR (//)
 Command Failed or Server Error
 ;
+MSG_FTP_SECURITY (//)
+Security
+;
+MSG_FTP_TLS_PLAIN (//)
+Plain FTP
+;
+MSG_FTP_TLS_EXPLICIT (//)
+Explicit FTPS
+;
+MSG_FTP_SECURING_CONNECTION (//)
+Securing FTP connection...
+;
+MSG_FTP_TLS_FAILED (//)
+FTPS negotiation failed
+;
