@@ -32,6 +32,15 @@ static void check_uint(const char *name, unsigned int actual, unsigned int expec
 	}
 }
 
+static void check_mask(const char *name, unsigned int actual, unsigned int expected)
+{
+	if ((actual & expected) != expected)
+	{
+		printf("FAIL: %s: got mask 0x%x expected 0x%x\n", name, actual, expected);
+		++failures;
+	}
+}
+
 static void test_epsv(void)
 {
 	unsigned int port = 0;
@@ -90,6 +99,42 @@ static void test_eol(void)
 	check_false("eol accepts plain text", ftp_parse_has_eol("LIST /pub"));
 	check_true("eol detects cr", ftp_parse_has_eol("LIST /pub\rNOOP"));
 	check_true("eol detects lf", ftp_parse_has_eol("LIST /pub\nNOOP"));
+}
+
+static void test_feat(void)
+{
+	unsigned int caps;
+
+	caps = ftp_parse_feat_reply("211-Features:\r\n"
+								" UTF8\r\n"
+								" EPSV\r\n"
+								" MDTM\r\n"
+								" REST STREAM\r\n"
+								" SIZE\r\n"
+								" MLST type*;size*;modify*;\r\n"
+								"211 End\r\n");
+
+	check_mask("feat parses standard multiline reply",
+			   caps,
+			   FTP_PARSE_FEAT_UTF8 | FTP_PARSE_FEAT_EPSV | FTP_PARSE_FEAT_MDTM |
+				   FTP_PARSE_FEAT_REST_STREAM | FTP_PARSE_FEAT_SIZE | FTP_PARSE_FEAT_MLST);
+
+	caps = ftp_parse_feat_reply("211-Extensions supported:\n"
+								" mLsD\n"
+								" Rest Stream\n"
+								"211 End\n");
+	check_mask("feat parses mixed-case extensions",
+			   caps,
+			   FTP_PARSE_FEAT_MLST | FTP_PARSE_FEAT_REST_STREAM);
+
+	check_true("feat parses coded feature line",
+			   ftp_parse_feat_line("211 EPSV") & FTP_PARSE_FEAT_EPSV);
+	check_false("feat ignores reply banner",
+				ftp_parse_feat_line("211-Features:") & FTP_PARSE_FEAT_MLST);
+	check_false("feat rejects feature prefix",
+				ftp_parse_feat_line(" SIZES") & FTP_PARSE_FEAT_SIZE);
+	check_false("feat requires rest stream mode",
+				ftp_parse_feat_line(" REST") & FTP_PARSE_FEAT_REST_STREAM);
 }
 
 static void test_ipv4_scope(void)
@@ -159,6 +204,7 @@ int main(void)
 	test_epsv();
 	test_pasv();
 	test_eol();
+	test_feat();
 	test_ipv4_scope();
 	test_pasv_peer();
 

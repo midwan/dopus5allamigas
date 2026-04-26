@@ -19,6 +19,73 @@ static int ftp_parse_isdigit(char c)
 	return isdigit((unsigned char)c);
 }
 
+static int ftp_parse_isspace(char c)
+{
+	return c == ' ' || c == '\t';
+}
+
+static char ftp_parse_toupper(char c)
+{
+	if (c >= 'a' && c <= 'z')
+		return (char)(c - ('a' - 'A'));
+
+	return c;
+}
+
+static const char *ftp_parse_skip_spaces(const char *text)
+{
+	while (ftp_parse_isspace(*text))
+		++text;
+
+	return text;
+}
+
+static int ftp_parse_feature_token_end(char c)
+{
+	return c == 0 || c == '\r' || c == '\n' || ftp_parse_isspace(c) || c == ';';
+}
+
+static int ftp_parse_feature_word(const char *text, const char *word)
+{
+	while (*word)
+	{
+		if (ftp_parse_toupper(*text) != *word)
+			return 0;
+
+		++text;
+		++word;
+	}
+
+	return ftp_parse_feature_token_end(*text);
+}
+
+static int ftp_parse_feature_prefix(const char **text, const char *word)
+{
+	const char *p = *text;
+
+	while (*word)
+	{
+		if (ftp_parse_toupper(*p) != *word)
+			return 0;
+
+		++p;
+		++word;
+	}
+
+	*text = p;
+	return 1;
+}
+
+static int ftp_parse_feature_rest_stream(const char *text)
+{
+	if (!ftp_parse_feature_prefix(&text, "REST") || !ftp_parse_isspace(*text))
+		return 0;
+
+	text = ftp_parse_skip_spaces(text);
+
+	return ftp_parse_feature_word(text, "STREAM");
+}
+
 static void ftp_parse_copy_tuple(unsigned int dest[6], const unsigned int src[6])
 {
 	int i;
@@ -40,6 +107,62 @@ int ftp_parse_has_eol(const char *text)
 	}
 
 	return 0;
+}
+
+unsigned int ftp_parse_feat_line(const char *line)
+{
+	const char *feat;
+	unsigned int caps = 0;
+
+	if (!line)
+		return 0;
+
+	feat = ftp_parse_skip_spaces(line);
+
+	if (ftp_parse_isdigit(feat[0]) && ftp_parse_isdigit(feat[1]) && ftp_parse_isdigit(feat[2]) &&
+		(feat[3] == '-' || feat[3] == ' '))
+		feat = ftp_parse_skip_spaces(feat + 4);
+
+	if (ftp_parse_feature_word(feat, "MLST") || ftp_parse_feature_word(feat, "MLSD"))
+		caps |= FTP_PARSE_FEAT_MLST;
+
+	if (ftp_parse_feature_word(feat, "EPSV"))
+		caps |= FTP_PARSE_FEAT_EPSV;
+
+	if (ftp_parse_feature_word(feat, "SIZE"))
+		caps |= FTP_PARSE_FEAT_SIZE;
+
+	if (ftp_parse_feature_word(feat, "MDTM"))
+		caps |= FTP_PARSE_FEAT_MDTM;
+
+	if (ftp_parse_feature_rest_stream(feat))
+		caps |= FTP_PARSE_FEAT_REST_STREAM;
+
+	if (ftp_parse_feature_word(feat, "UTF8"))
+		caps |= FTP_PARSE_FEAT_UTF8;
+
+	return caps;
+}
+
+unsigned int ftp_parse_feat_reply(const char *reply)
+{
+	unsigned int caps = 0;
+
+	if (!reply)
+		return 0;
+
+	while (*reply)
+	{
+		caps |= ftp_parse_feat_line(reply);
+
+		while (*reply && *reply != '\r' && *reply != '\n')
+			++reply;
+
+		while (*reply == '\r' || *reply == '\n')
+			++reply;
+	}
+
+	return caps;
 }
 
 int ftp_parse_ipv4_is_non_global(unsigned int a, unsigned int b, unsigned int c, unsigned int d)

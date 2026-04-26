@@ -43,6 +43,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_opusftp.h"
 #include "ftp_recursive.h"
 #include "ftp_util.h"
+#include "ftp_parse.h"
 #include "ftp_module.h"
 #include "ftp_addressbook.h"
 #include "ftp_addrsupp_protos.h"
@@ -274,27 +275,35 @@ static int lister_getsystype(struct ftp_node *node)
 static int feat_update(void *data, int skip, char *line)
 {
 	struct ftp_info *info = data;
-	char *feat = stpblk(line);
+	unsigned int caps;
 
-	if (!strncmp(feat, "MLST", 4))
+	(void)skip;
+
+	if (!info || !line)
+		return 0;
+
+	caps = ftp_parse_feat_line(line);
+
+	if (caps & FTP_PARSE_FEAT_MLST)
 		info->fi_flags |= FTP_FEAT_MLST;
+	if (caps & FTP_PARSE_FEAT_REST_STREAM)
+		info->fi_flags |= FTP_FEAT_REST_STREAM;
+	if (caps & FTP_PARSE_FEAT_SIZE)
+		info->fi_flags |= FTP_FEAT_SIZE;
+	if (caps & FTP_PARSE_FEAT_MDTM)
+		info->fi_flags |= FTP_FEAT_MDTM;
+	if (caps & FTP_PARSE_FEAT_EPSV)
+		info->fi_flags |= FTP_FEAT_EPSV;
+	if (caps & FTP_PARSE_FEAT_UTF8)
+		info->fi_flags |= FTP_FEAT_UTF8;
 
 	return 0;
 }
 
 static void lister_getfeats(struct ftp_node *node)
 {
-	int reply;
-
-#if 0
-	_ftpa(&node->fn_ftp, FTPFLAG_ASYNCH, "FEAT\r\n");
-	reply = _getreply(&node->fn_ftp, 0, feat_update, &node->fn_ftp);
-#else
-	// test if the server supports MLSD without actually parsing FEAT
-	reply = ftp(&node->fn_ftp, "MLSD\r\n");
-	if (!(reply >= 500 && reply <= 502))
-		node->fn_ftp.fi_flags |= FTP_FEAT_MLST;
-#endif
+	if (_ftpa(&node->fn_ftp, FTPFLAG_ASYNCH, "FEAT") < 600)
+		_getreply(&node->fn_ftp, 0, feat_update, &node->fn_ftp);
 
 	if (node->fn_ftp.fi_flags & FTP_FEAT_MLST)
 	{

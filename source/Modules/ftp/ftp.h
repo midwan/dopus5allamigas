@@ -107,7 +107,12 @@ enum {
 	FTP_NO_CHMOD = 1 << 27,	 // Doesn't support 'SITE CHMOD' command - set protection bits
 	FTP_NO_EPSV = 1 << 26,	 // Doesn't support 'EPSV' command - extended passive transfers
 
-	FTP_FEAT_MLST = 1 << 16,  // Supports 'MLSD' and 'MLST'
+	FTP_FEAT_MLST = 1 << 16,		  // Supports 'MLSD' and 'MLST'
+	FTP_FEAT_REST_STREAM = 1 << 17,  // Supports 'REST STREAM'
+	FTP_FEAT_SIZE = 1 << 18,		  // Supports 'SIZE'
+	FTP_FEAT_MDTM = 1 << 19,		  // Supports 'MDTM'
+	FTP_FEAT_EPSV = 1 << 20,		  // Supports 'EPSV'
+	FTP_FEAT_UTF8 = 1 << 21,		  // Supports 'UTF8'
 
 	FTP_IS_UNIX = 1 << 15,	  // Operating system is a version of Unix (DG/UX)
 	FTP_IS_WUFTPD = 1 << 14,  // FTP server is wu-ftpd
