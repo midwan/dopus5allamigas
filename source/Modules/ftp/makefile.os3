@@ -1,6 +1,8 @@
 include makefile.objs
 include ../module.common
 
+LIBS := $(filter-out -lamiga,$(LIBS)) -lamisslstubs -lamiga
+
 SHELL:= sh
 NEWDATE  := $(shell date +%d.%m.%Y)
 
@@ -35,4 +37,3 @@ clean:
 .PHONY cleanall:
 cleanall : clean
 	@$(REMOVE) $(TARGET) $(TARGET).map $(TARGET).s
-

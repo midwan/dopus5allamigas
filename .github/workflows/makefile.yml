@@ -17,12 +17,12 @@ concurrency:
 jobs:
   ftp-tests:
     runs-on: ubuntu-latest
-    name: ftp-parser-tests
+    name: ftp-host-tests
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Run FTP parser tests
+      - name: Run FTP host tests
         run: make -C source/Modules/ftp -f makefile.tests test
 
   build:

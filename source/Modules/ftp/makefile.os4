@@ -26,7 +26,7 @@ LDFLAGS  := $(C_LIB) -nostartfiles
 WARNINGS := -Wall -fno-strict-aliasing
 CC       := ppc-amigaos-gcc
 CFLAGS   := $(OPTIONS) $(DEBUG) $(DEBUGSYM) $(OPTIMIZE)
-LIBS     := 
+LIBS     := -lamisslstubs
 
 REMOVE  := rm -f
 MAKEDIR := mkdir -p
@@ -55,4 +55,3 @@ clean:
 .PHONY cleanall:
 cleanall : clean
 	@$(REMOVE) $(TARGET) $(TARGET).map $(TARGET).s
-

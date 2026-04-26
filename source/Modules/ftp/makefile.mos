@@ -24,7 +24,7 @@ LDFLAGS  := -nostartfiles -Wl,-Map=$(TARGET).map
 WARNINGS := -Wall -Wno-error=incompatible-pointer-types -Wno-error=int-conversion
 CC       := ppc-morphos-gcc -noixemul
 CFLAGS   := $(OPTIONS) $(DEBUG) $(DEBUGSYM) $(OPTIMIZE)
-LIBS     := -ldebug
+LIBS     := -ldebug -lssl_shared -lcrypto_shared
 
 REMOVE = rm -f
 MAKEDIR := mkdir -p
@@ -70,4 +70,3 @@ cleanall : clean
 .PHONY dump:
 dump:
 	ppc-morphos-objdump --disassemble-all --reloc $(TARGET) >$(TARGET).s
-
