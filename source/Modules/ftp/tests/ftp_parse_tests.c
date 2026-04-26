@@ -92,11 +92,32 @@ static void test_eol(void)
 	check_true("eol detects lf", ftp_parse_has_eol("LIST /pub\nNOOP"));
 }
 
+static void test_ipv4_scope(void)
+{
+	check_false("ipv4 accepts global", ftp_parse_ipv4_is_non_global(8, 8, 8, 8));
+	check_false("ipv4 accepts adjacent public range",
+				ftp_parse_ipv4_is_non_global(172, 32, 0, 1));
+	check_false("ipv4 accepts public cgnat neighbor",
+				ftp_parse_ipv4_is_non_global(100, 128, 0, 1));
+
+	check_true("ipv4 rejects zero network", ftp_parse_ipv4_is_non_global(0, 0, 0, 0));
+	check_true("ipv4 rejects private 10", ftp_parse_ipv4_is_non_global(10, 1, 2, 3));
+	check_true("ipv4 rejects private 172", ftp_parse_ipv4_is_non_global(172, 16, 0, 1));
+	check_true("ipv4 rejects private 192", ftp_parse_ipv4_is_non_global(192, 168, 1, 1));
+	check_true("ipv4 rejects loopback", ftp_parse_ipv4_is_non_global(127, 0, 0, 1));
+	check_true("ipv4 rejects link local", ftp_parse_ipv4_is_non_global(169, 254, 1, 1));
+	check_true("ipv4 rejects cgnat", ftp_parse_ipv4_is_non_global(100, 64, 0, 1));
+	check_true("ipv4 rejects test net", ftp_parse_ipv4_is_non_global(192, 0, 2, 1));
+	check_true("ipv4 rejects multicast", ftp_parse_ipv4_is_non_global(224, 0, 0, 1));
+	check_true("ipv4 rejects octet overflow", ftp_parse_ipv4_is_non_global(256, 0, 0, 1));
+}
+
 int main(void)
 {
 	test_epsv();
 	test_pasv();
 	test_eol();
+	test_ipv4_scope();
 
 	if (failures)
 	{

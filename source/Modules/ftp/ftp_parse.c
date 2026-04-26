@@ -42,6 +42,47 @@ int ftp_parse_has_eol(const char *text)
 	return 0;
 }
 
+int ftp_parse_ipv4_is_non_global(unsigned int a, unsigned int b, unsigned int c, unsigned int d)
+{
+	if (a > 255 || b > 255 || c > 255 || d > 255)
+		return 1;
+
+	if (a == 0 || a == 10 || a == 127)
+		return 1;
+
+	if (a == 100 && b >= 64 && b <= 127)
+		return 1;
+
+	if (a == 169 && b == 254)
+		return 1;
+
+	if (a == 172 && b >= 16 && b <= 31)
+		return 1;
+
+	if (a == 192 && b == 168)
+		return 1;
+
+	if (a == 192 && b == 0 && c == 0)
+		return 1;
+
+	if (a == 192 && b == 0 && c == 2)
+		return 1;
+
+	if (a == 198 && (b == 18 || b == 19))
+		return 1;
+
+	if (a == 198 && b == 51 && c == 100)
+		return 1;
+
+	if (a == 203 && b == 0 && c == 113)
+		return 1;
+
+	if (a >= 224)
+		return 1;
+
+	return 0;
+}
+
 int ftp_parse_epsv_port(const char *buf, unsigned int *port)
 {
 	const char *p;

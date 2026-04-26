@@ -558,6 +558,92 @@ static void ftp_log_data_mode(struct opusftp_globals *ogp, struct ftp_info *info
 		logprintf("-- Data connection: %s\n", mode);
 }
 
+static void ftp_ipv4_to_octets(struct in_addr addr, unsigned int octets[4])
+{
+	unsigned long value = ntohl(addr.s_addr);
+
+	octets[0] = (value >> 24) & 255;
+	octets[1] = (value >> 16) & 255;
+	octets[2] = (value >> 8) & 255;
+	octets[3] = value & 255;
+}
+
+static void ftp_ipv4_to_string(struct in_addr addr, char *buffer)
+{
+	unsigned int octets[4];
+
+	ftp_ipv4_to_octets(addr, octets);
+	sprintf(buffer, "%u.%u.%u.%u", octets[0], octets[1], octets[2], octets[3]);
+}
+
+static BOOL ftp_ipv4_is_same_address(const unsigned int left[4], const unsigned int right[4])
+{
+	return left[0] == right[0] && left[1] == right[1] && left[2] == right[2] && left[3] == right[3];
+}
+
+static BOOL ftp_ipv4_is_link_local(const unsigned int octets[4])
+{
+	return octets[0] == 169 && octets[1] == 254;
+}
+
+static BOOL ftp_pasv_should_use_control_peer(const struct sockaddr_in *pasv_addr,
+											 const struct sockaddr_in *peer_addr)
+{
+	unsigned int pasv[4];
+	unsigned int peer[4];
+
+	ftp_ipv4_to_octets(pasv_addr->sin_addr, pasv);
+	ftp_ipv4_to_octets(peer_addr->sin_addr, peer);
+
+	if (ftp_ipv4_is_same_address(pasv, peer))
+		return FALSE;
+
+	if (pasv[0] == 0 || pasv[0] >= 224)
+		return TRUE;
+
+	if (pasv[0] == 127 && peer[0] != 127)
+		return TRUE;
+
+	if (ftp_ipv4_is_link_local(pasv) && !ftp_ipv4_is_link_local(peer))
+		return TRUE;
+
+	return ftp_parse_ipv4_is_non_global(pasv[0], pasv[1], pasv[2], pasv[3]) &&
+		   !ftp_parse_ipv4_is_non_global(peer[0], peer[1], peer[2], peer[3]);
+}
+
+static void ftp_fix_pasv_address(struct opusftp_globals *ogp, struct ftp_info *info, struct sockaddr_in *address)
+{
+	struct sockaddr_in peer_addr;
+#ifdef __amigaos4__
+	socklen_t peer_len = sizeof(peer_addr);
+#else
+	LONG peer_len = sizeof(peer_addr);
+#endif
+
+	if (!info || !address)
+		return;
+
+	if (getpeername(info->fi_cs, (struct sockaddr *)&peer_addr, &peer_len) < 0)
+		return;
+
+	if (ftp_pasv_should_use_control_peer(address, &peer_addr))
+	{
+		char pasv_text[16];
+		char peer_text[16];
+
+		ftp_ipv4_to_string(address->sin_addr, pasv_text);
+		ftp_ipv4_to_string(peer_addr.sin_addr, peer_text);
+
+		D(bug("PASV advertised %s, using control peer %s\n", pasv_text, peer_text));
+
+		if (ogp && ogp->og_oc.oc_log_debug)
+			logprintf("-- PASV advertised %s, using control peer %s\n", pasv_text, peer_text);
+
+		address->sin_family = peer_addr.sin_family;
+		address->sin_addr = peer_addr.sin_addr;
+	}
+}
+
 //
 //	Open data connection
 //	Returns -1 upon failure; a socket descriptor upon success.
@@ -645,6 +731,8 @@ static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 				case 227:  // correct reply
 					if (pasv_to_address(&info->fi_addr, info->fi_iobuf))
 					{
+						ftp_fix_pasv_address(ogp, info, &info->fi_addr);
+
 						if (connect(ts, (struct sockaddr *)&info->fi_addr, sizeof(info->fi_addr)) >= 0)
 						{
 							info->fi_data_mode = FTP_DATAMODE_PASV;
@@ -2111,6 +2199,7 @@ BOOL pasv_to_address(struct sockaddr_in *address, const char *buf)
 	if (port <= 0 || port > 65535)
 		return FALSE;
 
+	address->sin_family = AF_INET;
 	address->sin_addr.s_addr = inet_addr(data_ip_addr);
 	address->sin_port = htons(port);
 

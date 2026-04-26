@@ -15,5 +15,6 @@ modify it under the terms of the AROS Public License version 1.1.
 int ftp_parse_has_eol(const char *text);
 int ftp_parse_epsv_port(const char *buf, unsigned int *port);
 int ftp_parse_pasv_tuple(const char *buf, unsigned int values[6]);
+int ftp_parse_ipv4_is_non_global(unsigned int a, unsigned int b, unsigned int c, unsigned int d);
 
 #endif /* _FTP_PARSE_H */
