@@ -213,7 +213,8 @@ endif
 ifeq ($(SYSTEM), linux)
 # Ensure Amiga executables carry the Unix +x bit so lha records it
 # (Amiga LHA maps it back to the Amiga `e` protection flag on extract).
-	@chmod +x Dopus5/DirectoryOpus Dopus5/C/DOpusRT5 Dopus5/C/LoadDB Dopus5/C/viewfont
+	@chmod +x Dopus5/DirectoryOpus Dopus5/Libs/dopus5.library Dopus5/Modules/*.module \
+		Dopus5/C/DOpusRT5 Dopus5/C/LoadDB Dopus5/C/viewfont
 endif
 	@$(COPY) ../archive/$(BASEARC) $(DEST)Dopus5$(VERSION)$(NAME)$(TYPE).lha
 	@$(LHA) $(ARCDEST)Dopus5$(VERSION)$(NAME)$(TYPE).lha Dopus5

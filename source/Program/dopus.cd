@@ -1480,13 +1480,13 @@ MSG_REPLACE_SAME (7000//)
 The two files appear to be the same.
 ;
 MSG_REPLACE_VERSION_SAME (//)
-Both files are the same version (%ld.%ld).
+Both files are the same version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_VERSION_NEWER (//)
-The new file is a later version (%ld.%ld).
+The new file is a later version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_VERSION_OLDER (//)
-The new file is an earlier version (%ld.%ld).
+The new file is an earlier version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_SIZE_BIGGER (//)
 The new file is larger than the old one (by %ld bytes).\n
@@ -1515,7 +1515,7 @@ New - Size : %7ld  Date : %19s%s\n\
 Old - Size : %7ld  Date : %19s%s
 ;
 MSG_REPLACE_VER (//)
-  Ver : %2ld.%ld
+  Ver : %ld.%ld.%ld
 ;
 MSG_REPLACE_VER_UNKNOWN (//)
   Ver : ?????

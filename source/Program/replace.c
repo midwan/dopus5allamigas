@@ -24,6 +24,19 @@ For more information on Directory Opus for Windows please see:
 #include "dopus.h"
 #include "replace.h"
 
+#define VERSION_BUFFER_SIZE 4096
+#define VERSION_BUFFER_OVERLAP 128
+
+#define VERSIONF_GOT_EXE (1 << 0)
+#define VERSIONF_GOT_HEADER (1 << 1)
+#define VERSIONF_FAIL (1 << 2)
+#define VERSIONF_MATCH (1 << 3)
+
+#define VERSION_EXECUTABLE 0x3f3
+#define VERSION_HEADER_CODE 0x3e9
+#define VERSION_HEADER_DATA 0x3ea
+#define VERSION_MATCHWORD 0x4afc
+
 enum {
 	TEST_SAME,
 	TEST_OLDER,
@@ -31,6 +44,14 @@ enum {
 	TEST_BIGGER,
 	TEST_SMALLER,
 };
+
+static BOOL copy_get_file_version(char *, short *, short *, short *, APTR);
+static BOOL copy_scan_file_version(char *, short *, short *, short *);
+static BOOL copy_scan_resident_version(char *, short *, short *, short *);
+static BOOL copy_parse_version(char *, short, short *, short *, short *);
+static BOOL copy_parse_version_text(char *, short, short, short *, short *, short *);
+static BOOL copy_parse_version_number(char *, short, short *, short *);
+static BOOL copy_is_digit(char);
 
 long SmartAskReplace(struct Window *parent,
 					 struct Screen *sparent,
@@ -44,7 +65,7 @@ long SmartAskReplace(struct Window *parent,
 	char *datebuf[2];
 	char *buf, *buf2;
 	short ret = 0;
-	short version[2] = {0, 0}, revision[2] = {0, 0}, noversion = 0;
+	short version[2] = {0, 0}, revision[2] = {0, 0}, patch[2] = {0, 0}, noversion = 0;
 	short got_version = 0, can_ver;
 	short date_test = TEST_SAME, size_test = TEST_SAME, version_test = TEST_SAME;
 	short
@@ -111,7 +132,7 @@ long SmartAskReplace(struct Window *parent,
 				}
 
 				// Get version of new file
-				if ((ok = GetFileVersion(file_new->fib_FileName, &version[0], &revision[0], 0, progress)))
+				if ((ok = copy_get_file_version(file_new->fib_FileName, &version[0], &revision[0], &patch[0], progress)))
 				{
 					// Change to old directory
 					CurrentDir(dir_old);
@@ -122,7 +143,7 @@ long SmartAskReplace(struct Window *parent,
 						SetProgressWindowTags(progress, PW_FileName, old_name, PW_FileNum, 2, TAG_END);
 
 					// Get version of old file
-					if (GetFileVersion(file_old->fib_FileName, &version[1], &revision[1], 0, progress))
+					if (copy_get_file_version(file_old->fib_FileName, &version[1], &revision[1], &patch[1], progress))
 					{
 						// Got versions for both
 						got_version |= 2;
@@ -161,12 +182,16 @@ long SmartAskReplace(struct Window *parent,
 			else if (version[0] < version[1])
 				version_test = TEST_OLDER;
 
-			// Same version, check revision
+			// Same version, check revision and patch
 			else
 			{
 				if (revision[0] > revision[1])
 					version_test = TEST_NEWER;
 				else if (revision[0] < revision[1])
+					version_test = TEST_OLDER;
+				else if (patch[0] > patch[1])
+					version_test = TEST_NEWER;
+				else if (patch[0] < patch[1])
 					version_test = TEST_OLDER;
 			}
 		}
@@ -175,18 +200,18 @@ long SmartAskReplace(struct Window *parent,
 		if (!(environment->env->settings.replace_flags & REPLACEF_VERBOSE_REPLACE) &&
 			!(date_test == TEST_SAME && size_test == TEST_SAME && version_test == TEST_SAME))
 		{
-			char verbuf[2][24];
+			char verbuf[2][32];
 
 			// Build version strings
 			if (got_version & 1)
-				lsprintf(verbuf[0], GetString(&locale, MSG_REPLACE_VER), version[0], revision[0]);
+				lsprintf(verbuf[0], GetString(&locale, MSG_REPLACE_VER), version[0], revision[0], patch[0]);
 			else if (got_version & 2)
 				strcpy(verbuf[0], GetString(&locale, MSG_REPLACE_VER_UNKNOWN));
 			else
 				verbuf[0][0] = 0;
 
 			if (got_version & 2)
-				lsprintf(verbuf[1], GetString(&locale, MSG_REPLACE_VER), version[1], revision[1]);
+				lsprintf(verbuf[1], GetString(&locale, MSG_REPLACE_VER), version[1], revision[1], patch[1]);
 			else if (got_version & 1)
 				strcpy(verbuf[1], GetString(&locale, MSG_REPLACE_VER_UNKNOWN));
 			else
@@ -256,15 +281,27 @@ long SmartAskReplace(struct Window *parent,
 				{
 					// Same version?
 					if (version_test == TEST_SAME)
-						lsprintf(buf2, GetString(&locale, MSG_REPLACE_VERSION_SAME), version[0], revision[0]);
+						lsprintf(buf2,
+								 GetString(&locale, MSG_REPLACE_VERSION_SAME),
+								 version[0],
+								 revision[0],
+								 patch[0]);
 
 					// Newer version?
 					else if (version_test == TEST_NEWER)
-						lsprintf(buf2, GetString(&locale, MSG_REPLACE_VERSION_NEWER), version[0], revision[0]);
+						lsprintf(buf2,
+								 GetString(&locale, MSG_REPLACE_VERSION_NEWER),
+								 version[0],
+								 revision[0],
+								 patch[0]);
 
 					// Must be older
 					else
-						lsprintf(buf2, GetString(&locale, MSG_REPLACE_VERSION_OLDER), version[0], revision[0]);
+						lsprintf(buf2,
+								 GetString(&locale, MSG_REPLACE_VERSION_OLDER),
+								 version[0],
+								 revision[0],
+								 patch[0]);
 
 					// Add to string
 					strcat(buf, buf2);
@@ -325,4 +362,279 @@ long SmartAskReplace(struct Window *parent,
 		option = REPLACE_REPLACE | REPLACE_ALL;
 
 	return option;
+}
+
+static BOOL copy_get_file_version(char *name, short *version, short *revision, short *patch, APTR progress)
+{
+	short scan_version = 0, scan_revision = 0, scan_patch = 0;
+
+	*patch = 0;
+
+	if (!GetFileVersion(name, version, revision, 0, progress))
+		return 0;
+
+	if (copy_scan_file_version(name, &scan_version, &scan_revision, &scan_patch) && scan_version == *version &&
+		scan_revision == *revision)
+		*patch = scan_patch;
+	else if (copy_scan_resident_version(name, &scan_version, &scan_revision, &scan_patch) && scan_version == *version &&
+			 scan_revision == *revision)
+		*patch = scan_patch;
+
+	return 1;
+}
+
+static BOOL copy_scan_file_version(char *name, short *version, short *revision, short *patch)
+{
+	char *buffer;
+	BPTR file;
+	short size, scan_size, carry, pos;
+	BOOL ok = 0;
+
+	*version = 0;
+	*revision = 0;
+	*patch = 0;
+
+	if (!(buffer = AllocVec(VERSION_BUFFER_SIZE + VERSION_BUFFER_OVERLAP, 0)))
+		return 0;
+
+	if (!(file = Open(name, MODE_OLDFILE)))
+	{
+		FreeVec(buffer);
+		return 0;
+	}
+
+	carry = 0;
+	while ((size = Read(file, buffer + carry, VERSION_BUFFER_SIZE)) > -1)
+	{
+		if (size == 0)
+			break;
+
+		scan_size = carry + size;
+
+		if (copy_parse_version(buffer, scan_size, version, revision, patch))
+		{
+			ok = 1;
+			break;
+		}
+
+		carry = (scan_size > VERSION_BUFFER_OVERLAP) ? VERSION_BUFFER_OVERLAP : scan_size;
+		for (pos = 0; pos < carry; pos++)
+			buffer[pos] = buffer[scan_size - carry + pos];
+	}
+
+	Close(file);
+	FreeVec(buffer);
+
+	return ok;
+}
+
+static BOOL copy_scan_resident_version(char *name, short *version, short *revision, short *patch)
+{
+	char *buffer;
+	BPTR file;
+	short size, pos;
+	BOOL ok = 0;
+	unsigned short word_read = 0, wordpos = 0;
+	unsigned short verflags = 0;
+	unsigned long wordcount = 0, headerstart = 0, matchpos = 0, headerlength = 0, limit;
+
+	*version = 0;
+	*revision = 0;
+	*patch = 0;
+
+	if (!(buffer = AllocVec(VERSION_BUFFER_SIZE, 0)))
+		return 0;
+
+	if (!(file = Open(name, MODE_OLDFILE)))
+	{
+		FreeVec(buffer);
+		return 0;
+	}
+
+	limit = 256;
+
+	while ((size = Read(file, buffer, VERSION_BUFFER_SIZE)) > -1)
+	{
+		short extra = 0;
+
+		if (size == 0)
+		{
+			if (verflags & VERSIONF_MATCH)
+			{
+				Seek(file, matchpos, OFFSET_BEGINNING);
+				size = Read(file, buffer, 512);
+				if (size > 1)
+					ok = copy_parse_version_text(buffer, size, 1, version, revision, patch);
+			}
+			break;
+		}
+
+		if (size > VERSION_BUFFER_SIZE - 32)
+		{
+			extra = size - (VERSION_BUFFER_SIZE - 32);
+			size = VERSION_BUFFER_SIZE - 32;
+		}
+
+		for (pos = 0; pos < size && !(verflags & VERSIONF_MATCH); pos++)
+		{
+			if (wordpos == 0)
+			{
+				word_read = ((unsigned char)buffer[pos]) << 8;
+				wordpos = 1;
+			}
+			else if (!(verflags & VERSIONF_FAIL))
+			{
+				word_read |= (unsigned char)buffer[pos];
+				wordpos = 0;
+				++wordcount;
+
+				if (word_read == VERSION_EXECUTABLE && wordcount == 2)
+					verflags |= VERSIONF_GOT_EXE;
+				else if (verflags & VERSIONF_GOT_EXE &&
+						 (word_read == VERSION_HEADER_CODE || word_read == VERSION_HEADER_DATA) && !headerstart)
+				{
+					verflags |= VERSIONF_GOT_HEADER;
+					headerstart = ((wordcount - 1) << 1) + 6;
+					CopyMem((char *)(buffer + pos + 1), (char *)&headerlength, sizeof(headerlength));
+					++headerlength;
+					headerlength <<= 1;
+				}
+				else if (verflags & VERSIONF_GOT_EXE && verflags & VERSIONF_GOT_HEADER &&
+						 word_read == VERSION_MATCHWORD)
+				{
+					struct Resident res;
+
+					CopyMem((char *)(buffer + pos - 1), (char *)&res, sizeof(struct Resident));
+					matchpos = ((long)res.rt_IdString) + headerstart - 1;
+					verflags |= VERSIONF_MATCH | VERSIONF_FAIL;
+				}
+				else if (headerstart)
+				{
+					if ((--headerlength) <= 0)
+					{
+						verflags &= ~VERSIONF_GOT_HEADER;
+						headerstart = 0;
+						limit = wordcount + 256;
+					}
+				}
+
+				if (wordcount > limit && !(verflags & VERSIONF_GOT_HEADER))
+					verflags |= VERSIONF_FAIL;
+			}
+		}
+
+		if (verflags & VERSIONF_MATCH)
+		{
+			Seek(file, matchpos, OFFSET_BEGINNING);
+			size = Read(file, buffer, 512);
+			if (size > 1)
+				ok = copy_parse_version_text(buffer, size, 1, version, revision, patch);
+			break;
+		}
+
+		if (extra > 0)
+			Seek(file, -extra, OFFSET_CURRENT);
+	}
+
+	Close(file);
+	FreeVec(buffer);
+
+	return ok;
+}
+
+static BOOL copy_parse_version(char *buffer, short size, short *version, short *revision, short *patch)
+{
+	short pos;
+
+	for (pos = 0; pos <= size - 5; pos++)
+	{
+		if (buffer[pos] != '$' || buffer[pos + 1] != 'V' || buffer[pos + 2] != 'E' || buffer[pos + 3] != 'R' ||
+			buffer[pos + 4] != ':')
+			continue;
+
+		if (copy_parse_version_text(buffer, size, pos + 5, version, revision, patch))
+			return 1;
+	}
+
+	return 0;
+}
+
+static BOOL copy_parse_version_text(char *buffer, short size, short scan, short *version, short *revision, short *patch)
+{
+	short ver = 0, rev = 0, pat = 0;
+
+	while (scan < size && buffer[scan] == ' ')
+		++scan;
+	if (scan >= size)
+		return 0;
+
+	while (scan < size && buffer[scan] != ' ' && buffer[scan] != '\n')
+		++scan;
+	if (scan >= size || buffer[scan] == '\n')
+		return 0;
+
+	while (scan < size && !copy_is_digit(buffer[scan]))
+		++scan;
+	if (scan >= size || !copy_parse_version_number(buffer, size, &scan, &ver))
+		return 0;
+
+	while (scan < size && buffer[scan] != '.' && buffer[scan] != ' ' && buffer[scan] != '\n')
+		++scan;
+	if (scan >= size)
+		return 0;
+
+	if (buffer[scan] == '.')
+	{
+		++scan;
+		if (scan >= size)
+			return 0;
+
+		if (copy_is_digit(buffer[scan]))
+			copy_parse_version_number(buffer, size, &scan, &rev);
+
+		if (scan < size && buffer[scan] == '.')
+		{
+			++scan;
+			if (scan >= size)
+				return 0;
+
+			if (copy_is_digit(buffer[scan]))
+				copy_parse_version_number(buffer, size, &scan, &pat);
+		}
+	}
+	else if (buffer[scan] == ' ')
+	{
+		++scan;
+		if (scan >= size)
+			return 0;
+
+		if (copy_is_digit(buffer[scan]))
+			copy_parse_version_number(buffer, size, &scan, &rev);
+	}
+
+	*version = ver;
+	*revision = rev;
+	*patch = pat;
+	return 1;
+}
+
+static BOOL copy_parse_version_number(char *buffer, short size, short *pos, short *value)
+{
+	long number = 0;
+	BOOL got = 0;
+
+	while (*pos < size && copy_is_digit(buffer[*pos]))
+	{
+		got = 1;
+		number = (number * 10) + buffer[*pos] - '0';
+		++(*pos);
+	}
+
+	*value = number;
+	return got;
+}
+
+static BOOL copy_is_digit(char c)
+{
+	return (c >= '0' && c <= '9');
 }

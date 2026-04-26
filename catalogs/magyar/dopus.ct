@@ -1823,16 +1823,16 @@ MSG_REPLACE_SAME
 ; The two files appear to be the same.
 ;
 MSG_REPLACE_VERSION_SAME
-Mindkét állomány ugyanaz a változat (%ld.%ld).
-; Both files are the same version (%ld.%ld).
+Mindkét állomány ugyanaz a változat (%ld.%ld.%ld).
+; Both files are the same version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_VERSION_NEWER
-Az új állomány a késõbbi változat (%ld.%ld).
-; The new file is a later version (%ld.%ld).
+Az új állomány a késõbbi változat (%ld.%ld.%ld).
+; The new file is a later version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_VERSION_OLDER
-Az új állomány a korábbi változat (%ld.%ld).
-; The new file is an earlier version (%ld.%ld).
+Az új állomány a korábbi változat (%ld.%ld.%ld).
+; The new file is an earlier version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_SIZE_BIGGER
 Az új állomány nagyobb, mint a régi (%ld byte-tal).\n
@@ -1871,8 +1871,8 @@ Régi - mérete: %7ld  dátuma: %19s%s
 ; Old - Size : %7ld  Date : %19s%s
 ;
 MSG_REPLACE_VER
-  Változat: %2ld.%ld
-;   Ver : %2ld.%ld
+  Változat: %ld.%ld.%ld
+;   Ver : %ld.%ld.%ld
 ;
 MSG_REPLACE_VER_UNKNOWN
   Változat: ?????

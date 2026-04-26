@@ -1823,16 +1823,16 @@ De twee bestanden schijnen identiek te zijn.
 ; The two files appear to be the same.
 ;
 MSG_REPLACE_VERSION_SAME
-Beide bestanden zijn dezelfde versie (%ld.%ld).
-; Both files are the same version (%ld.%ld).
+Beide bestanden zijn dezelfde versie (%ld.%ld.%ld).
+; Both files are the same version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_VERSION_NEWER
-Het nieuwe bestand is een nieuwere versie (%ld.%ld).
-; The new file is a later version (%ld.%ld).
+Het nieuwe bestand is een nieuwere versie (%ld.%ld.%ld).
+; The new file is a later version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_VERSION_OLDER
-Het nieuwe bestand is een oudere versie (%ld.%ld).
-; The new file is an earlier version (%ld.%ld).
+Het nieuwe bestand is een oudere versie (%ld.%ld.%ld).
+; The new file is an earlier version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_SIZE_BIGGER
 Het nieuwe bestand is groter dan het oude (%ld bytes verschil).\n
@@ -1871,8 +1871,8 @@ Nieuw - Grootte : %7ld  Datum : %19s%s\n\
 ; Old - Size : %7ld  Date : %19s%s
 ;
 MSG_REPLACE_VER
-  Ver : %2ld.%ld
-;   Ver : %2ld.%ld
+  Ver : %ld.%ld.%ld
+;   Ver : %ld.%ld.%ld
 ;
 MSG_REPLACE_VER_UNKNOWN
   Ver : ?????

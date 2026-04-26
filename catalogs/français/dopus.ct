@@ -1697,15 +1697,15 @@ Les deux fichiers semblent identiques.
 ; 
 ;
 MSG_UNKNOWN_7001
-Les deux fichiers ont la même version (%ld.%ld).\x00
+Les deux fichiers ont la même version (%ld.%ld.%ld).\x00
 ; 
 ;
 MSG_UNKNOWN_7002
-Le nouveau fichier est une nouvelle version (%ld.%ld).
+Le nouveau fichier est une nouvelle version (%ld.%ld.%ld).
 ; 
 ;
 MSG_UNKNOWN_7003
-Le nouveau fichier est une ancienne version (%ld.%ld).
+Le nouveau fichier est une ancienne version (%ld.%ld.%ld).
 ; 
 ;
 MSG_UNKNOWN_7004
@@ -1741,7 +1741,7 @@ Le fichier « %s » existe déjà. Le remplacer ?\n\nNouveau - Taille : %7ld  Date :
 ; 
 ;
 MSG_UNKNOWN_7012
-Ver : %2ld.%ld
+Ver : %ld.%ld.%ld
 ; 
 ;
 MSG_UNKNOWN_7013

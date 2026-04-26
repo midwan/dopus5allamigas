@@ -1035,9 +1035,9 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_DESKTOP_DELETE_DESKTOP_FILES_STR "%ld file(s)"
 	#define MSG_DESKTOP_DELETE_DESKTOP_DIRS_STR "%ld dir(s)"
 	#define MSG_REPLACE_SAME_STR "The two files appear to be the same."
-	#define MSG_REPLACE_VERSION_SAME_STR "Both files are the same version (%ld.%ld)."
-	#define MSG_REPLACE_VERSION_NEWER_STR "The new file is a later version (%ld.%ld)."
-	#define MSG_REPLACE_VERSION_OLDER_STR "The new file is an earlier version (%ld.%ld)."
+	#define MSG_REPLACE_VERSION_SAME_STR "Both files are the same version (%ld.%ld.%ld)."
+	#define MSG_REPLACE_VERSION_NEWER_STR "The new file is a later version (%ld.%ld.%ld)."
+	#define MSG_REPLACE_VERSION_OLDER_STR "The new file is an earlier version (%ld.%ld.%ld)."
 	#define MSG_REPLACE_SIZE_BIGGER_STR "The new file is larger than the old one (by %ld bytes).\n"
 	#define MSG_REPLACE_SIZE_SMALLER_STR "The new file is smaller than the old one (by %ld bytes).\n"
 	#define MSG_REPLACE_SIZE_SAME_STR "The two files are the same size (%ld bytes).\n"
@@ -1047,7 +1047,7 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_FILE_ALREADY_EXISTS_STR "File '%s' exists and would be replaced.\n"
 	#define MSG_BRIEF_FILE_EXISTS_STR \
 		"File '%s' already exists. Replace it?\n\nNew - Size : %7ld  Date : %19s%s\nOld - Size : %7ld  Date : %19s%s"
-	#define MSG_REPLACE_VER_STR "  Ver : %2ld.%ld"
+	#define MSG_REPLACE_VER_STR "  Ver : %ld.%ld.%ld"
 	#define MSG_REPLACE_VER_UNKNOWN_STR "  Ver : ?????"
 	#define MSG_GET_VERSION_STR "Version"
 	#define MSG_REPLACE_VERSION_TITLE_STR "Looking for version info..."
@@ -2560,11 +2560,11 @@ static const char CatCompBlock[] = {"\x00\x00\x00\x00\x00\x0C" MSG_ABORTED_STR
 									"\x00\x00"
 									"\x00\x00\x1B\x58\x00\x26" MSG_REPLACE_SAME_STR
 									"\x00\x00"
-									"\x00\x00\x1B\x59\x00\x2C" MSG_REPLACE_VERSION_SAME_STR
+									"\x00\x00\x1B\x59\x00\x30" MSG_REPLACE_VERSION_SAME_STR
 									"\x00\x00"
-									"\x00\x00\x1B\x5A\x00\x2C" MSG_REPLACE_VERSION_NEWER_STR
+									"\x00\x00\x1B\x5A\x00\x30" MSG_REPLACE_VERSION_NEWER_STR
 									"\x00\x00"
-									"\x00\x00\x1B\x5B\x00\x2E" MSG_REPLACE_VERSION_OLDER_STR
+									"\x00\x00\x1B\x5B\x00\x32" MSG_REPLACE_VERSION_OLDER_STR
 									"\x00"
 									"\x00\x00\x1B\x5C\x00\x3A" MSG_REPLACE_SIZE_BIGGER_STR
 									"\x00\x00"
@@ -2582,8 +2582,8 @@ static const char CatCompBlock[] = {"\x00\x00\x00\x00\x00\x0C" MSG_ABORTED_STR
 									"\x00\x00"
 									"\x00\x00\x1B\x63\x00\x6A" MSG_BRIEF_FILE_EXISTS_STR
 									"\x00\x00"
-									"\x00\x00\x1B\x64\x00\x12" MSG_REPLACE_VER_STR
-									"\x00\x00"
+									"\x00\x00\x1B\x64\x00\x14" MSG_REPLACE_VER_STR
+									"\x00"
 									"\x00\x00\x1B\x65\x00\x0E" MSG_REPLACE_VER_UNKNOWN_STR
 									"\x00"
 									"\x00\x00\x1B\x66\x00\x08" MSG_GET_VERSION_STR

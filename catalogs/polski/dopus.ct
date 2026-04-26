@@ -1841,16 +1841,16 @@ Pliki wydajâ sië byê identyczne
 ; The two files appear to be the same.
 ;
 MSG_REPLACE_VERSION_SAME
-Oba pliki sâ w tej samej wersji (%ld.%ld).
-; Both files are the same version (%ld.%ld).
+Oba pliki sâ w tej samej wersji (%ld.%ld.%ld).
+; Both files are the same version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_VERSION_NEWER
-Nowy plik jest w nowszej wersji (%ld.%ld).
-; The new file is a later version (%ld.%ld).
+Nowy plik jest w nowszej wersji (%ld.%ld.%ld).
+; The new file is a later version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_VERSION_OLDER
-Nowy plik jest w starszej wersji (%ld.%ld).
-; The new file is an earlier version (%ld.%ld).
+Nowy plik jest w starszej wersji (%ld.%ld.%ld).
+; The new file is an earlier version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_SIZE_BIGGER
 Nowy plik jest dîuûszy o %ld bajtów.\n
@@ -1890,8 +1890,8 @@ Stary - Rozmar: %7ld  Data: %19s%s
 ; Old - Size : %7ld  Date : %19s%s
 ;
 MSG_REPLACE_VER
-  Wer: %2ld.%ld
-;   Ver : %2ld.%ld
+  Wer: %ld.%ld.%ld
+;   Ver : %ld.%ld.%ld
 ;
 MSG_REPLACE_VER_UNKNOWN
   Wer: ?????

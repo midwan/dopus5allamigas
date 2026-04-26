@@ -1834,16 +1834,16 @@ De två filerna verkar vara samma.
 ; The two files appear to be the same.
 ;
 MSG_REPLACE_VERSION_SAME
-Båda filerna är av samma version (%ld.%ld).
-; Both files are the same version (%ld.%ld).
+Båda filerna är av samma version (%ld.%ld.%ld).
+; Both files are the same version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_VERSION_NEWER
-Den nya filen är av en högre version (%ld.%ld).
-; The new file is a later version (%ld.%ld).
+Den nya filen är av en högre version (%ld.%ld.%ld).
+; The new file is a later version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_VERSION_OLDER
-Den nya filen är av en lägre version (%ld.%ld).
-; The new file is an earlier version (%ld.%ld).
+Den nya filen är av en lägre version (%ld.%ld.%ld).
+; The new file is an earlier version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_SIZE_BIGGER
 Den nya filen är större än den gamla (med %lD bytes).\n
@@ -1882,8 +1882,8 @@ Gammal - Storlek: %lD  Datum: %s%s
 ; Old - Size : %7ld  Date : %19s%s
 ;
 MSG_REPLACE_VER
-  Version: %ld.%ld
-;   Ver : %2ld.%ld
+  Version: %ld.%ld.%ld
+;   Ver : %ld.%ld.%ld
 ;
 MSG_REPLACE_VER_UNKNOWN
   Version: ?????

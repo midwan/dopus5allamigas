@@ -1823,16 +1823,16 @@ MSG_REPLACE_SAME
 ; The two files appear to be the same.
 ;
 MSG_REPLACE_VERSION_SAME
-Τα δύο αρχεία είναι της ίδιας έκδοσης (%ld.%ld).
-; Both files are the same version (%ld.%ld).
+Τα δύο αρχεία είναι της ίδιας έκδοσης (%ld.%ld.%ld).
+; Both files are the same version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_VERSION_NEWER
-Το νέο αρχείο είναι νεώτερης έκδοσης (%ld.%ld).
-; The new file is a later version (%ld.%ld).
+Το νέο αρχείο είναι νεώτερης έκδοσης (%ld.%ld.%ld).
+; The new file is a later version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_VERSION_OLDER
-Το νέο αρχείο είναι παλαιότερης έκδοσης (%ld.%ld).
-; The new file is an earlier version (%ld.%ld).
+Το νέο αρχείο είναι παλαιότερης έκδοσης (%ld.%ld.%ld).
+; The new file is an earlier version (%ld.%ld.%ld).
 ;
 MSG_REPLACE_SIZE_BIGGER
 Το νέο αρχείο είναι μεγαλύτερο από το παλιό (κατά %ld bytes).\n
@@ -1871,8 +1871,8 @@ MSG_BRIEF_FILE_EXISTS
 ; Old - Size : %7ld  Date : %19s%s
 ;
 MSG_REPLACE_VER
-  Έκδοση : %2ld.%ld
-;   Ver : %2ld.%ld
+  Έκδοση : %ld.%ld.%ld
+;   Ver : %ld.%ld.%ld
 ;
 MSG_REPLACE_VER_UNKNOWN
   Έκδοση : ?????
