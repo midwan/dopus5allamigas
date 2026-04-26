@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -65,6 +67,8 @@ struct Device *TimerBase = NULL;
 extern void STDARGS logprintf(char *fmt, ...);
 
 static int ftp_command_error(struct ftp_info *info, int err, const char *msg);
+static BOOL ftp_tls_failure_is_verify(struct ftp_tls_session *session);
+static const char *ftp_tls_failure_string(struct ftp_tls_session *session);
 
 /**
  **	Function definitions
@@ -446,6 +450,29 @@ static int ftp_command_error(struct ftp_info *info, int err, const char *msg)
 	}
 
 	return 600;
+}
+
+/*************************************************************/
+
+static const char *ftp_tls_failure_string(struct ftp_tls_session *session)
+{
+	if (ftp_tls_failure_is_verify(session))
+		return GetString(locale, MSG_FTP_TLS_VERIFY_FAILED);
+
+	return GetString(locale, MSG_FTP_TLS_FAILED);
+}
+
+static BOOL ftp_tls_failure_is_verify(struct ftp_tls_session *session)
+{
+	switch (ftp_tls_session_error(session))
+	{
+	case FTP_TLS_ERROR_VERIFY_PATHS:
+	case FTP_TLS_ERROR_HOSTNAME:
+	case FTP_TLS_ERROR_VERIFY_RESULT:
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 /*************************************************************/
@@ -986,8 +1013,9 @@ static int dataconna(struct ftp_info *info, struct ftp_tls_session *data_tls_ses
 				if (!ftp_tls_connect(data_tls_session, ds, info->fi_tls_host, info->fi_tls_verify_peer))
 				{
 					errno = 0;
-					info->fi_errno = FTPERR_TLS_FAIL;
-					stccpy(info->fi_serverr, GetString(locale, MSG_FTP_TLS_FAILED), IOBUFSIZE + 1);
+					info->fi_errno =
+						ftp_tls_failure_is_verify(data_tls_session) ? FTPERR_TLS_VERIFY_FAIL : FTPERR_TLS_FAIL;
+					stccpy(info->fi_serverr, ftp_tls_failure_string(data_tls_session), IOBUFSIZE + 1);
 					CloseSocket(ds);
 					ds = -1;
 				}
@@ -1955,8 +1983,9 @@ static int ftp_secure_control(struct ftp_info *info,
 	if (!ftp_tls_connect(&info->fi_control_tls, info->fi_cs, host, info->fi_tls_verify_peer))
 	{
 		errno = 0;
-		info->fi_errno = FTPERR_TLS_FAIL;
-		stccpy(info->fi_iobuf, GetString(locale, MSG_FTP_TLS_FAILED), IOBUFSIZE + 1);
+		info->fi_errno =
+			ftp_tls_failure_is_verify(&info->fi_control_tls) ? FTPERR_TLS_VERIFY_FAIL : FTPERR_TLS_FAIL;
+		stccpy(info->fi_iobuf, ftp_tls_failure_string(&info->fi_control_tls), IOBUFSIZE + 1);
 		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
 		return 0;
 	}

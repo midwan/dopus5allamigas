@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -433,6 +435,16 @@ ObjectDef ftp_options_objects[] =
 				   PLACETEXT_LEFT,
 				   GAD_ENV_TLS_MODE,
 				   tls_mode_taglist},
+
+				  // Verify FTPS certificates
+				  {OD_GADGET,
+				   CHECKBOX_KIND,
+				   {LEFT_EDGE_GAD, 8, 0, 1},
+				   {4, 56, 26, CHECKBOX_HGT},
+				   MSG_FTP_VERIFY_TLS,
+				   PLACETEXT_RIGHT,
+				   GAD_ENV_TLS_VERIFY,
+				   ftp_relative_taglist},
 				  {OD_END}},
 
 		  ftp_opt_misc[] =

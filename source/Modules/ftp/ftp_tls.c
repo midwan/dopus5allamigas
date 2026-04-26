@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -25,6 +27,7 @@ modify it under the terms of the AROS Public License version 1.1.
 	#include "ftp_opusftp.h"
 
 	#include <libraries/amisslmaster.h>
+	#include <openssl/x509_vfy.h>
 	#include <proto/amisslmaster.h>
 	#include <proto/amissl.h>
 	#include <proto/exec.h>
@@ -139,6 +142,7 @@ static void ftp_tls_amissl_close(void)
 #elif defined(FTP_TLS_BACKEND_OPENSSL)
 	#include <openssl/err.h>
 	#include <openssl/ssl.h>
+	#include <openssl/x509_vfy.h>
 
 	#define FTP_TLS_HAVE_OPENSSL_API
 #endif
@@ -263,6 +267,7 @@ void ftp_tls_session_init(struct ftp_tls_session *session)
 	session->ssl = NULL;
 	session->socket = -1;
 	session->active = 0;
+	session->last_error = FTP_TLS_ERROR_NONE;
 }
 
 void ftp_tls_session_cleanup(struct ftp_tls_session *session)
@@ -295,44 +300,102 @@ void ftp_tls_session_cleanup(struct ftp_tls_session *session)
 #endif
 }
 
+int ftp_tls_session_error(const struct ftp_tls_session *session)
+{
+	return session ? session->last_error : FTP_TLS_ERROR_NONE;
+}
+
+static int ftp_tls_connect_fail(struct ftp_tls_session *session, int error)
+{
+	if (session)
+		session->last_error = error;
+
+	return 0;
+}
+
+#if defined(FTP_TLS_HAVE_OPENSSL_API)
+static int ftp_tls_set_verify_name(SSL *ssl, const char *host)
+{
+	X509_VERIFY_PARAM *param;
+
+	if (!ssl || !host || !*host || !(param = SSL_get0_param(ssl)))
+		return 0;
+
+	if (X509_VERIFY_PARAM_set1_ip_asc(param, host))
+		return 1;
+
+	return SSL_set1_host(ssl, host);
+}
+#endif
+
 int ftp_tls_connect(struct ftp_tls_session *session, int socket, const char *host, int verify_peer)
 {
 #if defined(FTP_TLS_HAVE_OPENSSL_API)
 	SSL_CTX *ctx;
 	SSL *ssl;
 
-	if (!session || socket < 0)
-		return 0;
+	if (!session)
+		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_CONTEXT);
 
 	ftp_tls_session_cleanup(session);
 
+	if (socket < 0)
+		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_CONTEXT);
+
 	if (!ftp_tls_backend_acquire())
-		return 0;
+		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_BACKEND);
 
 	if (!(ctx = SSL_CTX_new(TLS_client_method())))
 	{
 		ftp_tls_backend_release();
-		return 0;
+		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_CONTEXT);
 	}
 
 	SSL_CTX_set_verify(ctx, verify_peer ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
+	if (verify_peer && !SSL_CTX_set_default_verify_paths(ctx))
+	{
+		SSL_CTX_free(ctx);
+		ftp_tls_backend_release();
+		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_VERIFY_PATHS);
+	}
 
 	if (!(ssl = SSL_new(ctx)))
 	{
 		SSL_CTX_free(ctx);
 		ftp_tls_backend_release();
-		return 0;
+		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_CONTEXT);
 	}
 
 	if (host && *host)
 		SSL_set_tlsext_host_name(ssl, host);
 
-	if (!SSL_set_fd(ssl, socket) || SSL_connect(ssl) != 1)
+	if (verify_peer && !ftp_tls_set_verify_name(ssl, host))
 	{
 		SSL_free(ssl);
 		SSL_CTX_free(ctx);
 		ftp_tls_backend_release();
-		return 0;
+		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_HOSTNAME);
+	}
+
+	if (!SSL_set_fd(ssl, socket) || SSL_connect(ssl) != 1)
+	{
+		int error = FTP_TLS_ERROR_HANDSHAKE;
+
+		if (verify_peer && SSL_get_verify_result(ssl) != X509_V_OK)
+			error = FTP_TLS_ERROR_VERIFY_RESULT;
+
+		SSL_free(ssl);
+		SSL_CTX_free(ctx);
+		ftp_tls_backend_release();
+		return ftp_tls_connect_fail(session, error);
+	}
+
+	if (verify_peer && SSL_get_verify_result(ssl) != X509_V_OK)
+	{
+		SSL_free(ssl);
+		SSL_CTX_free(ctx);
+		ftp_tls_backend_release();
+		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_VERIFY_RESULT);
 	}
 
 	session->ctx = ctx;
@@ -345,7 +408,7 @@ int ftp_tls_connect(struct ftp_tls_session *session, int socket, const char *hos
 	(void)socket;
 	(void)host;
 	(void)verify_peer;
-	return 0;
+	return ftp_tls_connect_fail(session, FTP_TLS_ERROR_BACKEND);
 #endif
 }
 

@@ -1,3 +1,16 @@
+/*
+
+Directory Opus 5
+Original APL release version 5.82
+Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the AROS Public License version 1.1.
+
+*/
+
 #ifndef FTP_H
 #define FTP_H
 
@@ -371,6 +384,8 @@
 #define MSG_FTP_TLS_EXPLICIT 1336
 #define MSG_FTP_SECURING_CONNECTION 1337
 #define MSG_FTP_TLS_FAILED 1338
+#define MSG_FTP_VERIFY_TLS 1339
+#define MSG_FTP_TLS_VERIFY_FAILED 1340
 
 #endif /* CATCOMP_NUMBERS */
 
@@ -719,6 +734,8 @@
 #define MSG_FTP_TLS_EXPLICIT_STR "Explicit FTPS"
 #define MSG_FTP_SECURING_CONNECTION_STR "Securing FTP connection..."
 #define MSG_FTP_TLS_FAILED_STR "FTPS negotiation failed"
+#define MSG_FTP_VERIFY_TLS_STR "Verify TLS certificates"
+#define MSG_FTP_TLS_VERIFY_FAILED_STR "FTPS certificate check failed"
 
 #endif /* CATCOMP_STRINGS */
 
@@ -1075,6 +1092,8 @@ static const struct CatCompArrayType CatCompArray[] =
     {MSG_FTP_TLS_EXPLICIT,(STRPTR)MSG_FTP_TLS_EXPLICIT_STR},
     {MSG_FTP_SECURING_CONNECTION,(STRPTR)MSG_FTP_SECURING_CONNECTION_STR},
     {MSG_FTP_TLS_FAILED,(STRPTR)MSG_FTP_TLS_FAILED_STR},
+    {MSG_FTP_VERIFY_TLS,(STRPTR)MSG_FTP_VERIFY_TLS_STR},
+    {MSG_FTP_TLS_VERIFY_FAILED,(STRPTR)MSG_FTP_TLS_VERIFY_FAILED_STR},
 };
 
 #endif /* CATCOMP_ARRAY */
@@ -1765,6 +1784,10 @@ static const char CatCompBlock[] =
     MSG_FTP_SECURING_CONNECTION_STR "\x00\x00"
     "\x00\x00\x05\x3A\x00\x18"
     MSG_FTP_TLS_FAILED_STR "\x00"
+    "\x00\x00\x05\x3B\x00\x18"
+    MSG_FTP_VERIFY_TLS_STR "\x00"
+    "\x00\x00\x05\x3C\x00\x1E"
+    MSG_FTP_TLS_VERIFY_FAILED_STR "\x00"
 };
 
 #endif /* CATCOMP_BLOCK */

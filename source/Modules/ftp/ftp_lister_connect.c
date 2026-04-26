@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -882,7 +884,7 @@ static struct ftp_node *lister_create_node(struct opusftp_globals *ogp, IPCData 
 		node->fn_ftp.fi_cs = -1;
 		node->fn_ftp.fi_tls_mode =
 			ftp_tls_mode_uses_control_tls(cm->cm_site.se_env->e_tls_mode) ? FTP_TLS_MODE_EXPLICIT : FTP_TLS_MODE_OFF;
-		node->fn_ftp.fi_tls_verify_peer = 0;
+		node->fn_ftp.fi_tls_verify_peer = cm->cm_site.se_env->e_tls_verify_peer ? 1 : 0;
 		ftp_tls_session_init(&node->fn_ftp.fi_control_tls);
 
 		stccpy(node->fn_opus, cm->cm_opus, PORTNAMELEN + 1);

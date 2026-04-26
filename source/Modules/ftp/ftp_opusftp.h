@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -228,7 +230,7 @@ struct ftp_environment
 			unsigned int e_rescan : 1;
 			unsigned int e_recursive_special : 1;  //(recursive copy names with space)
 			unsigned int e_special_dir : 1;		   // old fred hack env var
-			unsigned int pad7 : 1;
+			unsigned int e_tls_verify_peer : 1;	   // Verify FTPS certificates
 			unsigned int pad8 : 1;
 #ifdef __AROS__
 		};
@@ -439,6 +441,7 @@ enum {
 	GAD_ENV_ENABLE_RETRY_LOST,
 	GAD_ENV_NOOPS,
 	GAD_ENV_TLS_MODE,
+	GAD_ENV_TLS_VERIFY,
 	GAD_ENV_PASSIVE,
 
 	GAD_ENV_TIMEOUT,

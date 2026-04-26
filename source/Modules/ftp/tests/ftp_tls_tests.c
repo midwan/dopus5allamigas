@@ -1,3 +1,16 @@
+/*
+
+Directory Opus 5
+Original APL release version 5.82
+Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the AROS Public License version 1.1.
+
+*/
+
 #include "../ftp_tls.h"
 
 #include <stdio.h>
@@ -96,6 +109,8 @@ static void test_tls_session_defaults(void)
 	check_true("tls session clears ssl", session.ssl == NULL);
 	check_int("tls session clears socket", session.socket, -1);
 	check_false("tls session inactive", session.active);
+	check_int("tls session clears error", ftp_tls_session_error(&session), FTP_TLS_ERROR_NONE);
+	check_int("tls null error", ftp_tls_session_error(NULL), FTP_TLS_ERROR_NONE);
 	check_int("tls inactive pending", ftp_tls_pending(&session), 0);
 	check_int("tls inactive read fails", ftp_tls_read(&session, &mode, sizeof(mode)), -1);
 }

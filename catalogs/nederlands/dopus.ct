@@ -1,6 +1,8 @@
 ## version $VER: dopus.catalog 2.1 (10.6.97)
 ## codeset 0
 ## language nederlands
+; Catalog updates Copyright 2023-2026 Dimitris Panokostas
+;
 ;
 MSG_ABORTED
 Afgebroken...

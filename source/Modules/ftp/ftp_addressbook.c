@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -1700,9 +1702,11 @@ static void display_options_gadgets(struct window_params *wp)
 		SetGadgetValue(objlist,
 					   GAD_ENV_TLS_MODE,
 					   ftp_tls_mode_uses_control_tls(env->e_tls_mode) ? FTP_TLS_MODE_EXPLICIT : FTP_TLS_MODE_OFF);
+		SetGadgetValue(objlist, GAD_ENV_TLS_VERIFY, env->e_tls_verify_peer);
 
 		DisableObject(objlist, GAD_ENV_RETRY_COUNT, !env->e_retry);
 		DisableObject(objlist, GAD_ENV_RETRY_DELAY, !env->e_retry);
+		DisableObject(objlist, GAD_ENV_TLS_VERIFY, !ftp_tls_mode_uses_control_tls(env->e_tls_mode));
 
 		break;
 
@@ -1862,6 +1866,7 @@ static void store_options_gadgets(struct window_params *wp)
 		env->e_retry_lost = GetGadgetValue(objlist, GAD_ENV_ENABLE_RETRY_LOST);
 		env->e_noops = GetGadgetValue(objlist, GAD_ENV_NOOPS);
 		env->e_tls_mode = GetGadgetValue(objlist, GAD_ENV_TLS_MODE);
+		env->e_tls_verify_peer = GetGadgetValue(objlist, GAD_ENV_TLS_VERIFY);
 		break;
 
 	default:

@@ -1,6 +1,8 @@
 ## version $VER: dopus.catalog 5.62 (10.08.97)
 ## codeset 0
 ## language norsk
+; Catalog updates Copyright 2023-2026 Dimitris Panokostas
+;
 ;
 MSG_ABORTED
 Avbrutt...
