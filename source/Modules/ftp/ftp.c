@@ -611,22 +611,38 @@ static BOOL ftp_pasv_should_use_control_peer(const struct sockaddr_in *pasv_addr
 		   !ftp_parse_ipv4_is_non_global(peer[0], peer[1], peer[2], peer[3]);
 }
 
-static void ftp_fix_pasv_address(struct opusftp_globals *ogp, struct ftp_info *info, struct sockaddr_in *address)
+static BOOL ftp_get_control_peer_address(struct ftp_info *info, struct sockaddr_in *peer_addr)
 {
-	struct sockaddr_in peer_addr;
 #ifdef __amigaos4__
-	socklen_t peer_len = sizeof(peer_addr);
+	socklen_t peer_len = sizeof(*peer_addr);
 #else
-	LONG peer_len = sizeof(peer_addr);
+	LONG peer_len = sizeof(*peer_addr);
 #endif
 
+	if (!info || !peer_addr)
+		return FALSE;
+
+	return getpeername(info->fi_cs, (struct sockaddr *)peer_addr, &peer_len) >= 0;
+}
+
+static BOOL ftp_use_pasv_control_peer(struct opusftp_globals *ogp,
+									  struct ftp_info *info,
+									  struct sockaddr_in *address,
+									  BOOL force_retry)
+{
+	struct sockaddr_in peer_addr;
+	BOOL use_peer;
+
 	if (!info || !address)
-		return;
+		return FALSE;
 
-	if (getpeername(info->fi_cs, (struct sockaddr *)&peer_addr, &peer_len) < 0)
-		return;
+	if (!ftp_get_control_peer_address(info, &peer_addr))
+		return FALSE;
 
-	if (ftp_pasv_should_use_control_peer(address, &peer_addr))
+	use_peer = force_retry || ftp_pasv_should_use_control_peer(address, &peer_addr);
+	if (!use_peer)
+		return FALSE;
+
 	{
 		char pasv_text[16];
 		char peer_text[16];
@@ -634,14 +650,30 @@ static void ftp_fix_pasv_address(struct opusftp_globals *ogp, struct ftp_info *i
 		ftp_ipv4_to_string(address->sin_addr, pasv_text);
 		ftp_ipv4_to_string(peer_addr.sin_addr, peer_text);
 
-		D(bug("PASV advertised %s, using control peer %s\n", pasv_text, peer_text));
+		if (!strcmp(pasv_text, peer_text))
+			return FALSE;
 
-		if (ogp && ogp->og_oc.oc_log_debug)
-			logprintf("-- PASV advertised %s, using control peer %s\n", pasv_text, peer_text);
+		if (force_retry)
+		{
+			D(bug("PASV retry using control peer %s instead of %s\n", peer_text, pasv_text));
+
+			if (ogp && ogp->og_oc.oc_log_debug)
+				logprintf("-- PASV retry using control peer %s instead of %s\n", peer_text, pasv_text);
+		}
+		else
+		{
+			D(bug("PASV advertised %s, using control peer %s\n", pasv_text, peer_text));
+
+			if (ogp && ogp->og_oc.oc_log_debug)
+				logprintf("-- PASV advertised %s, using control peer %s\n", pasv_text, peer_text);
+		}
 
 		address->sin_family = peer_addr.sin_family;
 		address->sin_addr = peer_addr.sin_addr;
+		return TRUE;
 	}
+
+	return FALSE;
 }
 
 //
@@ -731,7 +763,7 @@ static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 				case 227:  // correct reply
 					if (pasv_to_address(&info->fi_addr, info->fi_iobuf))
 					{
-						ftp_fix_pasv_address(ogp, info, &info->fi_addr);
+						ftp_use_pasv_control_peer(ogp, info, &info->fi_addr, FALSE);
 
 						if (connect(ts, (struct sockaddr *)&info->fi_addr, sizeof(info->fi_addr)) >= 0)
 						{
@@ -739,10 +771,25 @@ static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 							ftp_log_data_mode(ogp, info);
 							return (ts);
 						}
+
+						if (ftp_use_pasv_control_peer(ogp, info, &info->fi_addr, TRUE))
+						{
+							CloseSocket(ts);
+							ts = -1;
+
+							if ((ts = open_data_socket(info)) >= 0 &&
+								connect(ts, (struct sockaddr *)&info->fi_addr, sizeof(info->fi_addr)) >= 0)
+							{
+								info->fi_data_mode = FTP_DATAMODE_PASV;
+								ftp_log_data_mode(ogp, info);
+								return (ts);
+							}
+						}
 					}
 
 					bad_pasv = TRUE;
-					CloseSocket(ts);
+					if (ts >= 0)
+						CloseSocket(ts);
 					ts = -1;
 					break;
 
