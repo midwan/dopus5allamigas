@@ -576,41 +576,6 @@ static void ftp_ipv4_to_string(struct in_addr addr, char *buffer)
 	sprintf(buffer, "%u.%u.%u.%u", octets[0], octets[1], octets[2], octets[3]);
 }
 
-static BOOL ftp_ipv4_is_same_address(const unsigned int left[4], const unsigned int right[4])
-{
-	return left[0] == right[0] && left[1] == right[1] && left[2] == right[2] && left[3] == right[3];
-}
-
-static BOOL ftp_ipv4_is_link_local(const unsigned int octets[4])
-{
-	return octets[0] == 169 && octets[1] == 254;
-}
-
-static BOOL ftp_pasv_should_use_control_peer(const struct sockaddr_in *pasv_addr,
-											 const struct sockaddr_in *peer_addr)
-{
-	unsigned int pasv[4];
-	unsigned int peer[4];
-
-	ftp_ipv4_to_octets(pasv_addr->sin_addr, pasv);
-	ftp_ipv4_to_octets(peer_addr->sin_addr, peer);
-
-	if (ftp_ipv4_is_same_address(pasv, peer))
-		return FALSE;
-
-	if (pasv[0] == 0 || pasv[0] >= 224)
-		return TRUE;
-
-	if (pasv[0] == 127 && peer[0] != 127)
-		return TRUE;
-
-	if (ftp_ipv4_is_link_local(pasv) && !ftp_ipv4_is_link_local(peer))
-		return TRUE;
-
-	return ftp_parse_ipv4_is_non_global(pasv[0], pasv[1], pasv[2], pasv[3]) &&
-		   !ftp_parse_ipv4_is_non_global(peer[0], peer[1], peer[2], peer[3]);
-}
-
 static BOOL ftp_get_control_peer_address(struct ftp_info *info, struct sockaddr_in *peer_addr)
 {
 #ifdef __amigaos4__
@@ -631,6 +596,8 @@ static BOOL ftp_use_pasv_control_peer(struct opusftp_globals *ogp,
 									  BOOL force_retry)
 {
 	struct sockaddr_in peer_addr;
+	unsigned int pasv[4];
+	unsigned int peer[4];
 	BOOL use_peer;
 
 	if (!info || !address)
@@ -639,7 +606,10 @@ static BOOL ftp_use_pasv_control_peer(struct opusftp_globals *ogp,
 	if (!ftp_get_control_peer_address(info, &peer_addr))
 		return FALSE;
 
-	use_peer = force_retry || ftp_pasv_should_use_control_peer(address, &peer_addr);
+	ftp_ipv4_to_octets(address->sin_addr, pasv);
+	ftp_ipv4_to_octets(peer_addr.sin_addr, peer);
+
+	use_peer = force_retry || ftp_parse_pasv_should_use_control_peer(pasv, peer);
 	if (!use_peer)
 		return FALSE;
 

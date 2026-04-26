@@ -83,6 +83,37 @@ int ftp_parse_ipv4_is_non_global(unsigned int a, unsigned int b, unsigned int c,
 	return 0;
 }
 
+static int ftp_parse_ipv4_is_same_address(const unsigned int left[4], const unsigned int right[4])
+{
+	return left[0] == right[0] && left[1] == right[1] && left[2] == right[2] && left[3] == right[3];
+}
+
+static int ftp_parse_ipv4_is_link_local(const unsigned int octets[4])
+{
+	return octets[0] == 169 && octets[1] == 254;
+}
+
+int ftp_parse_pasv_should_use_control_peer(const unsigned int pasv[4], const unsigned int peer[4])
+{
+	if (!pasv || !peer)
+		return 0;
+
+	if (ftp_parse_ipv4_is_same_address(pasv, peer))
+		return 0;
+
+	if (pasv[0] == 0 || pasv[0] >= 224)
+		return 1;
+
+	if (pasv[0] == 127 && peer[0] != 127)
+		return 1;
+
+	if (ftp_parse_ipv4_is_link_local(pasv) && !ftp_parse_ipv4_is_link_local(peer))
+		return 1;
+
+	return ftp_parse_ipv4_is_non_global(pasv[0], pasv[1], pasv[2], pasv[3]) &&
+		   !ftp_parse_ipv4_is_non_global(peer[0], peer[1], peer[2], peer[3]);
+}
+
 int ftp_parse_epsv_port(const char *buf, unsigned int *port)
 {
 	const char *p;

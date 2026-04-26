@@ -112,12 +112,55 @@ static void test_ipv4_scope(void)
 	check_true("ipv4 rejects octet overflow", ftp_parse_ipv4_is_non_global(256, 0, 0, 1));
 }
 
+static void check_pasv_peer(const char *name,
+							unsigned int p0,
+							unsigned int p1,
+							unsigned int p2,
+							unsigned int p3,
+							unsigned int r0,
+							unsigned int r1,
+							unsigned int r2,
+							unsigned int r3,
+							int expected)
+{
+	unsigned int pasv[4];
+	unsigned int peer[4];
+
+	pasv[0] = p0;
+	pasv[1] = p1;
+	pasv[2] = p2;
+	pasv[3] = p3;
+	peer[0] = r0;
+	peer[1] = r1;
+	peer[2] = r2;
+	peer[3] = r3;
+
+	if (expected)
+		check_true(name, ftp_parse_pasv_should_use_control_peer(pasv, peer));
+	else
+		check_false(name, ftp_parse_pasv_should_use_control_peer(pasv, peer));
+}
+
+static void test_pasv_peer(void)
+{
+	check_pasv_peer("pasv keeps matching peer", 203, 0, 113, 1, 203, 0, 113, 1, 0);
+	check_pasv_peer("pasv keeps public alternate host", 1, 1, 1, 1, 8, 8, 8, 8, 0);
+	check_pasv_peer("pasv keeps private peer and private host", 192, 168, 1, 9, 10, 0, 0, 1, 0);
+
+	check_pasv_peer("pasv rewrites zero host", 0, 0, 0, 0, 8, 8, 8, 8, 1);
+	check_pasv_peer("pasv rewrites private host", 10, 0, 0, 5, 8, 8, 8, 8, 1);
+	check_pasv_peer("pasv rewrites loopback host", 127, 0, 0, 1, 8, 8, 8, 8, 1);
+	check_pasv_peer("pasv rewrites link local host", 169, 254, 1, 2, 8, 8, 8, 8, 1);
+	check_pasv_peer("pasv rewrites multicast host", 224, 0, 0, 1, 8, 8, 8, 8, 1);
+}
+
 int main(void)
 {
 	test_epsv();
 	test_pasv();
 	test_eol();
 	test_ipv4_scope();
+	test_pasv_peer();
 
 	if (failures)
 	{
