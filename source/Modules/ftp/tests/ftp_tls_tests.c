@@ -92,6 +92,15 @@ static void test_tls_mode_properties(void)
 	check_false("tls off has plain data", ftp_tls_mode_uses_data_tls(FTP_TLS_MODE_OFF));
 	check_true("tls explicit protects control", ftp_tls_mode_uses_control_tls(FTP_TLS_MODE_EXPLICIT));
 	check_true("tls explicit protects data", ftp_tls_mode_uses_data_tls(FTP_TLS_MODE_EXPLICIT));
+
+	check_true("plain ftp allows server transfer",
+			   ftp_tls_modes_allow_server_transfer(FTP_TLS_MODE_OFF, FTP_TLS_MODE_OFF));
+	check_false("source ftps blocks server transfer",
+				ftp_tls_modes_allow_server_transfer(FTP_TLS_MODE_EXPLICIT, FTP_TLS_MODE_OFF));
+	check_false("dest ftps blocks server transfer",
+				ftp_tls_modes_allow_server_transfer(FTP_TLS_MODE_OFF, FTP_TLS_MODE_EXPLICIT));
+	check_false("ftps pair blocks server transfer",
+				ftp_tls_modes_allow_server_transfer(FTP_TLS_MODE_EXPLICIT, FTP_TLS_MODE_EXPLICIT));
 }
 
 static void test_tls_session_defaults(void)

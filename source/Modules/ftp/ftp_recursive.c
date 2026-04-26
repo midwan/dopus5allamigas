@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -1205,6 +1207,16 @@ static unsigned int recursive_getput(endpoint *source,
 		D(bug("** getput neither side supports PASV\n"));
 		source->ep_ftpnode->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
 		stccpy(source->ep_ftpnode->fn_ftp.fi_serverr, GetString(locale, MSG_FTP_GETPUT_NO_PASV), IOBUFSIZE + 1);
+		keep_trying = 0;
+	}
+
+	// Server-to-server transfers do not let us negotiate or protect the data channel
+	if (keep_trying && !ftp_tls_modes_allow_server_transfer(source->ep_ftpnode->fn_ftp.fi_tls_mode,
+														   dest->ep_ftpnode->fn_ftp.fi_tls_mode))
+	{
+		D(bug("** getput FTPS data channel unsupported\n"));
+		source->ep_ftpnode->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
+		stccpy(source->ep_ftpnode->fn_ftp.fi_serverr, GetString(locale, MSG_FTP_GETPUT_NO_FTPS), IOBUFSIZE + 1);
 		keep_trying = 0;
 	}
 

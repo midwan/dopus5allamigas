@@ -1108,3 +1108,6 @@ Verify TLS certificates
 MSG_FTP_TLS_VERIFY_FAILED (//)
 FTPS certificate check failed
 ;
+MSG_FTP_GETPUT_NO_FTPS (//)
+FTPS cannot use direct site-to-site copy
+;

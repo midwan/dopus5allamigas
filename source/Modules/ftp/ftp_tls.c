@@ -258,6 +258,11 @@ int ftp_tls_mode_uses_data_tls(int mode)
 	return mode == FTP_TLS_MODE_EXPLICIT;
 }
 
+int ftp_tls_modes_allow_server_transfer(int source_mode, int dest_mode)
+{
+	return !ftp_tls_mode_uses_data_tls(source_mode) && !ftp_tls_mode_uses_data_tls(dest_mode);
+}
+
 void ftp_tls_session_init(struct ftp_tls_session *session)
 {
 	if (!session)

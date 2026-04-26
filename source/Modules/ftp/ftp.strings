@@ -386,6 +386,7 @@ modify it under the terms of the AROS Public License version 1.1.
 #define MSG_FTP_TLS_FAILED 1338
 #define MSG_FTP_VERIFY_TLS 1339
 #define MSG_FTP_TLS_VERIFY_FAILED 1340
+#define MSG_FTP_GETPUT_NO_FTPS 1341
 
 #endif /* CATCOMP_NUMBERS */
 
@@ -736,6 +737,7 @@ modify it under the terms of the AROS Public License version 1.1.
 #define MSG_FTP_TLS_FAILED_STR "FTPS negotiation failed"
 #define MSG_FTP_VERIFY_TLS_STR "Verify TLS certificates"
 #define MSG_FTP_TLS_VERIFY_FAILED_STR "FTPS certificate check failed"
+#define MSG_FTP_GETPUT_NO_FTPS_STR "FTPS cannot use direct site-to-site copy"
 
 #endif /* CATCOMP_STRINGS */
 
@@ -1094,6 +1096,7 @@ static const struct CatCompArrayType CatCompArray[] =
     {MSG_FTP_TLS_FAILED,(STRPTR)MSG_FTP_TLS_FAILED_STR},
     {MSG_FTP_VERIFY_TLS,(STRPTR)MSG_FTP_VERIFY_TLS_STR},
     {MSG_FTP_TLS_VERIFY_FAILED,(STRPTR)MSG_FTP_TLS_VERIFY_FAILED_STR},
+    {MSG_FTP_GETPUT_NO_FTPS,(STRPTR)MSG_FTP_GETPUT_NO_FTPS_STR},
 };
 
 #endif /* CATCOMP_ARRAY */
@@ -1788,6 +1791,8 @@ static const char CatCompBlock[] =
     MSG_FTP_VERIFY_TLS_STR "\x00"
     "\x00\x00\x05\x3C\x00\x1E"
     MSG_FTP_TLS_VERIFY_FAILED_STR "\x00"
+    "\x00\x00\x05\x3D\x00\x2A"
+    MSG_FTP_GETPUT_NO_FTPS_STR "\x00\x00"
 };
 
 #endif /* CATCOMP_BLOCK */
