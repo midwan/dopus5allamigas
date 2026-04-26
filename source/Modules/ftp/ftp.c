@@ -50,6 +50,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_arexx.h"
 #include "ftp_recursive.h"
 #include "ftp_util.h"  // for cat_bytes()
+#include "ftp_parse.h"
 
 #ifdef __amigaos3__
 // dummy TimerBase to get amiga.lib to link
@@ -58,6 +59,7 @@ struct Device *TimerBase = NULL;
 #endif
 
 #define UPDATE_BYTE_LIMIT (5 * 1024)
+#define FTP_COMMAND_BUFSIZE 1024
 
 /* Any printf can be used but this is designed for the one in 'lister.c' */
 extern void STDARGS logprintf(char *fmt, ...);
@@ -71,8 +73,9 @@ int ftp_cdup(struct ftp_info *info, int (*updatefn)(void *, int, char *), void *
 {
 	int reply;
 
-	_ftpa(info, FTPFLAG_ASYNCH, "CDUP");
-	reply = _getreply(info, 0, updatefn, updateinfo);
+	reply = _ftpa(info, FTPFLAG_ASYNCH, "CDUP");
+	if (reply < 600)
+		reply = _getreply(info, 0, updatefn, updateinfo);
 
 	return reply;
 }
@@ -101,8 +104,9 @@ int ftp_cwd(struct ftp_info *info, int (*updatefn)(void *, int, char *), void *u
 
 	*info->fi_serverr = 0;
 
-	_ftpa(info, FTPFLAG_ASYNCH, "CWD %s", path);
-	reply = _getreply(info, 0, updatefn, updateinfo);
+	reply = _ftpa(info, FTPFLAG_ASYNCH, "CWD %s", path);
+	if (reply < 600)
+		reply = _getreply(info, 0, updatefn, updateinfo);
 
 	if (reply / 100 != COMPLETE)
 		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
@@ -361,12 +365,14 @@ int ftp_syst(struct ftp_info *info)
 
 static int _ftp(struct ftp_info *info, unsigned long flags, const char *cmd)
 {
-	struct opusftp_globals *ogp = info->fi_og;
+	struct opusftp_globals *ogp;
 	int len;
 
 	// Valid?
 	if (!info || !cmd)
 		return 600;
+
+	ogp = info->fi_og;
 
 	// Socket used by non-owner task?
 	if (info->fi_task != FindTask(0))
@@ -374,7 +380,7 @@ static int _ftp(struct ftp_info *info, unsigned long flags, const char *cmd)
 
 	// Log outgoing commands if debugging is turned on
 	// NOOPs are never logged, passwords are hidden
-	if (!info->fi_doing_noop && ogp->og_oc.oc_log_debug)
+	if (!info->fi_doing_noop && ogp && ogp->og_oc.oc_log_debug)
 		logprintf("--> %s\n", strnicmp(cmd, "PASS ", 5) ? cmd : "PASS .....");
 
 	len = strlen(cmd);
@@ -395,34 +401,64 @@ int ftp(struct ftp_info *info, const char *cmd)
 
 /*************************************************************/
 
+static int ftp_command_error(struct ftp_info *info, int err, const char *msg)
+{
+	if (info)
+	{
+		info->fi_reply = 600;
+		info->fi_errno = err;
+
+		if (msg)
+		{
+			stccpy(info->fi_iobuf, msg, IOBUFSIZE + 1);
+			stccpy(info->fi_serverr, msg, IOBUFSIZE + 1);
+		}
+	}
+
+	return 600;
+}
+
+/*************************************************************/
+
 //
 //	Send an FTP command and return it's reply code.
 //	Store the result string in info->fi_iobuf
 //
-//	Return error 600 for out of memory
-//	It is technically possible for the buffer to be overwritten
+//	Return error 600 for local formatting errors
 //
 static int _vftpa(struct ftp_info *info, unsigned long flags, const char *fmt, va_list ap)
 {
 	char *buf;
 	int reply;
+	int written;
 
-	if ((buf = AllocVec(1024, MEMF_CLEAR)))
+	if (!fmt)
+		return ftp_command_error(info, FTPERR_BAD_COMMAND, "FTP command is empty");
+
+	if ((buf = AllocVec(FTP_COMMAND_BUFSIZE, MEMF_CLEAR)))
 	{
-		vsprintf(buf, fmt, ap);
+		written = vsnprintf(buf, FTP_COMMAND_BUFSIZE - 2, fmt, ap);
 
-		// add cr lf to terminate command for ftp()
-		strcat(buf, "\r\n");
+		if (written < 0 || written >= FTP_COMMAND_BUFSIZE - 2)
+		{
+			reply = ftp_command_error(info, FTPERR_COMMAND_TOO_LONG, "FTP command is too long");
+		}
+		else if (ftp_parse_has_eol(buf))
+		{
+			reply = ftp_command_error(info, FTPERR_BAD_COMMAND, "FTP command contains a line break");
+		}
+		else
+		{
+			// add cr lf to terminate command for ftp()
+			strcat(buf, "\r\n");
 
-		reply = _ftp(info, flags, buf);
+			reply = _ftp(info, flags, buf);
+		}
 
 		FreeVec(buf);
 	}
 	else
-	{
-		reply = 600;
-		info->fi_errno = FTPERR_NO_MEM;
-	}
+		reply = ftp_command_error(info, FTPERR_NO_MEM, "Out of memory");
 
 	return reply;
 }
@@ -497,6 +533,31 @@ static int open_data_socket(struct ftp_info *info)
 	return ts;
 }
 
+static const char *ftp_data_mode_name(int mode)
+{
+	switch (mode)
+	{
+	case FTP_DATAMODE_EPSV:
+		return "EPSV";
+	case FTP_DATAMODE_PASV:
+		return "PASV";
+	case FTP_DATAMODE_PORT:
+		return "PORT";
+	default:
+		return "unknown";
+	}
+}
+
+static void ftp_log_data_mode(struct opusftp_globals *ogp, struct ftp_info *info)
+{
+	const char *mode = ftp_data_mode_name(info ? info->fi_data_mode : FTP_DATAMODE_NONE);
+
+	D(bug("FTP data connection mode: %s\n", mode));
+
+	if (ogp && ogp->og_oc.oc_log_debug)
+		logprintf("-- Data connection: %s\n", mode);
+}
+
 //
 //	Open data connection
 //	Returns -1 upon failure; a socket descriptor upon success.
@@ -507,6 +568,8 @@ static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 	LONG len = sizeof(struct sockaddr_in);	// Length of socket address
 	int reply;								// Reply from FTP commands
 	int bad_pasv = FALSE;					// Passive unavailable?
+
+	info->fi_data_mode = FTP_DATAMODE_NONE;
 
 	// PASV known not to work on this site?
 	if (info->fi_flags & FTP_NO_PASV)
@@ -547,6 +610,8 @@ static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 						if (connect(ts, (struct sockaddr *)&epsv_addr, sizeof(epsv_addr)) >= 0)
 						{
 							info->fi_addr = epsv_addr;
+							info->fi_data_mode = FTP_DATAMODE_EPSV;
+							ftp_log_data_mode(ogp, info);
 							return (ts);
 						}
 					}
@@ -581,7 +646,11 @@ static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 					if (pasv_to_address(&info->fi_addr, info->fi_iobuf))
 					{
 						if (connect(ts, (struct sockaddr *)&info->fi_addr, sizeof(info->fi_addr)) >= 0)
+						{
+							info->fi_data_mode = FTP_DATAMODE_PASV;
+							ftp_log_data_mode(ogp, info);
 							return (ts);
+						}
 					}
 
 					bad_pasv = TRUE;
@@ -626,7 +695,11 @@ static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 						reply = ftp_port(info, 0, &info->fi_addr);
 
 						if (reply / 100 == COMPLETE)
+						{
+							info->fi_data_mode = FTP_DATAMODE_PORT;
+							ftp_log_data_mode(ogp, info);
 							return (ts);
+						}
 					}
 					else
 					{
@@ -727,7 +800,7 @@ static int dataconna(struct ftp_info *info, int restart, const char *fmt, ...)
 			LONG len = sizeof(from);
 
 			// Sendport mode?
-			if ((info->fi_flags & FTP_NO_PASV) || !(info->fi_flags & FTP_PASSIVE))
+			if (info->fi_data_mode == FTP_DATAMODE_PORT)
 			{
 				ds = accept(ts, (struct sockaddr *)&from, &len);
 
@@ -1810,8 +1883,10 @@ int login(struct ftp_info *info, int (*updatefn)(void *, int, char *), void *upd
 	// Clear previous error text
 	*info->fi_serverr = 0;
 
-	_ftpa(info, FTPFLAG_ASYNCH, "USER %s", user);
-	reply = _getreply(info, 0, updatefn, updateinfo) / 100;
+	reply = _ftpa(info, FTPFLAG_ASYNCH, "USER %s", user);
+	if (reply < 600)
+		reply = _getreply(info, 0, updatefn, updateinfo);
+	reply /= 100;
 
 	if (reply != CONTINUE && reply != COMPLETE)
 	{
@@ -1821,8 +1896,10 @@ int login(struct ftp_info *info, int (*updatefn)(void *, int, char *), void *upd
 
 	if (reply == CONTINUE)
 	{
-		_ftpa(info, FTPFLAG_ASYNCH, "PASS %s", passwd);
-		reply = _getreply(info, 0, updatefn, updateinfo) / 100;
+		reply = _ftpa(info, FTPFLAG_ASYNCH, "PASS %s", passwd);
+		if (reply < 600)
+			reply = _getreply(info, 0, updatefn, updateinfo);
+		reply /= 100;
 
 		if (reply != COMPLETE)
 		{
@@ -2010,44 +2087,7 @@ int getreply(struct ftp_info *info)
 //
 BOOL epsv_to_port(unsigned int *port, const char *buf)
 {
-	const char *p;
-	char delim;
-	unsigned int value = 0;
-	int i;
-
-	if (!port || !buf)
-		return FALSE;
-
-	if (!(p = strchr(buf, '(')))
-		return FALSE;
-
-	++p;
-	if (!(delim = *p))
-		return FALSE;
-
-	for (i = 0; i < 3; i++)
-	{
-		if (*p != delim)
-			return FALSE;
-		++p;
-	}
-
-	if (!isdigit(*p))
-		return FALSE;
-
-	while (isdigit(*p))
-	{
-		value = (value * 10) + (*p - '0');
-		if (value > 65535)
-			return FALSE;
-		++p;
-	}
-
-	if (*p != delim || value == 0)
-		return FALSE;
-
-	*port = value;
-	return TRUE;
+	return ftp_parse_epsv_port(buf, port) ? TRUE : FALSE;
 }
 
 //
@@ -2055,62 +2095,17 @@ BOOL epsv_to_port(unsigned int *port, const char *buf)
 //
 BOOL pasv_to_address(struct sockaddr_in *address, const char *buf)
 {
-	const char *in;	 // Convert address from here
-	int values[6];
-	int i;
+	unsigned int values[6];
 	int port;
 	char data_ip_addr[16];
 
 	if (!address || !buf)
 		return FALSE;
 
-	if ((in = strchr(buf, '(')))
-		++in;
-	else if (!strncmp(buf, "227", 3))
-		in = buf + 3;
-	else
-		in = buf;
+	if (!ftp_parse_pasv_tuple(buf, values))
+		return FALSE;
 
-	for (i = 0; i < 6; i++)
-	{
-		int value = 0;
-
-		if (i == 0)
-		{
-			while (*in && !isdigit(*in))
-				++in;
-		}
-		else
-		{
-			while (*in == ' ' || *in == '\t')
-				++in;
-		}
-
-		if (!isdigit(*in))
-			return FALSE;
-
-		while (isdigit(*in))
-		{
-			value = (value * 10) + (*in - '0');
-			if (value > 255)
-				return FALSE;
-			++in;
-		}
-
-		values[i] = value;
-
-		while (*in == ' ' || *in == '\t')
-			++in;
-
-		if (i < 5)
-		{
-			if (*in != ',')
-				return FALSE;
-			++in;
-		}
-	}
-
-	sprintf(data_ip_addr, "%d.%d.%d.%d", values[0], values[1], values[2], values[3]);
+	sprintf(data_ip_addr, "%u.%u.%u.%u", values[0], values[1], values[2], values[3]);
 	port = (values[4] << 8) + values[5];
 
 	if (port <= 0 || port > 65535)

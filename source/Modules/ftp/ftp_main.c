@@ -1100,13 +1100,14 @@ static void opus_leaveout(struct opusftp_globals *og, struct ftp_node *node, cha
 				}
 				else
 				{
-					build_url(command + strlen(command),
-							  node->fn_site.se_user,
-							  node->fn_site.se_pass,
-							  node->fn_site.se_host,
-							  node->fn_site.se_port,
-							  node->fn_site.se_path,
-							  0);
+					build_url_flags(command + strlen(command),
+									node->fn_site.se_user,
+									node->fn_site.se_pass,
+									node->fn_site.se_host,
+									node->fn_site.se_port,
+									node->fn_site.se_path,
+									0,
+									0);
 
 					AddPart(command, name, 1024);
 				}
@@ -1143,13 +1144,14 @@ static void opus_leaveout(struct opusftp_globals *og, struct ftp_node *node, cha
 				{
 					strcat(command, "URL \"");
 
-					build_url(command + strlen(command),
-							  node->fn_site.se_user,
-							  node->fn_site.se_pass,
-							  node->fn_site.se_host,
-							  node->fn_site.se_port,
-							  node->fn_site.se_path,
-							  0);
+					build_url_flags(command + strlen(command),
+									node->fn_site.se_user,
+									node->fn_site.se_pass,
+									node->fn_site.se_host,
+									node->fn_site.se_port,
+									node->fn_site.se_path,
+									0,
+									0);
 
 					sprintf(command + strlen(command), "\" \"%s\"", name);
 				}

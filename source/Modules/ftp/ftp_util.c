@@ -1135,13 +1135,14 @@ struct entry_info *rec_find_entry(struct rec_entry_list *entry_list, struct entr
 
 /********************************/
 
-void build_url(char *buffer,
-			   const char *user,
-			   const char *pass,
-			   const char *host,
-			   int port,
-			   const char *path,
-			   const char *entry)
+void build_url_flags(char *buffer,
+					 const char *user,
+					 const char *pass,
+					 const char *host,
+					 int port,
+					 const char *path,
+					 const char *entry,
+					 ULONG flags)
 {
 	// Valid?
 	if (!buffer || !host || !*host)
@@ -1153,7 +1154,7 @@ void build_url(char *buffer,
 	if (user && *user && stricmp(user, "anonymous") && stricmp(user, "ftp"))
 	{
 		strcat(buffer, user);
-		if (pass && *pass)
+		if ((flags & BUILDURLF_INCLUDE_PASSWORD) && pass && *pass)
 		{
 			strcat(buffer, ":");
 			strcat(buffer, pass);
@@ -1164,7 +1165,7 @@ void build_url(char *buffer,
 	if (port && port != 21)
 	{
 		strcat(buffer, ":");
-		sprintf(buffer + strlen(buffer), "%ld", port);
+		sprintf(buffer + strlen(buffer), "%ld", (long)port);
 	}
 	if (path && *path)
 	{
@@ -1177,6 +1178,19 @@ void build_url(char *buffer,
 			strcat(buffer, "/");
 		strcat(buffer, entry);
 	}
+}
+
+/********************************/
+
+void build_url(char *buffer,
+			   const char *user,
+			   const char *pass,
+			   const char *host,
+			   int port,
+			   const char *path,
+			   const char *entry)
+{
+	build_url_flags(buffer, user, pass, host, port, path, entry, BUILDURLF_INCLUDE_PASSWORD);
 }
 
 /********************************/

@@ -82,6 +82,7 @@ struct ftp_info
 	char fi_bufiobuf[BUFIOBUFSIZE + 1];	 // Buffered I/O buffer used by iread & friends
 	int fi_reply;						 // FTP reply code
 	int fi_errno;						 // Last error code (for stuff other than ftp replies)
+	int fi_data_mode;					 // Last data connection mode
 	int fi_aborted;						 // Did we abort the last get, put, or getput?
 	LONG fi_ioerr;						 // Result from IoErr() on dos error
 	char fi_serverr[IOBUFSIZE + 1];		 // Copy off error server error reply
@@ -114,6 +115,14 @@ enum {
 	FTP_PASSIVE = 1 << 7,  // Use passive transfers
 };
 
+// FTP data connection modes
+enum {
+	FTP_DATAMODE_NONE,
+	FTP_DATAMODE_EPSV,
+	FTP_DATAMODE_PASV,
+	FTP_DATAMODE_PORT,
+};
+
 //	Different FTP sytem types we might eventually recognise
 enum {
 	FTP_UNKNOWN,
@@ -138,6 +147,8 @@ enum {
 	FTPERR_LISTEN_FAIL,		  // A call to listen() failed
 	FTPERR_TIMEOUT,			  // sgetc() timed out
 	FTPERR_FAKE_421,		  // getreply() returns 421 but didn't read it in
+	FTPERR_BAD_COMMAND,		  // A formatted FTP command was rejected locally
+	FTPERR_COMMAND_TOO_LONG,  // A formatted FTP command was too long
 
 	FTPERR_XFER_SRCERR = 1 << 15,  // Error on source end of get(), put(), getput()
 	FTPERR_XFER_DSTERR = 1 << 16,  // Error on destination end of get(), put(), getput()

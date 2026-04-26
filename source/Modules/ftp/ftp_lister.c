@@ -2000,8 +2000,9 @@ static int lister_cmd(struct ftp_node *ftpnode, IPCMessage *msg)
 							 PROGRESS_FILE_OFF,
 							 PROGRESS_BAR_OFF);
 
-			_ftpa(&ftpnode->fn_ftp, FTPFLAG_ASYNCH, cmd);
-			reply = _getreply(&ftpnode->fn_ftp, 0, updatefn, mu);
+			reply = _ftpa(&ftpnode->fn_ftp, FTPFLAG_ASYNCH, "%s", cmd);
+			if (reply < 600)
+				reply = _getreply(&ftpnode->fn_ftp, 0, updatefn, mu);
 
 			// Not an error response?
 			if (reply < 500 && reply != 421)

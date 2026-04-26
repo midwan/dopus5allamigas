@@ -1,0 +1,20 @@
+CC ?= cc
+CFLAGS ?= -Wall -Wextra
+TEST_BUILD_DIR ?= /tmp/dopus5-ftp-tests
+
+FTP_PARSE_TEST := $(TEST_BUILD_DIR)/ftp_parse_tests
+FTP_PARSE_TEST_SRCS := tests/ftp_parse_tests.c ftp_parse.c
+
+.PHONY: test clean
+
+test: $(FTP_PARSE_TEST)
+	$(FTP_PARSE_TEST)
+
+$(FTP_PARSE_TEST): $(FTP_PARSE_TEST_SRCS) ftp_parse.h | $(TEST_BUILD_DIR)
+	$(CC) $(CFLAGS) -I. $(FTP_PARSE_TEST_SRCS) -o $@
+
+$(TEST_BUILD_DIR):
+	mkdir -p $@
+
+clean:
+	$(RM) $(FTP_PARSE_TEST)

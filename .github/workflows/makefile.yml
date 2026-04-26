@@ -15,7 +15,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  ftp-tests:
+    runs-on: ubuntu-latest
+    name: ftp-parser-tests
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run FTP parser tests
+        run: make -C source/Modules/ftp -f makefile.tests test
+
   build:
+    needs: ftp-tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

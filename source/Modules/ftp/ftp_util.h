@@ -91,6 +91,8 @@ void final_path(char *path, char *buf);
 // Find an entry in a list
 struct entry_info *rec_find_entry(struct rec_entry_list *, struct entry_info *, ULONG cmpflags);
 
+#define BUILDURLF_INCLUDE_PASSWORD (1 << 0)
+
 // Convert site details to a standard text URL (not including the ftp:// prefix)
 void build_url(char *buffer,
 			   const char *user,
@@ -99,6 +101,14 @@ void build_url(char *buffer,
 			   int port,
 			   const char *path,
 			   const char *entry);
+void build_url_flags(char *buffer,
+					 const char *user,
+					 const char *pass,
+					 const char *host,
+					 int port,
+					 const char *path,
+					 const char *entry,
+					 ULONG flags);
 
 // Split a URL into its component parts
 int split_url(const char *url, char *user, char *pass, char *host, long *port, char *path);
