@@ -164,6 +164,28 @@ int ftp_mkd(struct ftp_info *info, char *name)
 }
 
 //
+//	Request extended passive data port details.
+//
+int ftp_epsv(struct ftp_info *info)
+{
+	int reply;
+
+	*info->fi_serverr = 0;
+
+	reply = ftp(info, "EPSV\r\n");
+
+	if ((reply >= 500 && reply <= 502) || reply == 522)
+	{
+		D(bug("** setting NO_EPSV\n"));
+		info->fi_flags |= FTP_NO_EPSV;
+	}
+	else if (reply / 100 != COMPLETE)
+		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
+
+	return reply;
+}
+
+//
 //	Request data port details to connect to.
 //
 //	Note: This is also used to break data connections
@@ -465,13 +487,23 @@ void ftp_abor(struct ftp_info *info)
 	send(info->fi_cs, iac_ip + 3, 7, 0);
 }
 
+static int open_data_socket(struct ftp_info *info)
+{
+	int ts;
+
+	if ((ts = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		info->fi_errno = FTPERR_SOCKET_FAIL;
+
+	return ts;
+}
+
 //
 //	Open data connection
 //	Returns -1 upon failure; a socket descriptor upon success.
 //
 static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 {
-	int ts;									// Temporary socket
+	int ts = -1;							// Temporary socket
 	LONG len = sizeof(struct sockaddr_in);	// Length of socket address
 	int reply;								// Reply from FTP commands
 	int bad_pasv = FALSE;					// Passive unavailable?
@@ -485,36 +517,87 @@ static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 		bad_pasv = TRUE;
 
 	// Create temporary socket
-	if ((ts = socket(AF_INET, SOCK_STREAM, 0)) >= 0)
+	if ((ts = open_data_socket(info)) >= 0)
 	{
 		// Passive mode?  Try it first.
 		if (!bad_pasv)
 		{
-			// Send PASV command to FTP server
-			int pasvreply;
-
-			pasvreply = ftp_pasv(info);
-
-			switch (pasvreply)
+			// Prefer EPSV. It avoids the NAT-sensitive host address in PASV replies.
+			if (!(info->fi_flags & FTP_NO_EPSV))
 			{
-			case 227:  // correct reply
-				if (pasv_to_address(&info->fi_addr, info->fi_iobuf))
+				int epsvreply;
+				unsigned int port;
+				struct sockaddr_in epsv_addr;
+#ifdef __amigaos4__
+				socklen_t peer_len = sizeof(epsv_addr);
+#else
+				LONG peer_len = sizeof(epsv_addr);
+#endif
+
+				epsvreply = ftp_epsv(info);
+
+				switch (epsvreply)
 				{
-					if (connect(ts, (struct sockaddr *)&info->fi_addr, sizeof(info->fi_addr)) >= 0)
-						return (ts);
+				case 229:  // correct reply
+					if (epsv_to_port(&port, info->fi_iobuf) &&
+						getpeername(info->fi_cs, (struct sockaddr *)&epsv_addr, &peer_len) >= 0)
+					{
+						epsv_addr.sin_port = htons(port);
+
+						if (connect(ts, (struct sockaddr *)&epsv_addr, sizeof(epsv_addr)) >= 0)
+						{
+							info->fi_addr = epsv_addr;
+							return (ts);
+						}
+					}
+
+					info->fi_flags |= FTP_NO_EPSV;
+					CloseSocket(ts);
+					ts = -1;
+					break;
+
+				case 421:  // socket closed by timeout
+					CloseSocket(ts);
+					return (-1);
+
+				default:
+					D(bug("Epsv failed returns %ld\n", epsvreply));
 				}
+			}
 
-				bad_pasv = TRUE;
-				break;
-
-			case 421:  // sockect closed by timeout
-
-				CloseSocket(ts);
+			if (ts < 0 && (ts = open_data_socket(info)) < 0)
 				return (-1);
 
-			default:
-				D(bug("Pasv failed returns %ld\n", pasvreply));
-				bad_pasv = TRUE;
+			// Send PASV command to FTP server
+			if (!(info->fi_flags & FTP_NO_PASV))
+			{
+				int pasvreply;
+
+				pasvreply = ftp_pasv(info);
+
+				switch (pasvreply)
+				{
+				case 227:  // correct reply
+					if (pasv_to_address(&info->fi_addr, info->fi_iobuf))
+					{
+						if (connect(ts, (struct sockaddr *)&info->fi_addr, sizeof(info->fi_addr)) >= 0)
+							return (ts);
+					}
+
+					bad_pasv = TRUE;
+					CloseSocket(ts);
+					ts = -1;
+					break;
+
+				case 421:  // socket closed by timeout
+
+					CloseSocket(ts);
+					return (-1);
+
+				default:
+					D(bug("Pasv failed returns %ld\n", pasvreply));
+					bad_pasv = TRUE;
+				}
 			}
 		}
 
@@ -522,6 +605,9 @@ static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 
 		if (bad_pasv || (info->fi_flags & FTP_NO_PASV))
 		{
+			if (ts < 0 && (ts = open_data_socket(info)) < 0)
+				return (-1);
+
 			getsockname(info->fi_cs, (struct sockaddr *)&info->fi_addr, &len);
 
 			// Set port to zero so the system will pick one
@@ -1920,31 +2006,120 @@ int getreply(struct ftp_info *info)
 /*************************************************************/
 
 //
+//	Convert EPSV reply to port
+//
+BOOL epsv_to_port(unsigned int *port, const char *buf)
+{
+	const char *p;
+	char delim;
+	unsigned int value = 0;
+	int i;
+
+	if (!port || !buf)
+		return FALSE;
+
+	if (!(p = strchr(buf, '(')))
+		return FALSE;
+
+	++p;
+	if (!(delim = *p))
+		return FALSE;
+
+	for (i = 0; i < 3; i++)
+	{
+		if (*p != delim)
+			return FALSE;
+		++p;
+	}
+
+	if (!isdigit(*p))
+		return FALSE;
+
+	while (isdigit(*p))
+	{
+		value = (value * 10) + (*p - '0');
+		if (value > 65535)
+			return FALSE;
+		++p;
+	}
+
+	if (*p != delim || value == 0)
+		return FALSE;
+
+	*port = value;
+	return TRUE;
+}
+
+//
 //	Convert PASV reply to address
 //
 BOOL pasv_to_address(struct sockaddr_in *address, const char *buf)
 {
 	const char *in;	 // Convert address from here
-	int ip1, ip2, ip3, ip4, p1, p2, port;
+	int values[6];
+	int i;
+	int port;
 	char data_ip_addr[16];
 
-	if (!strncmp("227 Entering Passive Mode (", buf, 27))
-	{
-		in = buf + 26;
+	if (!address || !buf)
+		return FALSE;
 
-		if (sscanf(in, "(%d,%d,%d,%d,%d,%d)", &ip1, &ip2, &ip3, &ip4, &p1, &p2) != 6)
+	if ((in = strchr(buf, '(')))
+		++in;
+	else if (!strncmp(buf, "227", 3))
+		in = buf + 3;
+	else
+		in = buf;
+
+	for (i = 0; i < 6; i++)
+	{
+		int value = 0;
+
+		if (i == 0)
+		{
+			while (*in && !isdigit(*in))
+				++in;
+		}
+		else
+		{
+			while (*in == ' ' || *in == '\t')
+				++in;
+		}
+
+		if (!isdigit(*in))
 			return FALSE;
 
-		sprintf(data_ip_addr, "%d.%d.%d.%d", ip1, ip2, ip3, ip4);
-		port = (p1 << 8) + p2;
+		while (isdigit(*in))
+		{
+			value = (value * 10) + (*in - '0');
+			if (value > 255)
+				return FALSE;
+			++in;
+		}
 
-		address->sin_addr.s_addr = inet_addr(data_ip_addr);
-		address->sin_port = htons(port);
+		values[i] = value;
 
-		return TRUE;
+		while (*in == ' ' || *in == '\t')
+			++in;
+
+		if (i < 5)
+		{
+			if (*in != ',')
+				return FALSE;
+			++in;
+		}
 	}
 
-	return FALSE;
+	sprintf(data_ip_addr, "%d.%d.%d.%d", values[0], values[1], values[2], values[3]);
+	port = (values[4] << 8) + values[5];
+
+	if (port <= 0 || port > 65535)
+		return FALSE;
+
+	address->sin_addr.s_addr = inet_addr(data_ip_addr);
+	address->sin_port = htons(port);
+
+	return TRUE;
 }
 
 #if 0

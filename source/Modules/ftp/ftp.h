@@ -104,6 +104,7 @@ enum {
 	FTP_NO_SIZE = 1 << 29,	 // Doesn't support 'SIZE' command - size of file
 	FTP_NO_MDTM = 1 << 28,	 // Doesn't support 'MDTM' command - last modified time of file
 	FTP_NO_CHMOD = 1 << 27,	 // Doesn't support 'SITE CHMOD' command - set protection bits
+	FTP_NO_EPSV = 1 << 26,	 // Doesn't support 'EPSV' command - extended passive transfers
 
 	FTP_FEAT_MLST = 1 << 16,  // Supports 'MLSD' and 'MLST'
 
@@ -173,6 +174,7 @@ int ftp_dele(struct ftp_info *, char *name);
 int ftp_image(struct ftp_info *);
 int ftp_mdtm(struct ftp_info *, char *name);
 int ftp_mkd(struct ftp_info *, char *name);
+int ftp_epsv(struct ftp_info *);
 int ftp_pasv(struct ftp_info *);
 // int  ftp_port  ( struct ftp_info *, unsigned long flags, unsigned char *host, unsigned char *port );
 int ftp_port(struct ftp_info *, unsigned long flags, struct sockaddr_in *addr);
@@ -212,6 +214,9 @@ int do_lister_srcport(IPCMessage *msg);
 
 // Convert PASV reply to address
 BOOL pasv_to_address(struct sockaddr_in *address, const char *buf);
+
+// Convert EPSV reply to port
+BOOL epsv_to_port(unsigned int *port, const char *buf);
 
 // Custom string functions
 #if !defined(__MORPHOS__) && !defined(__AROS__)
