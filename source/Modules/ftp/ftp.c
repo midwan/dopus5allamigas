@@ -1142,6 +1142,7 @@ unsigned int get(struct ftp_info *info,
 	info->fi_errno = 0;
 	info->fi_ioerr = 0;
 	*info->fi_serverr = 0;
+	errno = 0;
 
 	// More validity
 	if (!remote_path || !local_path)
@@ -1695,6 +1696,7 @@ int list(struct ftp_info *info,
 	info->fi_errno = 0;
 	info->fi_ioerr = 0;
 	*info->fi_serverr = 0;
+	errno = 0;
 
 	ftp_tls_session_init(&data_tls);
 	allow_complete_reply = ftp_listcmd_is_mlsd(cmd);
@@ -1792,6 +1794,7 @@ unsigned int put(struct ftp_info *info,
 	info->fi_errno = 0;
 	info->fi_ioerr = 0;
 	*info->fi_serverr = 0;
+	errno = 0;
 
 	// More validity
 	if (!remote_path || !local_path)
