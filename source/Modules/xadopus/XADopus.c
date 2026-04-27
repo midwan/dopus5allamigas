@@ -176,20 +176,83 @@ struct Tree *FindDrw(struct xoData *data, UBYTE *path)
 	}
 }
 
+static BOOL XADFileInfoIsDirectory(struct xadFileInfo *xfi)
+{
+	ULONG namelen;
+
+	if (!xfi || !xfi->xfi_FileName)
+		return FALSE;
+
+	if (xfi->xfi_Flags & XADFIF_DIRECTORY)
+		return TRUE;
+
+	namelen = strlen(xfi->xfi_FileName);
+	return (BOOL)(namelen > 0 && xfi->xfi_FileName[namelen - 1] == '/');
+}
+
+static BOOL XADFileInfoSkipListerEntry(struct xadFileInfo *xfi)
+{
+	return (BOOL)(!xfi || (xfi->xfi_Flags & (XADFIF_INFOTEXT | XADFIF_NOFILENAME)) ||
+				  !xfi->xfi_FileName || !xfi->xfi_FileName[0]);
+}
+
+static void UpdateTreeFromXADFileInfo(struct Tree *tree,
+									  struct xadFileInfo *xfi,
+									  char *name,
+									  BOOL directory)
+{
+	if (name)
+		strcpy(tree->fib.fib_FileName, name);
+	if (xfi->xfi_Comment)
+		strcpy(tree->fib.fib_Comment, xfi->xfi_Comment);
+	else
+		*tree->fib.fib_Comment = 0;
+	xadConvertDates(
+		XAD_DATEXADDATE, (IPTR)&xfi->xfi_Date, XAD_GETDATEDATESTAMP, (IPTR)&tree->fib.fib_Date, TAG_DONE);
+	tree->fib.fib_Protection = xfi->xfi_Protection;
+	tree->fib.fib_DirEntryType = (directory) ? 1 : -1;
+	tree->fib.fib_Size = xfi->xfi_Size;
+	tree->fib.fib_OwnerUID = xfi->xfi_OwnerUID;
+	tree->fib.fib_OwnerGID = xfi->xfi_OwnerGID;
+	tree->fib.fib_NumBlocks = tree->fib.fib_DiskKey = 0;
+#ifndef __amigaos4__
+	tree->fib.fib_EntryType = 0;
+#endif
+	tree->xfi = xfi;
+}
+
 void BuildTree(struct xoData *data)
 {
 	struct xadFileInfo *xfi;
-	struct Tree *tree, *tmp;
+	struct Tree *tree, *tmp, *dup_tree;
 	char *name;
-	BOOL dup;
+	BOOL dup, directory;
 
 	xfi = data->ArcInf->xai_FileInfo;
 
 	while (xfi)
 	{
+		if (XADFileInfoSkipListerEntry(xfi))
+		{
+			xfi = xfi->xfi_Next;
+			continue;
+		}
+
+		directory = XADFileInfoIsDirectory(xfi);
 		tree = FindDrw(data, (UBYTE *)xfi->xfi_FileName);
 		name = FilePart(xfi->xfi_FileName);
+
+		/* FindDrw() already materialised a trailing-slash directory path.
+		   Do not add FilePart("dir/") as an empty child entry. */
+		if (directory && !*name)
+		{
+			UpdateTreeFromXADFileInfo(tree, xfi, NULL, TRUE);
+			xfi = xfi->xfi_Next;
+			continue;
+		}
+
 		dup = FALSE;
+		dup_tree = NULL;
 
 		if (tree->Child)
 		{
@@ -199,6 +262,7 @@ void BuildTree(struct xoData *data)
 				if (!strcmp(name, tmp->fib.fib_FileName))
 				{
 					dup = TRUE;
+					dup_tree = tmp;
 					break;
 				}
 				tmp = tmp->Next;
@@ -221,33 +285,11 @@ void BuildTree(struct xoData *data)
 				tree = tree->Next;
 			}
 
-			strcpy(tree->fib.fib_FileName, name);
-			if (xfi->xfi_Comment)
-				strcpy(tree->fib.fib_Comment, xfi->xfi_Comment);
-			else
-				*tree->fib.fib_Comment = 0;
-			xadConvertDates(
-				XAD_DATEXADDATE, (IPTR)&xfi->xfi_Date, XAD_GETDATEDATESTAMP, (IPTR)&tree->fib.fib_Date, TAG_DONE);
-			tree->fib.fib_Protection = xfi->xfi_Protection;
-			/* Detect directory entries: use XADFIF_DIRECTORY flag, but also
-			   check for trailing '/' as a fallback for non-Amiga LHA archives
-			   (e.g. created on Linux) where xadMaster may not set the flag. */
-			{
-				ULONG namelen = strlen(xfi->xfi_FileName);
-				if ((xfi->xfi_Flags & XADFIF_DIRECTORY) ||
-					(namelen > 0 && xfi->xfi_FileName[namelen - 1] == '/'))
-					tree->fib.fib_DirEntryType = 1;
-				else
-					tree->fib.fib_DirEntryType = -1;
-			}
-			tree->fib.fib_Size = xfi->xfi_Size;
-			tree->fib.fib_OwnerUID = xfi->xfi_OwnerUID;
-			tree->fib.fib_OwnerGID = xfi->xfi_OwnerGID;
-			tree->fib.fib_NumBlocks = tree->fib.fib_DiskKey = 0;
-#ifndef __amigaos4__
-			tree->fib.fib_EntryType = 0;
-#endif
-			tree->xfi = xfi;
+			UpdateTreeFromXADFileInfo(tree, xfi, name, directory);
+		}
+		else if (directory && dup_tree && dup_tree->fib.fib_DirEntryType > 0)
+		{
+			UpdateTreeFromXADFileInfo(dup_tree, xfi, NULL, TRUE);
 		}
 
 		xfi = xfi->xfi_Next;
@@ -747,9 +789,7 @@ void _copy(struct xoData *data, char *name, char *Dest, BOOL CopyAs)
 							if (xfi->xfi_Flags & (XADFIF_INFOTEXT | XADFIF_NOFILENAME))
 							{
 							}
-							else if ((xfi->xfi_Flags & XADFIF_DIRECTORY) ||
-									 (strlen(xfi->xfi_FileName) > 0 &&
-									  xfi->xfi_FileName[strlen(xfi->xfi_FileName) - 1] == '/'))
+							else if (XADFileInfoIsDirectory(xfi))
 							{
 								if ((dir = CreateDir(TreeName)))
 									UnLock(dir);
@@ -1021,9 +1061,7 @@ BOOL ExtractF(struct xoData *data)
 
 		if (xfi->xfi_Flags & (XADFIF_INFOTEXT | XADFIF_NOFILENAME))
 			;
-		else if ((xfi->xfi_Flags & XADFIF_DIRECTORY) ||
-				 (strlen(xfi->xfi_FileName) > 0 &&
-				  xfi->xfi_FileName[strlen(xfi->xfi_FileName) - 1] == '/'))
+		else if (XADFileInfoIsDirectory(xfi))
 		{
 			if ((dir = CreateDir(FileName)))
 				UnLock(dir);
