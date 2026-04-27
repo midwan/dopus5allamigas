@@ -156,11 +156,34 @@ static void test_tls_session_defaults(void)
 	check_int("tls inactive read fails", ftp_tls_read(&session, &mode, sizeof(mode)), -1);
 }
 
+static void test_tls_connect_failures(void)
+{
+	struct ftp_tls_session session;
+
+	ftp_tls_session_init(&session);
+	check_false("tls connect rejects invalid socket", ftp_tls_connect(&session, -1, "example.com", 1));
+	check_int("tls invalid socket error", ftp_tls_session_error(&session), FTP_TLS_ERROR_CONTEXT);
+	check_false("tls invalid socket inactive", session.active);
+
+	if (!strcmp(ftp_tls_backend_name(), "none"))
+	{
+		session.active = 1;
+		session.socket = 42;
+		session.last_error = FTP_TLS_ERROR_HANDSHAKE;
+
+		check_false("tls connect reports missing backend", ftp_tls_connect(&session, 0, "example.com", 0));
+		check_int("tls missing backend error", ftp_tls_session_error(&session), FTP_TLS_ERROR_BACKEND);
+		check_false("tls missing backend inactive", session.active);
+		check_int("tls missing backend clears socket", session.socket, -1);
+	}
+}
+
 int main(void)
 {
 	test_tls_modes();
 	test_tls_mode_properties();
 	test_tls_session_defaults();
+	test_tls_connect_failures();
 
 	if (failures)
 	{

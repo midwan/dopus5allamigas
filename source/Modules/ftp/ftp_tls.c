@@ -338,10 +338,6 @@ static int ftp_tls_set_verify_name(SSL *ssl, const char *host)
 
 int ftp_tls_connect(struct ftp_tls_session *session, int socket, const char *host, int verify_peer)
 {
-#if defined(FTP_TLS_HAVE_OPENSSL_API)
-	SSL_CTX *ctx;
-	SSL *ssl;
-
 	if (!session)
 		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_CONTEXT);
 
@@ -349,6 +345,10 @@ int ftp_tls_connect(struct ftp_tls_session *session, int socket, const char *hos
 
 	if (socket < 0)
 		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_CONTEXT);
+
+#if defined(FTP_TLS_HAVE_OPENSSL_API)
+	SSL_CTX *ctx;
+	SSL *ssl;
 
 	if (!ftp_tls_backend_acquire())
 		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_BACKEND);
@@ -412,7 +412,6 @@ int ftp_tls_connect(struct ftp_tls_session *session, int socket, const char *hos
 	session->active = 1;
 	return 1;
 #else
-	(void)session;
 	(void)socket;
 	(void)host;
 	(void)verify_peer;
