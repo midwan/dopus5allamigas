@@ -172,6 +172,7 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 	ULONG flags = 0;
 	int okay = FALSE;
 	int valid = TRUE;
+	const char *host_arg = NULL;
 
 	D(bug("mod_connect()\n"));
 
@@ -187,8 +188,25 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 
 			stccpy(cm->cm_opus, og.og_opusname, PORTNAMELEN + 1);
 
-			if (fa->FA_Arguments[D_OPT_HOST])
-				stccpy(cm->cm_site.se_host, (char *)fa->FA_Arguments[D_OPT_HOST], HOSTNAMELEN + 1);
+			host_arg = (const char *)fa->FA_Arguments[D_OPT_HOST];
+			if (host_arg)
+			{
+				const char *without_scheme;
+				int scheme_mode;
+
+				if (ftp_tls_mode_from_url_scheme(host_arg, &without_scheme, &scheme_mode))
+				{
+					struct ftp_environment *env;
+
+					host_arg = without_scheme;
+					if ((env = mod_connect_private_env(cm)))
+						env->e_tls_mode = scheme_mode;
+					else
+						valid = FALSE;
+				}
+
+				stccpy(cm->cm_site.se_host, host_arg, HOSTNAMELEN + 1);
+			}
 			if (fa->FA_Arguments[D_OPT_PORT])
 				cm->cm_site.se_port = *(int *)fa->FA_Arguments[D_OPT_PORT];
 			if (fa->FA_Arguments[D_OPT_USER])
@@ -245,14 +263,14 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 			//        [user[:password]@]host[:port][/path]
 
 			// When Opus calls us for 'FTP://', the path has already been converted to DIR=xxx
-			if (fa->FA_Arguments[D_OPT_HOST] &&
+			if (host_arg &&
 				!(fa->FA_Arguments[D_OPT_PORT] || fa->FA_Arguments[D_OPT_USER] || fa->FA_Arguments[D_OPT_PASS]
 				  /*||fa->FA_Arguments[D_OPT_PATH]*/))
 			{
 				// Remove hostname copied above and start afresh
 				stccpy(cm->cm_site.se_host, "", HOSTNAMELEN + 1);
 
-				split_url((char *)fa->FA_Arguments[D_OPT_HOST],
+				split_url(host_arg,
 						  cm->cm_site.se_user,
 						  cm->cm_site.se_pass,
 						  cm->cm_site.se_host,

@@ -41,6 +41,7 @@ struct ftp_tls_session
 const char *ftp_tls_backend_name(void);
 const char *ftp_tls_mode_name(int mode);
 int ftp_tls_mode_from_text(const char *text, int *mode);
+int ftp_tls_mode_from_url_scheme(const char *url, const char **without_scheme, int *mode);
 int ftp_tls_mode_uses_control_tls(int mode);
 int ftp_tls_mode_uses_data_tls(int mode);
 int ftp_tls_modes_allow_server_transfer(int source_mode, int dest_mode);

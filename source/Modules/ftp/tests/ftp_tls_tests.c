@@ -135,6 +135,25 @@ static void test_tls_mode_properties(void)
 				ftp_tls_modes_allow_server_transfer(FTP_TLS_MODE_EXPLICIT, FTP_TLS_MODE_EXPLICIT));
 }
 
+static void test_tls_url_schemes(void)
+{
+	const char *body = NULL;
+	int mode = -1;
+
+	check_true("tls parses ftp url scheme", ftp_tls_mode_from_url_scheme("ftp://example.com/pub", &body, &mode));
+	check_int("tls ftp url mode", mode, FTP_TLS_MODE_OFF);
+	check_string("tls ftp url body", body, "example.com/pub");
+
+	body = NULL;
+	mode = -1;
+	check_true("tls parses ftps url scheme", ftp_tls_mode_from_url_scheme("FTPS://example.com/pub", &body, &mode));
+	check_int("tls ftps url mode", mode, FTP_TLS_MODE_EXPLICIT);
+	check_string("tls ftps url body", body, "example.com/pub");
+
+	check_false("tls rejects url without scheme", ftp_tls_mode_from_url_scheme("example.com/pub", &body, &mode));
+	check_false("tls rejects sftp url scheme", ftp_tls_mode_from_url_scheme("sftp://example.com/pub", &body, &mode));
+}
+
 static void test_tls_session_defaults(void)
 {
 	struct ftp_tls_session session;
@@ -182,6 +201,7 @@ int main(void)
 {
 	test_tls_modes();
 	test_tls_mode_properties();
+	test_tls_url_schemes();
 	test_tls_session_defaults();
 	test_tls_connect_failures();
 

@@ -1546,26 +1546,24 @@ static int opus_path(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 
 	if ((node = find_ftpnode(og, atoi(argv[1]))))
 	{
-		int scheme_len = 0;
+		const char *url_body;
+		int url_mode;
 		const char *tls_arg = "";
 
-		if (!strnicmp(argv[2], "ftp://", 6))
-			scheme_len = 6;
-		else if (!strnicmp(argv[2], "ftps://", 7))
+		if (ftp_tls_mode_from_url_scheme(argv[2], &url_body, &url_mode))
 		{
-			scheme_len = 7;
-			tls_arg = " TLS=explicit";
-		}
+			if (ftp_tls_mode_uses_control_tls(url_mode))
+				tls_arg = " TLS=explicit";
+			else
+				tls_arg = " TLS=off";
 
-		if (scheme_len)
-		{
-			len = strlen("FTPConnect LISTER=") + strlen(argv[1]) + 1 + strlen(argv[2] + scheme_len) + strlen(tls_arg) + 1;
+			len = strlen("FTPConnect LISTER=") + strlen(argv[1]) + 1 + strlen(url_body) + strlen(tls_arg) + 1;
 
 			if ((qm = AllocVec(sizeof(struct quit_msg) + len, MEMF_CLEAR)))
 			{
 				qm->qm_rxmsg = rxmsg;
 				qm->qm_command = (char *)(qm + 1);
-				sprintf(qm->qm_command, "FTPConnect LISTER=%s %s%s", argv[1], argv[2] + scheme_len, tls_arg);
+				sprintf(qm->qm_command, "FTPConnect LISTER=%s %s%s", argv[1], url_body, tls_arg);
 
 				IPC_Quit(node->fn_ipc, (ULONG)qm, 0);
 				retval = 1;

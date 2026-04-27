@@ -202,6 +202,23 @@ static int ftp_tls_text_equals(const char *text, const char *word)
 	return text == end && *word == 0;
 }
 
+static int ftp_tls_text_starts_with(const char *text, const char *prefix)
+{
+	if (!text || !prefix)
+		return 0;
+
+	while (*prefix)
+	{
+		if (tolower((unsigned char)*text) != tolower((unsigned char)*prefix))
+			return 0;
+
+		++text;
+		++prefix;
+	}
+
+	return 1;
+}
+
 const char *ftp_tls_backend_name(void)
 {
 #if defined(FTP_TLS_BACKEND_AMISSL)
@@ -243,6 +260,29 @@ int ftp_tls_mode_from_text(const char *text, int *mode)
 		ftp_tls_text_equals(text, "on") || ftp_tls_text_equals(text, "yes") || ftp_tls_text_equals(text, "true") ||
 		ftp_tls_text_equals(text, "1"))
 	{
+		if (mode)
+			*mode = FTP_TLS_MODE_EXPLICIT;
+		return 1;
+	}
+
+	return 0;
+}
+
+int ftp_tls_mode_from_url_scheme(const char *url, const char **without_scheme, int *mode)
+{
+	if (ftp_tls_text_starts_with(url, "ftp://"))
+	{
+		if (without_scheme)
+			*without_scheme = url + 6;
+		if (mode)
+			*mode = FTP_TLS_MODE_OFF;
+		return 1;
+	}
+
+	if (ftp_tls_text_starts_with(url, "ftps://"))
+	{
+		if (without_scheme)
+			*without_scheme = url + 7;
 		if (mode)
 			*mode = FTP_TLS_MODE_EXPLICIT;
 		return 1;
