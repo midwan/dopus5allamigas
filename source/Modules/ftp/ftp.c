@@ -403,14 +403,17 @@ static int _ftp(struct ftp_info *info, unsigned long flags, const char *cmd)
 	int len;
 
 	// Valid?
-	if (!info || !cmd)
+	if (!info)
 		return 600;
+
+	if (!cmd)
+		return ftp_command_error(info, FTPERR_BAD_COMMAND, "FTP command is empty");
 
 	ogp = info->fi_og;
 
 	// Socket used by non-owner task?
 	if (info->fi_task != FindTask(0))
-		return 600;
+		return ftp_command_error(info, FTPERR_BAD_COMMAND, "FTP command used by wrong task");
 
 	// Log outgoing commands if debugging is turned on
 	// NOOPs are never logged, passwords are hidden
@@ -442,6 +445,9 @@ static int ftp_command_error(struct ftp_info *info, int err, const char *msg)
 	{
 		info->fi_reply = 600;
 		info->fi_errno = err;
+
+		if (err != FTPERR_SOCKET_FAIL)
+			errno = 0;
 
 		if (msg)
 		{
