@@ -1249,6 +1249,20 @@ void lister_disconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 
 /********************************/
 
+static void lister_append_reconnect_arg(char *command, int command_size, const char *arg)
+{
+	int len;
+
+	if (!command || !arg || command_size <= 0)
+		return;
+
+	len = strlen(command);
+	if (len < command_size - 1)
+		stccpy(command + len, arg, command_size - len);
+}
+
+/********************************/
+
 void lister_reconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 {
 	char command[1024 + 1];
@@ -1281,6 +1295,14 @@ void lister_reconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 				  0);
 
 		strcat(command, "\"");
+
+		if (mld->mld_node->fn_site.se_env &&
+			ftp_tls_mode_uses_control_tls(mld->mld_node->fn_site.se_env->e_tls_mode))
+		{
+			lister_append_reconnect_arg(command, sizeof(command), " TLS=explicit");
+			lister_append_reconnect_arg(
+				command, sizeof(command), mld->mld_node->fn_site.se_env->e_tls_verify_peer ? " TLSVERIFY" : " NOVERIFY");
+		}
 	}
 
 	if ((mld->mld_quit_command = AllocVec(strlen(command) + 1, MEMF_CLEAR)))
