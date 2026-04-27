@@ -577,12 +577,16 @@ static int ipc_connect(struct opusftp_globals *og, IPCData *ipc, struct ListLock
 				sprintf(buffer, "FTPConnect LISTER=%lu %s", cm->cm_handle, cm->cm_site.se_host);
 			}
 
-			if (!*cm->cm_site.se_name && cm->cm_site.se_env &&
-				ftp_tls_mode_uses_control_tls(cm->cm_site.se_env->e_tls_mode))
+			if (!*cm->cm_site.se_name && cm->cm_site.se_env)
 			{
-				ipc_append_connect_arg(buffer, sizeof(buffer), " TLS=explicit");
-				ipc_append_connect_arg(
-					buffer, sizeof(buffer), cm->cm_site.se_env->e_tls_verify_peer ? " TLSVERIFY" : " NOVERIFY");
+				if (ftp_tls_mode_uses_control_tls(cm->cm_site.se_env->e_tls_mode))
+				{
+					ipc_append_connect_arg(buffer, sizeof(buffer), " TLS=explicit");
+					ipc_append_connect_arg(
+						buffer, sizeof(buffer), cm->cm_site.se_env->e_tls_verify_peer ? " TLSVERIFY" : " NOVERIFY");
+				}
+				else
+					ipc_append_connect_arg(buffer, sizeof(buffer), " TLS=off");
 			}
 
 			if ((qm = AllocVec(sizeof(*qm) + strlen(buffer) + 1, MEMF_CLEAR)))

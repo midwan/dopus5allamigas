@@ -1298,12 +1298,17 @@ void lister_reconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 
 		strcat(command, "\"");
 
-		if (mld->mld_node->fn_site.se_env &&
-			ftp_tls_mode_uses_control_tls(mld->mld_node->fn_site.se_env->e_tls_mode))
+		if (mld->mld_node->fn_site.se_env)
 		{
-			lister_append_reconnect_arg(command, sizeof(command), " TLS=explicit");
-			lister_append_reconnect_arg(
-				command, sizeof(command), mld->mld_node->fn_site.se_env->e_tls_verify_peer ? " TLSVERIFY" : " NOVERIFY");
+			if (ftp_tls_mode_uses_control_tls(mld->mld_node->fn_site.se_env->e_tls_mode))
+			{
+				lister_append_reconnect_arg(command, sizeof(command), " TLS=explicit");
+				lister_append_reconnect_arg(command,
+											sizeof(command),
+											mld->mld_node->fn_site.se_env->e_tls_verify_peer ? " TLSVERIFY" : " NOVERIFY");
+			}
+			else
+				lister_append_reconnect_arg(command, sizeof(command), " TLS=off");
 		}
 	}
 
