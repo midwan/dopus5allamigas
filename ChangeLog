@@ -46,6 +46,8 @@ Covers PR #6 (port/derfsss-os4-features), 6 commits.
 
 Other fixes:
 - XADOpus: handle non-Amiga LHA directory entries during extraction.
+- XADOpus: avoid empty lister entries for trailing-slash directory
+  records when browsing archive subfolders.
 2026-04-25 by Dimitris Panokostas <midwan@gmail.com>
 
 [dopus5allamigas 5.98] Finish the tooltip regression fix (backdrop side)
