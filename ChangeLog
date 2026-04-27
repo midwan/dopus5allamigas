@@ -1,3 +1,33 @@
+[dopus5allamigas 5.100] Explicit FTPS support and archive lister fix
+Program bumps to 5.100, library and modules to v73r4, commands remain
+at v65r1.
+
+FTP / FTPS:
+- Add explicit FTPS support backed by AmiSSL/OpenSSL, including
+  protected control/data channels and optional TLS certificate
+  verification.
+- Expose FTP security settings in FTP Options and FTPConnect, including
+  ftps:// and ftp:// URL scheme handling plus common FTPS mode aliases.
+- Prefer EPSV passive transfers, fall back safely for unroutable PASV
+  hosts, and harden command/list parsing.
+- Improve MLSD fallback behavior, reconnect handoff, stale error
+  cleanup, and FTPS copy fallbacks. Direct FTPS site-to-site copy is
+  blocked because the data channel cannot be protected end-to-end there.
+- Add host-side FTP parser, LIST command, and TLS tests, and run them in
+  CI before the platform release builds.
+Covers PR #7 (feature/ftp-ftps), 34 non-merge commits.
+
+XADOpus:
+- Avoid empty lister entries for trailing-slash directory records when
+  browsing archive subfolders. This is the lister-side follow-up to the
+  5.99 extraction fix for non-Amiga LHA directory entries.
+Covers PR #8 (fix/xadopus-archive-lister-empty-entries).
+
+Release/build:
+- Ensure release archives preserve executable protection bits for the
+  library and modules when built from Linux.
+2026-04-27 by Dimitris Panokostas <midwan@gmail.com>
+
 [dopus5allamigas 5.99] Picasso96 migration, OS4 bug fixes and features
 Program bumps to 5.99, library and dopus5.module to v73r3, commands
 remain at v65r1.
@@ -46,8 +76,6 @@ Covers PR #6 (port/derfsss-os4-features), 6 commits.
 
 Other fixes:
 - XADOpus: handle non-Amiga LHA directory entries during extraction.
-- XADOpus: avoid empty lister entries for trailing-slash directory
-  records when browsing archive subfolders.
 2026-04-25 by Dimitris Panokostas <midwan@gmail.com>
 
 [dopus5allamigas 5.98] Finish the tooltip regression fix (backdrop side)
