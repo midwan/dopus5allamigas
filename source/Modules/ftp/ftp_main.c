@@ -539,6 +539,20 @@ static int ipc_remember_path(struct opusftp_globals *og, IPCData *ipc, IPCMessag
 //	Receive a connect message (from the address book or FTPConnect command)
 //	Create a new lister process and forward the connect message
 //
+static void ipc_append_connect_arg(char *command, int command_size, const char *arg)
+{
+	int len;
+	int arg_len;
+
+	if (!command || !arg || command_size <= 0)
+		return;
+
+	len = strlen(command);
+	arg_len = strlen(arg);
+	if (len < command_size && arg_len < command_size - len)
+		strcpy(command + len, arg);
+}
+
 static int ipc_connect(struct opusftp_globals *og, IPCData *ipc, struct ListLock *tasklist, IPCMessage *msg)
 {
 	struct connect_msg *cm = msg->data_free;
@@ -554,13 +568,21 @@ static int ipc_connect(struct opusftp_globals *og, IPCData *ipc, struct ListLock
 		// Handle of ftp lister?
 		if ((node = find_ftpnode(og, cm->cm_handle)))
 		{
-			if (cm->cm_site.se_name && *cm->cm_site.se_name)
+			if (*cm->cm_site.se_name)
 			{
 				sprintf(buffer, "FTPConnect LISTER=%lu SITE=\"%s\"", cm->cm_handle, cm->cm_site.se_name);
 			}
 			else
 			{
 				sprintf(buffer, "FTPConnect LISTER=%lu %s", cm->cm_handle, cm->cm_site.se_host);
+			}
+
+			if (!*cm->cm_site.se_name && cm->cm_site.se_env &&
+				ftp_tls_mode_uses_control_tls(cm->cm_site.se_env->e_tls_mode))
+			{
+				ipc_append_connect_arg(buffer, sizeof(buffer), " TLS=explicit");
+				ipc_append_connect_arg(
+					buffer, sizeof(buffer), cm->cm_site.se_env->e_tls_verify_peer ? " TLSVERIFY" : " NOVERIFY");
 			}
 
 			if ((qm = AllocVec(sizeof(*qm) + strlen(buffer) + 1, MEMF_CLEAR)))

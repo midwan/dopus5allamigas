@@ -1252,13 +1252,15 @@ void lister_disconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 static void lister_append_reconnect_arg(char *command, int command_size, const char *arg)
 {
 	int len;
+	int arg_len;
 
 	if (!command || !arg || command_size <= 0)
 		return;
 
 	len = strlen(command);
-	if (len < command_size - 1)
-		stccpy(command + len, arg, command_size - len);
+	arg_len = strlen(arg);
+	if (len < command_size && arg_len < command_size - len)
+		strcpy(command + len, arg);
 }
 
 /********************************/
@@ -1278,7 +1280,7 @@ void lister_reconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 	sprintf(
 		command, "FTPConnect RECON LISTER=%lu DIR=\"%s\"", mld->mld_node->fn_handle, mld->mld_node->fn_site.se_path);
 
-	if (mld->mld_node->fn_site.se_name && *mld->mld_node->fn_site.se_name)
+	if (*mld->mld_node->fn_site.se_name)
 	{
 		sprintf(command + strlen(command), " SITE=\"%s\"", mld->mld_node->fn_site.se_name);
 	}
