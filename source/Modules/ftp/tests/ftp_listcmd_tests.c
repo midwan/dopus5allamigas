@@ -94,6 +94,11 @@ int main(void)
 	check_int("preserves callback failure", ftp_listcmd_result_after_reply(-1, 226), -1);
 	check_int("preserves command failure", ftp_listcmd_result_after_reply(-2, 226), -2);
 
+	check_true("detects mlsd command", ftp_listcmd_is_mlsd(FTP_LISTCMD_MLSD));
+	check_true("detects mlsd case insensitive", ftp_listcmd_is_mlsd("mlsd"));
+	check_false("rejects list as mlsd", ftp_listcmd_is_mlsd(FTP_LISTCMD_PLAIN));
+	check_false("rejects mlsd with arguments", ftp_listcmd_is_mlsd("MLSD /pub"));
+
 	if (failures)
 	{
 		printf("ftp_listcmd tests failed: %d\n", failures);

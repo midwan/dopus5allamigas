@@ -943,7 +943,12 @@ static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 //	Returns -3 under some (forgotten) circumstances
 //	Returns -1 for other errors
 //
-static int dataconna(struct ftp_info *info, struct ftp_tls_session *data_tls_session, int restart, const char *fmt, ...)
+static int dataconna(struct ftp_info *info,
+					 struct ftp_tls_session *data_tls_session,
+					 int restart,
+					 BOOL allow_complete_reply,
+					 const char *fmt,
+					 ...)
 {
 	struct opusftp_globals *ogp = info->fi_og;
 	va_list ap;						  // For varargs
@@ -991,7 +996,7 @@ static int dataconna(struct ftp_info *info, struct ftp_tls_session *data_tls_ses
 		va_end(ap);
 
 		if (reply / 100 == PRELIM ||
-			((info->fi_flags & FTP_FEAT_MLST) && reply == 200))	 // better check the actual command?
+			(allow_complete_reply && (info->fi_flags & FTP_FEAT_MLST) && reply == 200))
 		{
 			LONG len = sizeof(from);
 
@@ -1023,7 +1028,10 @@ static int dataconna(struct ftp_info *info, struct ftp_tls_session *data_tls_ses
 			}
 		}
 		else
+		{
+			CloseSocket(ts);
 			ds = -2;
+		}
 	}
 
 	return ds;
@@ -1157,7 +1165,7 @@ unsigned int get(struct ftp_info *info,
 		}
 
 		// get connected  - bytes is a market flag 0/x for RETR/REST
-		if ((ds = dataconna(info, &data_tls, bytes, "RETR %s", remote_path)) < 0)
+		if ((ds = dataconna(info, &data_tls, bytes, FALSE, "RETR %s", remote_path)) < 0)
 		{
 			// Source (server error)?
 			if (ds == -2 || ds == -3)
@@ -1670,6 +1678,7 @@ int list(struct ftp_info *info,
 	int ds;				// Data socket
 	int reply;			// FTP reply
 	int updateret = 1;	// Return value from update function
+	BOOL allow_complete_reply;
 	struct ftp_tls_session data_tls;
 
 #ifdef QUOTE_HACK
@@ -1688,17 +1697,18 @@ int list(struct ftp_info *info,
 	*info->fi_serverr = 0;
 
 	ftp_tls_session_init(&data_tls);
+	allow_complete_reply = ftp_listcmd_is_mlsd(cmd);
 
 // Establish data connection
 #ifdef QUOTE_HACK
 	if (path && *path && GetVar("DOpus/ftp_quotes", &env, 1, 0) != -1)
-		ds = dataconna(info, &data_tls, 0, "%s \"%s\"", cmd, path);
+		ds = dataconna(info, &data_tls, 0, allow_complete_reply, "%s \"%s\"", cmd, path);
 	else
 #endif
 		if (path && *path)
-		ds = dataconna(info, &data_tls, 0, "%s %s", cmd, path);
+		ds = dataconna(info, &data_tls, 0, allow_complete_reply, "%s %s", cmd, path);
 	else
-		ds = dataconna(info, &data_tls, 0, "%s", cmd);
+		ds = dataconna(info, &data_tls, 0, allow_complete_reply, "%s", cmd);
 
 	if (ds >= 0)
 	{
@@ -1795,7 +1805,7 @@ unsigned int put(struct ftp_info *info,
 	if ((f = OpenBuf((char *)local_path, MODE_OLDFILE, WBUFSIZE)))
 	{
 		// Can TIMEOUT
-		if ((ds = dataconna(info, &data_tls, restart, "STOR %s", remote_path)) < 0)
+		if ((ds = dataconna(info, &data_tls, restart, FALSE, "STOR %s", remote_path)) < 0)
 		{
 			// Destination (server) error?
 			if (ds == -2 || ds == -3)

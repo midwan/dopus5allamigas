@@ -87,3 +87,8 @@ int ftp_listcmd_result_after_reply(int current_result, int final_reply)
 
 	return -2;
 }
+
+int ftp_listcmd_is_mlsd(const char *cmd)
+{
+	return ftp_listcmd_equal(cmd, FTP_LISTCMD_MLSD);
+}
