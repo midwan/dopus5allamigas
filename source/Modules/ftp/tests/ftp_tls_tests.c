@@ -67,6 +67,18 @@ static void test_tls_modes(void)
 	check_int("tls ftp mode", mode, FTP_TLS_MODE_OFF);
 
 	mode = -1;
+	check_true("tls parses plain as off", ftp_tls_mode_from_text("plain", &mode));
+	check_int("tls plain mode", mode, FTP_TLS_MODE_OFF);
+
+	mode = -1;
+	check_true("tls parses no as off", ftp_tls_mode_from_text(" no ", &mode));
+	check_int("tls no mode", mode, FTP_TLS_MODE_OFF);
+
+	mode = -1;
+	check_true("tls parses false as off", ftp_tls_mode_from_text("false", &mode));
+	check_int("tls false mode", mode, FTP_TLS_MODE_OFF);
+
+	mode = -1;
 	check_true("tls parses explicit", ftp_tls_mode_from_text("explicit", &mode));
 	check_int("tls explicit mode", mode, FTP_TLS_MODE_EXPLICIT);
 
@@ -77,6 +89,18 @@ static void test_tls_modes(void)
 	mode = -1;
 	check_true("tls parses auth tls", ftp_tls_mode_from_text("\tAUTH TLS\r\n", &mode));
 	check_int("tls auth tls mode", mode, FTP_TLS_MODE_EXPLICIT);
+
+	mode = -1;
+	check_true("tls parses on", ftp_tls_mode_from_text("on", &mode));
+	check_int("tls on mode", mode, FTP_TLS_MODE_EXPLICIT);
+
+	mode = -1;
+	check_true("tls parses yes", ftp_tls_mode_from_text("yes", &mode));
+	check_int("tls yes mode", mode, FTP_TLS_MODE_EXPLICIT);
+
+	mode = -1;
+	check_true("tls parses true", ftp_tls_mode_from_text(" TRUE ", &mode));
+	check_int("tls true mode", mode, FTP_TLS_MODE_EXPLICIT);
 
 	check_false("tls rejects implicit", ftp_tls_mode_from_text("implicit", &mode));
 	check_false("tls rejects starttls", ftp_tls_mode_from_text("starttls", &mode));

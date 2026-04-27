@@ -229,7 +229,8 @@ const char *ftp_tls_mode_name(int mode)
 int ftp_tls_mode_from_text(const char *text, int *mode)
 {
 	if (!text || !*text || ftp_tls_text_equals(text, "off") || ftp_tls_text_equals(text, "ftp") ||
-		ftp_tls_text_equals(text, "none") || ftp_tls_text_equals(text, "0"))
+		ftp_tls_text_equals(text, "plain") || ftp_tls_text_equals(text, "none") || ftp_tls_text_equals(text, "no") ||
+		ftp_tls_text_equals(text, "false") || ftp_tls_text_equals(text, "0"))
 	{
 		if (mode)
 			*mode = FTP_TLS_MODE_OFF;
@@ -238,6 +239,7 @@ int ftp_tls_mode_from_text(const char *text, int *mode)
 
 	if (ftp_tls_text_equals(text, "explicit") || ftp_tls_text_equals(text, "ftps") ||
 		ftp_tls_text_equals(text, "tls") || ftp_tls_text_equals(text, "auth tls") ||
+		ftp_tls_text_equals(text, "on") || ftp_tls_text_equals(text, "yes") || ftp_tls_text_equals(text, "true") ||
 		ftp_tls_text_equals(text, "1"))
 	{
 		if (mode)
