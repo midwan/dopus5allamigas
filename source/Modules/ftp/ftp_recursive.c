@@ -726,6 +726,8 @@ static void recursive_getput_clear_errors(endpoint *source, endpoint *dest)
 	dest->ep_ftpnode->fn_ftp.fi_errno = 0;
 	dest->ep_ftpnode->fn_ftp.fi_ioerr = 0;
 	*dest->ep_ftpnode->fn_ftp.fi_serverr = 0;
+
+	errno = 0;
 }
 
 static void recursive_getput_xfer_ui(struct hook_rec_data *hc, unsigned int total)
@@ -1374,10 +1376,7 @@ static unsigned int recursive_getput(endpoint *source,
 	D(bug("recursive_getput()\n"));
 
 	// No abort/error yet
-	source->ep_ftpnode->fn_ftp.fi_aborted = 0;
-	source->ep_ftpnode->fn_ftp.fi_errno = 0;
-	dest->ep_ftpnode->fn_ftp.fi_aborted = 0;
-	dest->ep_ftpnode->fn_ftp.fi_errno = 0;
+	recursive_getput_clear_errors(source, dest);
 
 	// Don't attempt transfer if we know neither side supports PASV
 	if (source->ep_ftpnode->fn_ftp.fi_flags & dest->ep_ftpnode->fn_ftp.fi_flags & FTP_NO_PASV)
