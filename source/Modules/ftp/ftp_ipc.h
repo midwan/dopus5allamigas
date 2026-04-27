@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -297,6 +299,8 @@ enum {
 	FAVOUR_GETREPLY,
 	FAVOUR_GETENTRY,
 	FAVOUR_ERRORREQ,
+	FAVOUR_GET_FILE,
+	FAVOUR_PUT_FILE,
 	FAVOUR_ENDLIST,
 };
 

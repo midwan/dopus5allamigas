@@ -2173,6 +2173,26 @@ static int lister_favour(struct ftp_node *ftpnode, IPCMessage *msg)
 	case FAVOUR_ERRORREQ:
 		msg->command = fm->fm_endpoint->ep_errorreq(fm->fm_endpoint, fm->fm_arg1, (ULONG)fm->fm_arg2);
 		break;
+	case FAVOUR_GET_FILE: {
+		struct rec_favour_xfer *xfer = fm->fm_arg1;
+		msg->command = get(&fm->fm_endpoint->ep_ftpnode->fn_ftp,
+						   xfer->updatefn,
+						   xfer->updateinfo,
+						   xfer->remote_path,
+						   xfer->local_path,
+						   xfer->restart);
+		break;
+	}
+	case FAVOUR_PUT_FILE: {
+		struct rec_favour_xfer *xfer = fm->fm_arg1;
+		msg->command = put(&fm->fm_endpoint->ep_ftpnode->fn_ftp,
+						   xfer->updatefn,
+						   xfer->updateinfo,
+						   xfer->local_path,
+						   xfer->remote_path,
+						   xfer->restart);
+		break;
+	}
 	default:
 		D(bug("** unknown favour %ld\n", fm->fm_ftp_command));
 		msg->command = 0;

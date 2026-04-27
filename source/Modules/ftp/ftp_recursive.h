@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -132,6 +134,15 @@ struct hook_rec_data
 #ifndef __amigaos3__
 	#pragma pack()
 #endif
+
+struct rec_favour_xfer
+{
+	int (*updatefn)(void *, unsigned int, unsigned int);
+	void *updateinfo;
+	char *remote_path;
+	char *local_path;
+	unsigned int restart;
+};
 
 //
 //	Flags for recursive stuff
