@@ -108,7 +108,6 @@ BOOL LIBFUNC L_GetFileVersion(REG(a0, char *name),
 	match_string[1] = 'V';
 	match_string[2] = 'E';
 	match_string[3] = 'R';
-	match_string[4] = ':';
 
 	// Wordcount limit
 	limit = 256;
@@ -131,8 +130,14 @@ BOOL LIBFUNC L_GetFileVersion(REG(a0, char *name),
 				size = Read(file, buffer, 512);
 
 				// Signal a match
-				match = 5;
-				verflags &= ~VERF_MATCH;
+				if (size > 1)
+				{
+					match = 5;
+					pos = 1;
+					verflags &= ~VERF_MATCH;
+				}
+				else
+					break;
 			}
 
 			// Failed to find anything
@@ -238,7 +243,14 @@ BOOL LIBFUNC L_GetFileVersion(REG(a0, char *name),
 			}
 
 			// Check for match
-			if (buffer[pos] == match_string[match])
+			if (match < 4 && buffer[pos] == match_string[match])
+			{
+				// Increment match count
+				++match;
+			}
+
+			// $VER strings may use either "$VER:" or "$VER "
+			else if (match == 4 && (buffer[pos] == ':' || buffer[pos] == ' ' || buffer[pos] == '\t'))
 			{
 				// Increment match count
 				++match;
@@ -246,7 +258,7 @@ BOOL LIBFUNC L_GetFileVersion(REG(a0, char *name),
 
 			// Reset match count
 			else
-				match = 0;
+				match = (buffer[pos] == match_string[0]) ? 1 : 0;
 		}
 
 		// Got a match?
@@ -264,21 +276,21 @@ BOOL LIBFUNC L_GetFileVersion(REG(a0, char *name),
 				L_SetProgressWindow(progress, tags);
 			}
 
-			// Bump position
-			++pos;
+			if (pos >= size)
+				break;
 
 			// On a space?
-			if (buffer[pos] == ' ')
+			if (buffer[pos] == ' ' || buffer[pos] == '\t')
 			{
 				// Find first non-space
-				while (pos < size && buffer[pos] == ' ')
+				while (pos < size && (buffer[pos] == ' ' || buffer[pos] == '\t'))
 					++pos;
 				if (pos >= size)
 					break;
 			}
 
 			// Find first space
-			while (pos < size && buffer[pos] != ' ' && buffer[pos] != '\n')
+			while (pos < size && buffer[pos] != ' ' && buffer[pos] != '\t' && buffer[pos] != '\n')
 				++pos;
 			if (pos >= size || buffer[pos] == '\n')
 				break;
@@ -293,7 +305,7 @@ BOOL LIBFUNC L_GetFileVersion(REG(a0, char *name),
 			*version = atoi(buffer + pos);
 
 			// Find decimal point
-			while (pos < size && buffer[pos] != '.' && buffer[pos] != ' ')
+			while (pos < size && buffer[pos] != '.' && buffer[pos] != ' ' && buffer[pos] != '\t')
 				++pos;
 			if (pos >= size - 1)
 				break;

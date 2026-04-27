@@ -369,20 +369,35 @@ long SmartAskReplace(struct Window *parent,
 static BOOL copy_get_file_version(char *name, short *version, short *revision, short *patch, APTR progress)
 {
 	short scan_version = 0, scan_revision = 0, scan_patch = 0;
+	BOOL got_version;
 
+	*version = 0;
+	*revision = 0;
 	*patch = 0;
 
-	if (!GetFileVersion(name, version, revision, 0, progress))
-		return 0;
+	got_version = GetFileVersion(name, version, revision, 0, progress);
 
-	if (copy_scan_file_version(name, &scan_version, &scan_revision, &scan_patch) && scan_version == *version &&
-		scan_revision == *revision)
+	if (copy_scan_file_version(name, &scan_version, &scan_revision, &scan_patch) &&
+		(!got_version || (*version == 0 && *revision == 0) ||
+		 (scan_version == *version && scan_revision == *revision)))
+	{
+		*version = scan_version;
+		*revision = scan_revision;
 		*patch = scan_patch;
-	else if (copy_scan_resident_version(name, &scan_version, &scan_revision, &scan_patch) && scan_version == *version &&
-			 scan_revision == *revision)
-		*patch = scan_patch;
+		return 1;
+	}
 
-	return 1;
+	if (copy_scan_resident_version(name, &scan_version, &scan_revision, &scan_patch) &&
+		(!got_version || (*version == 0 && *revision == 0) ||
+		 (scan_version == *version && scan_revision == *revision)))
+	{
+		*version = scan_version;
+		*revision = scan_revision;
+		*patch = scan_patch;
+		return 1;
+	}
+
+	return got_version;
 }
 
 static BOOL copy_scan_file_version(char *name, short *version, short *revision, short *patch)
@@ -550,11 +565,19 @@ static BOOL copy_parse_version(char *buffer, short size, short *version, short *
 
 	for (pos = 0; pos <= size - 5; pos++)
 	{
-		if (buffer[pos] != '$' || buffer[pos + 1] != 'V' || buffer[pos + 2] != 'E' || buffer[pos + 3] != 'R' ||
-			buffer[pos + 4] != ':')
+		short scan;
+
+		if (buffer[pos] != '$' || buffer[pos + 1] != 'V' || buffer[pos + 2] != 'E' || buffer[pos + 3] != 'R')
 			continue;
 
-		if (copy_parse_version_text(buffer, size, pos + 5, version, revision, patch))
+		if (buffer[pos + 4] == ':')
+			scan = pos + 5;
+		else if (buffer[pos + 4] == ' ' || buffer[pos + 4] == '\t')
+			scan = pos + 4;
+		else
+			continue;
+
+		if (copy_parse_version_text(buffer, size, scan, version, revision, patch))
 			return 1;
 	}
 
@@ -565,12 +588,12 @@ static BOOL copy_parse_version_text(char *buffer, short size, short scan, short 
 {
 	short ver = 0, rev = 0, pat = 0;
 
-	while (scan < size && buffer[scan] == ' ')
+	while (scan < size && (buffer[scan] == ' ' || buffer[scan] == '\t'))
 		++scan;
 	if (scan >= size)
 		return 0;
 
-	while (scan < size && buffer[scan] != ' ' && buffer[scan] != '\n')
+	while (scan < size && buffer[scan] != ' ' && buffer[scan] != '\t' && buffer[scan] != '\n')
 		++scan;
 	if (scan >= size || buffer[scan] == '\n')
 		return 0;
