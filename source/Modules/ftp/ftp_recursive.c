@@ -2591,6 +2591,23 @@ static int callback_func(struct rec_updateinfo *ui, char *line)
 	return retval;
 }
 
+static void rec_entry_list_clear(struct rec_entry_list *rel)
+{
+	struct entry_info *entry, *next;
+
+	if (!rel)
+		return;
+
+	for (entry = (struct entry_info *)rel->rl_list.lh_Head; entry->ei_node.ln_Succ; entry = next)
+	{
+		next = (struct entry_info *)entry->ei_node.ln_Succ;
+		FreeVec(entry);
+	}
+
+	NewList(&rel->rl_list);
+	rel->rl_entry_count = 0;
+}
+
 //
 //	Get a list of entries from an FTP server
 //
@@ -2633,11 +2650,15 @@ struct rec_entry_list *rec_ftp_list(endpoint *ep, char *dirname)
 		ep->ep_ftpnode->fn_ftp.fi_flags |= FTP_PASSIVE;
 
 	// Call FTP LIST command
-	do
+	for (;;)
 	{
 		ui.ui_ls_to_entryinfo = ep->ep_ftpnode->fn_ls_to_entryinfo;
 		list_result = list(&ep->ep_ftpnode->fn_ftp, callback_func, &ui, ep->ep_ftpnode->fn_lscmd, dirname);
-	} while (list_result == -2 && lister_fallback_list_command(ep->ep_ftpnode));
+		if (list_result == -2 && lister_fallback_list_command(ep->ep_ftpnode))
+			rec_entry_list_clear(rel);
+		else
+			break;
+	}
 
 	return rel;
 }
@@ -2647,19 +2668,11 @@ struct rec_entry_list *rec_ftp_list(endpoint *ep, char *dirname)
 //
 void free_entry_list(struct rec_entry_list *rel)
 {
-	struct entry_info *entry, *next;
-
 	// Valid?
 	if (!rel)
 		return;
 
-	// Free entries
-	for (entry = (struct entry_info *)rel->rl_list.lh_Head; entry->ei_node.ln_Succ; entry = next)
-	{
-		next = (struct entry_info *)entry->ei_node.ln_Succ;
-
-		FreeVec(entry);
-	}
+	rec_entry_list_clear(rel);
 
 	// Free list
 	FreeVec(rel);
