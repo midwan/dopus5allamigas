@@ -72,10 +72,12 @@ int main(void)
 	check_next("mlsd case insensitive", "mlsd", FTP_LISTCMD_DEFAULT, FTP_LISTCMD_DEFAULT);
 	check_next("mlsd ignores padding", " \tMLSD  ", FTP_LISTCMD_DEFAULT, FTP_LISTCMD_DEFAULT);
 	check_next("mlsd falls back to dgux default", FTP_LISTCMD_MLSD, FTP_LISTCMD_DGUX, FTP_LISTCMD_DGUX);
+	check_next("mlsd trims padded default", FTP_LISTCMD_MLSD, " \tLIST -alF ", FTP_LISTCMD_DEFAULT);
 	check_next("default falls back to plain list", FTP_LISTCMD_DEFAULT, FTP_LISTCMD_DEFAULT, FTP_LISTCMD_PLAIN);
 	check_next("default ignores padding", " LIST -alF ", FTP_LISTCMD_DEFAULT, FTP_LISTCMD_PLAIN);
 	check_next("dgux default falls back to plain list", FTP_LISTCMD_DGUX, FTP_LISTCMD_DGUX, FTP_LISTCMD_PLAIN);
 	check_next("empty default uses default list", FTP_LISTCMD_MLSD, "", FTP_LISTCMD_DEFAULT);
+	check_next("blank default uses default list", FTP_LISTCMD_MLSD, " \t ", FTP_LISTCMD_DEFAULT);
 
 	check_false("plain list has no fallback",
 				ftp_listcmd_next_after_failure(FTP_LISTCMD_PLAIN, FTP_LISTCMD_DEFAULT, next, sizeof(next)));
