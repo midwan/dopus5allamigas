@@ -61,6 +61,24 @@ static void lister_restore_list_parser(struct ftp_node *ftpnode)
 		ftpnode->fn_ls_to_entryinfo = unix_line_to_entryinfo;
 }
 
+static void lister_reset_index_state(struct ftp_node *ftpnode)
+{
+	ftpnode->fn_ftp.fi_found_index = 0;
+	ftpnode->fn_ftp.fi_found_index_size = 0;
+	ftpnode->fn_ftp.fi_found_fbbs_size = 0;
+}
+
+static void lister_clear_listing(struct ftp_node *ftpnode, ULONG handle, BOOL redo_cache)
+{
+	if (redo_cache)
+		rexx_lst_clear(ftpnode->fn_opus, handle);
+	else
+		rexx_lst_empty(ftpnode->fn_opus, handle);
+
+	rexx_lst_set_path(ftpnode->fn_opus, handle, ftpnode->fn_site.se_path);
+	lister_reset_index_state(ftpnode);
+}
+
 BOOL lister_fallback_list_command(struct ftp_node *ftpnode)
 {
 	char next_cmd[LSCMDLEN + 1] = "";
@@ -315,9 +333,7 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 	D(bug("lister_list()\n"));
 
 	// Prepare for index if found
-	ftpnode->fn_ftp.fi_found_index = 0;
-	ftpnode->fn_ftp.fi_found_index_size = 0;
-	ftpnode->fn_ftp.fi_found_fbbs_size = 0;
+	lister_reset_index_state(ftpnode);
 
 	// Passive mode required?
 	ftpnode->fn_ftp.fi_flags &= ~FTP_PASSIVE;
@@ -335,14 +351,7 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 
 		if (!buffered || redo_cache)
 		{
-			// No need to do an empty if entry is cached, use clear
-			if (redo_cache)
-				rexx_lst_clear(ftpnode->fn_opus, handle);
-			else
-				rexx_lst_empty(ftpnode->fn_opus, handle);
-
-			// We just cleared the path - put it back
-			rexx_lst_set_path(ftpnode->fn_opus, handle, ftpnode->fn_site.se_path);
+			lister_clear_listing(ftpnode, handle, redo_cache);
 
 			InitSemaphore(&ui->ui_sem);
 
@@ -386,13 +395,24 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 			GetSysTime(&ui->ui_last);
 			// gettimeofday(&ui->ui_last, NULL);
 
-			do
+			for (;;)
 			{
 				// Send the LIST command
 				lsresult = list(&ftpnode->fn_ftp, list_update, ui, ftpnode->fn_lscmd, "");
 
 				D(bug("list command result %d\n", lsresult));
-			} while (lsresult == -2 && lister_fallback_list_command(ftpnode));
+
+				if (lsresult == -2 && lister_fallback_list_command(ftpnode))
+				{
+					lister_clear_listing(ftpnode, handle, redo_cache);
+					GetSysTime(&ui->ui_last);
+				}
+				else
+					break;
+			}
+
+			if (lsresult)
+				lister_clear_listing(ftpnode, handle, redo_cache);
 
 			ftplister_refresh(ftpnode, REFRESH_NODATE);
 

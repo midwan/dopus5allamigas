@@ -67,6 +67,40 @@ int lister_retry_connect_requester(struct ftp_node *, struct connect_log_data *)
 
 /********************************/
 
+static struct ftp_environment *lister_connect_private_env(struct connect_msg *cm)
+{
+	if (!cm || !cm->cm_site.se_env)
+		return NULL;
+
+	if (!cm->cm_site.se_has_custom_env || cm->cm_site.se_env != &cm->cm_site.se_env_private)
+	{
+		*(&cm->cm_site.se_env_private) = *cm->cm_site.se_env;
+		cm->cm_site.se_env = &cm->cm_site.se_env_private;
+		cm->cm_site.se_has_custom_env = TRUE;
+	}
+
+	return cm->cm_site.se_env;
+}
+
+static void lister_apply_connect_tls_overrides(struct connect_msg *cm, ULONG flags, int tls_mode, int tls_verify)
+{
+	struct ftp_environment *env;
+
+	if (!(flags & (CONN_OPT_TLS_MODE | CONN_OPT_TLS_VERIFY)))
+		return;
+
+	if (!(env = lister_connect_private_env(cm)))
+		return;
+
+	if (flags & CONN_OPT_TLS_MODE)
+		env->e_tls_mode = tls_mode;
+
+	if (flags & CONN_OPT_TLS_VERIFY)
+		env->e_tls_verify_peer = tls_verify;
+}
+
+/********************************/
+
 //
 //	Check the startup message for system type in case the SYST command doesn't work.
 //	There may be useful info in here that SYST doesn't tell us in any case.
@@ -792,6 +826,15 @@ static int lister_get_args(struct opusftp_globals *ogp, struct msg_loop_data *ml
 	int active_gadget = GAD_CONNECT_NAME;  // Gadget in requester to acitvate
 	int okay = TRUE;
 	int noname = 0;
+	ULONG tls_override_flags = imsg->flags & (CONN_OPT_TLS_MODE | CONN_OPT_TLS_VERIFY);
+	int tls_mode = FTP_TLS_MODE_OFF;
+	int tls_verify = FALSE;
+
+	if (tls_override_flags && cm->cm_site.se_env)
+	{
+		tls_mode = cm->cm_site.se_env->e_tls_mode;
+		tls_verify = cm->cm_site.se_env->e_tls_verify_peer;
+	}
 
 	if (imsg->flags & CONN_OPT_GUI)
 		gui = TRUE;
@@ -806,6 +849,8 @@ static int lister_get_args(struct opusftp_globals *ogp, struct msg_loop_data *ml
 
 		if (imsg->flags & CONN_OPT_PATH)
 			stccpy(cm->cm_site.se_path, path, PATHLEN + 1);
+
+		lister_apply_connect_tls_overrides(cm, tls_override_flags, tls_mode, tls_verify);
 	}
 
 	// If we have no host, get host and user

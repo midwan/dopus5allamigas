@@ -173,6 +173,8 @@ struct connect_msg
 #define CONN_OPT_PATH (1 << 6)	  // Path (can override SITE or URL)
 #define CONN_OPT_NOSCAN (1 << 7)  // Don't scan the directory on connection
 #define CONN_OPT_RECON (1 << 8)	  // Reconnecting (private)
+#define CONN_OPT_TLS_MODE (1 << 9)	  // TLS mode was specified on FTPConnect
+#define CONN_OPT_TLS_VERIFY (1 << 10)  // TLS verification was specified on FTPConnect
 
 // FTPCommand flags
 #define CMD_OPT_QUIET (1 << 4)	// Don't show a result requester

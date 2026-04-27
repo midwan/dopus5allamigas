@@ -2660,6 +2660,13 @@ struct rec_entry_list *rec_ftp_list(endpoint *ep, char *dirname)
 			break;
 	}
 
+	if (list_result != 0)
+	{
+		rec_entry_list_clear(rel);
+		FreeVec(rel);
+		return 0;
+	}
+
 	return rel;
 }
 

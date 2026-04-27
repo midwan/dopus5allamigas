@@ -200,7 +200,10 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 
 					host_arg = without_scheme;
 					if ((env = mod_connect_private_env(cm)))
+					{
 						env->e_tls_mode = scheme_mode;
+						flags |= CONN_OPT_TLS_MODE;
+					}
 					else
 						valid = FALSE;
 				}
@@ -243,7 +246,10 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 
 				if (ftp_tls_mode_from_text((char *)fa->FA_Arguments[D_OPT_TLS], &mode) &&
 					(env = mod_connect_private_env(cm)))
+				{
 					env->e_tls_mode = mode;
+					flags |= CONN_OPT_TLS_MODE;
+				}
 				else
 					valid = FALSE;
 			}
@@ -253,7 +259,10 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 				struct ftp_environment *env;
 
 				if ((env = mod_connect_private_env(cm)))
+				{
 					env->e_tls_verify_peer = fa->FA_Arguments[D_OPT_NOVERIFY] ? FALSE : TRUE;
+					flags |= CONN_OPT_TLS_VERIFY;
+				}
 				else
 					valid = FALSE;
 			}
