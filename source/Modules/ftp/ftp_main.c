@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -537,6 +539,20 @@ static int ipc_remember_path(struct opusftp_globals *og, IPCData *ipc, IPCMessag
 //	Receive a connect message (from the address book or FTPConnect command)
 //	Create a new lister process and forward the connect message
 //
+static void ipc_append_connect_arg(char *command, int command_size, const char *arg)
+{
+	int len;
+	int arg_len;
+
+	if (!command || !arg || command_size <= 0)
+		return;
+
+	len = strlen(command);
+	arg_len = strlen(arg);
+	if (len < command_size && arg_len < command_size - len)
+		strcpy(command + len, arg);
+}
+
 static int ipc_connect(struct opusftp_globals *og, IPCData *ipc, struct ListLock *tasklist, IPCMessage *msg)
 {
 	struct connect_msg *cm = msg->data_free;
@@ -552,13 +568,25 @@ static int ipc_connect(struct opusftp_globals *og, IPCData *ipc, struct ListLock
 		// Handle of ftp lister?
 		if ((node = find_ftpnode(og, cm->cm_handle)))
 		{
-			if (cm->cm_site.se_name && *cm->cm_site.se_name)
+			if (*cm->cm_site.se_name)
 			{
 				sprintf(buffer, "FTPConnect LISTER=%lu SITE=\"%s\"", cm->cm_handle, cm->cm_site.se_name);
 			}
 			else
 			{
 				sprintf(buffer, "FTPConnect LISTER=%lu %s", cm->cm_handle, cm->cm_site.se_host);
+			}
+
+			if (!*cm->cm_site.se_name && cm->cm_site.se_env)
+			{
+				if (ftp_tls_mode_uses_control_tls(cm->cm_site.se_env->e_tls_mode))
+				{
+					ipc_append_connect_arg(buffer, sizeof(buffer), " TLS=explicit");
+					ipc_append_connect_arg(
+						buffer, sizeof(buffer), cm->cm_site.se_env->e_tls_verify_peer ? " TLSVERIFY" : " NOVERIFY");
+				}
+				else
+					ipc_append_connect_arg(buffer, sizeof(buffer), " TLS=off");
 			}
 
 			if ((qm = AllocVec(sizeof(*qm) + strlen(buffer) + 1, MEMF_CLEAR)))
@@ -1522,15 +1550,24 @@ static int opus_path(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 
 	if ((node = find_ftpnode(og, atoi(argv[1]))))
 	{
-		if (!strnicmp(argv[2], "ftp://", 6))
+		const char *url_body;
+		int url_mode;
+		const char *tls_arg = "";
+
+		if (ftp_tls_mode_from_url_scheme(argv[2], &url_body, &url_mode))
 		{
-			len = strlen("FTPConnect LISTER=") + strlen(argv[1]) + 1 + strlen(argv[2] + 6) + 1;
+			if (ftp_tls_mode_uses_control_tls(url_mode))
+				tls_arg = " TLS=explicit";
+			else
+				tls_arg = " TLS=off";
+
+			len = strlen("FTPConnect LISTER=") + strlen(argv[1]) + 1 + strlen(url_body) + strlen(tls_arg) + 1;
 
 			if ((qm = AllocVec(sizeof(struct quit_msg) + len, MEMF_CLEAR)))
 			{
 				qm->qm_rxmsg = rxmsg;
 				qm->qm_command = (char *)(qm + 1);
-				sprintf(qm->qm_command, "FTPConnect LISTER=%s %s", argv[1], argv[2] + 6);
+				sprintf(qm->qm_command, "FTPConnect LISTER=%s %s%s", argv[1], url_body, tls_arg);
 
 				IPC_Quit(node->fn_ipc, (ULONG)qm, 0);
 				retval = 1;

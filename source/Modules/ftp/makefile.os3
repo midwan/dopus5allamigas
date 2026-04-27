@@ -1,5 +1,12 @@
+# Directory Opus 5
+# Copyright 1993-2012 Jonathan Potter & GP Software
+# Copyright 2012-2013 DOPUS5 Open Source Team
+# Copyright 2023-2026 Dimitris Panokostas
+
 include makefile.objs
 include ../module.common
+
+LIBS := $(filter-out -lamiga,$(LIBS)) -lamisslstubs -lamiga
 
 SHELL:= sh
 NEWDATE  := $(shell date +%d.%m.%Y)
@@ -35,4 +42,3 @@ clean:
 .PHONY cleanall:
 cleanall : clean
 	@$(REMOVE) $(TARGET) $(TARGET).map $(TARGET).s
-

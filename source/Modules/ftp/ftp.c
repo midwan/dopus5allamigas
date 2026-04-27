@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -51,6 +53,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_recursive.h"
 #include "ftp_util.h"  // for cat_bytes()
 #include "ftp_parse.h"
+#include "ftp_listcmd.h"
 
 #ifdef __amigaos3__
 // dummy TimerBase to get amiga.lib to link
@@ -63,6 +66,10 @@ struct Device *TimerBase = NULL;
 
 /* Any printf can be used but this is designed for the one in 'lister.c' */
 extern void STDARGS logprintf(char *fmt, ...);
+
+static int ftp_command_error(struct ftp_info *info, int err, const char *msg);
+static BOOL ftp_tls_failure_is_verify(struct ftp_tls_session *session);
+static const char *ftp_tls_failure_string(struct ftp_tls_session *session);
 
 /**
  **	Function definitions
@@ -363,20 +370,50 @@ int ftp_syst(struct ftp_info *info)
  *
  **************************************************************/
 
+static BOOL ftp_tls_session_active(struct ftp_tls_session *session)
+{
+	return session && session->active;
+}
+
+static int ftp_socket_write_all(struct ftp_tls_session *tls_session, int socket, const char *buf, int len)
+{
+	int done = 0;
+
+	while (done < len)
+	{
+		int written;
+
+		if (ftp_tls_session_active(tls_session))
+			written = ftp_tls_write(tls_session, buf + done, len - done);
+		else
+			written = send(socket, (char *)buf + done, len - done, 0);
+
+		if (written <= 0)
+			return 0;
+
+		done += written;
+	}
+
+	return 1;
+}
+
 static int _ftp(struct ftp_info *info, unsigned long flags, const char *cmd)
 {
 	struct opusftp_globals *ogp;
 	int len;
 
 	// Valid?
-	if (!info || !cmd)
+	if (!info)
 		return 600;
+
+	if (!cmd)
+		return ftp_command_error(info, FTPERR_BAD_COMMAND, "FTP command is empty");
 
 	ogp = info->fi_og;
 
 	// Socket used by non-owner task?
 	if (info->fi_task != FindTask(0))
-		return 600;
+		return ftp_command_error(info, FTPERR_BAD_COMMAND, "FTP command used by wrong task");
 
 	// Log outgoing commands if debugging is turned on
 	// NOOPs are never logged, passwords are hidden
@@ -384,7 +421,8 @@ static int _ftp(struct ftp_info *info, unsigned long flags, const char *cmd)
 		logprintf("--> %s\n", strnicmp(cmd, "PASS ", 5) ? cmd : "PASS .....");
 
 	len = strlen(cmd);
-	send(info->fi_cs, (char *)cmd, len, 0);
+	if (!ftp_socket_write_all(&info->fi_control_tls, info->fi_cs, cmd, len))
+		return ftp_command_error(info, FTPERR_SOCKET_FAIL, "Could not write FTP command");
 
 	// Don't get reply if this is an asynchronous command, simply return 0
 	if (flags & FTPFLAG_ASYNCH)
@@ -408,6 +446,9 @@ static int ftp_command_error(struct ftp_info *info, int err, const char *msg)
 		info->fi_reply = 600;
 		info->fi_errno = err;
 
+		if (err != FTPERR_SOCKET_FAIL)
+			errno = 0;
+
 		if (msg)
 		{
 			stccpy(info->fi_iobuf, msg, IOBUFSIZE + 1);
@@ -416,6 +457,29 @@ static int ftp_command_error(struct ftp_info *info, int err, const char *msg)
 	}
 
 	return 600;
+}
+
+/*************************************************************/
+
+static const char *ftp_tls_failure_string(struct ftp_tls_session *session)
+{
+	if (ftp_tls_failure_is_verify(session))
+		return GetString(locale, MSG_FTP_TLS_VERIFY_FAILED);
+
+	return GetString(locale, MSG_FTP_TLS_FAILED);
+}
+
+static BOOL ftp_tls_failure_is_verify(struct ftp_tls_session *session)
+{
+	switch (ftp_tls_session_error(session))
+	{
+	case FTP_TLS_ERROR_VERIFY_PATHS:
+	case FTP_TLS_ERROR_HOSTNAME:
+	case FTP_TLS_ERROR_VERIFY_RESULT:
+		return TRUE;
+	}
+
+	return FALSE;
 }
 
 /*************************************************************/
@@ -509,6 +573,12 @@ void ftp_abor(struct ftp_info *info)
 	unsigned char iac_ip[] = {IAC, IP, IAC, DM, 'A', 'B', 'O', 'R', '\r', '\n'};
 	struct opusftp_globals *ogp = info->fi_og;
 
+	if (ftp_tls_session_active(&info->fi_control_tls))
+	{
+		_ftpa(info, FTPFLAG_ASYNCH, "ABOR");
+		return;
+	}
+
 	D(bug("--> IAC,IP\n"));
 	send(info->fi_cs, iac_ip, 2, 0);
 
@@ -531,6 +601,33 @@ static int open_data_socket(struct ftp_info *info)
 		info->fi_errno = FTPERR_SOCKET_FAIL;
 
 	return ts;
+}
+
+static int ftp_socket_read(struct ftp_tls_session *tls_session, int socket, void *buf, int len)
+{
+	if (ftp_tls_session_active(tls_session))
+		return ftp_tls_read(tls_session, buf, len);
+
+	return recv(socket, buf, len, 0);
+}
+
+static int ftp_socket_read_pending(struct ftp_tls_session *tls_session, int socket, void *buf, int len)
+{
+	if (!ftp_tls_session_active(tls_session) || ftp_tls_pending(tls_session) <= 0)
+	{
+		(void)socket;
+		(void)buf;
+		(void)len;
+		return -2;
+	}
+
+	return ftp_socket_read(tls_session, socket, buf, len);
+}
+
+static void ftp_close_data_socket(struct ftp_tls_session *tls_session, int socket)
+{
+	ftp_tls_session_cleanup(tls_session);
+	CloseSocket(socket);
 }
 
 static const char *ftp_data_mode_name(int mode)
@@ -852,7 +949,12 @@ static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 //	Returns -3 under some (forgotten) circumstances
 //	Returns -1 for other errors
 //
-static int dataconna(struct ftp_info *info, int restart, const char *fmt, ...)
+static int dataconna(struct ftp_info *info,
+					 struct ftp_tls_session *data_tls_session,
+					 int restart,
+					 BOOL allow_complete_reply,
+					 const char *fmt,
+					 ...)
 {
 	struct opusftp_globals *ogp = info->fi_og;
 	va_list ap;						  // For varargs
@@ -900,7 +1002,7 @@ static int dataconna(struct ftp_info *info, int restart, const char *fmt, ...)
 		va_end(ap);
 
 		if (reply / 100 == PRELIM ||
-			((info->fi_flags & FTP_FEAT_MLST) && reply == 200))	 // better check the actual command?
+			(allow_complete_reply && (info->fi_flags & FTP_FEAT_MLST) && reply == 200))
 		{
 			LONG len = sizeof(from);
 
@@ -917,9 +1019,29 @@ static int dataconna(struct ftp_info *info, int restart, const char *fmt, ...)
 			{
 				ds = ts;
 			}
+
+			if (ds >= 0 && data_tls_session && ftp_tls_mode_uses_data_tls(info->fi_tls_mode))
+			{
+				if (!ftp_tls_connect_reuse(data_tls_session,
+										   ds,
+										   info->fi_tls_host,
+										   info->fi_tls_verify_peer,
+										   &info->fi_control_tls))
+				{
+					errno = 0;
+					info->fi_errno =
+						ftp_tls_failure_is_verify(data_tls_session) ? FTPERR_TLS_VERIFY_FAIL : FTPERR_TLS_FAIL;
+					stccpy(info->fi_serverr, ftp_tls_failure_string(data_tls_session), IOBUFSIZE + 1);
+					CloseSocket(ds);
+					ds = -1;
+				}
+			}
 		}
 		else
+		{
+			CloseSocket(ts);
 			ds = -2;
+		}
 	}
 
 	return ds;
@@ -1017,6 +1139,7 @@ unsigned int get(struct ftp_info *info,
 	struct timeval timer = {0};
 	int display_bytes;
 	int done;
+	struct ftp_tls_session data_tls;
 
 	D(bug("get() '%s' -> '%s'\n", remote_path, local_path));
 
@@ -1029,6 +1152,7 @@ unsigned int get(struct ftp_info *info,
 	info->fi_errno = 0;
 	info->fi_ioerr = 0;
 	*info->fi_serverr = 0;
+	errno = 0;
 
 	// More validity
 	if (!remote_path || !local_path)
@@ -1039,6 +1163,7 @@ unsigned int get(struct ftp_info *info,
 
 	// init counters etc
 	display_bytes = done = 0;
+	ftp_tls_session_init(&data_tls);
 
 	// open output file for writing
 	if ((f = OpenBuf((char *)local_path, restart ? MODE_OLDFILE : MODE_NEWFILE, WBUFSIZE)))
@@ -1051,7 +1176,7 @@ unsigned int get(struct ftp_info *info,
 		}
 
 		// get connected  - bytes is a market flag 0/x for RETR/REST
-		if ((ds = dataconna(info, bytes, "RETR %s", remote_path)) < 0)
+		if ((ds = dataconna(info, &data_tls, bytes, FALSE, "RETR %s", remote_path)) < 0)
 		{
 			// Source (server error)?
 			if (ds == -2 || ds == -3)
@@ -1100,76 +1225,91 @@ unsigned int get(struct ftp_info *info,
 			// loop fetch tcp data and save it
 			while (!done)
 			{
+				BOOL have_data = FALSE;
+
 				// Note: these masks must be set before every call and
 				// are all cleared by select wait. Examine the masks
 				// afterwards to see what was set
 
-				FD_SET(ds, &rd);
-				FD_SET(ds, &ex);
-				flags = SIGBREAKF_CTRL_D;
+				b = ftp_socket_read_pending(&data_tls, ds, info->fi_iobuf, IOBUFSIZE);
 
-				if (WaitSelect(ds + 1, &rd, NULL, &ex, &timer, &flags) >= 0)
+				if (b != -2)
+					have_data = TRUE;
+				else
 				{
-					// Is there some data ready for us?
-					if (FD_ISSET(ds, &rd))
+					FD_SET(ds, &rd);
+					FD_SET(ds, &ex);
+					flags = SIGBREAKF_CTRL_D;
+
+					if (WaitSelect(ds + 1, &rd, NULL, &ex, &timer, &flags) >= 0)
 					{
-						// then get it and store it
-						if ((b = recv(ds, info->fi_iobuf, IOBUFSIZE, 0)))
+						// Is there some data ready for us?
+						if (FD_ISSET(ds, &rd))
 						{
-							// save data
-							if (WriteBuf(f, info->fi_iobuf, b) == b)
-							{
-								bytes += b;
-
-								// progress bar uprate
-								display_bytes += b;
-
-								if (display_bytes >= UPDATE_BYTE_LIMIT)
-								{
-									if (updatefn)
-										(*updatefn)(updateinfo, total, display_bytes);
-
-									display_bytes = 0;
-								}
-							}
-							// Write Error
-							else
-							{
-								info->fi_errno |= FTPERR_XFER_DSTERR;
-								info->fi_ioerr = IoErr();
-								info->fi_aborted = 1;
-								ftp_abor(info);
-								done = TRUE;
-							}
+							// then get it and store it
+							b = ftp_socket_read(&data_tls, ds, info->fi_iobuf, IOBUFSIZE);
+							have_data = TRUE;
 						}
-						else
+
+						// did we get a signal to abort?
+						if (!done && (flags & SIGBREAKF_CTRL_D))
+						{
+							D(bug("*** get() CTRL-D SIGNAL ***\n"));
+							info->fi_abortsignals = 0;
+							info->fi_aborted = 1;
+							ftp_abor(info);	 // NEEDED why not just close socket?
 							done = TRUE;
+						}
+
+						// did we get an exception? Other end closed connection maybe
+						if (FD_ISSET(ds, &ex))
+						{
+							D(bug("** get() socket exception\n"));
+
+							// has been aborted from remote ?
+							done = TRUE;
+						}
 					}
-
-					// did we get a signal to abort?
-					if (!done && (flags & SIGBREAKF_CTRL_D))
+					else
 					{
-						D(bug("*** get() CTRL-D SIGNAL ***\n"));
-						info->fi_abortsignals = 0;
-						info->fi_aborted = 1;
-						ftp_abor(info);	 // NEEDED why not just close socket?
-						done = TRUE;
-					}
-
-					// did we get an exception? Other end closed connection maybe
-					if (FD_ISSET(ds, &ex))
-					{
-						D(bug("** get() socket exception\n"));
-
-						// has been aborted from remote ?
+						// some socket error -ve a 0 == timeout
+						D(bug("** get() WaitSelect error\n"));
 						done = TRUE;
 					}
 				}
-				else
+
+				if (have_data)
 				{
-					// some socket error -ve a 0 == timeout
-					D(bug("** get() WaitSelect error\n"));
-					done = TRUE;
+					if (b > 0)
+					{
+						// save data
+						if (WriteBuf(f, info->fi_iobuf, b) == b)
+						{
+							bytes += b;
+
+							// progress bar uprate
+							display_bytes += b;
+
+							if (display_bytes >= UPDATE_BYTE_LIMIT)
+							{
+								if (updatefn)
+									(*updatefn)(updateinfo, total, display_bytes);
+
+								display_bytes = 0;
+							}
+						}
+						// Write Error
+						else
+						{
+							info->fi_errno |= FTPERR_XFER_DSTERR;
+							info->fi_ioerr = IoErr();
+							info->fi_aborted = 1;
+							ftp_abor(info);
+							done = TRUE;
+						}
+					}
+					else
+						done = TRUE;
 				}
 			}
 
@@ -1178,7 +1318,7 @@ unsigned int get(struct ftp_info *info,
 				(*updatefn)(updateinfo, total, 0);
 
 			// D(bug( "--> close(%ld)\n", ds ));
-			CloseSocket(ds);
+			ftp_close_data_socket(&data_tls, ds);
 
 #ifdef DEBUG
 //			if	(ui)
@@ -1215,6 +1355,7 @@ unsigned int get(struct ftp_info *info,
 		info->fi_ioerr = IoErr();
 	}
 
+	ftp_tls_session_cleanup(&data_tls);
 	return bytes;
 }
 
@@ -1227,13 +1368,17 @@ unsigned int get(struct ftp_info *info,
  *
  */
 
-static int iread(struct ftp_info *info, int skt, BOOL checkbreak)
+static int iread(struct ftp_info *info, int skt, BOOL checkbreak, struct ftp_tls_session *tls_session)
 {
 	// struct opusftp_globals *ogp = info->fi_og;
 	int retval = -1;
 	fd_set rd, ex;
 	ULONG flags;
 	struct timeval timer = {0, 0};
+
+	retval = ftp_socket_read_pending(tls_session, skt, info->fi_bufiobuf, BUFIOBUFSIZE);
+	if (retval != -2)
+		return retval;
 
 	// set network timeout for the select wait call
 	set_timeout(info, &timer);
@@ -1258,7 +1403,7 @@ static int iread(struct ftp_info *info, int skt, BOOL checkbreak)
 		{
 			// number of bytes read if successful else -1.
 			// can be 0 for EOF
-			retval = recv(skt, info->fi_bufiobuf, BUFIOBUFSIZE, 0);
+			retval = ftp_socket_read(tls_session, skt, info->fi_bufiobuf, BUFIOBUFSIZE);
 		}
 
 #ifdef DEBUG
@@ -1300,7 +1445,7 @@ static void flush_socket_buffer(struct ftp_info *info)
  * 	Function returns 1 for success or 0,-1 for timeouts/errors.
  */
 
-int buf_sgetc(struct ftp_info *info, int skt, BOOL checkbreak, char *ret)
+int buf_sgetc(struct ftp_info *info, int skt, BOOL checkbreak, struct ftp_tls_session *tls_session, char *ret)
 {
 	int res;
 
@@ -1315,7 +1460,7 @@ int buf_sgetc(struct ftp_info *info, int skt, BOOL checkbreak, char *ret)
 		info->fi_buffer_left = 0;
 
 		// Fill buffer - res no chars read, 0 = timeout, -1 = error
-		if ((res = iread(info, skt, checkbreak)) <= 0)
+		if ((res = iread(info, skt, checkbreak, tls_session)) <= 0)
 			return (res);
 
 		info->fi_buffer_left = res - 1;
@@ -1341,7 +1486,7 @@ int buf_sgetc(struct ftp_info *info, int skt, BOOL checkbreak, char *ret)
  *	 the file, the buffer argument is returned.
  */
 
-static char *buf_sgets(struct ftp_info *info, int bytes, int skt, BOOL checkbreak)
+static char *buf_sgets(struct ftp_info *info, int bytes, int skt, BOOL checkbreak, struct ftp_tls_session *tls_session)
 {
 	char *buf, *retval, *p;
 	char c;
@@ -1356,7 +1501,7 @@ static char *buf_sgets(struct ftp_info *info, int bytes, int skt, BOOL checkbrea
 			break;
 
 		//  EOF or error?
-		if (buf_sgetc(info, skt, checkbreak, &c) <= 0)
+		if (buf_sgetc(info, skt, checkbreak, tls_session, &c) <= 0)
 		{
 			retval = NULL;
 			break;
@@ -1383,7 +1528,7 @@ static char *buf_sgets(struct ftp_info *info, int bytes, int skt, BOOL checkbrea
 //	checkabort_time is set either to default or special time for
 //	getput only on dest STOR command
 //
-static int sgetc(struct ftp_info *info, int skt, int checkabort_time)
+static int sgetc(struct ftp_info *info, int skt, int checkabort_time, struct ftp_tls_session *tls_session)
 {
 	// struct opusftp_globals *ogp = info->fi_og;
 	int retval = -1;
@@ -1399,6 +1544,12 @@ static int sgetc(struct ftp_info *info, int skt, int checkabort_time)
 		D(bug("** sgetc invalid!\n"));
 		return retval;
 	}
+
+	n = ftp_socket_read_pending(tls_session, skt, &c, 1);
+	if (n == 1)
+		return c;
+	if (n != -2)
+		return retval;
 
 	// set network timeout for the select wait call
 
@@ -1439,7 +1590,7 @@ static int sgetc(struct ftp_info *info, int skt, int checkabort_time)
 
 		// is data ready?
 		if (FD_ISSET(skt, &rd))
-			if ((n = recv(skt, &c, 1, 0)) == 1)
+			if ((n = ftp_socket_read(tls_session, skt, &c, 1)) == 1)
 				retval = c;
 
 #ifdef DEBUG
@@ -1461,7 +1612,8 @@ static int sgetc(struct ftp_info *info, int skt, int checkabort_time)
 //	info->fi_reply = 800 for timeout
 //	info->fi_reply = 700 for control-D abort
 //
-static char *sgets(struct ftp_info *info, char *iobuf, int bytes, int skt, int checkabort_time)
+static char *sgets(
+	struct ftp_info *info, char *iobuf, int bytes, int skt, int checkabort_time, struct ftp_tls_session *tls_session)
 {
 	char *retval, *p;
 	int c;
@@ -1478,7 +1630,7 @@ static char *sgets(struct ftp_info *info, char *iobuf, int bytes, int skt, int c
 			break;
 
 		// Read a character
-		c = sgetc(info, skt, checkabort_time);
+		c = sgetc(info, skt, checkabort_time, tls_session);
 
 		// EOF or error?
 		if (c == -1)
@@ -1537,6 +1689,8 @@ int list(struct ftp_info *info,
 	int ds;				// Data socket
 	int reply;			// FTP reply
 	int updateret = 1;	// Return value from update function
+	BOOL allow_complete_reply;
+	struct ftp_tls_session data_tls;
 
 #ifdef QUOTE_HACK
 	// For quote checking
@@ -1547,16 +1701,26 @@ int list(struct ftp_info *info,
 	if (!info || !cmd)
 		return -1;
 
+	// No abort/error yet
+	info->fi_aborted = 0;
+	info->fi_errno = 0;
+	info->fi_ioerr = 0;
+	*info->fi_serverr = 0;
+	errno = 0;
+
+	ftp_tls_session_init(&data_tls);
+	allow_complete_reply = ftp_listcmd_is_mlsd(cmd);
+
 // Establish data connection
 #ifdef QUOTE_HACK
 	if (path && *path && GetVar("DOpus/ftp_quotes", &env, 1, 0) != -1)
-		ds = dataconna(info, 0, "%s \"%s\"", cmd, path);
+		ds = dataconna(info, &data_tls, 0, allow_complete_reply, "%s \"%s\"", cmd, path);
 	else
 #endif
 		if (path && *path)
-		ds = dataconna(info, 0, "%s %s", cmd, path);
+		ds = dataconna(info, &data_tls, 0, allow_complete_reply, "%s %s", cmd, path);
 	else
-		ds = dataconna(info, 0, "%s", cmd);
+		ds = dataconna(info, &data_tls, 0, allow_complete_reply, "%s", cmd);
 
 	if (ds >= 0)
 	{
@@ -1566,7 +1730,7 @@ int list(struct ftp_info *info,
 		flush_socket_buffer(info);
 
 		// Read a line and call the callback function
-		while (updateret > 0 && buf_sgets(info, IOBUFSIZE, ds, TRUE))
+		while (updateret > 0 && buf_sgets(info, IOBUFSIZE, ds, TRUE, &data_tls))
 		{
 			if (updatefn)
 			{
@@ -1581,7 +1745,7 @@ int list(struct ftp_info *info,
 		}
 
 		// D(bug( "--> close(%ld)\n", ds ));
-		CloseSocket(ds);
+		ftp_close_data_socket(&data_tls, ds);
 
 		// Get reply to socket closure -  Can TIMEOUT
 		reply = getreply(info);
@@ -1592,6 +1756,8 @@ int list(struct ftp_info *info,
 			info->fi_errno |= FTPERR_XFER_SRCERR;
 			stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
 		}
+
+		retval = ftp_listcmd_result_after_reply(retval, reply);
 	}
 	else
 	{
@@ -1599,6 +1765,7 @@ int list(struct ftp_info *info,
 			retval = -2;
 	}
 
+	ftp_tls_session_cleanup(&data_tls);
 	return retval;
 }
 
@@ -1626,6 +1793,7 @@ unsigned int put(struct ftp_info *info,
 	struct timeval timer = {0};
 	BOOL done = FALSE;
 	int display_bytes = 0;
+	struct ftp_tls_session data_tls;
 
 	// Valid?
 	if (!info)
@@ -1636,6 +1804,7 @@ unsigned int put(struct ftp_info *info,
 	info->fi_errno = 0;
 	info->fi_ioerr = 0;
 	*info->fi_serverr = 0;
+	errno = 0;
 
 	// More validity
 	if (!remote_path || !local_path)
@@ -1644,10 +1813,12 @@ unsigned int put(struct ftp_info *info,
 		return 0;
 	}
 
+	ftp_tls_session_init(&data_tls);
+
 	if ((f = OpenBuf((char *)local_path, MODE_OLDFILE, WBUFSIZE)))
 	{
 		// Can TIMEOUT
-		if ((ds = dataconna(info, restart, "STOR %s", remote_path)) < 0)
+		if ((ds = dataconna(info, &data_tls, restart, FALSE, "STOR %s", remote_path)) < 0)
 		{
 			// Destination (server) error?
 			if (ds == -2 || ds == -3)
@@ -1708,7 +1879,12 @@ unsigned int put(struct ftp_info *info,
 					{
 						if ((b = ReadBuf(f, info->fi_iobuf, IOBUFSIZE)) > 0)
 						{
-							send(ds, info->fi_iobuf, b, 0);
+							if (!ftp_socket_write_all(&data_tls, ds, info->fi_iobuf, b))
+							{
+								info->fi_errno |= FTPERR_XFER_DSTERR;
+								done = TRUE;
+								continue;
+							}
 							bytes += b;
 
 							if ((display_bytes += b) >= UPDATE_BYTE_LIMIT || bytes < UPDATE_BYTE_LIMIT)
@@ -1760,7 +1936,7 @@ unsigned int put(struct ftp_info *info,
 
 			// Close data socket
 			// D(bug( "--> close(%ld)\n", ds ));
-			CloseSocket(ds);
+			ftp_close_data_socket(&data_tls, ds);
 
 			// Get reply to socket closure -  Can TIMEOUT
 			if (getreply(info) / 100 != COMPLETE)
@@ -1777,6 +1953,7 @@ unsigned int put(struct ftp_info *info,
 		info->fi_ioerr = IoErr();
 	}
 
+	ftp_tls_session_cleanup(&data_tls);
 	return bytes;
 }
 
@@ -1812,6 +1989,79 @@ int gethost(struct opusftp_globals *ogp, struct sockaddr_in *remote_addr, char *
 
 /*************************************************************/
 
+static int ftp_secure_control(struct ftp_info *info,
+							  int (*updatefn)(void *, int, char *),
+							  void *updateinfo,
+							  const char *host)
+{
+	int reply;
+
+	if (updatefn)
+		(*updatefn)(updateinfo, 0 /*attempt*/, GetString(locale, MSG_FTP_SECURING_CONNECTION));
+
+	*info->fi_serverr = 0;
+
+	reply = _ftpa(info, FTPFLAG_ASYNCH, "AUTH TLS");
+	if (reply < 600)
+		reply = _getreply(info, 0, updatefn, updateinfo);
+
+	if (reply != 234)
+	{
+		errno = 0;
+		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
+		return 0;
+	}
+
+	if (!ftp_tls_connect(&info->fi_control_tls, info->fi_cs, host, info->fi_tls_verify_peer))
+	{
+		errno = 0;
+		info->fi_errno =
+			ftp_tls_failure_is_verify(&info->fi_control_tls) ? FTPERR_TLS_VERIFY_FAIL : FTPERR_TLS_FAIL;
+		stccpy(info->fi_iobuf, ftp_tls_failure_string(&info->fi_control_tls), IOBUFSIZE + 1);
+		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
+		return 0;
+	}
+
+	flush_socket_buffer(info);
+	return 1;
+}
+
+static int ftp_prepare_protected_data(struct ftp_info *info,
+									  int (*updatefn)(void *, int, char *),
+									  void *updateinfo)
+{
+	int reply;
+
+	if (!ftp_tls_mode_uses_data_tls(info->fi_tls_mode))
+		return 1;
+
+	reply = _ftpa(info, FTPFLAG_ASYNCH, "PBSZ 0");
+	if (reply < 600)
+		reply = _getreply(info, 0, updatefn, updateinfo);
+
+	if (reply / 100 != COMPLETE)
+	{
+		errno = 0;
+		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
+		return 0;
+	}
+
+	reply = _ftpa(info, FTPFLAG_ASYNCH, "PROT P");
+	if (reply < 600)
+		reply = _getreply(info, 0, updatefn, updateinfo);
+
+	if (reply / 100 != COMPLETE)
+	{
+		errno = 0;
+		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
+		return 0;
+	}
+
+	return 1;
+}
+
+/*************************************************************/
+
 //
 //	Connect a remote host to our local socket
 //	local_addr will be used as data_addr in later calls
@@ -1830,7 +2080,23 @@ int connect_host(struct ftp_info *info, int (*updatefn)(void *, int, char *), vo
 	LONG len = sizeof(struct sockaddr_in);
 	int reply;	// FTP reply
 
+	if (info->fi_cs >= 0)
+	{
+		ftp_tls_session_cleanup(&info->fi_control_tls);
+		CloseSocket(info->fi_cs);
+	}
+	else
+		ftp_tls_session_cleanup(&info->fi_control_tls);
+
 	info->fi_cs = -1;
+	info->fi_errno = 0;
+	*info->fi_serverr = 0;
+	errno = 0;
+
+	if (host)
+		stccpy(info->fi_tls_host, host, FTP_TLS_HOST_BUFSIZE);
+	else
+		*info->fi_tls_host = 0;
 
 	if (updatefn)
 		(*updatefn)(updateinfo, 0 /*attempt*/, GetString(locale, MSG_LOOKING_UP));
@@ -1889,13 +2155,18 @@ int connect_host(struct ftp_info *info, int (*updatefn)(void *, int, char *), vo
 						;
 
 					if (reply == 220)
-						retval = 1;
+					{
+						if (!ftp_tls_mode_uses_control_tls(info->fi_tls_mode) ||
+							ftp_secure_control(info, updatefn, updateinfo, host))
+							retval = 1;
+					}
 				}
 			}
 
 			// If something went wrong close and invalidate the control socket
 			if (retval <= 0)
 			{
+				ftp_tls_session_cleanup(&info->fi_control_tls);
 				CloseSocket(info->fi_cs);
 				info->fi_cs = -1;
 			}
@@ -1949,6 +2220,7 @@ void disconnect_host(struct ftp_info *info)
 
 	if (info->fi_cs >= 0)
 	{
+		ftp_tls_session_cleanup(&info->fi_control_tls);
 		CloseSocket(info->fi_cs);
 		info->fi_cs = -1;
 	}
@@ -1965,6 +2237,7 @@ void lostconn(struct ftp_info *info)
 
 	if (info->fi_cs >= 0)
 	{
+		ftp_tls_session_cleanup(&info->fi_control_tls);
 		shutdown(info->fi_cs, 1 + 1);  // Send and receive disallowed
 		CloseSocket(info->fi_cs);	   // Close control socket
 		info->fi_cs = -1;			   // Descriptor invalid
@@ -1979,11 +2252,14 @@ void lostconn(struct ftp_info *info)
 //	Returns  0 if okay
 //	Returns -1 if USER failed
 //	Returns -2 if PASS failed
+//	Returns -3 if TLS data protection setup failed
 //
 int login(struct ftp_info *info, int (*updatefn)(void *, int, char *), void *updateinfo, char *user, char *passwd)
 {
 	BOOL retval = 0;
 	int reply;
+
+	errno = 0;
 
 	// Clear previous error text
 	*info->fi_serverr = 0;
@@ -2012,6 +2288,9 @@ int login(struct ftp_info *info, int (*updatefn)(void *, int, char *), void *upd
 			retval = -2;
 		}
 	}
+
+	if (retval == 0 && !ftp_prepare_protected_data(info, updatefn, updateinfo))
+		retval = -3;
 
 	return retval;
 }
@@ -2083,7 +2362,7 @@ int _getreply(struct ftp_info *info, unsigned long flags, int (*updatefn)(void *
 	do
 	{
 		// EOF or error
-		if ((sgets(info, iobuf, IOBUFSIZE, info->fi_cs, checkabort_time)) == 0)
+		if ((sgets(info, iobuf, IOBUFSIZE, info->fi_cs, checkabort_time, &info->fi_control_tls)) == 0)
 		{
 			if (info->fi_reply == 800)
 				info->fi_errno = FTPERR_TIMEOUT;

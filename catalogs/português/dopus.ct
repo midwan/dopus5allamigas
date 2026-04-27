@@ -1,6 +1,8 @@
 ## version $VER: dopus.catalog 0.5 (11-09-1998) - Por Raul Silva 
 ## codeset 0
 ## language português
+; Catalog updates Copyright 2023-2026 Dimitris Panokostas
+;
 ;
 MSG_ABORTED
 A Abortar...

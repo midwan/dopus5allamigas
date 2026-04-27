@@ -1,6 +1,8 @@
 ## version $VER: dopus.catalog 2.25 (2.10.97) Készítette Horváth Péter és Miklós Árpád
 ## codeset 5
 ## language magyar
+; Catalog updates Copyright 2023-2026 Dimitris Panokostas
+;
 ;
 MSG_ABORTED
 Megszakítva..

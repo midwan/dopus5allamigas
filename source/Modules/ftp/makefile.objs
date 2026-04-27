@@ -1,8 +1,13 @@
+# Directory Opus 5
+# Copyright 1993-2012 Jonathan Potter & GP Software
+# Copyright 2012-2013 DOPUS5 Open Source Team
+# Copyright 2023-2026 Dimitris Panokostas
+
 NAME := ftp.module
 
 COMMON_OBJS := 	init/libinit.o init/amiga.o \
 				ftp_main.o ftp_lister.o ftp_lister_list.o \
-				ftp_lister_xfer.o ftp_lister_connect.o ftp.o ftp_parse.o \
+				ftp_lister_xfer.o ftp_lister_connect.o ftp.o ftp_parse.o ftp_listcmd.o ftp_tls.o \
 				ftp_arexx.o ftp_util.o ftp_recursive.o \
 				ftp_addressbook.o ftp_addrsupp.o ftp_addrformat.o \
 				ftp_protect.o ftp_module.o ftp_data.o ftp_strings.o

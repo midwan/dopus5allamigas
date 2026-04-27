@@ -1,3 +1,8 @@
+; Directory Opus 5
+; Copyright 1993-2012 Jonathan Potter & GP Software
+; Copyright 2012-2013 DOPUS5 Open Source Team
+; Copyright 2023-2026 Dimitris Panokostas
+;
 ; ************************************************* 
 ; Catalog description file for ftp.module
 ; ************************************************* 
@@ -267,14 +272,20 @@ MSG_ERR_XX (//)
 ;
 ;
 MSG_MAIN_NEED_TCPIP (//)
-You must have a TCP/IP stack\nsuch as AmiTCP, AS225, INet,\nMiami, MLink, or TermiteTCP\nrunning to use\nOpusFTP
+You must have a TCP/IP stack
+such as AmiTCP, AS225, INet,
+Miami, MLink, or TermiteTCP
+running to use
+OpusFTP
 ;
 ; (The next two lines make up a single string "The ??? command...")
 MSG_MAIN_THE (//)
 The
 ;
 MSG_MAIN_CMD_NOT_SUPP (//)
-command\nis not currently supported\nby OpusFTP
+command
+is not currently supported
+by OpusFTP
 ;
 ;
 ; ************************************************* 
@@ -388,22 +399,27 @@ MSG_SEND_NOOP (//) ; don't tranlate the NOOP part
 NOOPs
 ;
 MSG_BADSITE (//)
-Invalid Site Details\nYou must enter a Host IP or Address.
+Invalid Site Details
+You must enter a Host IP or Address.
 ;
 MSG_BADVER (//)
-This OpusFTP module requires\nDOpus version 5.51 or higher!
+This OpusFTP module requires
+DOpus version 5.51 or higher!
 ;
 MSG_QUERYSAVE (//)
-You have modified the FTP config and not\nsaved it. Would you like to?
+You have modified the FTP config and not
+saved it. Would you like to?
 ;
 MSG_FTP_USE (//)
 _Use
 ;
 MSG_QUERYINDEX (//)
-Found file %s of size %ld %s.\nFetch it and update file comments?
+Found file %s of size %ld %s.
+Fetch it and update file comments?
 ;
 MSG_BADHASH (//)
-Sorry, OpusFTP cannot handle files\nbeginning with the '#' character.
+Sorry, OpusFTP cannot handle files
+beginning with the '#' character.
 ;
 MSG_FTP_DOS_ERROR (//)
 DOS error
@@ -412,7 +428,8 @@ OBSOLETE027 (//)
 
 ;
 MSG_NO_LOCALHOST (//)
-Site to site transfer is not possible using localhost.\nPlease use the full address instead.
+Site to site transfer is not possible using localhost.
+Please use the full address instead.
 ;
 OBSOLETE028 (//)
 
@@ -498,7 +515,8 @@ MSG_FTP_DRAWERS (//)
 drawer(s) (and their contents)
 ;
 MSG_DELETE_DIRS (//)
-is a directory.\nProcede with delete operation?
+is a directory.
+Procede with delete operation?
 ;
 ;	Recursive confirmation requester
 ;
@@ -608,16 +626,19 @@ _Progress
 ;
 ;
 MSG_FTP_GETPUT_NO_PASV (//)
-Neither site supports passive transfers.\nSite to site transfer is not possible.
+Neither site supports passive transfers.
+Site to site transfer is not possible.
 ;
 MSG_FTP_LOGIN_FAILED (//)
 Login unsuccessful.
 ;
 MSG_FTP_CHANGE_USERPASS (//)
-Do you wish to alter the user name\nand password?
+Do you wish to alter the user name
+and password?
 ;
 MSG_RESUME_FAILURE (//)
-This FTP server does not support the resume feature.\nThe old file will be replaced.
+This FTP server does not support the resume feature.
+The old file will be replaced.
 ;
 MSG_CONSOLE_TITLE (//)
 Directory Opus Magellan FTP
@@ -1039,7 +1060,8 @@ MSG_FTP_IMPORT_AMFTP_SITES (//)
 Import AMFTP Sites
 ;
 MSG_FTP_IMPORT_BAD_AMFTPFILE (//)
-Not an .AmFTPProfiles file!\n Continue anyway?
+Not an .AmFTPProfiles file!
+ Continue anyway?
 ;
 MSG_FTP_LAST_SITE (//)
 _Last Site
@@ -1064,4 +1086,28 @@ MSG_ABORT_COMMENT_END (//)
 ;
 MSG_FTP_SERVER_ERROR (//)
 Command Failed or Server Error
+;
+MSG_FTP_SECURITY (//)
+Security
+;
+MSG_FTP_TLS_PLAIN (//)
+Plain FTP
+;
+MSG_FTP_TLS_EXPLICIT (//)
+Explicit FTPS
+;
+MSG_FTP_SECURING_CONNECTION (//)
+Securing FTP connection...
+;
+MSG_FTP_TLS_FAILED (//)
+FTPS negotiation failed
+;
+MSG_FTP_VERIFY_TLS (//)
+Verify TLS certificates
+;
+MSG_FTP_TLS_VERIFY_FAILED (//)
+FTPS certificate check failed
+;
+MSG_FTP_GETPUT_NO_FTPS (//)
+FTPS cannot use direct site-to-site copy
 ;

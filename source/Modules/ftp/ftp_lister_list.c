@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -38,6 +40,64 @@ For more information on Directory Opus for Windows please see:
 #define min(a, b) (((a) <= (b)) ? (a) : (b))
 
 extern const char *months[];
+
+/********************************/
+
+static const char *lister_default_list_command(struct ftp_node *ftpnode)
+{
+	if (ftpnode->fn_systype == FTP_DGUX)
+		return FTP_LISTCMD_DGUX;
+	if (ftpnode->fn_systype == FTP_OS2 || ftpnode->fn_systype == FTP_WINDOWSNT)
+		return FTP_LISTCMD_PLAIN;
+
+	return FTP_LISTCMD_DEFAULT;
+}
+
+static void lister_restore_list_parser(struct ftp_node *ftpnode)
+{
+	if (ftpnode->fn_systype == FTP_WINDOWSNT)
+		ftpnode->fn_ls_to_entryinfo = nt_line_to_entryinfo;
+	else
+		ftpnode->fn_ls_to_entryinfo = unix_line_to_entryinfo;
+}
+
+static void lister_reset_index_state(struct ftp_node *ftpnode)
+{
+	ftpnode->fn_ftp.fi_found_index = 0;
+	ftpnode->fn_ftp.fi_found_index_size = 0;
+	ftpnode->fn_ftp.fi_found_fbbs_size = 0;
+}
+
+static void lister_clear_listing(struct ftp_node *ftpnode, ULONG handle, BOOL redo_cache)
+{
+	if (redo_cache)
+		rexx_lst_clear(ftpnode->fn_opus, handle);
+	else
+		rexx_lst_empty(ftpnode->fn_opus, handle);
+
+	rexx_lst_set_path(ftpnode->fn_opus, handle, ftpnode->fn_site.se_path);
+	lister_reset_index_state(ftpnode);
+}
+
+BOOL lister_fallback_list_command(struct ftp_node *ftpnode)
+{
+	char next_cmd[LSCMDLEN + 1] = "";
+
+	if (!ftpnode)
+		return FALSE;
+
+	if (!ftp_listcmd_next_after_failure(ftpnode->fn_lscmd,
+										lister_default_list_command(ftpnode),
+										next_cmd,
+										sizeof(next_cmd)))
+		return FALSE;
+
+	D(bug("list command '%s' failed; trying '%s'\n", ftpnode->fn_lscmd, next_cmd));
+	stccpy(ftpnode->fn_lscmd, next_cmd, LSCMDLEN + 1);
+	lister_restore_list_parser(ftpnode);
+
+	return TRUE;
+}
 
 /********************************/
 
@@ -273,9 +333,7 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 	D(bug("lister_list()\n"));
 
 	// Prepare for index if found
-	ftpnode->fn_ftp.fi_found_index = 0;
-	ftpnode->fn_ftp.fi_found_index_size = 0;
-	ftpnode->fn_ftp.fi_found_fbbs_size = 0;
+	lister_reset_index_state(ftpnode);
 
 	// Passive mode required?
 	ftpnode->fn_ftp.fi_flags &= ~FTP_PASSIVE;
@@ -293,14 +351,7 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 
 		if (!buffered || redo_cache)
 		{
-			// No need to do an empty if entry is cached, use clear
-			if (redo_cache)
-				rexx_lst_clear(ftpnode->fn_opus, handle);
-			else
-				rexx_lst_empty(ftpnode->fn_opus, handle);
-
-			// We just cleared the path - put it back
-			rexx_lst_set_path(ftpnode->fn_opus, handle, ftpnode->fn_site.se_path);
+			lister_clear_listing(ftpnode, handle, redo_cache);
 
 			InitSemaphore(&ui->ui_sem);
 
@@ -344,23 +395,26 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 			GetSysTime(&ui->ui_last);
 			// gettimeofday(&ui->ui_last, NULL);
 
-			// Send the LIST command
-			lsresult = list(&ftpnode->fn_ftp, list_update, ui, ftpnode->fn_lscmd, "");
+			for (;;)
+			{
+				// Send the LIST command
+				lsresult = list(&ftpnode->fn_ftp, list_update, ui, ftpnode->fn_lscmd, "");
 
-			D(bug("list command result %d\n", lsresult));
+				D(bug("list command result %d\n", lsresult));
+
+				if (lsresult == -2 && lister_fallback_list_command(ftpnode))
+				{
+					lister_clear_listing(ftpnode, handle, redo_cache);
+					GetSysTime(&ui->ui_last);
+				}
+				else
+					break;
+			}
+
+			if (lsresult)
+				lister_clear_listing(ftpnode, handle, redo_cache);
 
 			ftplister_refresh(ftpnode, REFRESH_NODATE);
-
-			// LIST command failed?
-			if (lsresult == -2)
-			{
-				if (!stricmp(ftpnode->fn_lscmd, LSCMD)) /* If we haven't tried yet */
-				{
-					strcpy(ftpnode->fn_lscmd, "LIST"); /* Get rid of all options */
-					lsresult = list(&ftpnode->fn_ftp, list_update, ui, ftpnode->fn_lscmd, "");
-					/* and try again... */
-				} /* (should change to NLST?) */
-			}	  /* (dg allows NLST opts) */
 
 			retval = lsresult ? FALSE : TRUE;
 

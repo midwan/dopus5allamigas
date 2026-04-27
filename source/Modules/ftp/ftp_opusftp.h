@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -105,7 +107,8 @@ enum  // offsets for parse template
   A_OPT_PASS,
 };
 
-#define CONNECT_TEMPLATE "HOST,PORT/N/K,USER,PASSWORD=PASS,DIR/K,LISTER/N/K,SITE/K,GUI/S,NOSCAN/S,RECON/S"
+#define CONNECT_TEMPLATE \
+	"HOST,PORT/N/K,USER,PASSWORD=PASS,DIR/K,LISTER/N/K,SITE/K,GUI/S,NOSCAN/S,RECON/S,TLS/K,TLSVERIFY=VERIFY/S,NOVERIFY/S"
 #define ADDRBOOK_TEMPLATE 0
 #if 0
 	#define CD_TEMPLATE "DIR/F"
@@ -130,6 +133,9 @@ enum {
 	D_OPT_GUI,
 	D_OPT_NOSCAN,
 	D_OPT_RECON,
+	D_OPT_TLS,
+	D_OPT_TLSVERIFY,
+	D_OPT_NOVERIFY,
 };
 
 // Module function IDs
@@ -199,7 +205,7 @@ struct ftp_environment
 			unsigned int e_show_dir : 1;
 			unsigned int e_progress_window : 1;	 // Display progress bars while scanning dirs
 
-			unsigned int oldpad : 2;
+			unsigned int e_tls_mode : 2;  // FTP_TLS_MODE_*
 
 			unsigned int e_script_connect_ok : 1;
 			unsigned int e_script_connect_fail : 1;
@@ -228,7 +234,7 @@ struct ftp_environment
 			unsigned int e_rescan : 1;
 			unsigned int e_recursive_special : 1;  //(recursive copy names with space)
 			unsigned int e_special_dir : 1;		   // old fred hack env var
-			unsigned int pad7 : 1;
+			unsigned int e_tls_verify_peer : 1;	   // Verify FTPS certificates
 			unsigned int pad8 : 1;
 #ifdef __AROS__
 		};
@@ -438,6 +444,8 @@ enum {
 	GAD_ENV_RETRY_DELAY,
 	GAD_ENV_ENABLE_RETRY_LOST,
 	GAD_ENV_NOOPS,
+	GAD_ENV_TLS_MODE,
+	GAD_ENV_TLS_VERIFY,
 	GAD_ENV_PASSIVE,
 
 	GAD_ENV_TIMEOUT,

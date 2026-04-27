@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -53,6 +55,11 @@ static unsigned int recursive_getput(endpoint *source,
 									 char *remote_path,
 									 char *local_path,
 									 unsigned int restart);
+static unsigned int recursive_getput_via_temp(struct hook_rec_data *hc,
+											  struct entry_info *entry,
+											  char *destname,
+											  BOOL resume);
+static void recursive_getput_clear_errors(endpoint *source, endpoint *dest);
 // static int callback_func( void *, char *str );
 static int rec_ask_lister_favour(int favour, endpoint *, void *arg1, void *arg2);
 
@@ -537,19 +544,9 @@ static int rec_retry_getput(struct hook_rec_data *hc, struct entry_info *entry, 
 
 	while (reqresult == 1)
 	{
+		int transfer_aborted = 0;
+
 		reqresult = -1;
-
-		hc->hc_ui.ui_bytes_so_far = 0;
-		// hc->hc_ui.ui_total_bytes = entry->ei_size;
-		hc->hc_ui.ui_total_bytes = 3;
-		hc->hc_ui.ui_flags &= ~UI_FIRSTDONE;
-
-		init_xfer_time(&hc->hc_ui);
-
-		// We use the destination lister for abort signalling
-		// because it's the operating process during a getput transfer
-		lst_addabort(hc->hc_source->ep_ftpnode, SIGBREAKF_CTRL_D, (struct Task *)hc->hc_dest->ep_ftpnode->fn_ipc->proc);
-		// lst_addabort( hc->hc_dest->ep_ftpnode, SIGBREAKF_CTRL_D, 0 );
 
 		// Use new name for CopyAs/MoveAs at top level
 		if (hc->hc_basedirname == startdirname && hc->hc_newname)
@@ -557,13 +554,42 @@ static int rec_retry_getput(struct hook_rec_data *hc, struct entry_info *entry, 
 		else
 			destname = entry->ei_name;
 
-		actual = recursive_getput(hc->hc_source,
-								  hc->hc_dest,
-								  getput_update,
-								  &hc->hc_ui,
-								  entry->ei_name,
-								  destname,
-								  resume ? entry->ei_size : 0);
+		if (ftp_tls_modes_allow_server_transfer(hc->hc_source->ep_ftpnode->fn_ftp.fi_tls_mode,
+												hc->hc_dest->ep_ftpnode->fn_ftp.fi_tls_mode))
+		{
+			hc->hc_ui.ui_bytes_so_far = 0;
+			// hc->hc_ui.ui_total_bytes = entry->ei_size;
+			hc->hc_ui.ui_total_bytes = 3;
+			hc->hc_ui.ui_flags &= ~UI_FIRSTDONE;
+
+			init_xfer_time(&hc->hc_ui);
+
+			// We use the destination lister for abort signalling
+			// because it's the operating process during a direct getput transfer
+			lst_addabort(hc->hc_source->ep_ftpnode,
+						 SIGBREAKF_CTRL_D,
+						 (struct Task *)hc->hc_dest->ep_ftpnode->fn_ipc->proc);
+
+			actual = recursive_getput(hc->hc_source,
+									  hc->hc_dest,
+									  getput_update,
+									  &hc->hc_ui,
+									  entry->ei_name,
+									  destname,
+									  resume ? entry->ei_size : 0);
+
+			lst_remabort(hc->hc_source->ep_ftpnode);
+
+			if (actual == REC_GETPUT_ERROR_START && !hc->hc_source->ep_ftpnode->fn_ftp.fi_aborted &&
+				!hc->hc_dest->ep_ftpnode->fn_ftp.fi_aborted)
+			{
+				D(bug("** getput direct setup failed; trying temp fallback\n"));
+				recursive_getput_clear_errors(hc->hc_source, hc->hc_dest);
+				actual = recursive_getput_via_temp(hc, entry, destname, resume);
+			}
+		}
+		else
+			actual = recursive_getput_via_temp(hc, entry, destname, resume);
 
 		D(bug("** getput actual 1 %ld\n", actual));
 
@@ -575,7 +601,10 @@ static int rec_retry_getput(struct hook_rec_data *hc, struct entry_info *entry, 
 
 		// Transfer aborted?  'actual' should be less than file size
 		else if (actual == REC_GETPUT_ABORTED)
+		{
 			actual = entry->ei_size / 2;
+			transfer_aborted = 1;
+		}
 
 		// Transfer error at beginning of transfer?  'actual' should be 0
 		else if (actual == REC_GETPUT_ERROR_START)
@@ -587,6 +616,12 @@ static int rec_retry_getput(struct hook_rec_data *hc, struct entry_info *entry, 
 
 		D(bug("** getput actual 2 %ld\n", actual));
 
+		if (transfer_aborted)
+		{
+			reqresult = 0;
+			retval = 0;
+		}
+		else
 		{
 			//	endpoint *ep;
 
@@ -657,22 +692,20 @@ static int rec_retry_getput(struct hook_rec_data *hc, struct entry_info *entry, 
 
 				break;
 			}
-		}
-
-		// Completely successful?
-		if (actual == entry->ei_size)
-		{
-			retval = 2;
-
-			// If Move, delete from source
-			if (hc->hc_copy_flags & XFER_MOVE)
+			// Completely successful?
+			if (actual == entry->ei_size)
 			{
-				if (rec_retry_dele(hc->hc_source, hc->hc_prognode, entry))
-					retval = 3;
+				retval = 2;
+
+				// If Move, delete from source
+				if (hc->hc_copy_flags & XFER_MOVE)
+				{
+					if (rec_retry_dele(hc->hc_source, hc->hc_prognode, entry))
+						retval = 3;
+				}
 			}
 		}
 
-		lst_remabort(hc->hc_dest->ep_ftpnode);
 	}
 
 	// Aborted?
@@ -680,6 +713,155 @@ static int rec_retry_getput(struct hook_rec_data *hc, struct entry_info *entry, 
 		hc->hc_prognode->fn_flags |= LST_ABORT;
 
 	return retval;
+}
+
+static void recursive_getput_clear_errors(endpoint *source, endpoint *dest)
+{
+	source->ep_ftpnode->fn_ftp.fi_aborted = 0;
+	source->ep_ftpnode->fn_ftp.fi_errno = 0;
+	source->ep_ftpnode->fn_ftp.fi_ioerr = 0;
+	*source->ep_ftpnode->fn_ftp.fi_serverr = 0;
+
+	dest->ep_ftpnode->fn_ftp.fi_aborted = 0;
+	dest->ep_ftpnode->fn_ftp.fi_errno = 0;
+	dest->ep_ftpnode->fn_ftp.fi_ioerr = 0;
+	*dest->ep_ftpnode->fn_ftp.fi_serverr = 0;
+
+	errno = 0;
+}
+
+static void recursive_getput_xfer_ui(struct hook_rec_data *hc, unsigned int total)
+{
+	hc->hc_ui.ui_bytes_so_far = 0;
+	hc->hc_ui.ui_total_bytes = total;
+	hc->hc_ui.ui_flags &= ~UI_FIRSTDONE;
+
+	init_xfer_time(&hc->hc_ui);
+}
+
+static unsigned int recursive_getput_file(endpoint *ep,
+										  int favour,
+										  int (*updatefn)(void *, unsigned int, unsigned int),
+										  void *updateinfo,
+										  char *remote_path,
+										  char *local_path,
+										  unsigned int restart)
+{
+	struct rec_favour_xfer xfer;
+
+	if (ep->ep_ftpnode->fn_ftp.fi_task == FindTask(0))
+	{
+		if (favour == FAVOUR_GET_FILE)
+			return get(&ep->ep_ftpnode->fn_ftp, updatefn, updateinfo, remote_path, local_path, restart);
+
+		return put(&ep->ep_ftpnode->fn_ftp, updatefn, updateinfo, local_path, remote_path, restart);
+	}
+
+	xfer.updatefn = NULL;
+	xfer.updateinfo = NULL;
+	xfer.remote_path = remote_path;
+	xfer.local_path = local_path;
+	xfer.restart = restart;
+
+	return rec_ask_lister_favour(favour, ep, &xfer, 0);
+}
+
+static void recursive_getput_temp_error(struct ftp_info *info, ULONG xfer_error, int msg)
+{
+	info->fi_errno &= ~FTPERR_XFER_MASK;
+	info->fi_errno |= xfer_error;
+	stccpy(info->fi_serverr, GetString(locale, msg), IOBUFSIZE + 1);
+}
+
+static unsigned int recursive_getput_via_temp(struct hook_rec_data *hc,
+											  struct entry_info *entry,
+											  char *destname,
+											  BOOL resume)
+{
+	BPTR temp_file;
+	char tempname[PATHLEN + 1] = {0};
+	unsigned int actual = 0;
+	unsigned int result = REC_GETPUT_ERROR_START;
+
+	D(bug("recursive_getput_via_temp()\n"));
+
+	if (!(temp_file = open_temp_file(tempname, hc->hc_dest->ep_ftpnode->fn_ipc)))
+	{
+		recursive_getput_temp_error(&hc->hc_source->ep_ftpnode->fn_ftp, FTPERR_XFER_SRCERR, MSG_ERROR_SAVING);
+		return REC_GETPUT_ERROR_START;
+	}
+
+	Close(temp_file);
+
+	hc->hc_source->ep_ftpnode->fn_ftp.fi_flags &= ~FTP_PASSIVE;
+	if (hc->hc_source->ep_ftpnode->fn_site.se_env->e_passive)
+		hc->hc_source->ep_ftpnode->fn_ftp.fi_flags |= FTP_PASSIVE;
+
+	recursive_getput_xfer_ui(hc, entry->ei_size);
+
+	lst_addabort(hc->hc_source->ep_ftpnode, SIGBREAKF_CTRL_D, 0);
+
+	actual = recursive_getput_file(hc->hc_source,
+								   FAVOUR_GET_FILE,
+								   xfer_update,
+								   &hc->hc_ui,
+								   entry->ei_name,
+								   tempname,
+								   FALSE);
+
+	lst_remabort(hc->hc_source->ep_ftpnode);
+
+	if (hc->hc_source->ep_ftpnode->fn_ftp.fi_aborted && !hc->hc_source->ep_ftpnode->fn_ftp.fi_errno)
+		result = REC_GETPUT_ABORTED;
+	else if (hc->hc_source->ep_ftpnode->fn_ftp.fi_errno || actual != entry->ei_size)
+	{
+		if (hc->hc_source->ep_ftpnode->fn_ftp.fi_errno & FTPERR_XFER_DSTERR)
+			recursive_getput_temp_error(&hc->hc_source->ep_ftpnode->fn_ftp, FTPERR_XFER_SRCERR, MSG_ERROR_SAVING);
+		else if (!hc->hc_source->ep_ftpnode->fn_ftp.fi_errno)
+			hc->hc_source->ep_ftpnode->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
+
+		result = actual ? REC_GETPUT_ERROR_END : REC_GETPUT_ERROR_START;
+	}
+	else
+	{
+		hc->hc_dest->ep_ftpnode->fn_ftp.fi_flags &= ~FTP_PASSIVE;
+		if (hc->hc_dest->ep_ftpnode->fn_site.se_env->e_passive)
+			hc->hc_dest->ep_ftpnode->fn_ftp.fi_flags |= FTP_PASSIVE;
+
+		recursive_getput_xfer_ui(hc, entry->ei_size);
+
+		lst_addabort(hc->hc_dest->ep_ftpnode,
+					 SIGBREAKF_CTRL_D,
+					 (struct Task *)hc->hc_dest->ep_ftpnode->fn_ipc->proc);
+
+		actual = recursive_getput_file(hc->hc_dest,
+									   FAVOUR_PUT_FILE,
+									   xfer_update,
+									   &hc->hc_ui,
+									   destname,
+									   tempname,
+									   resume ? hc->hc_misc_bytes : 0);
+
+		lst_remabort(hc->hc_dest->ep_ftpnode);
+
+		if (hc->hc_dest->ep_ftpnode->fn_ftp.fi_aborted && !hc->hc_dest->ep_ftpnode->fn_ftp.fi_errno)
+			result = REC_GETPUT_ABORTED;
+		else if (hc->hc_dest->ep_ftpnode->fn_ftp.fi_errno || actual != entry->ei_size)
+		{
+			if (hc->hc_dest->ep_ftpnode->fn_ftp.fi_errno & FTPERR_XFER_SRCERR)
+				recursive_getput_temp_error(&hc->hc_dest->ep_ftpnode->fn_ftp, FTPERR_XFER_DSTERR, MSG_ERROR_LOADING);
+			else if (!hc->hc_dest->ep_ftpnode->fn_ftp.fi_errno)
+				hc->hc_dest->ep_ftpnode->fn_ftp.fi_errno |= FTPERR_XFER_DSTERR;
+
+			result = REC_GETPUT_ERROR_END;
+		}
+		else
+			result = REC_GETPUT_OK;
+	}
+
+	DeleteFile(tempname);
+
+	return result;
 }
 
 struct copy_locals
@@ -1194,10 +1376,7 @@ static unsigned int recursive_getput(endpoint *source,
 	D(bug("recursive_getput()\n"));
 
 	// No abort/error yet
-	source->ep_ftpnode->fn_ftp.fi_aborted = 0;
-	source->ep_ftpnode->fn_ftp.fi_errno = 0;
-	dest->ep_ftpnode->fn_ftp.fi_aborted = 0;
-	dest->ep_ftpnode->fn_ftp.fi_errno = 0;
+	recursive_getput_clear_errors(source, dest);
 
 	// Don't attempt transfer if we know neither side supports PASV
 	if (source->ep_ftpnode->fn_ftp.fi_flags & dest->ep_ftpnode->fn_ftp.fi_flags & FTP_NO_PASV)
@@ -1205,6 +1384,16 @@ static unsigned int recursive_getput(endpoint *source,
 		D(bug("** getput neither side supports PASV\n"));
 		source->ep_ftpnode->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
 		stccpy(source->ep_ftpnode->fn_ftp.fi_serverr, GetString(locale, MSG_FTP_GETPUT_NO_PASV), IOBUFSIZE + 1);
+		keep_trying = 0;
+	}
+
+	// Server-to-server transfers do not let us negotiate or protect the data channel
+	if (keep_trying && !ftp_tls_modes_allow_server_transfer(source->ep_ftpnode->fn_ftp.fi_tls_mode,
+														   dest->ep_ftpnode->fn_ftp.fi_tls_mode))
+	{
+		D(bug("** getput FTPS data channel unsupported\n"));
+		source->ep_ftpnode->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
+		stccpy(source->ep_ftpnode->fn_ftp.fi_serverr, GetString(locale, MSG_FTP_GETPUT_NO_FTPS), IOBUFSIZE + 1);
 		keep_trying = 0;
 	}
 
@@ -2402,6 +2591,23 @@ static int callback_func(struct rec_updateinfo *ui, char *line)
 	return retval;
 }
 
+static void rec_entry_list_clear(struct rec_entry_list *rel)
+{
+	struct entry_info *entry, *next;
+
+	if (!rel)
+		return;
+
+	for (entry = (struct entry_info *)rel->rl_list.lh_Head; entry->ei_node.ln_Succ; entry = next)
+	{
+		next = (struct entry_info *)entry->ei_node.ln_Succ;
+		FreeVec(entry);
+	}
+
+	NewList(&rel->rl_list);
+	rel->rl_entry_count = 0;
+}
+
 //
 //	Get a list of entries from an FTP server
 //
@@ -2409,6 +2615,7 @@ struct rec_entry_list *rec_ftp_list(endpoint *ep, char *dirname)
 {
 	struct rec_entry_list *rel;
 	struct rec_updateinfo ui = {0};
+	int list_result;
 
 	// Valid?
 	if (!ep)
@@ -2443,7 +2650,22 @@ struct rec_entry_list *rec_ftp_list(endpoint *ep, char *dirname)
 		ep->ep_ftpnode->fn_ftp.fi_flags |= FTP_PASSIVE;
 
 	// Call FTP LIST command
-	list(&ep->ep_ftpnode->fn_ftp, callback_func, &ui, ep->ep_ftpnode->fn_lscmd, dirname);
+	for (;;)
+	{
+		ui.ui_ls_to_entryinfo = ep->ep_ftpnode->fn_ls_to_entryinfo;
+		list_result = list(&ep->ep_ftpnode->fn_ftp, callback_func, &ui, ep->ep_ftpnode->fn_lscmd, dirname);
+		if (list_result == -2 && lister_fallback_list_command(ep->ep_ftpnode))
+			rec_entry_list_clear(rel);
+		else
+			break;
+	}
+
+	if (list_result != 0)
+	{
+		rec_entry_list_clear(rel);
+		FreeVec(rel);
+		return 0;
+	}
 
 	return rel;
 }
@@ -2453,19 +2675,11 @@ struct rec_entry_list *rec_ftp_list(endpoint *ep, char *dirname)
 //
 void free_entry_list(struct rec_entry_list *rel)
 {
-	struct entry_info *entry, *next;
-
 	// Valid?
 	if (!rel)
 		return;
 
-	// Free entries
-	for (entry = (struct entry_info *)rel->rl_list.lh_Head; entry->ei_node.ln_Succ; entry = next)
-	{
-		next = (struct entry_info *)entry->ei_node.ln_Succ;
-
-		FreeVec(entry);
-	}
+	rec_entry_list_clear(rel);
 
 	// Free list
 	FreeVec(rel);

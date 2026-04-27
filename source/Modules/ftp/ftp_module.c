@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -144,6 +146,21 @@ static int mod_addrbook(IPCData *function_ipc, char *args, int arglen)
 	return okay;
 }
 
+static struct ftp_environment *mod_connect_private_env(struct connect_msg *cm)
+{
+	if (!cm || !cm->cm_site.se_env)
+		return NULL;
+
+	if (!cm->cm_site.se_has_custom_env || cm->cm_site.se_env != &cm->cm_site.se_env_private)
+	{
+		*(&cm->cm_site.se_env_private) = *cm->cm_site.se_env;
+		cm->cm_site.se_env = &cm->cm_site.se_env_private;
+		cm->cm_site.se_has_custom_env = TRUE;
+	}
+
+	return cm->cm_site.se_env;
+}
+
 //
 //	Build and send a connect message
 //	Function is called from a direct command FTPCONNECT (like AmiNet..)
@@ -154,6 +171,8 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 	struct connect_msg *cm;
 	ULONG flags = 0;
 	int okay = FALSE;
+	int valid = TRUE;
+	const char *host_arg = NULL;
 
 	D(bug("mod_connect()\n"));
 
@@ -169,8 +188,28 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 
 			stccpy(cm->cm_opus, og.og_opusname, PORTNAMELEN + 1);
 
-			if (fa->FA_Arguments[D_OPT_HOST])
-				stccpy(cm->cm_site.se_host, (char *)fa->FA_Arguments[D_OPT_HOST], HOSTNAMELEN + 1);
+			host_arg = (const char *)fa->FA_Arguments[D_OPT_HOST];
+			if (host_arg)
+			{
+				const char *without_scheme;
+				int scheme_mode;
+
+				if (ftp_tls_mode_from_url_scheme(host_arg, &without_scheme, &scheme_mode))
+				{
+					struct ftp_environment *env;
+
+					host_arg = without_scheme;
+					if ((env = mod_connect_private_env(cm)))
+					{
+						env->e_tls_mode = scheme_mode;
+						flags |= CONN_OPT_TLS_MODE;
+					}
+					else
+						valid = FALSE;
+				}
+
+				stccpy(cm->cm_site.se_host, host_arg, HOSTNAMELEN + 1);
+			}
 			if (fa->FA_Arguments[D_OPT_PORT])
 				cm->cm_site.se_port = *(int *)fa->FA_Arguments[D_OPT_PORT];
 			if (fa->FA_Arguments[D_OPT_USER])
@@ -200,19 +239,47 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 			if (fa->FA_Arguments[D_OPT_RECON])
 				flags |= CONN_OPT_RECON;
 
+			if (fa->FA_Arguments[D_OPT_TLS])
+			{
+				int mode;
+				struct ftp_environment *env;
+
+				if (ftp_tls_mode_from_text((char *)fa->FA_Arguments[D_OPT_TLS], &mode) &&
+					(env = mod_connect_private_env(cm)))
+				{
+					env->e_tls_mode = mode;
+					flags |= CONN_OPT_TLS_MODE;
+				}
+				else
+					valid = FALSE;
+			}
+
+			if (valid && (fa->FA_Arguments[D_OPT_TLSVERIFY] || fa->FA_Arguments[D_OPT_NOVERIFY]))
+			{
+				struct ftp_environment *env;
+
+				if ((env = mod_connect_private_env(cm)))
+				{
+					env->e_tls_verify_peer = fa->FA_Arguments[D_OPT_NOVERIFY] ? FALSE : TRUE;
+					flags |= CONN_OPT_TLS_VERIFY;
+				}
+				else
+					valid = FALSE;
+			}
+
 			// Check for official style URL (RFC 1738)
 			// ftp://<user>:<password>@<host>:<port>/<url-path>
 			//        [user[:password]@]host[:port][/path]
 
 			// When Opus calls us for 'FTP://', the path has already been converted to DIR=xxx
-			if (fa->FA_Arguments[D_OPT_HOST] &&
+			if (host_arg &&
 				!(fa->FA_Arguments[D_OPT_PORT] || fa->FA_Arguments[D_OPT_USER] || fa->FA_Arguments[D_OPT_PASS]
 				  /*||fa->FA_Arguments[D_OPT_PATH]*/))
 			{
 				// Remove hostname copied above and start afresh
 				stccpy(cm->cm_site.se_host, "", HOSTNAMELEN + 1);
 
-				split_url((char *)fa->FA_Arguments[D_OPT_HOST],
+				split_url(host_arg,
 						  cm->cm_site.se_user,
 						  cm->cm_site.se_pass,
 						  cm->cm_site.se_host,
@@ -220,7 +287,10 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 						  cm->cm_site.se_path);
 			}
 
-			okay = IPC_Command(og.og_main_ipc, IPC_CONNECT, flags, 0, cm, REPLY_NO_PORT);
+			if (valid)
+				okay = IPC_Command(og.og_main_ipc, IPC_CONNECT, flags, 0, cm, REPLY_NO_PORT);
+			else
+				FreeVec(cm);
 		}
 
 		DisposeArgs(fa);

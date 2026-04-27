@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -2171,6 +2173,26 @@ static int lister_favour(struct ftp_node *ftpnode, IPCMessage *msg)
 	case FAVOUR_ERRORREQ:
 		msg->command = fm->fm_endpoint->ep_errorreq(fm->fm_endpoint, fm->fm_arg1, (ULONG)fm->fm_arg2);
 		break;
+	case FAVOUR_GET_FILE: {
+		struct rec_favour_xfer *xfer = fm->fm_arg1;
+		msg->command = get(&fm->fm_endpoint->ep_ftpnode->fn_ftp,
+						   xfer->updatefn,
+						   xfer->updateinfo,
+						   xfer->remote_path,
+						   xfer->local_path,
+						   xfer->restart);
+		break;
+	}
+	case FAVOUR_PUT_FILE: {
+		struct rec_favour_xfer *xfer = fm->fm_arg1;
+		msg->command = put(&fm->fm_endpoint->ep_ftpnode->fn_ftp,
+						   xfer->updatefn,
+						   xfer->updateinfo,
+						   xfer->local_path,
+						   xfer->remote_path,
+						   xfer->restart);
+		break;
+	}
 	default:
 		D(bug("** unknown favour %ld\n", fm->fm_ftp_command));
 		msg->command = 0;

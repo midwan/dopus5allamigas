@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -171,6 +173,8 @@ struct connect_msg
 #define CONN_OPT_PATH (1 << 6)	  // Path (can override SITE or URL)
 #define CONN_OPT_NOSCAN (1 << 7)  // Don't scan the directory on connection
 #define CONN_OPT_RECON (1 << 8)	  // Reconnecting (private)
+#define CONN_OPT_TLS_MODE (1 << 9)	  // TLS mode was specified on FTPConnect
+#define CONN_OPT_TLS_VERIFY (1 << 10)  // TLS verification was specified on FTPConnect
 
 // FTPCommand flags
 #define CMD_OPT_QUIET (1 << 4)	// Don't show a result requester
@@ -297,6 +301,8 @@ enum {
 	FAVOUR_GETREPLY,
 	FAVOUR_GETENTRY,
 	FAVOUR_ERRORREQ,
+	FAVOUR_GET_FILE,
+	FAVOUR_PUT_FILE,
 	FAVOUR_ENDLIST,
 };
 

@@ -1,6 +1,8 @@
 ## version $VER: dopus.catalog 2.2 (05.08.97) by Francesco Dipietromaria
 ## codeset 0
 ## language italiano
+; Catalog updates Copyright 2023-2026 Dimitris Panokostas
+;
 ;
 MSG_ABORTED
 Interrotto...

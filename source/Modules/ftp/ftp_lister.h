@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -29,6 +31,7 @@ For more information on Directory Opus for Windows please see:
 #include <errno.h>
 #include "ftp_opusftp.h"
 #include "ftp.h"
+#include "ftp_listcmd.h"
 
 // Flags for entry_info_from_XXX function
 enum {
@@ -49,7 +52,7 @@ enum {
 };
 
 //	The default FTP command to get a directory listing
-#define LSCMD "LIST -alF"
+#define LSCMD FTP_LISTCMD_DEFAULT
 
 //	Lister flags
 enum {
@@ -278,6 +281,7 @@ ULONG get_file_mdtm(struct ftp_node *, char *name);
 int get_file_size(struct ftp_node *, char *name);
 
 int lister_list(struct opusftp_globals *, struct ftp_node *, BOOL redo_cache);
+BOOL lister_fallback_list_command(struct ftp_node *);
 void lister_doubleclick(struct ftp_node *, IPCMessage *);
 void lister_xfer(struct ftp_node *, IPCMessage *);
 void lister_getput(struct ftp_node *srcnode, IPCMessage *);

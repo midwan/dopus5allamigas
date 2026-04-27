@@ -1,6 +1,8 @@
 ## version $VER: dopus.catalog 5.65 (8.9.97)
 ## codeset 10
 ## language greek
+; Catalog updates Copyright 2023-2026 Dimitris Panokostas
+;
 ;
 MSG_ABORTED
 Ακυρώθηκε

@@ -1,3 +1,16 @@
+/*
+
+Directory Opus 5
+Original APL release version 5.82
+Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the AROS Public License version 1.1.
+
+*/
+
 #ifndef FTP_H
 #define FTP_H
 
@@ -366,6 +379,14 @@
 #define MSG_ABORT_COMMENT_UNKNOWN_SIZE 1331
 #define MSG_ABORT_COMMENT_END 1332
 #define MSG_FTP_SERVER_ERROR 1333
+#define MSG_FTP_SECURITY 1334
+#define MSG_FTP_TLS_PLAIN 1335
+#define MSG_FTP_TLS_EXPLICIT 1336
+#define MSG_FTP_SECURING_CONNECTION 1337
+#define MSG_FTP_TLS_FAILED 1338
+#define MSG_FTP_VERIFY_TLS 1339
+#define MSG_FTP_TLS_VERIFY_FAILED 1340
+#define MSG_FTP_GETPUT_NO_FTPS 1341
 
 #endif /* CATCOMP_NUMBERS */
 
@@ -709,6 +730,14 @@
 #define MSG_ABORT_COMMENT_UNKNOWN_SIZE_STR "unknown"
 #define MSG_ABORT_COMMENT_END_STR " total length)"
 #define MSG_FTP_SERVER_ERROR_STR "Command Failed or Server Error"
+#define MSG_FTP_SECURITY_STR "Security"
+#define MSG_FTP_TLS_PLAIN_STR "Plain FTP"
+#define MSG_FTP_TLS_EXPLICIT_STR "Explicit FTPS"
+#define MSG_FTP_SECURING_CONNECTION_STR "Securing FTP connection..."
+#define MSG_FTP_TLS_FAILED_STR "FTPS negotiation failed"
+#define MSG_FTP_VERIFY_TLS_STR "Verify TLS certificates"
+#define MSG_FTP_TLS_VERIFY_FAILED_STR "FTPS certificate check failed"
+#define MSG_FTP_GETPUT_NO_FTPS_STR "FTPS cannot use direct site-to-site copy"
 
 #endif /* CATCOMP_STRINGS */
 
@@ -1060,6 +1089,14 @@ static const struct CatCompArrayType CatCompArray[] =
     {MSG_ABORT_COMMENT_UNKNOWN_SIZE,(STRPTR)MSG_ABORT_COMMENT_UNKNOWN_SIZE_STR},
     {MSG_ABORT_COMMENT_END,(STRPTR)MSG_ABORT_COMMENT_END_STR},
     {MSG_FTP_SERVER_ERROR,(STRPTR)MSG_FTP_SERVER_ERROR_STR},
+    {MSG_FTP_SECURITY,(STRPTR)MSG_FTP_SECURITY_STR},
+    {MSG_FTP_TLS_PLAIN,(STRPTR)MSG_FTP_TLS_PLAIN_STR},
+    {MSG_FTP_TLS_EXPLICIT,(STRPTR)MSG_FTP_TLS_EXPLICIT_STR},
+    {MSG_FTP_SECURING_CONNECTION,(STRPTR)MSG_FTP_SECURING_CONNECTION_STR},
+    {MSG_FTP_TLS_FAILED,(STRPTR)MSG_FTP_TLS_FAILED_STR},
+    {MSG_FTP_VERIFY_TLS,(STRPTR)MSG_FTP_VERIFY_TLS_STR},
+    {MSG_FTP_TLS_VERIFY_FAILED,(STRPTR)MSG_FTP_TLS_VERIFY_FAILED_STR},
+    {MSG_FTP_GETPUT_NO_FTPS,(STRPTR)MSG_FTP_GETPUT_NO_FTPS_STR},
 };
 
 #endif /* CATCOMP_ARRAY */
@@ -1740,6 +1777,22 @@ static const char CatCompBlock[] =
     MSG_ABORT_COMMENT_END_STR "\x00\x00"
     "\x00\x00\x05\x35\x00\x20"
     MSG_FTP_SERVER_ERROR_STR "\x00\x00"
+    "\x00\x00\x05\x36\x00\x0A"
+    MSG_FTP_SECURITY_STR "\x00\x00"
+    "\x00\x00\x05\x37\x00\x0A"
+    MSG_FTP_TLS_PLAIN_STR "\x00"
+    "\x00\x00\x05\x38\x00\x0E"
+    MSG_FTP_TLS_EXPLICIT_STR "\x00"
+    "\x00\x00\x05\x39\x00\x1C"
+    MSG_FTP_SECURING_CONNECTION_STR "\x00\x00"
+    "\x00\x00\x05\x3A\x00\x18"
+    MSG_FTP_TLS_FAILED_STR "\x00"
+    "\x00\x00\x05\x3B\x00\x18"
+    MSG_FTP_VERIFY_TLS_STR "\x00"
+    "\x00\x00\x05\x3C\x00\x1E"
+    MSG_FTP_TLS_VERIFY_FAILED_STR "\x00"
+    "\x00\x00\x05\x3D\x00\x2A"
+    MSG_FTP_GETPUT_NO_FTPS_STR "\x00\x00"
 };
 
 #endif /* CATCOMP_BLOCK */

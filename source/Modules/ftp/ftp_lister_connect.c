@@ -3,6 +3,8 @@
 Directory Opus 5
 Original APL release version 5.82
 Copyright 1993-2012 Jonathan Potter & GP Software
+Copyright 2012-2013 DOPUS5 Open Source Team
+Copyright 2023-2026 Dimitris Panokostas
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the AROS Public License version 1.1.
@@ -36,6 +38,8 @@ For more information on Directory Opus for Windows please see:
  *
  */
 
+#include <ctype.h>
+
 #include "ftp.h"
 #include "ftp_arexx.h"
 #include "ftp_ipc.h"
@@ -60,6 +64,40 @@ struct connect_log_data
 };
 
 int lister_retry_connect_requester(struct ftp_node *, struct connect_log_data *);
+
+/********************************/
+
+static struct ftp_environment *lister_connect_private_env(struct connect_msg *cm)
+{
+	if (!cm || !cm->cm_site.se_env)
+		return NULL;
+
+	if (!cm->cm_site.se_has_custom_env || cm->cm_site.se_env != &cm->cm_site.se_env_private)
+	{
+		*(&cm->cm_site.se_env_private) = *cm->cm_site.se_env;
+		cm->cm_site.se_env = &cm->cm_site.se_env_private;
+		cm->cm_site.se_has_custom_env = TRUE;
+	}
+
+	return cm->cm_site.se_env;
+}
+
+static void lister_apply_connect_tls_overrides(struct connect_msg *cm, ULONG flags, int tls_mode, int tls_verify)
+{
+	struct ftp_environment *env;
+
+	if (!(flags & (CONN_OPT_TLS_MODE | CONN_OPT_TLS_VERIFY)))
+		return;
+
+	if (!(env = lister_connect_private_env(cm)))
+		return;
+
+	if (flags & CONN_OPT_TLS_MODE)
+		env->e_tls_mode = tls_mode;
+
+	if (flags & CONN_OPT_TLS_VERIFY)
+		env->e_tls_verify_peer = tls_verify;
+}
 
 /********************************/
 
@@ -236,7 +274,7 @@ static int lister_getsystype(struct ftp_node *node)
 
 	if (node->fn_systype == FTP_DGUX)
 	{
-		strcpy(node->fn_lscmd, "NLST -alF");
+		strcpy(node->fn_lscmd, FTP_LISTCMD_DGUX);
 		node->fn_ftp.fi_flags |= FTP_IS_UNIX;
 	}
 	else if (node->fn_systype == FTP_ULTRIX)
@@ -244,10 +282,10 @@ static int lister_getsystype(struct ftp_node *node)
 	else if (node->fn_systype == FTP_UNIX)
 		node->fn_ftp.fi_flags |= FTP_IS_UNIX;
 	else if (node->fn_systype == FTP_OS2)
-		strcpy(node->fn_lscmd, "LIST"); /* It'll take more than this :) */
+		strcpy(node->fn_lscmd, FTP_LISTCMD_PLAIN); /* It'll take more than this :) */
 	else if (node->fn_systype == FTP_WINDOWSNT)
 	{
-		strcpy(node->fn_lscmd, "LIST");
+		strcpy(node->fn_lscmd, FTP_LISTCMD_PLAIN);
 		node->fn_ls_to_entryinfo = nt_line_to_entryinfo;
 	}
 
@@ -308,7 +346,7 @@ static void lister_getfeats(struct ftp_node *node)
 	if (node->fn_ftp.fi_flags & FTP_FEAT_MLST)
 	{
 		D(bug("MLSD listing enabled\n"));
-		strcpy(node->fn_lscmd, "MLSD");
+		strcpy(node->fn_lscmd, FTP_LISTCMD_MLSD);
 		node->fn_ls_to_entryinfo = mlsd_line_to_entryinfo;
 	}
 }
@@ -363,6 +401,26 @@ static int connect_cwd(struct ftp_node *ftpnode,
 	}
 
 	return reply;
+}
+
+/********************************/
+
+static char *lister_server_error_text(struct opusftp_globals *og, struct ftp_node *node)
+{
+	char *errmsg;
+
+	if (!node || !*node->fn_ftp.fi_serverr)
+		return NULL;
+
+	if ((errmsg = strchr(node->fn_ftp.fi_serverr + 4, '\r')))
+		*errmsg = 0;
+
+	if (!og->og_oc.oc_log_debug && isdigit((unsigned char)node->fn_ftp.fi_serverr[0]) &&
+		isdigit((unsigned char)node->fn_ftp.fi_serverr[1]) &&
+		isdigit((unsigned char)node->fn_ftp.fi_serverr[2]) && node->fn_ftp.fi_serverr[3] == ' ')
+		return node->fn_ftp.fi_serverr + 4;
+
+	return node->fn_ftp.fi_serverr;
 }
 
 /********************************/
@@ -478,14 +536,7 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 				else if (errno)
 					cld->cld_errmsg = sockerr();
 				else if (*node->fn_ftp.fi_serverr)
-				{
-					// Remove \r\n from end of line
-					if ((cld->cld_errmsg = strchr(node->fn_ftp.fi_serverr + 4, '\r')))
-						*cld->cld_errmsg = 0;
-
-					// Include error number or message only?
-					cld->cld_errmsg = node->fn_ftp.fi_serverr + (og->og_oc.oc_log_debug ? 0 : 4);
-				}
+					cld->cld_errmsg = lister_server_error_text(og, node);
 				else if (loginerr == -1)
 					cld->cld_errmsg = GetString(locale, MSG_FTP_USERNAME_FAILED);
 				else
@@ -531,6 +582,8 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 				cld->cld_errmsg = sockerr();
 			else if (connected == -2)
 				cld->cld_errmsg = (char *)GetString(locale, MSG_SITE_NOT_FOUND);
+			else if (*node->fn_ftp.fi_serverr)
+				cld->cld_errmsg = lister_server_error_text(og, node);
 			else
 				cld->cld_errmsg = (char *)GetString(locale, MSG_FTP_COULD_NOT_CONNECT);
 		}
@@ -539,6 +592,8 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 			// Set error message
 			if (errno)
 				cld->cld_errmsg = sockerr();
+			else if (*node->fn_ftp.fi_serverr)
+				cld->cld_errmsg = lister_server_error_text(og, node);
 
 			choice = lister_retry_connect_requester(node, cld);
 
@@ -771,6 +826,15 @@ static int lister_get_args(struct opusftp_globals *ogp, struct msg_loop_data *ml
 	int active_gadget = GAD_CONNECT_NAME;  // Gadget in requester to acitvate
 	int okay = TRUE;
 	int noname = 0;
+	ULONG tls_override_flags = imsg->flags & (CONN_OPT_TLS_MODE | CONN_OPT_TLS_VERIFY);
+	int tls_mode = FTP_TLS_MODE_OFF;
+	int tls_verify = FALSE;
+
+	if (tls_override_flags && cm->cm_site.se_env)
+	{
+		tls_mode = cm->cm_site.se_env->e_tls_mode;
+		tls_verify = cm->cm_site.se_env->e_tls_verify_peer;
+	}
 
 	if (imsg->flags & CONN_OPT_GUI)
 		gui = TRUE;
@@ -785,6 +849,8 @@ static int lister_get_args(struct opusftp_globals *ogp, struct msg_loop_data *ml
 
 		if (imsg->flags & CONN_OPT_PATH)
 			stccpy(cm->cm_site.se_path, path, PATHLEN + 1);
+
+		lister_apply_connect_tls_overrides(cm, tls_override_flags, tls_mode, tls_verify);
 	}
 
 	// If we have no host, get host and user
@@ -858,8 +924,13 @@ static struct ftp_node *lister_create_node(struct opusftp_globals *ogp, IPCData 
 	if ((node = AllocVec(sizeof(struct ftp_node), MEMF_CLEAR)))
 	{
 		node->fn_ipc = ipc;
-		node->fn_ftp.fi_og = node->fn_og = ogp;	 // MUST set this to access hook fns
-		node->fn_ftp.fi_task = FindTask(0);		 // To check against cross-task usage
+		node->fn_ftp.fi_og = node->fn_og = ogp;	// MUST set this to access hook fns
+		node->fn_ftp.fi_task = FindTask(0);		// To check against cross-task usage
+		node->fn_ftp.fi_cs = -1;
+		node->fn_ftp.fi_tls_mode =
+			ftp_tls_mode_uses_control_tls(cm->cm_site.se_env->e_tls_mode) ? FTP_TLS_MODE_EXPLICIT : FTP_TLS_MODE_OFF;
+		node->fn_ftp.fi_tls_verify_peer = cm->cm_site.se_env->e_tls_verify_peer ? 1 : 0;
+		ftp_tls_session_init(&node->fn_ftp.fi_control_tls);
 
 		stccpy(node->fn_opus, cm->cm_opus, PORTNAMELEN + 1);
 
@@ -1223,6 +1294,22 @@ void lister_disconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 
 /********************************/
 
+static void lister_append_reconnect_arg(char *command, int command_size, const char *arg)
+{
+	int len;
+	int arg_len;
+
+	if (!command || !arg || command_size <= 0)
+		return;
+
+	len = strlen(command);
+	arg_len = strlen(arg);
+	if (len < command_size && arg_len < command_size - len)
+		strcpy(command + len, arg);
+}
+
+/********************************/
+
 void lister_reconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 {
 	char command[1024 + 1];
@@ -1238,7 +1325,7 @@ void lister_reconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 	sprintf(
 		command, "FTPConnect RECON LISTER=%lu DIR=\"%s\"", mld->mld_node->fn_handle, mld->mld_node->fn_site.se_path);
 
-	if (mld->mld_node->fn_site.se_name && *mld->mld_node->fn_site.se_name)
+	if (*mld->mld_node->fn_site.se_name)
 	{
 		sprintf(command + strlen(command), " SITE=\"%s\"", mld->mld_node->fn_site.se_name);
 	}
@@ -1255,6 +1342,19 @@ void lister_reconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 				  0);
 
 		strcat(command, "\"");
+
+		if (mld->mld_node->fn_site.se_env)
+		{
+			if (ftp_tls_mode_uses_control_tls(mld->mld_node->fn_site.se_env->e_tls_mode))
+			{
+				lister_append_reconnect_arg(command, sizeof(command), " TLS=explicit");
+				lister_append_reconnect_arg(command,
+											sizeof(command),
+											mld->mld_node->fn_site.se_env->e_tls_verify_peer ? " TLSVERIFY" : " NOVERIFY");
+			}
+			else
+				lister_append_reconnect_arg(command, sizeof(command), " TLS=off");
+		}
 	}
 
 	if ((mld->mld_quit_command = AllocVec(strlen(command) + 1, MEMF_CLEAR)))
