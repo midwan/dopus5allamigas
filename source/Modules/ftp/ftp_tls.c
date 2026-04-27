@@ -374,10 +374,65 @@ static int ftp_tls_set_verify_name(SSL *ssl, const char *host)
 
 	return SSL_set1_host(ssl, host);
 }
+
+static SSL_CTX *ftp_tls_new_context(int verify_peer, int *error)
+{
+	SSL_CTX *ctx;
+
+	if (!(ctx = SSL_CTX_new(TLS_client_method())))
+	{
+		if (error)
+			*error = FTP_TLS_ERROR_CONTEXT;
+		return NULL;
+	}
+
+	SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_CLIENT);
+	SSL_CTX_set_verify(ctx, verify_peer ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
+
+	if (verify_peer && !SSL_CTX_set_default_verify_paths(ctx))
+	{
+		SSL_CTX_free(ctx);
+		if (error)
+			*error = FTP_TLS_ERROR_VERIFY_PATHS;
+		return NULL;
+	}
+
+	if (error)
+		*error = FTP_TLS_ERROR_NONE;
+
+	return ctx;
+}
+
+static SSL_CTX *ftp_tls_context_for_session(const struct ftp_tls_session *reuse_session, int verify_peer, int *error)
+{
+	if (reuse_session && reuse_session->active && reuse_session->ctx &&
+		SSL_CTX_up_ref((SSL_CTX *)reuse_session->ctx))
+	{
+		if (error)
+			*error = FTP_TLS_ERROR_NONE;
+		return (SSL_CTX *)reuse_session->ctx;
+	}
+
+	return ftp_tls_new_context(verify_peer, error);
+}
+
+static SSL_SESSION *ftp_tls_get_reusable_session(const struct ftp_tls_session *reuse_session)
+{
+	if (!reuse_session || !reuse_session->active || !reuse_session->ssl)
+		return NULL;
+
+	return SSL_get1_session((SSL *)reuse_session->ssl);
+}
 #endif
 
-int ftp_tls_connect(struct ftp_tls_session *session, int socket, const char *host, int verify_peer)
+int ftp_tls_connect_reuse(struct ftp_tls_session *session,
+						  int socket,
+						  const char *host,
+						  int verify_peer,
+						  const struct ftp_tls_session *reuse_session)
 {
+	const struct ftp_tls_session *resume_source = reuse_session == session ? NULL : reuse_session;
+
 	if (!session)
 		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_CONTEXT);
 
@@ -389,22 +444,16 @@ int ftp_tls_connect(struct ftp_tls_session *session, int socket, const char *hos
 #if defined(FTP_TLS_HAVE_OPENSSL_API)
 	SSL_CTX *ctx;
 	SSL *ssl;
+	SSL_SESSION *resume_session = NULL;
+	int context_error = FTP_TLS_ERROR_NONE;
 
 	if (!ftp_tls_backend_acquire())
 		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_BACKEND);
 
-	if (!(ctx = SSL_CTX_new(TLS_client_method())))
+	if (!(ctx = ftp_tls_context_for_session(resume_source, verify_peer, &context_error)))
 	{
 		ftp_tls_backend_release();
-		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_CONTEXT);
-	}
-
-	SSL_CTX_set_verify(ctx, verify_peer ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
-	if (verify_peer && !SSL_CTX_set_default_verify_paths(ctx))
-	{
-		SSL_CTX_free(ctx);
-		ftp_tls_backend_release();
-		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_VERIFY_PATHS);
+		return ftp_tls_connect_fail(session, context_error);
 	}
 
 	if (!(ssl = SSL_new(ctx)))
@@ -413,6 +462,8 @@ int ftp_tls_connect(struct ftp_tls_session *session, int socket, const char *hos
 		ftp_tls_backend_release();
 		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_CONTEXT);
 	}
+
+	SSL_set_verify(ssl, verify_peer ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
 
 	if (host && *host)
 		SSL_set_tlsext_host_name(ssl, host);
@@ -425,6 +476,18 @@ int ftp_tls_connect(struct ftp_tls_session *session, int socket, const char *hos
 		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_HOSTNAME);
 	}
 
+	if ((resume_session = ftp_tls_get_reusable_session(resume_source)))
+	{
+		if (!SSL_set_session(ssl, resume_session))
+		{
+			SSL_SESSION_free(resume_session);
+			SSL_free(ssl);
+			SSL_CTX_free(ctx);
+			ftp_tls_backend_release();
+			return ftp_tls_connect_fail(session, FTP_TLS_ERROR_CONTEXT);
+		}
+	}
+
 	if (!SSL_set_fd(ssl, socket) || SSL_connect(ssl) != 1)
 	{
 		int error = FTP_TLS_ERROR_HANDSHAKE;
@@ -432,6 +495,8 @@ int ftp_tls_connect(struct ftp_tls_session *session, int socket, const char *hos
 		if (verify_peer && SSL_get_verify_result(ssl) != X509_V_OK)
 			error = FTP_TLS_ERROR_VERIFY_RESULT;
 
+		if (resume_session)
+			SSL_SESSION_free(resume_session);
 		SSL_free(ssl);
 		SSL_CTX_free(ctx);
 		ftp_tls_backend_release();
@@ -440,11 +505,16 @@ int ftp_tls_connect(struct ftp_tls_session *session, int socket, const char *hos
 
 	if (verify_peer && SSL_get_verify_result(ssl) != X509_V_OK)
 	{
+		if (resume_session)
+			SSL_SESSION_free(resume_session);
 		SSL_free(ssl);
 		SSL_CTX_free(ctx);
 		ftp_tls_backend_release();
 		return ftp_tls_connect_fail(session, FTP_TLS_ERROR_VERIFY_RESULT);
 	}
+
+	if (resume_session)
+		SSL_SESSION_free(resume_session);
 
 	session->ctx = ctx;
 	session->ssl = ssl;
@@ -455,8 +525,14 @@ int ftp_tls_connect(struct ftp_tls_session *session, int socket, const char *hos
 	(void)socket;
 	(void)host;
 	(void)verify_peer;
+	(void)resume_source;
 	return ftp_tls_connect_fail(session, FTP_TLS_ERROR_BACKEND);
 #endif
+}
+
+int ftp_tls_connect(struct ftp_tls_session *session, int socket, const char *host, int verify_peer)
+{
+	return ftp_tls_connect_reuse(session, socket, host, verify_peer, NULL);
 }
 
 int ftp_tls_read(struct ftp_tls_session *session, void *buf, int len)

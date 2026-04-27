@@ -1022,7 +1022,11 @@ static int dataconna(struct ftp_info *info,
 
 			if (ds >= 0 && data_tls_session && ftp_tls_mode_uses_data_tls(info->fi_tls_mode))
 			{
-				if (!ftp_tls_connect(data_tls_session, ds, info->fi_tls_host, info->fi_tls_verify_peer))
+				if (!ftp_tls_connect_reuse(data_tls_session,
+										   ds,
+										   info->fi_tls_host,
+										   info->fi_tls_verify_peer,
+										   &info->fi_control_tls))
 				{
 					errno = 0;
 					info->fi_errno =

@@ -178,11 +178,17 @@ static void test_tls_session_defaults(void)
 static void test_tls_connect_failures(void)
 {
 	struct ftp_tls_session session;
+	struct ftp_tls_session reuse_session;
 
 	ftp_tls_session_init(&session);
+	ftp_tls_session_init(&reuse_session);
 	check_false("tls connect rejects invalid socket", ftp_tls_connect(&session, -1, "example.com", 1));
 	check_int("tls invalid socket error", ftp_tls_session_error(&session), FTP_TLS_ERROR_CONTEXT);
 	check_false("tls invalid socket inactive", session.active);
+	check_false("tls reuse rejects invalid socket",
+				ftp_tls_connect_reuse(&session, -1, "example.com", 1, &reuse_session));
+	check_int("tls reuse invalid socket error", ftp_tls_session_error(&session), FTP_TLS_ERROR_CONTEXT);
+	check_false("tls reuse invalid socket inactive", session.active);
 
 	if (!strcmp(ftp_tls_backend_name(), "none"))
 	{
@@ -194,6 +200,11 @@ static void test_tls_connect_failures(void)
 		check_int("tls missing backend error", ftp_tls_session_error(&session), FTP_TLS_ERROR_BACKEND);
 		check_false("tls missing backend inactive", session.active);
 		check_int("tls missing backend clears socket", session.socket, -1);
+
+		check_false("tls reuse reports missing backend",
+					ftp_tls_connect_reuse(&session, 0, "example.com", 0, &reuse_session));
+		check_int("tls reuse missing backend error", ftp_tls_session_error(&session), FTP_TLS_ERROR_BACKEND);
+		check_false("tls reuse missing backend inactive", session.active);
 	}
 }
 
