@@ -25,10 +25,26 @@ static char ftp_listcmd_tolower(char c)
 
 static int ftp_listcmd_equal(const char *a, const char *b)
 {
+	const char *a_end;
+	const char *b_end;
+
 	if (!a || !b)
 		return 0;
 
-	while (*a && *b)
+	while (*a == ' ' || *a == '\t')
+		++a;
+	while (*b == ' ' || *b == '\t')
+		++b;
+
+	a_end = a + strlen(a);
+	b_end = b + strlen(b);
+
+	while (a_end > a && (a_end[-1] == ' ' || a_end[-1] == '\t'))
+		--a_end;
+	while (b_end > b && (b_end[-1] == ' ' || b_end[-1] == '\t'))
+		--b_end;
+
+	while (a < a_end && b < b_end)
 	{
 		if (ftp_listcmd_tolower(*a) != ftp_listcmd_tolower(*b))
 			return 0;
@@ -37,7 +53,7 @@ static int ftp_listcmd_equal(const char *a, const char *b)
 		++b;
 	}
 
-	return *a == 0 && *b == 0;
+	return a == a_end && b == b_end;
 }
 
 static int ftp_listcmd_copy(char *dest, size_t dest_size, const char *src)

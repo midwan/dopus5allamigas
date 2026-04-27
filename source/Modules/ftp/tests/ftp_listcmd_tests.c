@@ -70,8 +70,10 @@ int main(void)
 
 	check_next("mlsd falls back to default", FTP_LISTCMD_MLSD, FTP_LISTCMD_DEFAULT, FTP_LISTCMD_DEFAULT);
 	check_next("mlsd case insensitive", "mlsd", FTP_LISTCMD_DEFAULT, FTP_LISTCMD_DEFAULT);
+	check_next("mlsd ignores padding", " \tMLSD  ", FTP_LISTCMD_DEFAULT, FTP_LISTCMD_DEFAULT);
 	check_next("mlsd falls back to dgux default", FTP_LISTCMD_MLSD, FTP_LISTCMD_DGUX, FTP_LISTCMD_DGUX);
 	check_next("default falls back to plain list", FTP_LISTCMD_DEFAULT, FTP_LISTCMD_DEFAULT, FTP_LISTCMD_PLAIN);
+	check_next("default ignores padding", " LIST -alF ", FTP_LISTCMD_DEFAULT, FTP_LISTCMD_PLAIN);
 	check_next("dgux default falls back to plain list", FTP_LISTCMD_DGUX, FTP_LISTCMD_DGUX, FTP_LISTCMD_PLAIN);
 	check_next("empty default uses default list", FTP_LISTCMD_MLSD, "", FTP_LISTCMD_DEFAULT);
 
@@ -96,6 +98,7 @@ int main(void)
 
 	check_true("detects mlsd command", ftp_listcmd_is_mlsd(FTP_LISTCMD_MLSD));
 	check_true("detects mlsd case insensitive", ftp_listcmd_is_mlsd("mlsd"));
+	check_true("detects padded mlsd", ftp_listcmd_is_mlsd(" MLSD\t"));
 	check_false("rejects list as mlsd", ftp_listcmd_is_mlsd(FTP_LISTCMD_PLAIN));
 	check_false("rejects mlsd with arguments", ftp_listcmd_is_mlsd("MLSD /pub"));
 
