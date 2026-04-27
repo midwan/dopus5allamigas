@@ -59,6 +59,7 @@ static unsigned int recursive_getput_via_temp(struct hook_rec_data *hc,
 											  struct entry_info *entry,
 											  char *destname,
 											  BOOL resume);
+static void recursive_getput_clear_errors(endpoint *source, endpoint *dest);
 // static int callback_func( void *, char *str );
 static int rec_ask_lister_favour(int favour, endpoint *, void *arg1, void *arg2);
 
@@ -578,6 +579,14 @@ static int rec_retry_getput(struct hook_rec_data *hc, struct entry_info *entry, 
 									  resume ? entry->ei_size : 0);
 
 			lst_remabort(hc->hc_source->ep_ftpnode);
+
+			if (actual == REC_GETPUT_ERROR_START && !hc->hc_source->ep_ftpnode->fn_ftp.fi_aborted &&
+				!hc->hc_dest->ep_ftpnode->fn_ftp.fi_aborted)
+			{
+				D(bug("** getput direct setup failed; trying temp fallback\n"));
+				recursive_getput_clear_errors(hc->hc_source, hc->hc_dest);
+				actual = recursive_getput_via_temp(hc, entry, destname, resume);
+			}
 		}
 		else
 			actual = recursive_getput_via_temp(hc, entry, destname, resume);
@@ -704,6 +713,19 @@ static int rec_retry_getput(struct hook_rec_data *hc, struct entry_info *entry, 
 		hc->hc_prognode->fn_flags |= LST_ABORT;
 
 	return retval;
+}
+
+static void recursive_getput_clear_errors(endpoint *source, endpoint *dest)
+{
+	source->ep_ftpnode->fn_ftp.fi_aborted = 0;
+	source->ep_ftpnode->fn_ftp.fi_errno = 0;
+	source->ep_ftpnode->fn_ftp.fi_ioerr = 0;
+	*source->ep_ftpnode->fn_ftp.fi_serverr = 0;
+
+	dest->ep_ftpnode->fn_ftp.fi_aborted = 0;
+	dest->ep_ftpnode->fn_ftp.fi_errno = 0;
+	dest->ep_ftpnode->fn_ftp.fi_ioerr = 0;
+	*dest->ep_ftpnode->fn_ftp.fi_serverr = 0;
 }
 
 static void recursive_getput_xfer_ui(struct hook_rec_data *hc, unsigned int total)
