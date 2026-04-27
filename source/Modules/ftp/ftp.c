@@ -1681,6 +1681,12 @@ int list(struct ftp_info *info,
 	if (!info || !cmd)
 		return -1;
 
+	// No abort/error yet
+	info->fi_aborted = 0;
+	info->fi_errno = 0;
+	info->fi_ioerr = 0;
+	*info->fi_serverr = 0;
+
 	ftp_tls_session_init(&data_tls);
 
 // Establish data connection
