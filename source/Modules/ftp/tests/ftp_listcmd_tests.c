@@ -46,6 +46,15 @@ static void check_string(const char *name, const char *actual, const char *expec
 	}
 }
 
+static void check_int(const char *name, int actual, int expected)
+{
+	if (actual != expected)
+	{
+		printf("FAIL: %s: got %d, expected %d\n", name, actual, expected);
+		++failures;
+	}
+}
+
 static void check_next(const char *name, const char *current, const char *fallback_default, const char *expected)
 {
 	char next[32] = "";
@@ -76,6 +85,14 @@ int main(void)
 				ftp_listcmd_next_after_failure(FTP_LISTCMD_MLSD, FTP_LISTCMD_DEFAULT, small, sizeof(small)));
 	check_false("null current rejected",
 				ftp_listcmd_next_after_failure(NULL, FTP_LISTCMD_DEFAULT, next, sizeof(next)));
+
+	check_int("successful final list reply", ftp_listcmd_result_after_reply(0, 226), 0);
+	check_int("successful alternate final list reply", ftp_listcmd_result_after_reply(0, 250), 0);
+	check_int("transient final list failure", ftp_listcmd_result_after_reply(0, 451), -2);
+	check_int("permanent final list failure", ftp_listcmd_result_after_reply(0, 550), -2);
+	check_int("connection final list failure", ftp_listcmd_result_after_reply(0, 421), -2);
+	check_int("preserves callback failure", ftp_listcmd_result_after_reply(-1, 226), -1);
+	check_int("preserves command failure", ftp_listcmd_result_after_reply(-2, 226), -2);
 
 	if (failures)
 	{

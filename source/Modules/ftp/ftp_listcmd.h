@@ -25,5 +25,6 @@ int ftp_listcmd_next_after_failure(const char *current_cmd,
 								   const char *default_cmd,
 								   char *next_cmd,
 								   size_t next_cmd_size);
+int ftp_listcmd_result_after_reply(int current_result, int final_reply);
 
 #endif /* _FTP_LISTCMD_H */

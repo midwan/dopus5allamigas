@@ -76,3 +76,14 @@ int ftp_listcmd_next_after_failure(const char *current_cmd,
 
 	return 0;
 }
+
+int ftp_listcmd_result_after_reply(int current_result, int final_reply)
+{
+	if (current_result)
+		return current_result;
+
+	if (final_reply / 100 == 2)
+		return 0;
+
+	return -2;
+}

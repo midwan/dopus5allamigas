@@ -53,6 +53,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_recursive.h"
 #include "ftp_util.h"  // for cat_bytes()
 #include "ftp_parse.h"
+#include "ftp_listcmd.h"
 
 #ifdef __amigaos3__
 // dummy TimerBase to get amiga.lib to link
@@ -1727,6 +1728,8 @@ int list(struct ftp_info *info,
 			info->fi_errno |= FTPERR_XFER_SRCERR;
 			stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
 		}
+
+		retval = ftp_listcmd_result_after_reply(retval, reply);
 	}
 	else
 	{
