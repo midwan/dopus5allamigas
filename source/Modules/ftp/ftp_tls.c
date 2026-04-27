@@ -238,7 +238,8 @@ int ftp_tls_mode_from_text(const char *text, int *mode)
 	}
 
 	if (ftp_tls_text_equals(text, "explicit") || ftp_tls_text_equals(text, "ftps") ||
-		ftp_tls_text_equals(text, "tls") || ftp_tls_text_equals(text, "auth tls") ||
+		ftp_tls_text_equals(text, "ftpes") || ftp_tls_text_equals(text, "tls") ||
+		ftp_tls_text_equals(text, "auth tls") || ftp_tls_text_equals(text, "starttls") ||
 		ftp_tls_text_equals(text, "on") || ftp_tls_text_equals(text, "yes") || ftp_tls_text_equals(text, "true") ||
 		ftp_tls_text_equals(text, "1"))
 	{
