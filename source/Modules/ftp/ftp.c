@@ -2076,6 +2076,9 @@ int connect_host(struct ftp_info *info, int (*updatefn)(void *, int, char *), vo
 		ftp_tls_session_cleanup(&info->fi_control_tls);
 
 	info->fi_cs = -1;
+	info->fi_errno = 0;
+	*info->fi_serverr = 0;
+	errno = 0;
 
 	if (host)
 		stccpy(info->fi_tls_host, host, FTP_TLS_HOST_BUFSIZE);
