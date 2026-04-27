@@ -2599,6 +2599,7 @@ struct rec_entry_list *rec_ftp_list(endpoint *ep, char *dirname)
 {
 	struct rec_entry_list *rel;
 	struct rec_updateinfo ui = {0};
+	int list_result;
 
 	// Valid?
 	if (!ep)
@@ -2633,7 +2634,11 @@ struct rec_entry_list *rec_ftp_list(endpoint *ep, char *dirname)
 		ep->ep_ftpnode->fn_ftp.fi_flags |= FTP_PASSIVE;
 
 	// Call FTP LIST command
-	list(&ep->ep_ftpnode->fn_ftp, callback_func, &ui, ep->ep_ftpnode->fn_lscmd, dirname);
+	do
+	{
+		ui.ui_ls_to_entryinfo = ep->ep_ftpnode->fn_ls_to_entryinfo;
+		list_result = list(&ep->ep_ftpnode->fn_ftp, callback_func, &ui, ep->ep_ftpnode->fn_lscmd, dirname);
+	} while (list_result == -2 && lister_fallback_list_command(ep->ep_ftpnode));
 
 	return rel;
 }

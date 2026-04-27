@@ -240,7 +240,7 @@ static int lister_getsystype(struct ftp_node *node)
 
 	if (node->fn_systype == FTP_DGUX)
 	{
-		strcpy(node->fn_lscmd, "NLST -alF");
+		strcpy(node->fn_lscmd, FTP_LISTCMD_DGUX);
 		node->fn_ftp.fi_flags |= FTP_IS_UNIX;
 	}
 	else if (node->fn_systype == FTP_ULTRIX)
@@ -248,10 +248,10 @@ static int lister_getsystype(struct ftp_node *node)
 	else if (node->fn_systype == FTP_UNIX)
 		node->fn_ftp.fi_flags |= FTP_IS_UNIX;
 	else if (node->fn_systype == FTP_OS2)
-		strcpy(node->fn_lscmd, "LIST"); /* It'll take more than this :) */
+		strcpy(node->fn_lscmd, FTP_LISTCMD_PLAIN); /* It'll take more than this :) */
 	else if (node->fn_systype == FTP_WINDOWSNT)
 	{
-		strcpy(node->fn_lscmd, "LIST");
+		strcpy(node->fn_lscmd, FTP_LISTCMD_PLAIN);
 		node->fn_ls_to_entryinfo = nt_line_to_entryinfo;
 	}
 
@@ -312,7 +312,7 @@ static void lister_getfeats(struct ftp_node *node)
 	if (node->fn_ftp.fi_flags & FTP_FEAT_MLST)
 	{
 		D(bug("MLSD listing enabled\n"));
-		strcpy(node->fn_lscmd, "MLSD");
+		strcpy(node->fn_lscmd, FTP_LISTCMD_MLSD);
 		node->fn_ls_to_entryinfo = mlsd_line_to_entryinfo;
 	}
 }

@@ -9,17 +9,23 @@ TEST_BUILD_DIR ?= /tmp/dopus5-ftp-tests
 
 FTP_PARSE_TEST := $(TEST_BUILD_DIR)/ftp_parse_tests
 FTP_PARSE_TEST_SRCS := tests/ftp_parse_tests.c ftp_parse.c
+FTP_LISTCMD_TEST := $(TEST_BUILD_DIR)/ftp_listcmd_tests
+FTP_LISTCMD_TEST_SRCS := tests/ftp_listcmd_tests.c ftp_listcmd.c
 FTP_TLS_TEST := $(TEST_BUILD_DIR)/ftp_tls_tests
 FTP_TLS_TEST_SRCS := tests/ftp_tls_tests.c ftp_tls.c
 
 .PHONY: test clean
 
-test: $(FTP_PARSE_TEST) $(FTP_TLS_TEST)
+test: $(FTP_PARSE_TEST) $(FTP_LISTCMD_TEST) $(FTP_TLS_TEST)
 	$(FTP_PARSE_TEST)
+	$(FTP_LISTCMD_TEST)
 	$(FTP_TLS_TEST)
 
 $(FTP_PARSE_TEST): $(FTP_PARSE_TEST_SRCS) ftp_parse.h | $(TEST_BUILD_DIR)
 	$(CC) $(CFLAGS) -I. $(FTP_PARSE_TEST_SRCS) -o $@
+
+$(FTP_LISTCMD_TEST): $(FTP_LISTCMD_TEST_SRCS) ftp_listcmd.h | $(TEST_BUILD_DIR)
+	$(CC) $(CFLAGS) -I. $(FTP_LISTCMD_TEST_SRCS) -o $@
 
 $(FTP_TLS_TEST): $(FTP_TLS_TEST_SRCS) ftp_tls.h | $(TEST_BUILD_DIR)
 	$(CC) $(CFLAGS) -I. $(FTP_TLS_TEST_SRCS) -o $@
@@ -28,4 +34,4 @@ $(TEST_BUILD_DIR):
 	mkdir -p $@
 
 clean:
-	$(RM) $(FTP_PARSE_TEST) $(FTP_TLS_TEST)
+	$(RM) $(FTP_PARSE_TEST) $(FTP_LISTCMD_TEST) $(FTP_TLS_TEST)
