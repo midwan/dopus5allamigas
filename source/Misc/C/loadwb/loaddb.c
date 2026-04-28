@@ -41,6 +41,15 @@ const char USED_VAR version[] = "\0$VER: LoadDB " CMD_STRING;
 
 enum { ARG_DEBUG, ARG_DELAY, ARG_CLEANUP, ARG_NEWPATH, ARG_COUNT };
 
+#ifdef SYS_Error
+	#define DETACH_Error SYS_Error
+#elif defined(NP_Error)
+	#define DETACH_Error NP_Error
+#else
+	#define DETACH_Error TAG_IGNORE
+#endif
+
+BOOL launch_detached(char *command);
 BOOL workbench_running(void);
 
 int main(int argc, char **arg_string)
@@ -195,7 +204,7 @@ int main(int argc, char **arg_string)
 						*arg_ptr = 0;
 
 				// Try launch
-				ok = Execute(buf, 0, 0);
+				ok = launch_detached(buf);
 			}
 		}
 
@@ -220,10 +229,29 @@ int main(int argc, char **arg_string)
 			strcat(buf, " NEWPATH");
 
 		// Run it
-		Execute(buf, 0, 0);
+		launch_detached(buf);
 	}
 
 	return (0);
+}
+
+// Launch without keeping the startup shell/script process or its files open
+BOOL launch_detached(char *command)
+{
+	return (SystemTags(command,
+					   SYS_Input,
+					   0,
+					   SYS_Output,
+					   0,
+					   DETACH_Error,
+					   0,
+					   SYS_Asynch,
+					   TRUE,
+					   SYS_UserShell,
+					   TRUE,
+					   NP_Cli,
+					   TRUE,
+					   TAG_DONE) != -1);
 }
 
 // See if Workbench is running

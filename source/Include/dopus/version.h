@@ -24,7 +24,7 @@
 
 // set the commands version/revision (viewfont, dopusrt5, loadwb)
 #define CMD_VERSION    65
-#define CMD_REVISION   1
+#define CMD_REVISION   2
 
 // set platform identification
 #ifdef DEBUG
