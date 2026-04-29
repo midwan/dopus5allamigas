@@ -77,11 +77,11 @@ extern char *string_no_owner;
 extern char *string_no_group;
 extern char *string_empty;
 
-extern const UWORD arrow_hi_data[11][2], arrow_lo_data[11][2];
+extern UWORD arrow_hi_data[11][2], arrow_lo_data[11][2];
 extern struct Image arrow_image[2];
-extern const UWORD small_arrow[7], big_arrow[11];
+extern UWORD small_arrow[7], big_arrow[11];
 extern const UWORD moon_big_data[8][2][13], moon_small_data[8][2][9];
-extern const UWORD command_arrow[7], parent_arrow[6];
+extern UWORD command_arrow[7], parent_arrow[6];
 
 #ifdef __amigaos3__
 extern UWORD *arrow_hi_data_chip;
