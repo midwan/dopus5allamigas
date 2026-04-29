@@ -222,6 +222,25 @@ static int lister_sftp_hostkey_request(void *userdata,
 	return choice == 1;
 }
 
+static int lister_sftp_connect_error_is_fatal(struct ftp_node *node, int error)
+{
+	if (node && (node->fn_flags & LST_ABORT))
+		return 1;
+
+	switch (error)
+	{
+	case FTP_SFTP_ERROR_ABORTED:
+	case FTP_SFTP_ERROR_BACKEND:
+	case FTP_SFTP_ERROR_SESSION:
+	case FTP_SFTP_ERROR_HOSTKEY:
+		return 1;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 //
 //	Attempt to log in to the FTP host we just connected to.
 //
@@ -521,9 +540,6 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 
 	D(bug("lister_connect_and_login()\n"));
 
-	if (node->fn_protocol == FTP_PROTOCOL_SFTP)
-		prompt_userpass = 0;
-
 	// Get number of retries from config
 	if (node->fn_site.se_env->e_retry)
 		maxtries = node->fn_site.se_env->e_retry_count + 1;
@@ -600,10 +616,22 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 			else
 			{
 				const char *sftp_message = ftp_sftp_error_message(&node->fn_sftp);
+				int sftp_error = ftp_sftp_session_error(&node->fn_sftp);
 
 				cld->cld_errmsg = (char *)sftp_message;
-				connected = -1;
-				prompt_userpass = 0;
+				if (node->fn_flags & LST_ABORT)
+					errno = EINTR;
+
+				if (lister_sftp_connect_error_is_fatal(node, sftp_error))
+				{
+					connected = -1;
+					prompt_userpass = 0;
+				}
+				else
+				{
+					connected = 0;
+					prompt_userpass = (sftp_error == FTP_SFTP_ERROR_AUTH);
+				}
 			}
 		}
 		else
@@ -1557,9 +1585,6 @@ int lister_retry_connect_requester(struct ftp_node *node, struct connect_log_dat
 	char buffer[1024 + 1] = "";
 
 	D(bug("lister_retry_connect_requester()\n"));
-
-	if (node && node->fn_protocol == FTP_PROTOCOL_SFTP)
-		return 3;
 
 	// Add reason in brackets
 	if (cld->cld_errmsg)
