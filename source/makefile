@@ -114,6 +114,9 @@ endif
 ###########################################################
 # Sets base archive to use for releases
 BASEARC := basedata.lha
+RELEASE_DIR := Dopus5.$(NAME)
+RELEASE_ROOT := $(RELEASE_DIR)/Dopus5
+RELEASE_ARCDEST := $(abspath $(ARCDEST))
 ###########################################################
 # Commands
 REMOVE := rm -rf
@@ -193,38 +196,39 @@ clean-commands:
 release: all
 	@echo " "
 	@echo ">>>>>Creating release archive: Dopus5$(VERSION)$(NAME)$(TYPE).lha"
-	@$(MAKEDIR) Dopus5/Libs
-	@$(MAKEDIR) Dopus5/Modules
-	@$(MAKEDIR) Dopus5/C
-	@$(MAKEDIR) Dopus5/Help
-	@$(MAKEDIR) Dopus5/Documents
+	@$(REMOVE) $(RELEASE_DIR)
+	@$(MAKEDIR) $(RELEASE_ROOT)/Libs
+	@$(MAKEDIR) $(RELEASE_ROOT)/Modules
+	@$(MAKEDIR) $(RELEASE_ROOT)/C
+	@$(MAKEDIR) $(RELEASE_ROOT)/Help
+	@$(MAKEDIR) $(RELEASE_ROOT)/Documents
 	@$(MAKEDIR) $(DEST)
 ifeq ($(PLATFORM), os4)
-	@$(MAKEDIR) Dopus5/WBStartup
-	@$(COPY) ../archive/DoWBStartup Dopus5/WBStartup
-	@$(COPY) ../archive/DoWBStartup.info  Dopus5/WBStartup
+	@$(MAKEDIR) $(RELEASE_ROOT)/WBStartup
+	@$(COPY) ../archive/DoWBStartup $(RELEASE_ROOT)/WBStartup
+	@$(COPY) ../archive/DoWBStartup.info  $(RELEASE_ROOT)/WBStartup
 endif
-	@$(COPY) bin.$(NAME)/dopus5.library Dopus5/Libs
-	@$(COPY) bin.$(NAME)/*.module Dopus5/Modules
-	@$(COPY) bin.$(NAME)/DirectoryOpus Dopus5
-	@$(COPY) bin.$(NAME)/DOpusRT5 Dopus5/C
-	@$(COPY) bin.$(NAME)/LoadDB Dopus5/C
-	@$(COPY) bin.$(NAME)/viewfont Dopus5/C
-	@$(COPY) ../documents/*.guide Dopus5/Help
-	@$(COPY) ../documents/*.pdf Dopus5/Documents
-	@$(COPY) ../THIRD_PARTY_NOTICES.md Dopus5/Documents
+	@$(COPY) bin.$(NAME)/dopus5.library $(RELEASE_ROOT)/Libs
+	@$(COPY) bin.$(NAME)/*.module $(RELEASE_ROOT)/Modules
+	@$(COPY) bin.$(NAME)/DirectoryOpus $(RELEASE_ROOT)
+	@$(COPY) bin.$(NAME)/DOpusRT5 $(RELEASE_ROOT)/C
+	@$(COPY) bin.$(NAME)/LoadDB $(RELEASE_ROOT)/C
+	@$(COPY) bin.$(NAME)/viewfont $(RELEASE_ROOT)/C
+	@$(COPY) ../documents/*.guide $(RELEASE_ROOT)/Help
+	@$(COPY) ../documents/*.pdf $(RELEASE_ROOT)/Documents
+	@$(COPY) ../THIRD_PARTY_NOTICES.md $(RELEASE_ROOT)/Documents
 ifeq ($(log), yes)
-	@$(COPY) ../ChangeLog Dopus5
+	@$(COPY) ../ChangeLog $(RELEASE_ROOT)
 endif
 ifeq ($(SYSTEM), linux)
 # Ensure Amiga executables carry the Unix +x bit so lha records it
 # (Amiga LHA maps it back to the Amiga `e` protection flag on extract).
-	@chmod +x Dopus5/DirectoryOpus Dopus5/Libs/dopus5.library Dopus5/Modules/*.module \
-		Dopus5/C/DOpusRT5 Dopus5/C/LoadDB Dopus5/C/viewfont
+	@chmod +x $(RELEASE_ROOT)/DirectoryOpus $(RELEASE_ROOT)/Libs/dopus5.library $(RELEASE_ROOT)/Modules/*.module \
+		$(RELEASE_ROOT)/C/DOpusRT5 $(RELEASE_ROOT)/C/LoadDB $(RELEASE_ROOT)/C/viewfont
 endif
 	@$(COPY) ../archive/$(BASEARC) $(DEST)Dopus5$(VERSION)$(NAME)$(TYPE).lha
-	@$(LHA) $(ARCDEST)Dopus5$(VERSION)$(NAME)$(TYPE).lha Dopus5
-	@$(REMOVE) Dopus5
+	@cd $(RELEASE_DIR) && $(LHA) $(RELEASE_ARCDEST)/Dopus5$(VERSION)$(NAME)$(TYPE).lha Dopus5
+	@$(REMOVE) $(RELEASE_DIR)
 	@echo ">>>>>Release date:" $(shell $(DATE) "+%m/%d/%Y")
 
 ###########################################################

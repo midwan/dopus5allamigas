@@ -21,6 +21,7 @@ endif
 NAME     := LoadDB
 DESTDIR  := ../../../bin.$(ARCH)-aros
 TARGET   := $(DESTDIR)/$(NAME)
+OBJDIR  := .objects/$(if $(arch),$(arch)-aros,aros)
 OPTIMIZE := -O2
 OPTIONS  := -DCOMPDATE=$(NEWDATE) -DARCH=$(ARCH)
 INCLUDES := -I../../../Include
@@ -34,6 +35,8 @@ REMOVE = rm -f
 MAKEDIR := mkdir -p
 
 OBJS = loaddb.o
+SRC_OBJS := $(OBJS)
+OBJS := $(addprefix $(OBJDIR)/,$(SRC_OBJS))
 
 all : $(TARGET)
 
@@ -41,13 +44,13 @@ $(TARGET): $(OBJS)
 	@$(MAKEDIR) $(DESTDIR)
 	$(CC) $^ $(LDFLAGS) $(LIBS) -o $@
 
-%.o : %.c
+$(OBJDIR)/%.o : %.c
+	@$(MAKEDIR) $(dir $@)
 	$(CC) -c $< $(CFLAGS) $(INCLUDES) $(WARNINGS) -o $@
 
 .PHONY clean:
 clean:
-	@$(REMOVE) *.o
-
+	@rm -rf $(OBJDIR)
 .PHONY cleanall:
 cleanall : clean
 	@$(REMOVE) $(TARGET) $(TARGET).map $(TARGET).s

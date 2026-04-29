@@ -7,6 +7,7 @@ NEWDATE  := $(shell date +%d.%m.%Y)
 NAME := dopus5.library
 DESTDIR  := ../bin.os3
 TARGET   := $(DESTDIR)/$(NAME)
+OBJDIR  := .objects/os3
 
 LDFLAGS  += -nostartfiles
 
@@ -14,6 +15,8 @@ REMOVE = rm -f
 MAKEDIR := mkdir -p
 
 OBJS = $(COMMON_OBJS)
+SRC_OBJS := $(OBJS)
+OBJS := $(addprefix $(OBJDIR)/,$(SRC_OBJS))
 
 all : $(TARGET)
 
@@ -22,17 +25,18 @@ $(TARGET): $(OBJS)
 	$(CC) $^ $(LDFLAGS) $(LIBS) -o $@_unstripped
 	@$(STRIP)
 
-%.o : %.c
+$(OBJDIR)/%.o : %.c
 	@echo ">>>>>Compiling $<"
+	@$(MAKEDIR) $(dir $@)
 	@$(CC) -c $< $(CFLAGS) $(INCLUDES) $(WARNINGS) -o $@
 
 .PHONY depend: Makefile.dep
-Makefile.dep : $(OBJS:.o=.c)
-	@$(CC) -MM $(CFLAGS) $(INCLUDES) $(OBJS:.o=.c) >Makefile.dep
+Makefile.dep : $(SRC_OBJS:.o=.c)
+	@$(CC) -MM $(CFLAGS) $(INCLUDES) $(SRC_OBJS:.o=.c) >Makefile.dep
 
 .PHONY clean:
 clean:
-	@$(REMOVE) *.o
+	@rm -rf $(OBJDIR)
 #	@$(REMOVE) Makefile.dep
 
 .PHONY cleanall:

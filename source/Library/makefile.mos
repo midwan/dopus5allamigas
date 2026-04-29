@@ -8,6 +8,7 @@ NEWDATE  := $(shell date +%d.%m.%Y)
 NAME     := dopus5.library
 DESTDIR  := ../bin.mos
 TARGET   := $(DESTDIR)/$(NAME)
+OBJDIR  := .objects/mos
 
 # Enter debug=no on "Make" command line to disable debug output.
 ifeq ($(debug), no)
@@ -32,6 +33,8 @@ REMOVE = rm -f
 MAKEDIR := mkdir -p
 
 OBJS = $(COMMON_OBJS) morphos_stubs.o
+SRC_OBJS := $(OBJS)
+OBJS := $(addprefix $(OBJDIR)/,$(SRC_OBJS))
 
 ECHO = echo
 ECHE = echo -e
@@ -53,18 +56,18 @@ $(TARGET): $(OBJS)
 	@$(STRIP)
 	@chmod $(TARGET) -x
 
-%.o : %.c
+$(OBJDIR)/%.o : %.c
 	$(COMPILING)
+	@$(MAKEDIR) $(dir $@)
 	@$(CC) -c $< $(CFLAGS) $(INCLUDES) $(WARNINGS) -o $@
 
 .PHONY depend: Makefile.dep
-Makefile.dep : $(OBJS:.o=.c)
-	@$(CC) -MM $(CFLAGS) $(INCLUDES) $(OBJS:.o=.c) >Makefile.dep
+Makefile.dep : $(SRC_OBJS:.o=.c)
+	@$(CC) -MM $(CFLAGS) $(INCLUDES) $(SRC_OBJS:.o=.c) >Makefile.dep
 
 .PHONY clean:
 clean:
-	@$(REMOVE) *.o
-
+	@rm -rf $(OBJDIR)
 .PHONY cleanall:
 cleanall : clean
 	@$(REMOVE) $(TARGET) $(TARGET).map $(TARGET).s
