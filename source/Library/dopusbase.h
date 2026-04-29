@@ -156,7 +156,7 @@ For more information on Directory Opus for Windows please see:
 #define MENUFLAG_GET_SEQ(fl) ((char)((fl) >> 24))
 
 #define NM_NEXT 10
-#define NM_BAR_LABEL (ULONG) NM_BARLABEL
+#define NM_BAR_LABEL (IPTR) NM_BARLABEL
 
 #define IS_GADTOOLS(obj) (BOOL)(obj->gl_info.gl_gadget.context != NULL)
 
@@ -334,7 +334,7 @@ For more information on Directory Opus for Windows please see:
 #define GADGET_SEL(list, id) (GADGET(GetObject(list, id))->Flags & GFLG_SELECTED)
 #define CFGDATA(win) (((WindowData *)win->UserData)->data)
 
-#define MENUID(menu) ((ULONG)GTMENUITEM_USERDATA(menu))
+#define MENUID(menu) ((ULONG)(IPTR)GTMENUITEM_USERDATA(menu))
 
 #define WDF_VALID (1 << 0)
 #define WDF_ZOOMED (1 << 1)
@@ -888,8 +888,8 @@ typedef struct _ObjectList
 typedef struct _MenuData
 {
 	UBYTE type;	  // Menu type
-	ULONG id;	  // Menu ID
-	ULONG name;	  // Menu name
+	IPTR id;	  // Menu ID or user data
+	IPTR name;	  // Menu name
 	ULONG flags;  // Menu flags
 } MenuData;
 

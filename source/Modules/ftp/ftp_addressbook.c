@@ -1366,7 +1366,7 @@ static Att_List *build_sub_options(SubOptionHandle *list)
 	return (options);
 }
 
-static void change_menus(MenuData *menu, int id, ULONG textval)
+static void change_menus(MenuData *menu, int id, IPTR textval)
 {
 	int a;
 

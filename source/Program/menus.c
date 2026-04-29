@@ -147,14 +147,14 @@ void display_build_user_menu(void)
 
 					// Fill in data
 					GUI->user_menu_data[num].type = NM_TITLE;
-					GUI->user_menu_data[num].id = (ULONG)func;
+					GUI->user_menu_data[num].id = (IPTR)func;
 					if (func)
 					{
-						if (!(GUI->user_menu_data[num].name = (ULONG)function_label(func)))
-							GUI->user_menu_data[num].name = (ULONG)GUI->null_string;
+						if (!(GUI->user_menu_data[num].name = (IPTR)function_label(func)))
+							GUI->user_menu_data[num].name = (IPTR)GUI->null_string;
 					}
 					else
-						GUI->user_menu_data[num].name = (ULONG)GetString(&locale, MSG_USER_MENU);
+						GUI->user_menu_data[num].name = (IPTR)GetString(&locale, MSG_USER_MENU);
 					GUI->user_menu_data[num].flags = MENUFLAG_TEXT_STRING;
 					++num;
 				}
@@ -188,18 +188,18 @@ void display_build_user_menu(void)
 
 						// Fill in menu data
 						GUI->user_menu_data[num].type = type;
-						GUI->user_menu_data[num].id = (ULONG)func;
+						GUI->user_menu_data[num].id = (IPTR)func;
 
 						// Bar label?
 						if (function_label(func) && strncmp(function_label(func), "---", 3) == 0)
-							GUI->user_menu_data[num].name = (ULONG)NM_BARLABEL;
+							GUI->user_menu_data[num].name = NM_BAR_LABEL;
 
 						// Normal function
 						else
 						{
 							// Get name
-							if (!(GUI->user_menu_data[num].name = (ULONG)function_label(func)))
-								GUI->user_menu_data[num].name = (ULONG)GUI->null_string;
+							if (!(GUI->user_menu_data[num].name = (IPTR)function_label(func)))
+								GUI->user_menu_data[num].name = (IPTR)GUI->null_string;
 							GUI->user_menu_data[num].flags = MENUFLAG_TEXT_STRING;
 
 							// Does function have a right-amiga hotkey?
@@ -264,18 +264,18 @@ void display_build_user_menu(void)
 			{
 				// Fill in menu data
 				GUI->user_menu_data[num].type = NM_ITEM;
-				GUI->user_menu_data[num].id = (ULONG)appmenu;
+				GUI->user_menu_data[num].id = (IPTR)appmenu;
 
 				// Separator?
 				if (strncmp(appmenu->text, "---", 3) == 0)
 				{
-					GUI->user_menu_data[num].name = (ULONG)NM_BARLABEL;
+					GUI->user_menu_data[num].name = NM_BAR_LABEL;
 				}
 
 				// Normal string
 				else
 				{
-					GUI->user_menu_data[num].name = (ULONG)appmenu->text;
+					GUI->user_menu_data[num].name = (IPTR)appmenu->text;
 					GUI->user_menu_data[num].flags = MENUFLAG_TEXT_STRING;
 				}
 
@@ -296,7 +296,7 @@ void display_build_user_menu(void)
 		;
 
 	// Point fixed menus on to user menu
-	dopus_menus[count].name = (ULONG)GUI->user_menu_data;
+	dopus_menus[count].name = (IPTR)GUI->user_menu_data;
 
 	// Unlock menus
 	FreeSemaphore(&GUI->user_menu_lock);
@@ -342,7 +342,7 @@ struct MenuItem *find_menu_item(struct Menu *menu, UWORD id)
 		struct MenuItem *item;
 
 		// Is this what we're looking for?
-		if (id == (UWORD)GTMENU_USERDATA(menu))
+		if (id == (UWORD)(IPTR)GTMENU_USERDATA(menu))
 			return (struct MenuItem *)menu;
 
 		// Go through items
@@ -351,14 +351,14 @@ struct MenuItem *find_menu_item(struct Menu *menu, UWORD id)
 			struct MenuItem *sub;
 
 			// Is this what we're looking for?
-			if (id == (UWORD)GTMENUITEM_USERDATA(item))
+			if (id == (UWORD)(IPTR)GTMENUITEM_USERDATA(item))
 				return item;
 
 			// Go through sub items
 			for (sub = item->SubItem; sub; sub = sub->NextItem)
 			{
 				// Is this what we're looking for?
-				if (id == (UWORD)GTMENUITEM_USERDATA(sub))
+				if (id == (UWORD)(IPTR)GTMENUITEM_USERDATA(sub))
 					return sub;
 			}
 		}
@@ -604,10 +604,10 @@ static ULONG menu_disable_keys[] = {WINDOW_BACKDROP | WINDOW_LISTER | WINDOW_LIS
 void menu_check_disable(struct MenuItem *item, unsigned long type)
 {
 	short key;
-	unsigned long id;
+	IPTR id;
 
 	// Get menu ID
-	id = (unsigned long)GTMENUITEM_USERDATA(item);
+	id = (IPTR)GTMENUITEM_USERDATA(item);
 
 	// Go through keys
 	for (key = 0; menu_disable_keys[key + 1]; key += 2)

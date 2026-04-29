@@ -79,7 +79,7 @@ void command_remove(char *);
 
 // event_loop.c
 void event_loop(void);
-BOOL menu_process_event(ULONG, struct MenuItem *, struct Window *);
+BOOL menu_process_event(IPTR, struct MenuItem *, struct Window *);
 
 // string_data.c
 void init_locale_data(struct DOpusLocale *);

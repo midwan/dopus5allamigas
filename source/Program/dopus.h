@@ -94,7 +94,7 @@ typedef struct _rego_data
 
 typedef struct
 {
-	ULONG id;
+	IPTR id;
 	struct MenuItem *menu;
 	struct Window *window;
 } MenuEvent;
