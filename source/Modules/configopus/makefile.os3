@@ -7,11 +7,14 @@ NEWDATE  := $(shell date +%d.%m.%Y)
 # NAME is assigned in makefile.objs
 DESTDIR  := ../../bin.os3
 TARGET   := $(DESTDIR)/$(NAME)
+OBJDIR  := .objects/os3
 
 REMOVE = rm -f
 MAKEDIR := mkdir -p
 
 OBJS := $(COMMON_OBJS) $(OS3_OBJS)
+SRC_OBJS := $(OBJS)
+OBJS := $(addprefix $(OBJDIR)/,$(SRC_OBJS))
 
 all : $(TARGET)
 
@@ -20,18 +23,18 @@ $(TARGET): $(OBJS)
 	$(CC) $^ $(LDFLAGS) $(LIBS) -o $@_unstripped
 	@$(STRIP)
 
-%.o : %.c
+$(OBJDIR)/%.o : %.c
 	@echo ">>>>>Compiling $<"
+	@$(MAKEDIR) $(dir $@)
 	@$(CC) -c $< $(CFLAGS) $(INCLUDES) $(WARNINGS) -o $@
 
 .PHONY depend: Makefile.dep
-Makefile.dep : $(OBJS:.o=.c)
-	@$(CC) -MM $(CFLAGS) $(INCLUDES) $(OBJS:.o=.c) >Makefile.dep
+Makefile.dep : $(SRC_OBJS:.o=.c)
+	@$(CC) -MM $(CFLAGS) $(INCLUDES) $(SRC_OBJS:.o=.c) >Makefile.dep
 
 .PHONY clean:
 clean:
-	@$(REMOVE) *.o init/*.o
-
+	@rm -rf $(OBJDIR)
 .PHONY cleanall:
 cleanall : clean
 	@$(REMOVE) $(TARGET) $(TARGET).map $(TARGET).s

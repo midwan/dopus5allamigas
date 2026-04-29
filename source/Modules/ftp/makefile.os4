@@ -11,6 +11,7 @@ NEWDATE  := $(shell date +%d.%m.%Y)
 # NAME is assigned in makefile.objs
 DESTDIR  := ../../bin.os4
 TARGET   := $(DESTDIR)/$(NAME)
+OBJDIR  := .objects/os4
 
 # Enter debug=no on "Make" command line to disable debuging.
 ifeq ($(debug), no)
@@ -47,6 +48,8 @@ REMOVE  := rm -f
 MAKEDIR := mkdir -p
 
 OBJS = $(COMMON_OBJS) $(OS4_OBJS)
+SRC_OBJS := $(OBJS)
+OBJS := $(addprefix $(OBJDIR)/,$(SRC_OBJS))
 
 $(OBJS): $(SFTP_DEPS)
 
@@ -57,18 +60,18 @@ $(TARGET): $(OBJS) $(SFTP_DEPS)
 	$(CC) $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 	@$(STRIP)
 
-%.o : %.c
+$(OBJDIR)/%.o : %.c
 	@echo ">>>>>Compiling $<"
+	@$(MAKEDIR) $(dir $@)
 	@$(CC) -c $< $(CFLAGS) $(INCLUDES) $(WARNINGS) -o $@
 
 .PHONY depend: Makefile.dep
-Makefile.dep : $(OBJS:.o=.c)
-	@$(CC) -MM $(CFLAGS) $(INCLUDES) $(OBJS:.o=.c) >Makefile.dep
+Makefile.dep : $(SRC_OBJS:.o=.c)
+	@$(CC) -MM $(CFLAGS) $(INCLUDES) $(SRC_OBJS:.o=.c) >Makefile.dep
 
 .PHONY clean:
 clean:
-	@$(REMOVE) *.o init/*.o
-
+	@rm -rf $(OBJDIR)
 .PHONY cleanall:
 cleanall : clean
 	@$(REMOVE) $(TARGET) $(TARGET).map $(TARGET).s
