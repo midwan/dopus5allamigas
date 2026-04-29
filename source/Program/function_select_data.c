@@ -34,13 +34,13 @@ _select_cycle_labels[] = {MSG_SELECT_IGNORE, MSG_SELECT_MATCH, MSG_SELECT_NOMATC
 
 struct TagItem _select_name_tags[] = {{GTST_MaxChars, 59}, {GTCustom_LayoutRel, GAD_SELECT_LAYOUT_AREA}, {TAG_END}},
 
-			   _select_cycle_tags[] = {{GTCustom_LocaleLabels, (ULONG)_select_cycle_labels},
+			   _select_cycle_tags[] = {{GTCustom_LocaleLabels, (IPTR)_select_cycle_labels},
 									   {GTCustom_LayoutRel, GAD_SELECT_LAYOUT_AREA},
 									   {TAG_END}},
 
 			   _select_date_tags[] = {{GTST_MaxChars, 9}, {GTCustom_LayoutRel, GAD_SELECT_LAYOUT_AREA}, {TAG_END}},
 
-			   _select_compare_tags[] = {{GTCustom_LocaleLabels, (ULONG)_select_compare_labels},
+			   _select_compare_tags[] = {{GTCustom_LocaleLabels, (IPTR)_select_compare_labels},
 										 {GTCustom_LayoutRel, GAD_SELECT_LAYOUT_AREA},
 										 {TAG_END}},
 
@@ -48,11 +48,11 @@ struct TagItem _select_name_tags[] = {{GTST_MaxChars, 59}, {GTCustom_LayoutRel, 
 
 			   _select_layout_tags[] = {{GTCustom_LayoutRel, GAD_SELECT_LAYOUT_AREA}, {TAG_END}},
 
-			   _select_include_tags[] = {{GTCustom_LocaleLabels, (ULONG)_select_include_labels},
+			   _select_include_tags[] = {{GTCustom_LocaleLabels, (IPTR)_select_include_labels},
 										 {GTCustom_LayoutRel, GAD_SELECT_LAYOUT_AREA},
 										 {TAG_END, 0}},
 
-			   _select_entry_type_tags[] = {{GTCustom_LocaleLabels, (ULONG)_select_entry_type_labels},
+			   _select_entry_type_tags[] = {{GTCustom_LocaleLabels, (IPTR)_select_entry_type_labels},
 											{GTCustom_LayoutRel, GAD_SELECT_LAYOUT_AREA},
 											{TAG_END}};
 

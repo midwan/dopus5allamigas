@@ -11,7 +11,7 @@ GCC/cross-toolchain support, platform fixes, and ongoing module work.
 - **AmigaOS 3** (m68k, including OS3.9/OS3.2)
 - **AmigaOS 4** (PPC)
 - **MorphOS** (PPC)
-- **AROS** (i386 and ARM)
+- **AROS** (i386 ABIv0 and x86_64 ABIv11)
 
 ## Downloads
 
@@ -23,6 +23,8 @@ The project builds with GCC-based cross-compilation toolchains for each target
 platform. CI uses the
 [`sacredbanana/amiga-compiler`](https://hub.docker.com/r/sacredbanana/amiga-compiler)
 Docker images for AmigaOS 3, AmigaOS 4, and MorphOS.
+AROS builds use the `midwan/aros-compiler:i386-aros` and
+`midwan/aros-compiler:x86_64-aros` Docker images.
 
 General flow (inside the toolchain environment):
 
@@ -31,8 +33,8 @@ cd source
 make os3        # AmigaOS 3
 make os4        # AmigaOS 4
 make mos        # MorphOS
-make i386-aros  # AROS/i386
-make arm-aros   # AROS/ARM
+make i386-aros      # AROS/i386 ABIv0
+make x86_64-aros    # AROS/x86_64 ABIv11
 ```
 
 Release archives are built from the same makefile:

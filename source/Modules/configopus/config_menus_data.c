@@ -9,20 +9,20 @@ struct TagItem config_menu_layout_tags[] = {{GTCustom_LayoutRel, GAD_MENUS_LAYOU
 			   config_menu_list_tags[] = {{DLV_ShowSelected, 0},
 										  {DLV_DragNotify, 2},
 										  {DLV_ShowSeparators, 1},
-										  {TAG_MORE, (ULONG)config_menu_layout_tags}},
+										  {TAG_MORE, (IPTR)config_menu_layout_tags}},
 
 			   config_menukeys_list_tags[] = {{DLV_ShowSelected, 0},
 											  {DLV_ShowSeparators, 1},
-											  {TAG_MORE, (ULONG)config_menu_layout_tags}},
+											  {TAG_MORE, (IPTR)config_menu_layout_tags}},
 
 			   config_menu_name_tags[] = {{GTST_MaxChars, 64},
 										  {GTCustom_NoSelectNext, TRUE},
-										  {TAG_MORE, (ULONG)config_menu_layout_tags}},
+										  {TAG_MORE, (IPTR)config_menu_layout_tags}},
 
 			   config_menu_key_tags[] = {{GTST_MaxChars, 1},
 										 {GTCustom_NoSelectNext, TRUE},
 										 {GTCustom_UpperCase, TRUE},
-										 {TAG_MORE, (ULONG)config_menu_layout_tags}};
+										 {TAG_MORE, (IPTR)config_menu_layout_tags}};
 
 ObjectDef config_menu_objects[] = {
 

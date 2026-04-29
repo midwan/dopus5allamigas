@@ -8,8 +8,8 @@
 // converts AROS archetecture into integer for conditional tests
 #undef i386
 #define i386 386
-#undef arm
-#define arm 603
+#undef x86_64
+#define x86_64 64
 
 //set the compile date from the makefile date definition
 #define DOPUSDATE STRI(COMPDATE)
@@ -38,9 +38,9 @@
 		#if ARCH == 386
 			#undef i386
 			#define PLATFORM [AROSdev-i386]
-		#elif ARCH == 603
-			#undef arm
-			#define PLATFORM [AROSdev-arm]
+		#elif ARCH == 64
+			#undef x86_64
+			#define PLATFORM [AROSdev-x86_64]
 		#else
 			#warning Unknown architecture!
 			#define PLATFORM [AROSdev]
@@ -59,9 +59,9 @@
 		#if ARCH == 386
 			#undef i386
 			#define PLATFORM [AROS-i386]
-		#elif ARCH == 603
-			#undef arm
-			#define PLATFORM [AROS-arm]
+		#elif ARCH == 64
+			#undef x86_64
+			#define PLATFORM [AROS-x86_64]
 		#else
 			#warning Unknown architecture!
 			#define PLATFORM [AROS]

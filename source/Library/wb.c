@@ -88,6 +88,7 @@ static inline void atomic_dec(ULONG *counter)
 // so this can't be stored in wb_data, unless we introduce a global
 // pointer to it
 ULONG usecount[WB_PATCH_COUNT];
+static APTR old_findtask_function;
 
 //// AddAppWindow patch
 PATCHED_5(struct AppWindow *,
@@ -2126,11 +2127,23 @@ PATCHED_1(struct Task *, LIBFUNC L_PatchedFindTask, a1, char *, name)
 		struct LibData *data;
 		struct Task *task;
 
-		// This task?
+		// Preserve the native FindTask(NULL) path even when dopus5.library
+		// is unavailable during patch installation/removal.
 		if (!name)
 		{
+			if (old_findtask_function)
+			{
+				task = LIBCALL_1(struct Task *, old_findtask_function, SysBase, IExec, a1, NULL);
+				atomic_dec(&usecount[WB_PATCH_FINDTASK]);
+				return task;
+			}
+#ifndef __AROS__
 			atomic_dec(&usecount[WB_PATCH_FINDTASK]);
 			return ((struct ExecBase *)SysBase)->ThisTask;
+#else
+			atomic_dec(&usecount[WB_PATCH_FINDTASK]);
+			return NULL;
+#endif
 		}
 
 		// Get library pointer
@@ -2190,7 +2203,7 @@ PATCHED_2(struct Window *, LIBFUNC L_PatchedOpenWindowTags, a0, struct NewWindow
 		wb_data = &data->wb_data;
 
 		// Is window being opened by the kludge task?
-		if (data->open_window_kludge == (struct Process *)((struct ExecBase *)SysBase)->ThisTask)
+		if (data->open_window_kludge == (struct Process *)FindTask(NULL))
 
 		{
 			short x, y, w, h;
@@ -2543,6 +2556,8 @@ void LIBFUNC L_WB_Install_Patch(REG(a6, struct MyLibrary *libbase))
 					wb_data->old_function[patch] =
 						SetFunction(libptr, wb_patches[patch].offset, wb_patches[patch].function);
 #endif
+					if (patch == WB_PATCH_FINDTASK)
+						old_findtask_function = wb_data->old_function[patch];
 				}
 			}
 
@@ -2629,6 +2644,7 @@ BOOL LIBFUNC L_WB_Remove_Patch(REG(a6, struct MyLibrary *libbase))
 		}
 		FreeVec(wb_data->old_function);
 		wb_data->old_function = 0;
+		old_findtask_function = NULL;
 #else
 		// Try to remove patches
 		Forbid();
@@ -2695,6 +2711,7 @@ BOOL LIBFUNC L_WB_Remove_Patch(REG(a6, struct MyLibrary *libbase))
 		{
 			FreeVec(wb_data->old_function);
 			wb_data->old_function = 0;
+			old_findtask_function = NULL;
 		}
 
 		CacheClearU();

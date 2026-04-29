@@ -84,10 +84,10 @@
 		}                                                                                                             \
 		static struct EmulLibEntry name##_trap = {TRAP_LIB, 0, (APTR)&name##_stubs};
 
-	#define GET_DOPUS_CALLBACK(name) (ULONG) & name##_trap
+	#define GET_DOPUS_CALLBACK(name) (APTR)&name##_trap
 
 #else
-	#define GET_DOPUS_CALLBACK(name) (ULONG) & name
+	#define GET_DOPUS_CALLBACK(name) (APTR)&name
 #endif
 
 //#if defined(__amigaos4__) || defined(__MORPHOS__)

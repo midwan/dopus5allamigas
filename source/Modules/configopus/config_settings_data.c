@@ -27,27 +27,27 @@ struct TagItem
 	_settings_relative_taglist[] = {{GTCustom_LayoutRel, GAD_SETTINGS_EDIT_AREA}, {TAG_END}},
 
 	// Maximum number of cached directories
-	_settings_caching_buffers_taglist[] = {{GTIN_MaxChars, 5}, {TAG_MORE, (ULONG)&_settings_relative_taglist}},
+	_settings_caching_buffers_taglist[] = {{GTIN_MaxChars, 5}, {TAG_MORE, (IPTR)&_settings_relative_taglist}},
 
 	// Disable caching
 	_settings_disable_caching_taglist[] = {{GTCustom_Control, GAD_SETTINGS_CACHING_MAX_BUFFERS},
-										   {TAG_MORE, (ULONG)&_settings_relative_taglist}},
+										   {TAG_MORE, (IPTR)&_settings_relative_taglist}},
 
 	// Date format
-	_settings_dateformat_taglist[] = {{GTCustom_LocaleLabels, (ULONG)_settings_dateformat_labels},
-									  {TAG_MORE, (ULONG)&_settings_relative_taglist}},
+	_settings_dateformat_taglist[] = {{GTCustom_LocaleLabels, (IPTR)_settings_dateformat_labels},
+									  {TAG_MORE, (IPTR)&_settings_relative_taglist}},
 
 	// Hide method
-	_settings_hide_taglist[] = {{GTCustom_LocaleLabels, (ULONG)_settings_hidemethod_labels},
-								{TAG_MORE, (ULONG)&_settings_relative_taglist}},
+	_settings_hide_taglist[] = {{GTCustom_LocaleLabels, (IPTR)_settings_hidemethod_labels},
+								{TAG_MORE, (IPTR)&_settings_relative_taglist}},
 
 	// Popkey
-	_settings_popkey_taglist[] = {{GTST_MaxChars, 80}, {TAG_MORE, (ULONG)&_settings_relative_taglist}},
+	_settings_popkey_taglist[] = {{GTST_MaxChars, 80}, {TAG_MORE, (IPTR)&_settings_relative_taglist}},
 
 	// Priority
 	_settings_priority_taglist[] = {{GTIN_MaxChars, 4},
 									{GTCustom_MinMax, (127 << 16) | ((unsigned short)-128)},
-									{TAG_MORE, (ULONG)&_settings_relative_taglist}};
+									{TAG_MORE, (IPTR)&_settings_relative_taglist}};
 
 // Settings objects
 ObjectDef

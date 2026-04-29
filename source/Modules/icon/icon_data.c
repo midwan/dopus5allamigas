@@ -42,22 +42,22 @@ ConfigWindow icon_disk_window = {{POS_CENTER, POS_CENTER, 62, 9}, {0, 0, 12, 38}
 
 struct TagItem icon_layout[] = {{GTCustom_CopyTags, 1}, {GTCustom_LayoutRel, GAD_ICON_LAYOUT_AREA}, {TAG_END}},
 
-			   icon_stack_tags[] = {{GTIN_MaxChars, 10}, {TAG_MORE, (ULONG)icon_layout}},
+			   icon_stack_tags[] = {{GTIN_MaxChars, 10}, {TAG_MORE, (IPTR)icon_layout}},
 
-			   icon_protection_tags[] = {{DLV_MultiSelect, 1}, {DLV_NoScroller, 1}, {TAG_MORE, (ULONG)icon_layout}},
+			   icon_protection_tags[] = {{DLV_MultiSelect, 1}, {DLV_NoScroller, 1}, {TAG_MORE, (IPTR)icon_layout}},
 
-			   icon_comment_tags[] = {{GTST_MaxChars, 79}, {TAG_MORE, (ULONG)icon_layout}},
+			   icon_comment_tags[] = {{GTST_MaxChars, 79}, {TAG_MORE, (IPTR)icon_layout}},
 
 			   icon_tooltypes_tags[] = {{DLV_ShowSelected, 0},
 										{DLV_Flags, PLACETEXT_LEFT},
 										{DLV_DragNotify, 2},
 										{GTST_MaxChars, 255},
 										{GTCustom_NoSelectNext, TRUE},
-										{TAG_MORE, (ULONG)icon_layout}},
+										{TAG_MORE, (IPTR)icon_layout}},
 
-			   icon_default_tool_tags[] = {{GTST_MaxChars, 255}, {TAG_MORE, (ULONG)icon_layout}},
+			   icon_default_tool_tags[] = {{GTST_MaxChars, 255}, {TAG_MORE, (IPTR)icon_layout}},
 
-			   icon_location_tags[] = {{GTST_MaxChars, 256}, {TAG_MORE, (ULONG)icon_layout}};
+			   icon_location_tags[] = {{GTST_MaxChars, 256}, {TAG_MORE, (IPTR)icon_layout}};
 
 ObjectDef
 

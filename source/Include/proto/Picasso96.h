@@ -29,7 +29,7 @@
     #ifdef __GNUC__
         #ifndef __AROS__
             /* AROS uses native C calling conventions; the m68k-style inline
-             * wrappers below are wrong for i386-aros / arm-aros. AROS builds
+             * wrappers below are wrong for i386-aros / x86_64-aros. AROS builds
              * rely on the plain prototypes from <clib/Picasso96_protos.h>
              * together with whatever AROS-side Picasso96 implementation is
              * linked at build time. */

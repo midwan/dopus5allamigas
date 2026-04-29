@@ -25,7 +25,7 @@ For more information on Directory Opus for Windows please see:
 
 #include "callback_main.h"
 
-STATIC CONST ULONG HookTable[DOPUS_HOOK_COUNT] = {
+STATIC CONST APTR HookTable[DOPUS_HOOK_COUNT] = {
 	GET_DOPUS_CALLBACK(HookCreateFileEntry), GET_DOPUS_CALLBACK(HookFileSet),
 	GET_DOPUS_CALLBACK(HookSortFileList),	 GET_DOPUS_CALLBACK(HookAddFileEntry),
 	GET_DOPUS_CALLBACK(HookResortLister),	 GET_DOPUS_CALLBACK(HookRefreshLister),
@@ -56,14 +56,14 @@ STATIC CONST ULONG HookTable[DOPUS_HOOK_COUNT] = {
 
 long HookInitHooks(DOpusCallbackInfo *info)
 {
-	ULONG *srcptr, *dstptr;
+	APTR *srcptr, *dstptr;
 	short num;
 
 	// Get pointer to start of function table
-	srcptr = (ULONG *)HookTable;
+	srcptr = (APTR *)HookTable;
 
 	// Get pointer to storage space in structure
-	dstptr = (ULONG *)&info->dc_CreateFileEntry;
+	dstptr = (APTR *)&info->dc_CreateFileEntry;
 
 	// Fill it out, up to count entries
 	for (num = 0; num < info->dc_Count; num++, srcptr++, dstptr++)

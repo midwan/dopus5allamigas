@@ -36,11 +36,43 @@ For more information on Directory Opus for Windows please see:
 #include <proto/socket.h>
 #undef __NOGLOBALIFACE__
 #undef __NOLIBBASE__
-#include <netinet/in_systm.h>
+#if !defined(__has_include) || __has_include(<netinet/in_systm.h>)
+	#include <netinet/in_systm.h>
+#endif
 #include <netinet/in.h>
+#ifdef __AROS__
+	#include <endian.h>
+	#ifndef BYTE_ORDER
+		#define BYTE_ORDER _BYTE_ORDER
+	#endif
+#endif
+#if !defined(__has_include) || __has_include(<netinet/ip.h>)
 #include <netinet/ip.h>
+#endif
+#ifndef IPTOS_LOWDELAY
+#define IPTOS_LOWDELAY 0x10
+#endif
+#ifndef IPTOS_THROUGHPUT
+#define IPTOS_THROUGHPUT 0x08
+#endif
+#if !defined(__has_include) || __has_include(<arpa/ftp.h>)
 #include <arpa/ftp.h>
+#endif
+#ifndef PRELIM
+#define PRELIM 1
+#define COMPLETE 2
+#define CONTINUE 3
+#define TRANSIENT 4
+#define ERROR 5
+#endif
+#if !defined(__has_include) || __has_include(<arpa/telnet.h>)
 #include <arpa/telnet.h>
+#endif
+#ifndef IAC
+#define DM 242
+#define IP 244
+#define IAC 255
+#endif
 #include <netdb.h>
 #include <time.h>
 

@@ -9,7 +9,7 @@ struct TagItem
 	_lister_buttons_scroller[] = {{GA_RelVerify, TRUE},
 								  {GA_Immediate, TRUE},
 								  {GTSC_Arrows, 14},
-								  {TAG_MORE, (ULONG)_lister_buttons_layout}};
+								  {TAG_MORE, (IPTR)_lister_buttons_layout}};
 
 ObjectDef _lister_buttons_objects[] = {
 
