@@ -51,6 +51,8 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_module.h"
 #include "ftp_addressbook.h"
 #include "ftp_addrsupp_protos.h"
+#include "ftp_protocol.h"
+#include "ftp_sftp.h"
 
 struct connect_log_data
 {
@@ -58,6 +60,7 @@ struct connect_log_data
 	ULONG cld_handle;
 	struct connect_msg *cld_cm;
 	char *cld_errmsg;
+	char cld_sftp_errmsg[FTP_SFTP_ERROR_BUFSIZE + 1];
 	int cld_okay;
 	int cld_aborted;
 	ULONG cld_flags;  // The flags field of the connect IPCMessage
@@ -99,6 +102,18 @@ static void lister_apply_connect_tls_overrides(struct connect_msg *cm, ULONG fla
 		env->e_tls_verify_peer = tls_verify;
 }
 
+static void lister_apply_inferred_protocol(struct connect_msg *cm, ULONG flags)
+{
+	if (!cm || (flags & CONN_OPT_PROTOCOL))
+		return;
+
+	cm->cm_protocol =
+		ftp_protocol_infer_from_connection(cm->cm_site.se_protocol, cm->cm_site.se_port, cm->cm_site.se_anon);
+	cm->cm_site.se_protocol = cm->cm_protocol;
+	if (cm->cm_protocol == FTP_PROTOCOL_SFTP)
+		cm->cm_site.se_anon = FALSE;
+}
+
 /********************************/
 
 //
@@ -134,7 +149,7 @@ static int lister_connect(struct ftp_node *node,
 {
 	int retval;
 
-	lst_addabort(node, SIGBREAKF_CTRL_C, 0);
+	lst_addabort(node, SIGBREAKF_CTRL_D, 0);
 
 	D(bug("lister_connect %s %ld\n", host, port));
 
@@ -157,6 +172,96 @@ static int lister_connect(struct ftp_node *node,
 
 /********************************/
 
+static void lister_sftp_connect_update(void *userdata, const char *text)
+{
+	struct ftp_node *node = (struct ftp_node *)userdata;
+
+	if (node && text)
+		lister_prog_info(node, (char *)text);
+}
+
+static int lister_sftp_connect_abort(void *userdata)
+{
+	struct ftp_node *node = (struct ftp_node *)userdata;
+
+	return node && (node->fn_flags & LST_ABORT);
+}
+
+static int lister_sftp_hostkey_request(void *userdata,
+									   const char *host,
+									   int port,
+									   const char *fingerprint,
+									   const char *known_hosts_path)
+{
+	struct ftp_node *node = (struct ftp_node *)userdata;
+	char portbuf[16];
+	int choice;
+
+	if (!node || !node->fn_og || node->fn_og->og_noreq || (node->fn_flags & LST_NOREQ))
+		return 0;
+
+	sprintf(portbuf, "%ld", (long)port);
+	lister_prog_info(node, "SFTP: Waiting for host key approval...");
+
+	choice = lister_request_tags(node,
+								 FR_FormatString,
+								 "The SFTP host key for %s:%s is not known.\n\nFingerprint:\n%s\n\nKnown-hosts file:\n%s\n\nTrust this host key?",
+								 AR_Message,
+								 host ? host : "",
+								 AR_Message,
+								 portbuf,
+								 AR_Message,
+								 fingerprint ? fingerprint : "unavailable",
+								 AR_Message,
+								 known_hosts_path ? known_hosts_path : "",
+								 AR_Button,
+								 "Trust",
+								 FR_ButtonNum,
+								 MSG_FTP_CANCEL,
+								 TAG_DONE);
+
+	return choice == 1;
+}
+
+static int lister_sftp_connect_error_is_fatal(struct ftp_node *node, int error)
+{
+	if (node && (node->fn_flags & LST_ABORT))
+		return 1;
+
+	switch (error)
+	{
+	case FTP_SFTP_ERROR_ABORTED:
+	case FTP_SFTP_ERROR_BACKEND:
+	case FTP_SFTP_ERROR_SESSION:
+	case FTP_SFTP_ERROR_HOSTKEY:
+		return 1;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+static void lister_sftp_set_connect_error(struct connect_log_data *cld, const char *message)
+{
+	size_t len;
+
+	if (!cld)
+		return;
+
+	if (!message)
+		message = "";
+
+	len = strlen(message);
+	if (len > FTP_SFTP_ERROR_BUFSIZE)
+		len = FTP_SFTP_ERROR_BUFSIZE;
+
+	if (len)
+		memcpy(cld->cld_sftp_errmsg, message, len);
+	cld->cld_sftp_errmsg[len] = 0;
+	cld->cld_errmsg = cld->cld_sftp_errmsg;
+}
+
 //
 //	Attempt to log in to the FTP host we just connected to.
 //
@@ -176,7 +281,7 @@ static int lister_login(struct ftp_node *node,
 
 	lister_prog_info(node, info);
 
-	lst_addabort(node, SIGBREAKF_CTRL_C, 0);
+	lst_addabort(node, SIGBREAKF_CTRL_D, 0);
 
 	retval = login(&node->fn_ftp, startupfn, mu, user, pass);
 
@@ -500,11 +605,62 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 		if (mu && mu->mu_msg)
 			Att_RemList(mu->mu_msg, REMLIST_SAVELIST);
 
-		// Try to connect lister to site
-		connected = lister_connect(node, startupfn, mu, cld->cld_cm->cm_site.se_host, cld->cld_cm->cm_site.se_port);
+		if (node->fn_protocol == FTP_PROTOCOL_SFTP)
+		{
+			struct ftp_sftp_connect_options sftp_options = {0};
+
+			lister_prog_info(node, "SFTP: Connecting...");
+
+			sftp_options.timeout_secs = node->fn_site.se_env->e_timeout;
+			sftp_options.update = lister_sftp_connect_update;
+			sftp_options.abort = lister_sftp_connect_abort;
+			sftp_options.hostkey = lister_sftp_hostkey_request;
+			sftp_options.userdata = node;
+
+			lst_addabort(node, SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_D, 0);
+			connected = ftp_sftp_connect_with_options(&node->fn_sftp,
+													  cld->cld_cm->cm_site.se_host,
+													  cld->cld_cm->cm_site.se_port,
+													  cld->cld_cm->cm_site.se_user,
+													  cld->cld_cm->cm_site.se_pass,
+													  &sftp_options)
+							? 1
+							: 0;
+			lst_remabort(node);
+
+			if (connected > 0)
+			{
+				node->fn_flags |= LST_CONNECTED | LST_LOGGEDIN;
+				logged_in = 1;
+				tries = 0;
+			}
+			else
+			{
+				const char *sftp_message = ftp_sftp_error_message(&node->fn_sftp);
+				int sftp_error = ftp_sftp_session_error(&node->fn_sftp);
+
+				lister_sftp_set_connect_error(cld, sftp_message);
+				if (node->fn_flags & LST_ABORT)
+					errno = EINTR;
+
+				if (lister_sftp_connect_error_is_fatal(node, sftp_error))
+				{
+					connected = -1;
+					prompt_userpass = 0;
+				}
+				else
+				{
+					connected = 0;
+					prompt_userpass = (sftp_error == FTP_SFTP_ERROR_AUTH);
+				}
+			}
+		}
+		else
+			// Try to connect lister to site
+			connected = lister_connect(node, startupfn, mu, cld->cld_cm->cm_site.se_host, cld->cld_cm->cm_site.se_port);
 
 		// Connect successful?
-		if (connected > 0)
+		if (connected > 0 && node->fn_protocol != FTP_PROTOCOL_SFTP)
 		{
 			// Log in with user name and password
 			loginerr = lister_login(node, startupfn, mu, cld->cld_cm->cm_site.se_user, cld->cld_cm->cm_site.se_pass);
@@ -578,6 +734,8 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 			}
 
 			// Set error message
+			else if (cld->cld_errmsg)
+				;
 			else if (errno)
 				cld->cld_errmsg = sockerr();
 			else if (connected == -2)
@@ -590,9 +748,9 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 		else if (prompt_userpass)
 		{
 			// Set error message
-			if (errno)
+			if (!cld->cld_errmsg && errno)
 				cld->cld_errmsg = sockerr();
-			else if (*node->fn_ftp.fi_serverr)
+			else if (!cld->cld_errmsg && *node->fn_ftp.fi_serverr)
 				cld->cld_errmsg = lister_server_error_text(og, node);
 
 			choice = lister_retry_connect_requester(node, cld);
@@ -602,6 +760,10 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 			// Aborted?
 			if (cld->cld_aborted)
 				tries = 0;
+
+			// Credentials changed; try the new values once even when retries are disabled
+			else if (choice == 1)
+				tries = 1;
 
 			// Keep trying?
 			else if (choice == 3)
@@ -659,7 +821,42 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 	}
 
 	// Connected and logged in ok?  Do other initializations
-	if (logged_in)
+	if (logged_in && node->fn_protocol == FTP_PROTOCOL_SFTP)
+	{
+		cld->cld_okay = TRUE;
+
+		if (*node->fn_site.se_path)
+		{
+			lister_prog_info(node, GetString(locale, MSG_INITIAL_DIR));
+			if (!ftp_sftp_cwd(&node->fn_sftp, node->fn_site.se_path))
+			{
+				cld->cld_okay = FALSE;
+				lister_sftp_set_connect_error(cld, ftp_sftp_error_message(&node->fn_sftp));
+			}
+		}
+
+		if (cld->cld_okay)
+			ftp_sftp_pwd(&node->fn_sftp, node->fn_site.se_path, PATHLEN + 1);
+
+		rexx_lst_set_path(node->fn_opus, node->fn_handle, node->fn_site.se_path);
+
+		lister_prog_clear(node);
+		rexx_lst_unlock(cld->cld_cm->cm_opus, cld->cld_handle);
+		rexx_lst_empty(cld->cld_cm->cm_opus, cld->cld_handle);
+
+		send_rexxa(cld->cld_cm->cm_opus,
+				   REXX_REPLY_NONE,
+				   "lister set %lu title SFTP:%s",
+				   cld->cld_handle,
+				   cld->cld_cm->cm_site.se_host);
+
+		send_rexxa(cld->cld_cm->cm_opus, REXX_REPLY_NONE, "lister refresh %lu full", cld->cld_handle);
+		rexx_lst_label(cld->cld_cm->cm_opus, cld->cld_handle, "SFTP:", cld->cld_cm->cm_site.se_host, NULL);
+
+		if (cld->cld_okay && !(cld->cld_flags & CONN_OPT_NOSCAN))
+			lister_list(og, node, TRUE);
+	}
+	else if (logged_in)
 	{
 		// Look for useful info via SYST command
 		lister_prog_info(node, GetString(locale, MSG_QUERY_SYSTYPE));
@@ -776,14 +973,19 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 	{
 		// Disconnect
 		if (connected > 0)
-			disconnect_host(&node->fn_ftp);
+		{
+			if (node->fn_protocol == FTP_PROTOCOL_SFTP)
+				ftp_sftp_session_cleanup(&node->fn_sftp);
+			else
+				disconnect_host(&node->fn_ftp);
+		}
 
 		lister_prog_clear(node);
 
 		// Connect/login error requester
 		if (!cld->cld_aborted && !og->og_noreq)
 		{
-			char buffer[1024 + 1];
+			char buffer[1024 + 1] = "";
 
 			// Reason to attach?  Use brackets when appropriate
 			if (cld->cld_errmsg)
@@ -839,6 +1041,13 @@ static int lister_get_args(struct opusftp_globals *ogp, struct msg_loop_data *ml
 	if (imsg->flags & CONN_OPT_GUI)
 		gui = TRUE;
 
+	if (!(imsg->flags & CONN_OPT_PROTOCOL))
+		cm->cm_protocol = cm->cm_site.se_protocol ? cm->cm_site.se_protocol : FTP_PROTOCOL_FTP;
+	cm->cm_site.se_protocol = cm->cm_protocol;
+	if (cm->cm_protocol == FTP_PROTOCOL_SFTP)
+		cm->cm_site.se_anon = FALSE;
+	lister_apply_inferred_protocol(cm, imsg->flags);
+
 	// Look up site if we're supposed to
 	if (imsg->flags & CONN_OPT_SITE)
 	{
@@ -851,12 +1060,24 @@ static int lister_get_args(struct opusftp_globals *ogp, struct msg_loop_data *ml
 			stccpy(cm->cm_site.se_path, path, PATHLEN + 1);
 
 		lister_apply_connect_tls_overrides(cm, tls_override_flags, tls_mode, tls_verify);
+		if (!(imsg->flags & CONN_OPT_PROTOCOL))
+			cm->cm_protocol = cm->cm_site.se_protocol ? cm->cm_site.se_protocol : FTP_PROTOCOL_FTP;
+		else
+			cm->cm_site.se_protocol = cm->cm_protocol;
+		if (cm->cm_protocol == FTP_PROTOCOL_SFTP)
+			cm->cm_site.se_anon = FALSE;
+		lister_apply_inferred_protocol(cm, imsg->flags);
 	}
 
 	// If we have no host, get host and user
 	if (!*cm->cm_site.se_host)
 	{
 		active_gadget = GAD_CONNECT_HOST;
+		gui = TRUE;
+	}
+	else if (cm->cm_protocol == FTP_PROTOCOL_SFTP && !*cm->cm_site.se_user)
+	{
+		active_gadget = GAD_CONNECT_USER;
 		gui = TRUE;
 	}
 
@@ -892,14 +1113,14 @@ static int lister_get_args(struct opusftp_globals *ogp, struct msg_loop_data *ml
 	}
 
 	// If we have host but not user, use anonymous
-	if (okay && (cm->cm_site.se_anon || !*cm->cm_site.se_user))
+	if (okay && cm->cm_protocol != FTP_PROTOCOL_SFTP && (cm->cm_site.se_anon || !*cm->cm_site.se_user))
 	{
 		cm->cm_site.se_anon = TRUE;
 		strcpy(cm->cm_site.se_user, "anonymous");
 	}
 
 	// If we have host and user is anonymous, use user's address as password
-	if (okay &&
+	if (okay && cm->cm_protocol != FTP_PROTOCOL_SFTP &&
 		(cm->cm_site.se_anon || !strcmp(cm->cm_site.se_user, "anonymous") || !strcmp(cm->cm_site.se_user, "ftp")))
 	{
 		// Has user defined an anonymous password?
@@ -931,10 +1152,13 @@ static struct ftp_node *lister_create_node(struct opusftp_globals *ogp, IPCData 
 			ftp_tls_mode_uses_control_tls(cm->cm_site.se_env->e_tls_mode) ? FTP_TLS_MODE_EXPLICIT : FTP_TLS_MODE_OFF;
 		node->fn_ftp.fi_tls_verify_peer = cm->cm_site.se_env->e_tls_verify_peer ? 1 : 0;
 		ftp_tls_session_init(&node->fn_ftp.fi_control_tls);
+		ftp_sftp_session_init(&node->fn_sftp);
+		node->fn_protocol = cm->cm_protocol;
 
 		stccpy(node->fn_opus, cm->cm_opus, PORTNAMELEN + 1);
 
 		copy_site_entry(ogp, &node->fn_site, &cm->cm_site);
+		node->fn_site.se_protocol = node->fn_protocol;
 
 		//	ftp.ncr.com needs -l when using options or defaults to names only!
 		//	for OS/2 no options should be used
@@ -969,6 +1193,8 @@ struct ftp_node *lister_new_connection(struct opusftp_globals *ogp, struct msg_l
 			{
 				// Some options need to be known at a lower level
 				node->fn_ftp.fi_timeout = node->fn_site.se_env->e_timeout;
+				if (node->fn_site.se_port <= 0)
+					node->fn_site.se_port = ftp_protocol_default_port(node->fn_protocol);
 
 				mld->mld_node = node;
 
@@ -1217,10 +1443,12 @@ void lister_disconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 	// Otherwise log out politely now
 	else if (*mld->mld_ftpreply != 421)
 	{
-		if (ftpnode->fn_flags & LST_LOGGEDIN)
+		if (ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+			ftp_sftp_session_cleanup(&ftpnode->fn_sftp);
+		else if (ftpnode->fn_flags & LST_LOGGEDIN)
 			logout(&ftpnode->fn_ftp);
 
-		if (ftpnode->fn_flags & LST_CONNECTED)
+		if (ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && ftpnode->fn_flags & LST_CONNECTED)
 			disconnect_host(&ftpnode->fn_ftp);
 	}
 
@@ -1345,7 +1573,9 @@ void lister_reconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 
 		if (mld->mld_node->fn_site.se_env)
 		{
-			if (ftp_tls_mode_uses_control_tls(mld->mld_node->fn_site.se_env->e_tls_mode))
+			if (mld->mld_node->fn_protocol == FTP_PROTOCOL_SFTP)
+				lister_append_reconnect_arg(command, sizeof(command), " PROTOCOL=SFTP");
+			else if (ftp_tls_mode_uses_control_tls(mld->mld_node->fn_site.se_env->e_tls_mode))
 			{
 				lister_append_reconnect_arg(command, sizeof(command), " TLS=explicit");
 				lister_append_reconnect_arg(command,

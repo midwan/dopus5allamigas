@@ -194,6 +194,7 @@ struct window_params
 
 #define ID_FTPSITE_SHORT MAKE_ID('F', 'A', 'D', '1')
 #define ID_FTPSITE_LONG MAKE_ID('F', 'A', 'D', '2')
+#define ID_FTPSITE_PROTOCOL MAKE_ID('F', 'A', 'D', 'P')
 #define ID_OPTIONS MAKE_ID('F', 'O', 'P', 'T')
 #define ID_ENV MAKE_ID('F', 'E', 'N', 'V')
 

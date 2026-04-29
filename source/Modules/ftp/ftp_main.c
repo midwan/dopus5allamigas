@@ -579,7 +579,9 @@ static int ipc_connect(struct opusftp_globals *og, IPCData *ipc, struct ListLock
 
 			if (!*cm->cm_site.se_name && cm->cm_site.se_env)
 			{
-				if (ftp_tls_mode_uses_control_tls(cm->cm_site.se_env->e_tls_mode))
+				if (cm->cm_protocol == FTP_PROTOCOL_SFTP)
+					ipc_append_connect_arg(buffer, sizeof(buffer), " PROTOCOL=SFTP");
+				else if (ftp_tls_mode_uses_control_tls(cm->cm_site.se_env->e_tls_mode))
 				{
 					ipc_append_connect_arg(buffer, sizeof(buffer), " TLS=explicit");
 					ipc_append_connect_arg(
@@ -1551,23 +1553,31 @@ static int opus_path(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 	if ((node = find_ftpnode(og, atoi(argv[1]))))
 	{
 		const char *url_body;
+		int url_protocol;
 		int url_mode;
 		const char *tls_arg = "";
+		const char *protocol_arg = "";
 
-		if (ftp_tls_mode_from_url_scheme(argv[2], &url_body, &url_mode))
+		if (ftp_protocol_from_url_scheme(argv[2], &url_body, &url_protocol))
 		{
-			if (ftp_tls_mode_uses_control_tls(url_mode))
-				tls_arg = " TLS=explicit";
-			else
-				tls_arg = " TLS=off";
+			if (url_protocol == FTP_PROTOCOL_SFTP)
+				protocol_arg = " PROTOCOL=SFTP";
+			else if (ftp_tls_mode_from_url_scheme(argv[2], &url_body, &url_mode))
+			{
+				if (ftp_tls_mode_uses_control_tls(url_mode))
+					tls_arg = " TLS=explicit";
+				else
+					tls_arg = " TLS=off";
+			}
 
-			len = strlen("FTPConnect LISTER=") + strlen(argv[1]) + 1 + strlen(url_body) + strlen(tls_arg) + 1;
+			len = strlen("FTPConnect LISTER=") + strlen(argv[1]) + 1 + strlen(url_body) + strlen(tls_arg) +
+				  strlen(protocol_arg) + 1;
 
 			if ((qm = AllocVec(sizeof(struct quit_msg) + len, MEMF_CLEAR)))
 			{
 				qm->qm_rxmsg = rxmsg;
 				qm->qm_command = (char *)(qm + 1);
-				sprintf(qm->qm_command, "FTPConnect LISTER=%s %s%s", argv[1], url_body, tls_arg);
+				sprintf(qm->qm_command, "FTPConnect LISTER=%s %s%s%s", argv[1], url_body, tls_arg, protocol_arg);
 
 				IPC_Quit(node->fn_ipc, (ULONG)qm, 0);
 				retval = 1;

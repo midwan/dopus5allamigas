@@ -462,6 +462,19 @@ int replace_requester(struct hook_rec_data *hc, ULONG flags, struct entry_info *
 
 /********************************/
 
+static int transfer_aborted(struct update_info *ui)
+{
+	if (!ui)
+		return 0;
+	if (ui->ui_abort && *ui->ui_abort)
+		return *ui->ui_abort;
+	if (ui->ui_ftpnode && (ui->ui_ftpnode->fn_flags & LST_ABORT))
+		return 1;
+	return 0;
+}
+
+/********************************/
+
 //
 //	Gets called every so often by the low-level get()/put() function
 //	Updates the progress bar
@@ -586,7 +599,7 @@ int xfer_update(struct update_info *ui, unsigned int total, unsigned int bytes)
 	DropInterface((struct Interface *)ITimer);
 #endif
 
-	return 0;
+	return transfer_aborted(ui);
 }
 
 /********************************/
@@ -680,7 +693,7 @@ int getput_update(struct update_info *ui, unsigned int total, unsigned int bytes
 	DropInterface((struct Interface *)ITimer);
 #endif
 
-	return 0;
+	return transfer_aborted(ui);
 }
 
 /**************************************************************
@@ -1220,7 +1233,10 @@ void lister_xfer(struct ftp_node *remotenode, IPCMessage *msg)
 				// Need to CD to subdir?
 				if ((xm->xm_flags & (XFER_DROP | XFER_SUBDIR)) == (XFER_DROP | XFER_SUBDIR))
 				{
-					ftp_cwd(&remotenode->fn_ftp, 0, 0, xm->xm_dstpath);
+					if (remotenode->fn_protocol == FTP_PROTOCOL_SFTP)
+						ftp_sftp_cwd(&remotenode->fn_sftp, xm->xm_dstpath);
+					else
+						ftp_cwd(&remotenode->fn_ftp, 0, 0, xm->xm_dstpath);
 					dest_list = dest->ep_list(dest, 0);
 				}
 
@@ -1400,7 +1416,10 @@ void lister_xfer(struct ftp_node *remotenode, IPCMessage *msg)
 				{
 					if (dest_list)
 						free_entry_list(dest_list);
-					ftp_cdup(&remotenode->fn_ftp, 0, 0);
+					if (remotenode->fn_protocol == FTP_PROTOCOL_SFTP)
+						ftp_sftp_cdup(&remotenode->fn_sftp);
+					else
+						ftp_cdup(&remotenode->fn_ftp, 0, 0);
 				}
 
 				// Remove progress bar
@@ -1562,7 +1581,11 @@ void lister_doubleclick(struct ftp_node *node, IPCMessage *msg)
 						lst_server_reply(node->fn_og, node, node, MSG_FTP_PATH_NOT_FOUND);
 					}
 
-					rexx_lst_label(node->fn_opus, handle, "FTP:", node->fn_site.se_host, NULL);
+					rexx_lst_label(node->fn_opus,
+								   handle,
+								   node->fn_protocol == FTP_PROTOCOL_SFTP ? "SFTP:" : "FTP:",
+								   node->fn_site.se_host,
+								   NULL);
 
 					rexx_lst_unlock(node->fn_opus, node->fn_handle);
 
@@ -1614,7 +1637,26 @@ void lister_doubleclick(struct ftp_node *node, IPCMessage *msg)
 
 				init_xfer_time(&ui);
 
-				actual = get(&node->fn_ftp, xfer_update, &ui, ei.ei_name, temp, FALSE);
+				if (node->fn_protocol == FTP_PROTOCOL_SFTP)
+				{
+					node->fn_ftp.fi_aborted = 0;
+					node->fn_ftp.fi_errno = 0;
+					node->fn_ftp.fi_ioerr = 0;
+					*node->fn_ftp.fi_serverr = 0;
+					actual = ftp_sftp_get(&node->fn_sftp, xfer_update, &ui, ei.ei_name, temp, FALSE);
+					if (ftp_sftp_session_error(&node->fn_sftp) != FTP_SFTP_ERROR_NONE)
+					{
+						if (ftp_sftp_session_error(&node->fn_sftp) == FTP_SFTP_ERROR_ABORTED)
+							node->fn_ftp.fi_aborted = 1;
+						else
+						{
+							node->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
+							sprintf(node->fn_ftp.fi_serverr, "550 %s\r\n", ftp_sftp_error_message(&node->fn_sftp));
+						}
+					}
+				}
+				else
+					actual = get(&node->fn_ftp, xfer_update, &ui, ei.ei_name, temp, FALSE);
 
 				lst_remabort(node);
 
@@ -1641,7 +1683,11 @@ void lister_doubleclick(struct ftp_node *node, IPCMessage *msg)
 				else if (node->fn_ftp.fi_errno)
 					DisplayBeep(node->fn_og->og_screen);
 
-				rexx_lst_label(node->fn_opus, handle, "FTP:", node->fn_site.se_host, NULL);
+					rexx_lst_label(node->fn_opus,
+								   handle,
+								   node->fn_protocol == FTP_PROTOCOL_SFTP ? "SFTP:" : "FTP:",
+								   node->fn_site.se_host,
+								   NULL);
 				lister_prog_clear(node);
 				rexx_lst_unlock(node->fn_opus, handle);
 			}
@@ -1742,7 +1788,26 @@ void lister_traptemp(struct ftp_node *node, IPCMessage *msg)
 
 						init_xfer_time(&ui);
 
-						actual = get(&node->fn_ftp, xfer_update, &ui, ei.ei_name, temp, FALSE);
+						if (node->fn_protocol == FTP_PROTOCOL_SFTP)
+						{
+							node->fn_ftp.fi_aborted = 0;
+							node->fn_ftp.fi_errno = 0;
+							node->fn_ftp.fi_ioerr = 0;
+							*node->fn_ftp.fi_serverr = 0;
+							actual = ftp_sftp_get(&node->fn_sftp, xfer_update, &ui, ei.ei_name, temp, FALSE);
+							if (ftp_sftp_session_error(&node->fn_sftp) != FTP_SFTP_ERROR_NONE)
+							{
+								if (ftp_sftp_session_error(&node->fn_sftp) == FTP_SFTP_ERROR_ABORTED)
+									node->fn_ftp.fi_aborted = 1;
+								else
+								{
+									node->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
+									sprintf(node->fn_ftp.fi_serverr, "550 %s\r\n", ftp_sftp_error_message(&node->fn_sftp));
+								}
+							}
+						}
+						else
+							actual = get(&node->fn_ftp, xfer_update, &ui, ei.ei_name, temp, FALSE);
 
 						lst_remabort(node);
 
@@ -1790,7 +1855,11 @@ void lister_traptemp(struct ftp_node *node, IPCMessage *msg)
 					if (*(p + 1) == 0)
 						break;
 				}
-				rexx_lst_label(node->fn_opus, handle, "FTP:", node->fn_site.se_host, NULL);
+					rexx_lst_label(node->fn_opus,
+								   handle,
+								   node->fn_protocol == FTP_PROTOCOL_SFTP ? "SFTP:" : "FTP:",
+								   node->fn_site.se_host,
+								   NULL);
 				lister_prog_clear(node);
 			}
 			rexx_lst_unlock(node->fn_opus, handle);
@@ -1853,7 +1922,26 @@ BOOL lister_xferindex(struct ftp_node *ftpnode, char *localname, char *remotenam
 
 	init_xfer_time(&ui);
 
-	actual = get(&ftpnode->fn_ftp, xfer_update, &ui, remotename, localname, FALSE);
+	if (ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+	{
+		ftpnode->fn_ftp.fi_aborted = 0;
+		ftpnode->fn_ftp.fi_errno = 0;
+		ftpnode->fn_ftp.fi_ioerr = 0;
+		*ftpnode->fn_ftp.fi_serverr = 0;
+		actual = ftp_sftp_get(&ftpnode->fn_sftp, xfer_update, &ui, remotename, localname, FALSE);
+		if (ftp_sftp_session_error(&ftpnode->fn_sftp) != FTP_SFTP_ERROR_NONE)
+		{
+			if (ftp_sftp_session_error(&ftpnode->fn_sftp) == FTP_SFTP_ERROR_ABORTED)
+				ftpnode->fn_ftp.fi_aborted = 1;
+			else
+			{
+				ftpnode->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
+				sprintf(ftpnode->fn_ftp.fi_serverr, "550 %s\r\n", ftp_sftp_error_message(&ftpnode->fn_sftp));
+			}
+		}
+	}
+	else
+		actual = get(&ftpnode->fn_ftp, xfer_update, &ui, remotename, localname, FALSE);
 
 	lst_remabort(ftpnode);
 
@@ -1873,7 +1961,11 @@ BOOL lister_xferindex(struct ftp_node *ftpnode, char *localname, char *remotenam
 	else if (ftpnode->fn_ftp.fi_errno)
 		DisplayBeep(ftpnode->fn_og->og_screen);
 
-	rexx_lst_label(ftpnode->fn_opus, handle, "FTP:", ftpnode->fn_site.se_host, NULL);
+	rexx_lst_label(ftpnode->fn_opus,
+				   handle,
+				   ftpnode->fn_protocol == FTP_PROTOCOL_SFTP ? "SFTP:" : "FTP:",
+				   ftpnode->fn_site.se_host,
+				   NULL);
 	lister_prog_clear(ftpnode);
 
 	// Do this AFTER adding comments

@@ -8,6 +8,16 @@ include ../module.common
 
 LIBS := $(filter-out -lamiga,$(LIBS)) -lamisslstubs -lamiga
 
+CROSS_ROOT ?= /opt/m68k-amigaos
+SFTP_TARGET := m68k-amigaos
+SFTP_DEP_CC := m68k-amigaos-gcc
+SFTP_DEP_AR := m68k-amigaos-ar
+SFTP_DEP_RANLIB := m68k-amigaos-ranlib
+SFTP_DEP_CFLAGS := --std=gnu99 -m68020-60 -mtune=68030 -Os -fomit-frame-pointer -noixemul
+SFTP_DEP_CPPFLAGS := -I$(CROSS_ROOT)/usr/include -D__USE_INLINE__
+SFTP_DEP_LIBS := -lamisslstubs -lamisslauto -L$(CROSS_ROOT)/usr/lib -lz
+include makefile.sftp
+
 SHELL:= sh
 NEWDATE  := $(shell date +%d.%m.%Y)
 
@@ -20,11 +30,13 @@ MAKEDIR := mkdir -p
 
 OBJS = $(COMMON_OBJS) $(OS3_OBJS)
 
+$(OBJS): $(SFTP_DEPS)
+
 all : $(TARGET)
 
-$(TARGET): $(OBJS)
+$(TARGET): $(OBJS) $(SFTP_DEPS)
 	@$(MAKEDIR) $(DESTDIR)
-	$(CC) $^ $(LDFLAGS) $(LIBS) -o $@_unstripped
+	$(CC) $(OBJS) $(LDFLAGS) $(LIBS) -o $@_unstripped
 	@$(STRIP)
 
 %.o : %.c

@@ -93,7 +93,7 @@ enum  // offsets for parse template
 };
 
 #define ADDR_TEMPLATE \
-	"ANONYMOUS=ANON/S,USERACCOUNT=ACCT/S,ALIAS=NAME/K,HOST,ADDRESS=ADDR/K,PORT/N,PATH=DIR,USER/K,PASSWORD=PASS/K"
+	"ANONYMOUS=ANON/S,USERACCOUNT=ACCT/S,ALIAS=NAME/K,HOST,ADDRESS=ADDR/K,PORT/N,PATH=DIR,USER/K,PASSWORD=PASS/K,PROTOCOL=PROTO/K"
 
 enum  // offsets for parse template
 { A_OPT_ANON,
@@ -105,10 +105,11 @@ enum  // offsets for parse template
   A_OPT_PATH,
   A_OPT_USER,
   A_OPT_PASS,
+  A_OPT_PROTOCOL,
 };
 
 #define CONNECT_TEMPLATE \
-	"HOST,PORT/N/K,USER,PASSWORD=PASS,DIR/K,LISTER/N/K,SITE/K,GUI/S,NOSCAN/S,RECON/S,TLS/K,TLSVERIFY=VERIFY/S,NOVERIFY/S"
+	"HOST,PORT/N/K,USER,PASSWORD=PASS,DIR/K,LISTER/N/K,SITE/K,GUI/S,NOSCAN/S,RECON/S,TLS/K,TLSVERIFY=VERIFY/S,NOVERIFY/S,PROTOCOL=PROTO/K"
 #define ADDRBOOK_TEMPLATE 0
 #if 0
 	#define CD_TEMPLATE "DIR/F"
@@ -136,6 +137,7 @@ enum {
 	D_OPT_TLS,
 	D_OPT_TLSVERIFY,
 	D_OPT_NOVERIFY,
+	D_OPT_PROTOCOL,
 };
 
 // Module function IDs
@@ -315,6 +317,7 @@ struct site_entry
 	/********* 	see ftp_addressbook.h			********/
 	/***************************************************************/
 
+	LONG se_protocol;		 // FTP_PROTOCOL_*, persisted in a companion chunk
 	UWORD se_active_gadget;	 // contains 0 or GADGET ID for
 							 // gadget to be activated on gui
 							 // from ftp_opuftp.h GAD_CONNECT...
@@ -527,6 +530,8 @@ enum {
 	GAD_EDIT_CUSTOM_LAYOUT,
 	GAD_EDIT_CUSTOM_OPTIONS,
 	GAD_EDIT_SET_CUSTOM_OPTIONS,
+	GAD_CONNECT_PROTOCOL,
+	GAD_EDIT_PROTOCOL,
 
 	MENU_ENV_OPEN,
 	MENU_ENV_SAVE,

@@ -1,0 +1,36 @@
+# Shared SFTP build support for the Amiga cross makefiles.
+
+.DEFAULT_GOAL := all
+
+SFTP_BACKEND ?= bundled
+SFTP_CFLAGS ?=
+SFTP_LIBS ?=
+SFTP_DEPS :=
+
+ifeq ($(sftp), yes)
+CFLAGS += -DFTP_SFTP_BACKEND_LIBSSH2
+
+ifeq ($(SFTP_BACKEND), bundled)
+SFTP_DEPS_DIR ?= third_party/libssh2
+SFTP_DEPS_TARGET ?= $(SFTP_TARGET)
+SFTP_DEPS_PREFIX ?= $(SFTP_DEPS_DIR)/build/$(SFTP_DEPS_TARGET)/prefix
+SFTP_DEPS_LIB := $(SFTP_DEPS_PREFIX)/lib/libssh2.a
+SFTP_DEPS += $(SFTP_DEPS_LIB)
+
+SFTP_CFLAGS += -I$(SFTP_DEPS_PREFIX)/include
+SFTP_LIBS += $(SFTP_DEPS_LIB) $(SFTP_DEP_LIBS)
+
+$(SFTP_DEPS_LIB):
+	$(MAKE) -C $(SFTP_DEPS_DIR) \
+		TARGET=$(SFTP_DEPS_TARGET) \
+		PREFIX=build/$(SFTP_DEPS_TARGET)/prefix \
+		CC="$(SFTP_DEP_CC)" \
+		AR="$(SFTP_DEP_AR)" \
+		RANLIB="$(SFTP_DEP_RANLIB)" \
+		TARGET_CFLAGS="$(SFTP_DEP_CFLAGS)" \
+		TARGET_CPPFLAGS="$(SFTP_DEP_CPPFLAGS)"
+endif
+
+CFLAGS += $(SFTP_CFLAGS)
+LIBS += $(SFTP_LIBS)
+endif

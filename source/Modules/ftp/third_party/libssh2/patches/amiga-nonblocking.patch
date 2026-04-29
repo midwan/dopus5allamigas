@@ -1,0 +1,73 @@
+--- a/src/packet.c
++++ b/src/packet.c
+@@ -1536,6 +1536,9 @@ _libssh2_packet_require(LIBSSH2_SESSION * session, unsigned char packet_type,
+         }
+         else if(ret == 0) {
+             /* nothing available, wait until data arrives or we time out */
++            if(!session->api_block_mode)
++                return LIBSSH2_ERROR_EAGAIN;
++
+             long left = session->packet_read_timeout - (long)(time(NULL) -
+                                                               state->start);
+
+@@ -1630,6 +1633,9 @@ _libssh2_packet_requirev(LIBSSH2_SESSION *session,
+             return ret;
+         }
+         if(ret <= 0) {
++            if(ret == 0 && !session->api_block_mode)
++                return LIBSSH2_ERROR_EAGAIN;
++
+             long left = session->packet_read_timeout -
+                 (long)(time(NULL) - state->start);
+
+--- a/src/sftp.c
++++ b/src/sftp.c
+@@ -391,6 +391,10 @@ sftp_packet_read(LIBSSH2_SFTP *sftp)
+                 return _libssh2_error(session, (int)rc,
+                                       "Error waiting for SFTP packet");
+             }
++            else if(rc == 0 && !session->api_block_mode) {
++                sftp->packet_state = libssh2_NB_state_sent1;
++                return LIBSSH2_ERROR_EAGAIN;
++            }
+             sftp->partial_received += rc;
+         }
+
+@@ -589,6 +593,9 @@ sftp_packet_requirev(LIBSSH2_SFTP *sftp, int num_valid_responses,
+             return rc;
+         }
+         else if(rc <= 0) {
++            if(rc == 0 && !sftp->channel->session->api_block_mode)
++                return LIBSSH2_ERROR_EAGAIN;
++
+             /* prevent busy-looping */
+             long left =
+                 sftp->channel->session->packet_read_timeout -
+@@ -929,6 +936,11 @@ static LIBSSH2_SFTP *sftp_init(LIBSSH2_SESSION *session)
+                 session->sftpInit_state = libssh2_NB_state_sent3;
+
+             /* if less than 9, we remain in this state to send more later on */
++            if(!rc && !session->api_block_mode) {
++                _libssh2_error(session, LIBSSH2_ERROR_EAGAIN,
++                               "Would block sending SSH_FXP_INIT");
++                return NULL;
++            }
+         }
+     }
+
+@@ -1044,7 +1056,15 @@ LIBSSH2_API LIBSSH2_SFTP *libssh2_sftp_init(LIBSSH2_SESSION *session)
+                        "session not authenticated yet");
+         return NULL;
+     }
+
++#if defined(__amigaos3__) || defined(__amigaos4__) || defined(__MORPHOS__) || defined(__AROS__)
++    {
++        int blocking = _libssh2_session_set_blocking(session, 0);
++        ptr = sftp_init(session);
++        (void)_libssh2_session_set_blocking(session, blocking);
++    }
++#else
+     BLOCK_ADJUST_ERRNO(ptr, session, sftp_init(session));
++#endif
+     return ptr;
+ }

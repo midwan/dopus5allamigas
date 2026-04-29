@@ -23,8 +23,33 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install SFTP test dependencies
+        run: sudo apt-get update && sudo apt-get install -y libssh2-1-dev pkg-config
+
       - name: Run FTP host tests
-        run: make -C source/Modules/ftp -f makefile.tests test
+        run: |
+          make -C source/Modules/ftp -f makefile.tests test
+          make -C source/Modules/ftp -f makefile.tests test-libssh2
+
+  sftp-build:
+    needs: ftp-tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { name: os3, image: "sacredbanana/amiga-compiler:m68k-amigaos" }
+          - { name: os4, image: "sacredbanana/amiga-compiler:ppc-amigaos" }
+          - { name: mos, image: "sacredbanana/amiga-compiler:ppc-morphos" }
+
+    name: sftp-build-${{ matrix.platform.name }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build FTP module with SFTP (${{ matrix.platform.name }})
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/work ${{ matrix.platform.image }} sh -c "cd /work/source/Modules/ftp && make -f makefile.${{ matrix.platform.name }} clean && make -f makefile.${{ matrix.platform.name }} sftp=yes"
 
   build:
     needs: ftp-tests
@@ -56,7 +81,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    needs: build
+    needs: [build, sftp-build]
     runs-on: ubuntu-latest
     permissions:
       contents: write

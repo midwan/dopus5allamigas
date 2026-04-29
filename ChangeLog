@@ -1,3 +1,23 @@
+[dopus5allamigas next] FTP SFTP support
+Program remains at 5.100. ftp.module bumps to v73r5.
+
+FTP / SFTP:
+- Add SFTP support backed by libssh2, including directory listing,
+  navigation, file transfer, rename, delete, mkdir/rmdir, chmod, and stat.
+- Add a protocol selector to the FTP address book and connect requester,
+  preserving Standard FTP, Explicit FTPS, or SFTP (SSH) per site.
+- Add sftp:// URL handling and PROTOCOL=SFTP / PROTO SFTP support for
+  FTPConnect and ASCII site lists.
+- Add SFTP known-hosts checking with a first-use fingerprint approval
+  requester and storage in DOpus5:System/ftp_known_hosts on Amiga targets.
+- Add abort handling for SFTP connect, listing, download, and upload paths.
+- Add host-side SFTP unit tests, optional live SFTP tests, and an Amiga
+  cross-build helper for bundled static libssh2 builds.
+- Add CI coverage for libssh2 host tests and SFTP-enabled FTP module
+  cross-builds.
+- Include third-party notices for SFTP-enabled release archives.
+2026-04-29 by Dimitris Panokostas <midwan@gmail.com>
+
 [dopus5allamigas 5.100] Explicit FTPS support and archive lister fix
 Program bumps to 5.100, library and modules to v73r4, commands remain
 at v65r1.

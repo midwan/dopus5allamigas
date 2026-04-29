@@ -2344,7 +2344,7 @@ int _getreply(struct ftp_info *info, unsigned long flags, int (*updatefn)(void *
 	else
 		iobuf = info->fi_iobuf;
 
-	if (info->fi_reply < 0)	 // not accept timeouts
+	if (info->fi_reply < 0 || (info->fi_abortsignals & SIGBREAKF_CTRL_D))	 // not accept timeouts
 	{
 		checkabort_time = 1;
 

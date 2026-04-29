@@ -212,6 +212,7 @@ endif
 	@$(COPY) bin.$(NAME)/viewfont Dopus5/C
 	@$(COPY) ../documents/*.guide Dopus5/Help
 	@$(COPY) ../documents/*.pdf Dopus5/Documents
+	@$(COPY) ../THIRD_PARTY_NOTICES.md Dopus5/Documents
 ifeq ($(log), yes)
 	@$(COPY) ../ChangeLog Dopus5
 endif

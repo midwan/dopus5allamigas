@@ -772,6 +772,9 @@ This command will add the current connected site in the SOURCE lister to the
 FTP address book.  Useful for when you have connected to a site with the
 connect requester and wish to use it again.
 
+The saved entry includes the connection type, so FTP, explicit FTPS, and SFTP
+connections can all be re-opened from the address book.
+
 Manual Ref: 5.8 - 106
 @endnode
 
@@ -785,6 +788,11 @@ DOpus5:System/ftp.config.
 
 Double click on an entry to connect or highlight the entry and select Edit
 or Delete. Select New to add new entries.
+
+Each site has a Connection setting.  Standard FTP uses the normal FTP
+protocol, Explicit FTPS uses FTP secured with TLS, and SFTP (SSH) connects
+through the SSH file transfer protocol.  SFTP entries require a user account
+and default to port 22.
 
 Select Options to show the configuration sections:-
 
@@ -844,9 +852,9 @@ Select Options to show the configuration sections:-
     standard format. However this cannot be guaranteed and some files may
     display truncated comments.
 
-The FTP module offers many extras such as site-to-site FTP and instant FTP
-access by typing paths starting with "FTP://" into listers. See your
-manual for further information.
+The FTP module offers many extras such as site-to-site FTP and instant access
+by typing paths starting with "FTP://", "FTPS://", or "SFTP://" into listers.
+See your manual for further information.
 
 Manual Ref: 5.8 - 90, 104
 @endnode
@@ -868,7 +876,8 @@ Manual Ref: 5.8 - 105
 
 @node "FTPConnect" "FTPConnect"
 FTPConnect            HOST,PORT/N/K,USER,PASSWORD=PASS,DIR/K,LISTER/N/K,
-                      SITE/K,GUI/S,NOSCAN/S,RECON/S
+                      SITE/K,GUI/S,NOSCAN/S,RECON/S,TLS/K,
+                      TLSVERIFY=VERIFY/S,NOVERIFY/S,PROTOCOL=PROTO/K
 
 Useful for connecting to sites without adding them to the address book. This
 command supports the following options:
@@ -902,9 +911,35 @@ NOSCAN/S      Causes the initial directory to not be scanned into the lister.
 RECON/S       Causes the connection to be re-established if lost for any
               reason.
 
-The FTPConnect command now accepts industry standard URL syntax such as:-
+TLS/K         Controls FTPS mode for FTP connections.  Use TLS=explicit,
+              TLS=ftps, or TLS=yes for explicit FTPS.  Use TLS=off for
+              plain FTP.
+
+TLSVERIFY=VERIFY/S
+              Verifies the FTPS server certificate when using TLS.
+
+NOVERIFY/S    Disables FTPS certificate verification for this connection.
+
+PROTOCOL=PROTO/K
+              Selects the protocol.  Valid values are FTP and SFTP.  FTPS
+              is still FTP protocol with TLS enabled, so use PROTOCOL=FTP
+              and TLS=explicit for FTPS.
+
+The FTPConnect command accepts URL syntax such as:-
 
 @{bg fill}@{fg shine} user:password\@host:port/path @{fg text}@{bg back} (all but host are optional)
+
+The "ftp://", "ftps://", and "sftp://" URL schemes may also be used.  For
+example:
+
+@{bg fill}@{fg shine} FTPConnect ftp://ftp.example.com/pub @{fg text}@{bg back}
+@{bg fill}@{fg shine} FTPConnect ftps://user:pass\@ftp.example.com/path @{fg text}@{bg back}
+@{bg fill}@{fg shine} FTPConnect sftp://user:pass\@host.example.com/home/user @{fg text}@{bg back}
+
+SFTP connections use a known-hosts file at DOpus5:System/ftp_known_hosts.
+The first connection to a host asks you to approve the displayed fingerprint
+before the key is stored there.  If the host key changes later, the connection
+is refused until the saved entry is checked or removed.
 
 * Many anonymous FTP sites have a maximum number of users.  If you attempt to
   log in to such a site without using a log window you will not see the

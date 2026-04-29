@@ -244,7 +244,7 @@ int rexx_lst_findcache(const char *opus, ULONG handle, char *path)
 // Remember to do a refresh after this
 void rexx_lst_title(const char *opus, ULONG handle, char *title)
 {
-	if (strncmp(title, "FTP:", 4))
+	if (strncmp(title, "FTP:", 4) && strncmp(title, "SFTP:", 5))
 		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu title FTP:%s", handle, title);
 	else
 		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu title %s", handle, title);
@@ -253,7 +253,7 @@ void rexx_lst_title(const char *opus, ULONG handle, char *title)
 // Remember to do a refresh after this
 char *rexx_lst_title_swap(const char *opus, ULONG handle, char *title)
 {
-	if (strncmp(title, "FTP:", 4))
+	if (strncmp(title, "FTP:", 4) && strncmp(title, "SFTP:", 5))
 		return (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister set %lu title FTP:%s", handle, title);
 	else
 		return (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister set %lu title %s", handle, title);

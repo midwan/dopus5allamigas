@@ -55,6 +55,13 @@ static unsigned int recursive_getput(endpoint *source,
 									 char *remote_path,
 									 char *local_path,
 									 unsigned int restart);
+static unsigned int recursive_getput_file(endpoint *ep,
+										  int favour,
+										  int (*updatefn)(void *, unsigned int, unsigned int),
+										  void *updateinfo,
+										  char *remote_path,
+										  char *local_path,
+										  unsigned int restart);
 static unsigned int recursive_getput_via_temp(struct hook_rec_data *hc,
 											  struct entry_info *entry,
 											  char *destname,
@@ -303,13 +310,13 @@ static int rec_retry_get(struct hook_rec_data *hc,
 		else
 			destname = entry->ei_name;
 
-		actual = get(&hc->hc_source->ep_ftpnode->fn_ftp,  // FTP info
-					 xfer_update,						  // update hook
-					 &hc->hc_ui,						  // update info
-					 entry->ei_name,					  // source name
-					 destname,							  // dest name
-					 resume								  // restart?
-		);
+		actual = recursive_getput_file(hc->hc_source,
+									   FAVOUR_GET_FILE,
+									   xfer_update,
+									   &hc->hc_ui,
+									   entry->ei_name,
+									   destname,
+									   resume);
 
 		D(bug("** GET errno=%ld, actual=%lu\n", hc->hc_source->ep_ftpnode->fn_ftp.fi_errno, actual));
 
@@ -453,13 +460,13 @@ static int rec_retry_put(struct hook_rec_data *hc, struct entry_info *entry, cha
 		else
 			stccpy(destname, entry->ei_name, PATHLEN + 1);
 
-		actual = put(&hc->hc_dest->ep_ftpnode->fn_ftp,	// FTP info
-					 xfer_update,						// update hook
-					 &hc->hc_ui,						// update info
-					 entry->ei_name,					// source name
-					 destname,							// dest name
-					 resume ? hc->hc_misc_bytes : 0		// restart position
-		);
+		actual = recursive_getput_file(hc->hc_dest,
+									   FAVOUR_PUT_FILE,
+									   xfer_update,
+									   &hc->hc_ui,
+									   destname,
+									   entry->ei_name,
+									   resume ? hc->hc_misc_bytes : 0);
 
 		D(bug("** PUT errno=%ld, actual=%lu\n", hc->hc_source->ep_ftpnode->fn_ftp.fi_errno, actual));
 
@@ -752,8 +759,66 @@ static unsigned int recursive_getput_file(endpoint *ep,
 	if (ep->ep_ftpnode->fn_ftp.fi_task == FindTask(0))
 	{
 		if (favour == FAVOUR_GET_FILE)
-			return get(&ep->ep_ftpnode->fn_ftp, updatefn, updateinfo, remote_path, local_path, restart);
+		{
+			if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+			{
+				unsigned int actual;
 
+				ep->ep_ftpnode->fn_ftp.fi_aborted = 0;
+				ep->ep_ftpnode->fn_ftp.fi_errno = 0;
+				ep->ep_ftpnode->fn_ftp.fi_ioerr = 0;
+				*ep->ep_ftpnode->fn_ftp.fi_serverr = 0;
+				actual = ftp_sftp_get(&ep->ep_ftpnode->fn_sftp,
+									  updatefn,
+									  updateinfo,
+									  remote_path,
+									  local_path,
+									  restart);
+				if (ftp_sftp_session_error(&ep->ep_ftpnode->fn_sftp) != FTP_SFTP_ERROR_NONE)
+				{
+					if (ftp_sftp_session_error(&ep->ep_ftpnode->fn_sftp) == FTP_SFTP_ERROR_ABORTED)
+						ep->ep_ftpnode->fn_ftp.fi_aborted = 1;
+					else
+					{
+						ep->ep_ftpnode->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
+						sprintf(ep->ep_ftpnode->fn_ftp.fi_serverr,
+								"550 %s\r\n",
+								ftp_sftp_error_message(&ep->ep_ftpnode->fn_sftp));
+					}
+				}
+				return actual;
+			}
+			return get(&ep->ep_ftpnode->fn_ftp, updatefn, updateinfo, remote_path, local_path, restart);
+		}
+
+		if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+		{
+			unsigned int actual;
+
+			ep->ep_ftpnode->fn_ftp.fi_aborted = 0;
+			ep->ep_ftpnode->fn_ftp.fi_errno = 0;
+			ep->ep_ftpnode->fn_ftp.fi_ioerr = 0;
+			*ep->ep_ftpnode->fn_ftp.fi_serverr = 0;
+			actual = ftp_sftp_put(&ep->ep_ftpnode->fn_sftp,
+								  updatefn,
+								  updateinfo,
+								  local_path,
+								  remote_path,
+								  restart);
+			if (ftp_sftp_session_error(&ep->ep_ftpnode->fn_sftp) != FTP_SFTP_ERROR_NONE)
+			{
+				if (ftp_sftp_session_error(&ep->ep_ftpnode->fn_sftp) == FTP_SFTP_ERROR_ABORTED)
+					ep->ep_ftpnode->fn_ftp.fi_aborted = 1;
+				else
+				{
+					ep->ep_ftpnode->fn_ftp.fi_errno |= FTPERR_XFER_DSTERR;
+					sprintf(ep->ep_ftpnode->fn_ftp.fi_serverr,
+							"550 %s\r\n",
+							ftp_sftp_error_message(&ep->ep_ftpnode->fn_sftp));
+				}
+			}
+			return actual;
+		}
 		return put(&ep->ep_ftpnode->fn_ftp, updatefn, updateinfo, local_path, remote_path, restart);
 	}
 
@@ -2591,6 +2656,31 @@ static int callback_func(struct rec_updateinfo *ui, char *line)
 	return retval;
 }
 
+static int sftp_callback_func(void *userdata, const struct ftp_sftp_entry *sftp_entry)
+{
+	struct rec_updateinfo *ui = userdata;
+	struct entry_info *entry;
+
+	if (!ui || !sftp_entry)
+		return 1;
+
+	if (!(entry = AllocVec(sizeof(struct entry_info), MEMF_CLEAR)))
+		return -10;
+
+	stccpy(entry->ei_name, sftp_entry->name, FILENAMELEN + 1);
+	entry->ei_size = sftp_entry->size;
+	entry->ei_type = sftp_entry->type;
+	entry->ei_seconds = ftp_sftp_unix_to_amiga_seconds(sftp_entry->seconds);
+	entry->ei_prot = prot_unix_to_amiga(sftp_entry->unixprot);
+	entry->ei_unixprot = sftp_entry->unixprot;
+	stccpy(entry->ei_comment, sftp_entry->comment, COMMENTLEN + 1);
+
+	AddTail(&ui->ui_list->rl_list, &entry->ei_node);
+	++ui->ui_list->rl_entry_count;
+
+	return 1;
+}
+
 static void rec_entry_list_clear(struct rec_entry_list *rel)
 {
 	struct entry_info *entry, *next;
@@ -2650,14 +2740,19 @@ struct rec_entry_list *rec_ftp_list(endpoint *ep, char *dirname)
 		ep->ep_ftpnode->fn_ftp.fi_flags |= FTP_PASSIVE;
 
 	// Call FTP LIST command
-	for (;;)
+	if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+		list_result = ftp_sftp_list(&ep->ep_ftpnode->fn_sftp, dirname, sftp_callback_func, &ui) ? 0 : -1;
+	else
 	{
-		ui.ui_ls_to_entryinfo = ep->ep_ftpnode->fn_ls_to_entryinfo;
-		list_result = list(&ep->ep_ftpnode->fn_ftp, callback_func, &ui, ep->ep_ftpnode->fn_lscmd, dirname);
-		if (list_result == -2 && lister_fallback_list_command(ep->ep_ftpnode))
-			rec_entry_list_clear(rel);
-		else
-			break;
+		for (;;)
+		{
+			ui.ui_ls_to_entryinfo = ep->ep_ftpnode->fn_ls_to_entryinfo;
+			list_result = list(&ep->ep_ftpnode->fn_ftp, callback_func, &ui, ep->ep_ftpnode->fn_lscmd, dirname);
+			if (list_result == -2 && lister_fallback_list_command(ep->ep_ftpnode))
+				rec_entry_list_clear(rel);
+			else
+				break;
+		}
 	}
 
 	if (list_result != 0)
@@ -2698,7 +2793,8 @@ int rec_ftp_cwd(endpoint *ep, char *dirname)
 
 	D(bug("FTP CWD  %s\n", dirname));
 
-	if (ftp_cwd(&ep->ep_ftpnode->fn_ftp, 0, 0, dirname) == 250)
+	if ((ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP && ftp_sftp_cwd(&ep->ep_ftpnode->fn_sftp, dirname)) ||
+		(ep->ep_ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && ftp_cwd(&ep->ep_ftpnode->fn_ftp, 0, 0, dirname) == 250))
 		return 1;
 	else
 		return 0;
@@ -2735,7 +2831,8 @@ int rec_ftp_cdup(endpoint *ep)
 
 	D(bug("FTP CDUP\n"));
 
-	if (ftp_cdup(&ep->ep_ftpnode->fn_ftp, 0, 0) == 250)
+	if ((ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP && ftp_sftp_cdup(&ep->ep_ftpnode->fn_sftp)) ||
+		(ep->ep_ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && ftp_cdup(&ep->ep_ftpnode->fn_ftp, 0, 0) == 250))
 		return 1;
 	else
 		return 0;
@@ -2801,7 +2898,10 @@ int rec_ftp_mkdir(endpoint *ep, char *dirname)
 	// D(bug( "FTP MKD  %s\n", dir->ei_name ));
 
 	// Can TIMEOUT
-	reply = ftp_mkd(&ep->ep_ftpnode->fn_ftp, dirname);
+	if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+		reply = ftp_sftp_mkdir(&ep->ep_ftpnode->fn_sftp, dirname) ? 250 : 550;
+	else
+		reply = ftp_mkd(&ep->ep_ftpnode->fn_ftp, dirname);
 
 	if (reply / 100 == COMPLETE)
 		retval = 1;
@@ -2882,7 +2982,9 @@ int rec_ftp_dele(endpoint *ep, struct entry_info *file)
 
 	D(bug("FTP DELE %s\n", file->ei_name));
 
-	if (ftp_dele(&ep->ep_ftpnode->fn_ftp, file->ei_name) == 250)
+	if ((ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP &&
+		 ftp_sftp_delete(&ep->ep_ftpnode->fn_sftp, file->ei_name)) ||
+		(ep->ep_ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && ftp_dele(&ep->ep_ftpnode->fn_ftp, file->ei_name) == 250))
 		return 1;
 	else
 		return 0;
@@ -2911,7 +3013,8 @@ int rec_ftp_rmd(endpoint *ep, struct entry_info *dir)
 
 	D(bug("FTP RMD %s\n", dir->ei_name));
 
-	if (ftp_rmd(&ep->ep_ftpnode->fn_ftp, dir->ei_name) / 100 == COMPLETE)
+	if ((ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP && ftp_sftp_rmdir(&ep->ep_ftpnode->fn_sftp, dir->ei_name)) ||
+		(ep->ep_ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && ftp_rmd(&ep->ep_ftpnode->fn_ftp, dir->ei_name) / 100 == COMPLETE))
 		return 1;
 	else
 		return 0;
@@ -2939,6 +3042,9 @@ int rec_ftp_port(endpoint *ep, struct sockaddr_in *addr, ULONG flags)
 		return rec_ask_lister_favour(FAVOUR_PORT, ep, addr, (void *)flags);
 
 	D(bug("FTP PORT\n"));
+
+	if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+		return 0;
 
 	// if	(ftp_port( &ep->ep_ftpnode->fn_ftp, flags, (char *)&addr->sin_addr, (char *)&addr->sin_port ) == 200)
 	if (ftp_port(&ep->ep_ftpnode->fn_ftp, flags, addr) == 200)
@@ -2972,6 +3078,9 @@ struct sockaddr_in *rec_ftp_pasv(endpoint *ep)
 	}
 
 	D(bug("FTP PASV\n"));
+
+	if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+		return 0;
 
 	// Send PASV command to FTP server
 	if (ftp_pasv(&ep->ep_ftpnode->fn_ftp) == 227)
@@ -3017,6 +3126,9 @@ int rec_ftp_rest(endpoint *ep, unsigned int offset)
 
 	D(bug("FTP REST %s\n", offset));
 
+	if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+		return offset == 0;
+
 	return ftpa(&ep->ep_ftpnode->fn_ftp, "REST %lu", offset);
 }
 
@@ -3044,6 +3156,9 @@ int rec_ftp_retr(endpoint *ep, char *file)
 		return rec_ask_lister_favour(FAVOUR_RETR, ep, file, 0);
 
 	D(bug("FTP RETR %s\n", file));
+
+	if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+		return 0;
 
 	reply = ftpa(&ep->ep_ftpnode->fn_ftp, "RETR %s", file);
 
@@ -3074,6 +3189,9 @@ int rec_ftp_stor(endpoint *ep, char *file)
 		return rec_ask_lister_favour(FAVOUR_STOR, ep, file, 0);
 
 	D(bug("FTP STOR %s\n", file));
+
+	if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+		return 0;
 
 	reply = ftpa(&ep->ep_ftpnode->fn_ftp, "STOR %s", file);
 
@@ -3131,6 +3249,9 @@ int rec_ftp_chmod(endpoint *ep, char *name, ULONG mode)
 
 		// Ask the appropriate lister to do it for us
 		return rec_ask_lister_favour(FAVOUR_CHMOD, ep, name, (void *)mode);
+
+	if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+		return ftp_sftp_chmod(&ep->ep_ftpnode->fn_sftp, name, mode);
 
 	if (ep->ep_ftpnode->fn_ftp.fi_flags & FTP_NO_CHMOD)
 		return 0;

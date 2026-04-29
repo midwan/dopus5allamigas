@@ -162,6 +162,7 @@ struct connect_msg
 	char cm_opus[PORTNAMELEN + 1];	// Port name of this copy of Opus (DOPUS.1, DOPUS.2, ...)
 	struct Window *cm_window;		// Window to open requester over
 	ULONG cm_handle;				// Lister handle if called with one
+	int cm_protocol;				// FTP_PROTOCOL_*
 	struct site_entry cm_site;
 };
 #ifndef __amigaos3__
@@ -175,6 +176,7 @@ struct connect_msg
 #define CONN_OPT_RECON (1 << 8)	  // Reconnecting (private)
 #define CONN_OPT_TLS_MODE (1 << 9)	  // TLS mode was specified on FTPConnect
 #define CONN_OPT_TLS_VERIFY (1 << 10)  // TLS verification was specified on FTPConnect
+#define CONN_OPT_PROTOCOL (1 << 11)	  // Protocol was specified on FTPConnect
 
 // FTPCommand flags
 #define CMD_OPT_QUIET (1 << 4)	// Don't show a result requester
