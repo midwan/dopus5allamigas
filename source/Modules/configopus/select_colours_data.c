@@ -10,7 +10,7 @@ struct TagItem _palette_box_tags[] = {{GTCustom_LayoutRel, GAD_PALETTE_LAYOUT}, 
 
 			   _palette_slider_tags[] = {{GA_RelVerify, TRUE},
 										 {GA_Immediate, TRUE},
-										 {TAG_MORE, (ULONG)_palette_box_tags}};
+										 {TAG_MORE, (IPTR)_palette_box_tags}};
 
 // Palette box objects
 ObjectDef

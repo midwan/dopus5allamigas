@@ -95,190 +95,190 @@ const static struct TagItem
 	_environment_relative_taglist[] = {{GTCustom_LayoutRel, GAD_ENVIRONMENT_EDIT_AREA}, {TAG_END, 0}},
 
 	// Screenmode selector
-	_environment_screenmode_taglist[] = {{DLV_ShowSelected, 0}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_screenmode_taglist[] = {{DLV_ShowSelected, 0}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Screen colours taglist
 	_environment_colors_taglist[] = {{GA_RelVerify, TRUE},
 									 {GA_Immediate, TRUE},
 									 {GTSL_Min, 2},
-									 {TAG_MORE, (ULONG)_environment_relative_taglist}},
+									 {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	_environment_colors_display_taglist[] = {{GTCustom_Borderless, TRUE},
 											 {GTCustom_Justify, JUSTIFY_LEFT},
-											 {TAG_MORE, (ULONG)_environment_relative_taglist}},
+											 {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Palette colour selector
-	_environment_palette_taglist[] = {{TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_palette_taglist[] = {{TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// RGB sliders
 	_environment_colour_slider_taglist[] = {{GA_RelVerify, TRUE},
 											{GA_Immediate, TRUE},
 											{GTSL_MaxLevelLen, 5},
-											{GTSL_LevelFormat, (ULONG) "%ld  "},
+											{GTSL_LevelFormat, (IPTR) "%ld  "},
 											{GTSL_LevelPlace, PLACETEXT_RIGHT},
-											{GTCustom_CallBack, (ULONG)&_palette_slider_callback},
-											{TAG_MORE, (ULONG)_environment_relative_taglist}},
+											{GTCustom_CallBack, (IPTR)&_palette_slider_callback},
+											{TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Colour count slider
-	_environment_colour_count_taglist[] = {{GTSL_Max, 8}, {TAG_MORE, (ULONG)_environment_colour_slider_taglist}},
+	_environment_colour_count_taglist[] = {{GTSL_Max, 8}, {TAG_MORE, (IPTR)_environment_colour_slider_taglist}},
 
 	// Lister colour items
-	_environment_lister_colour_taglist[] = {{DLV_ShowSelected, 0}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_lister_colour_taglist[] = {{DLV_ShowSelected, 0}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Backdrop preferences
 	_environment_buttons[] = {{GTCustom_Control, GAD_ENVIRONMENT_MAIN_WINDOW_FIELD},
-							  {DFB_DefPath, (ULONG) "env:sys/WBPattern.prefs"},
-							  {TAG_MORE, (ULONG)_environment_relative_taglist}},
+							  {DFB_DefPath, (IPTR) "env:sys/WBPattern.prefs"},
+							  {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Backdrop prefs file
-	_environment_buttons_field[] = {{GTST_MaxChars, 80}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_buttons_field[] = {{GTST_MaxChars, 80}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Themes preferences
 	_environment_themes_location[] = {{GTCustom_Control, GAD_ENVIRONMENT_THEMES_FIELD},
-									  {DFB_DefPath, (ULONG) "DOpus5:Themes/"},
-									  {TAG_MORE, (ULONG)_environment_relative_taglist}},
+									  {DFB_DefPath, (IPTR) "DOpus5:Themes/"},
+									  {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Themes location field
-	_environment_themes_field[] = {{GTST_MaxChars, 256}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_themes_field[] = {{GTST_MaxChars, 256}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Set output window name
-	_environment_output_name_tags[] = {{GTST_MaxChars, 60}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_output_name_tags[] = {{GTST_MaxChars, 60}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Set default stack
-	_environment_stack_tags[] = {{GTIN_MaxChars, 7}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_stack_tags[] = {{GTIN_MaxChars, 7}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Command line length
-	_environment_cll_tags[] = {{GTIN_MaxChars, 4}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_cll_tags[] = {{GTIN_MaxChars, 4}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Status bar text
-	_environment_status_taglist[] = {{GTST_MaxChars, 80}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_status_taglist[] = {{GTST_MaxChars, 80}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Screen title text
 	_environment_screen_title_taglist[] =
 		{
 			//		{GTST_MaxChars,120},
 			{GTST_MaxChars, 188},
-			{TAG_MORE, (ULONG)_environment_relative_taglist}},
+			{TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Screen font
 	_environment_font_taglist[] = {{GTCustom_Control, GAD_ENVIRONMENT_SCREENMODE_FONTNAME},
-								   {TAG_MORE, (ULONG)_environment_relative_taglist}},
+								   {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
-	_environment_fontname_taglist[] = {{GTST_MaxChars, 50}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_fontname_taglist[] = {{GTST_MaxChars, 50}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
-	_environment_fontsize_taglist[] = {{GTIN_MaxChars, 2}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_fontsize_taglist[] = {{GTIN_MaxChars, 2}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Hideen drives cycle
-	_environment_hidden_drives_cycle[] = {{GTCustom_LocaleLabels, (ULONG)_environment_hidden_labels},
-										  {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_hidden_drives_cycle[] = {{GTCustom_LocaleLabels, (IPTR)_environment_hidden_labels},
+										  {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Hidden drives lister
 	_environment_hidden_drives[] = {{DLV_MultiSelect, TRUE},
 									{DLV_TopJustify, 1},
-									{TAG_MORE, (ULONG)_environment_relative_taglist}},
+									{TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Lister editing
-	_environment_listeredit_taglist[] = {{GTCustom_LocaleLabels, (ULONG)_environment_listeredit_labels},
-										 {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_listeredit_taglist[] = {{GTCustom_LocaleLabels, (IPTR)_environment_listeredit_labels},
+										 {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Lister font
 	_environment_lister_font_taglist[] = {{GTCustom_Control, GAD_ENVIRONMENT_LISTER_FONTNAME},
 										  //		{GTCustom_FixedWidthOnly,TRUE},
 										  {GTCustom_CopyTags, TRUE},
-										  {TAG_MORE, (ULONG)_environment_relative_taglist}},
+										  {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Desktop popup
 	_environment_desktop_popup[] = {{GTCustom_Control, GAD_ENVIRONMENT_DESKTOP_LOCATION},
-									{TAG_MORE, (ULONG)_environment_relative_taglist}},
+									{TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Desktop folder location
-	_environment_desktop_folder[] = {{GTST_MaxChars, 240}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_desktop_folder[] = {{GTST_MaxChars, 240}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Default action
-	_environment_desktop_default[] = {{GTCustom_LocaleLabels, (ULONG)_environment_default_labels},
-									  {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_desktop_default[] = {{GTCustom_LocaleLabels, (IPTR)_environment_default_labels},
+									  {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Precision
-	_environment_precision_taglist[] = {{GTIN_MaxChars, 3}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_precision_taglist[] = {{GTIN_MaxChars, 3}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Desktop picture
 	_environment_desktop_picture[] = {{GTCustom_Control, GAD_ENVIRONMENT_PICTURE_DESK_FIELD},
-									  {TAG_MORE, (ULONG)_environment_relative_taglist}},
+									  {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Desktop picture field
-	_environment_desktop_picture_field[] = {{GTST_MaxChars, 256}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_desktop_picture_field[] = {{GTST_MaxChars, 256}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Lister picture
 	_environment_lister_picture[] = {{GTCustom_Control, GAD_ENVIRONMENT_PICTURE_LISTER_FIELD},
-									 {TAG_MORE, (ULONG)_environment_relative_taglist}},
+									 {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Lister picture field
-	_environment_lister_picture_field[] = {{GTST_MaxChars, 256}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_lister_picture_field[] = {{GTST_MaxChars, 256}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Requester picture
 	_environment_requester_picture[] = {{GTCustom_Control, GAD_ENVIRONMENT_PICTURE_REQ_FIELD},
-										{TAG_MORE, (ULONG)_environment_relative_taglist}},
+										{TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Requester picture field
-	_environment_requester_picture_field[] = {{GTST_MaxChars, 256}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_requester_picture_field[] = {{GTST_MaxChars, 256}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Maximum number of cached directories
-	_environment_caching_buffers_taglist[] = {{GTIN_MaxChars, 5}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_caching_buffers_taglist[] = {{GTIN_MaxChars, 5}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Disable caching
 	_environment_disable_caching_taglist[] = {{GTCustom_Control, GAD_SETTINGS_CACHING_MAX_BUFFERS},
-											  {TAG_MORE, (ULONG)_environment_relative_taglist}},
+											  {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Date format
-	_environment_dateformat_taglist[] = {{GTCustom_LocaleLabels, (ULONG)_environment_dateformat_labels},
-										 {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_dateformat_taglist[] = {{GTCustom_LocaleLabels, (IPTR)_environment_dateformat_labels},
+										 {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Hide method
-	_environment_hide_taglist[] = {{GTCustom_LocaleLabels, (ULONG)_environment_hidemethod_labels},
-								   {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_hide_taglist[] = {{GTCustom_LocaleLabels, (IPTR)_environment_hidemethod_labels},
+								   {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Popkey
-	_environment_popkey_taglist[] = {{GTST_MaxChars, 80}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_popkey_taglist[] = {{GTST_MaxChars, 80}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Priority
 	_environment_priority_taglist[] = {{GTIN_MaxChars, 4},
 									   {GTCustom_MinMax, (127 << 16) | ((unsigned short)-128)},
-									   {TAG_MORE, (ULONG)_environment_relative_taglist}},
+									   {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Icon settings
-	_environment_icon_settings_taglist[] = {{DLV_MultiSelect, 1}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_icon_settings_taglist[] = {{DLV_MultiSelect, 1}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Path list
 	_environment_pathlist_taglist[] = {{DLV_ShowSelected, 0},
 									   {DLV_DragNotify, 2},
-									   {TAG_MORE, (ULONG)_environment_relative_taglist}},
+									   {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Sounds
-	_environment_soundlist_taglist[] = {{DLV_ShowSelected, 0}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_soundlist_taglist[] = {{DLV_ShowSelected, 0}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	_environment_soundlist_popup_taglist[] = {{GTCustom_Control, GAD_SETTINGS_SOUNDLIST_PATH},
-											  {DFB_DefPath, (ULONG) "DOpus5:Sounds/"},
-											  {TAG_MORE, (ULONG)_environment_relative_taglist}},
+											  {DFB_DefPath, (IPTR) "DOpus5:Sounds/"},
+											  {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
-	_environment_soundlist_path_taglist[] = {{GTST_MaxChars, 255}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_soundlist_path_taglist[] = {{GTST_MaxChars, 255}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
-	_environment_volume_taglist[] = {{GTIN_MaxChars, 3}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_volume_taglist[] = {{GTIN_MaxChars, 3}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	_environment_volslider_taglist[] = {{GA_RelVerify, TRUE},
 										{GA_Immediate, TRUE},
 										{GTSL_Max, 64},
-										{TAG_MORE, (ULONG)_environment_relative_taglist}},
+										{TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Path list popup
 	_environment_pathlist_popup_taglist[] = {{GTCustom_Control, GAD_SETTINGS_PATHLIST_PATH},
-											 {TAG_MORE, (ULONG)_environment_relative_taglist}},
+											 {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
 	// Path
-	_environment_pathlist_path_taglist[] = {{GTST_MaxChars, 255}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_pathlist_path_taglist[] = {{GTST_MaxChars, 255}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
-	_environment_max_openwith_taglist[] = {{GTIN_MaxChars, 3}, {TAG_MORE, (ULONG)_environment_relative_taglist}},
+	_environment_max_openwith_taglist[] = {{GTIN_MaxChars, 3}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
-	_environment_popup_delay_taglist[] = {{GTIN_MaxChars, 2}, {TAG_MORE, (ULONG)_environment_relative_taglist}};
+	_environment_popup_delay_taglist[] = {{GTIN_MaxChars, 2}, {TAG_MORE, (IPTR)_environment_relative_taglist}};
 
 // Flags objects
 const ObjectDef _config_environment_objects[] =
@@ -1184,7 +1184,7 @@ const ObjectDef _config_environment_objects[] =
 						 BUTTON_KIND,
 						 {POS_RIGHT_JUSTIFY - 2, 1, 0, 1},
 						 {-8, 12, 26, 6},
-						 (ULONG) "?",
+						 (IPTR) "?",
 						 TEXTFLAG_TEXT_STRING | BUTTONFLAG_IMMEDIATE,
 						 GAD_ENVIRONMENT_PICTURE_DESK_PREFS,
 						 _environment_relative_taglist},
@@ -1214,7 +1214,7 @@ const ObjectDef _config_environment_objects[] =
 						 BUTTON_KIND,
 						 {POS_RIGHT_JUSTIFY - 2, 2, 0, 1},
 						 {-8, 20, 26, 6},
-						 (ULONG) "?",
+						 (IPTR) "?",
 						 TEXTFLAG_TEXT_STRING | BUTTONFLAG_IMMEDIATE,
 						 GAD_ENVIRONMENT_PICTURE_LISTER_PREFS,
 						 _environment_relative_taglist},
@@ -1244,7 +1244,7 @@ const ObjectDef _config_environment_objects[] =
 						 BUTTON_KIND,
 						 {POS_RIGHT_JUSTIFY - 2, 3, 0, 1},
 						 {-8, 28, 26, 6},
-						 (ULONG) "?",
+						 (IPTR) "?",
 						 TEXTFLAG_TEXT_STRING | BUTTONFLAG_IMMEDIATE,
 						 GAD_ENVIRONMENT_PICTURE_REQ_PREFS,
 						 _environment_relative_taglist},
@@ -1294,7 +1294,7 @@ const ObjectDef _config_environment_objects[] =
 						 BUTTON_KIND,
 						 {POS_RIGHT_JUSTIFY - 2, 7, 0, 1},
 						 {-8, 44, 26, 6},
-						 (ULONG) "_!",
+						 (IPTR) "_!",
 						 TEXTFLAG_TEXT_STRING,
 						 GAD_ENVIRONMENT_EDIT_PATTERN,
 						 _environment_relative_taglist},

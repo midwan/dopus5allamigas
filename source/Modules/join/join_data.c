@@ -54,23 +54,23 @@ struct TagItem
 
 	join_layout_tags[] = {{GTCustom_LayoutRel, GAD_JOIN_LAYOUT}, {GTCustom_CopyTags, TRUE}, {TAG_END}},
 
-	join_lister_tags[] = {{DLV_ShowSelected, 0}, {DLV_ShowFilenames, 1}, {TAG_MORE, (ULONG)join_layout_tags}},
+	join_lister_tags[] = {{DLV_ShowSelected, 0}, {DLV_ShowFilenames, 1}, {TAG_MORE, (IPTR)join_layout_tags}},
 
 	join_popup_tags[] = {{GTCustom_Control, GAD_JOIN_TO_FIELD},
-						 {DFB_DefPath, (ULONG) "ram:"},
-						 {TAG_MORE, (ULONG)join_layout_tags}},
+						 {DFB_DefPath, (IPTR) "ram:"},
+						 {TAG_MORE, (IPTR)join_layout_tags}},
 
-	join_to_tags[] = {{GTST_MaxChars, 256}, {TAG_MORE, (ULONG)join_layout_tags}},
+	join_to_tags[] = {{GTST_MaxChars, 256}, {TAG_MORE, (IPTR)join_layout_tags}},
 
-	split_from_popup_tags[] = {{GTCustom_Control, GAD_SPLIT_FROM}, {TAG_MORE, (ULONG)join_layout_tags}},
+	split_from_popup_tags[] = {{GTCustom_Control, GAD_SPLIT_FROM}, {TAG_MORE, (IPTR)join_layout_tags}},
 
-	split_to_popup_tags[] = {{GTCustom_Control, GAD_SPLIT_TO}, {TAG_MORE, (ULONG)join_layout_tags}},
+	split_to_popup_tags[] = {{GTCustom_Control, GAD_SPLIT_TO}, {TAG_MORE, (IPTR)join_layout_tags}},
 
-	split_stem_tags[] = {{GTST_MaxChars, 27}, {TAG_MORE, (ULONG)join_layout_tags}},
+	split_stem_tags[] = {{GTST_MaxChars, 27}, {TAG_MORE, (IPTR)join_layout_tags}},
 
-	split_into_tags[] = {{GTIN_MaxChars, 5}, {TAG_MORE, (ULONG)join_layout_tags}},
+	split_into_tags[] = {{GTIN_MaxChars, 5}, {TAG_MORE, (IPTR)join_layout_tags}},
 
-	split_sizes_tags[] = {{GTCustom_LocaleLabels, (ULONG)chunk_labels}, {TAG_MORE, (ULONG)join_layout_tags}};
+	split_sizes_tags[] = {{GTCustom_LocaleLabels, (IPTR)chunk_labels}, {TAG_MORE, (IPTR)join_layout_tags}};
 
 ObjectDef
 	join_objects[] =

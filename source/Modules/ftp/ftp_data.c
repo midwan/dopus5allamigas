@@ -48,16 +48,16 @@ struct TagItem
 						// The docs say 1 for drag in all directions, 2 for sideways only
 						// In reality, it's the other way around
 						{DLV_DragNotify, 2},
-						{TAG_MORE, (ULONG)ftp_main_layout_tags}},
+						{TAG_MORE, (IPTR)ftp_main_layout_tags}},
 
 	ftp_rhs_layout_tags[] = {{GTCustom_LayoutRel, GAD_FTP_SITE_LAYOUT}, {GTCustom_CopyTags, TRUE}, {TAG_DONE}},
 
 	ftp_anon_tags[] = {{GA_Disabled, TRUE},
 					   {GTCustom_NoGhost, TRUE},
 					   {GTCustom_Recessed, TRUE},
-					   {TAG_MORE, (ULONG)ftp_rhs_layout_tags}},
+					   {TAG_MORE, (IPTR)ftp_rhs_layout_tags}},
 
-	ftp_port_tags[] = {{GTCustom_Justify, JUSTIFY_CENTER}, {TAG_MORE, (ULONG)ftp_rhs_layout_tags}},
+	ftp_port_tags[] = {{GTCustom_Justify, JUSTIFY_CENTER}, {TAG_MORE, (IPTR)ftp_rhs_layout_tags}},
 
 	ftp_custom_relative_tags[] = {{GTCustom_LayoutRel, GAD_FTP_CUSTOM_LAYOUT}, {GTCustom_CopyTags, TRUE}, {TAG_DONE}},
 
@@ -65,7 +65,7 @@ struct TagItem
 	ftp_customs_options_taglist[] = {{GA_Disabled, TRUE},
 									 {GTCustom_NoGhost, TRUE},
 									 {GTCustom_Recessed, TRUE},
-									 {TAG_MORE, (ULONG)ftp_custom_relative_tags}};
+									 {TAG_MORE, (IPTR)ftp_custom_relative_tags}};
 
 #define STRHGT 6
 #define CHECKBOX_HGT 4
@@ -282,39 +282,39 @@ static struct TagItem
 	// Relative to area tags[]={
 	ftp_relative_taglist[] = {{GTCustom_LayoutRel, GAD_ENV_EDIT_AREA}, {TAG_END, 0}},
 
-	ftp_options_anon_tags[] = {{GTST_MaxChars, PASSWORDLEN}, {TAG_MORE, (ULONG)ftp_relative_taglist}},
+	ftp_options_anon_tags[] = {{GTST_MaxChars, PASSWORDLEN}, {TAG_MORE, (IPTR)ftp_relative_taglist}},
 
-	ftp_options_log_tags[] = {{GTST_MaxChars, LOGNAMELEN}, {TAG_MORE, (ULONG)ftp_relative_taglist}},
+	ftp_options_log_tags[] = {{GTST_MaxChars, LOGNAMELEN}, {TAG_MORE, (IPTR)ftp_relative_taglist}},
 
 	// string gadget for 4 chars
-	ftp_integer_field_4[] = {{GTIN_MaxChars, 4}, {TAG_MORE, (ULONG)ftp_relative_taglist}},
+	ftp_integer_field_4[] = {{GTIN_MaxChars, 4}, {TAG_MORE, (IPTR)ftp_relative_taglist}},
 
-	ftp_text_field_256[] = {{GTST_MaxChars, 256}, {TAG_MORE, (ULONG)ftp_relative_taglist}},
+	ftp_text_field_256[] = {{GTST_MaxChars, 256}, {TAG_MORE, (IPTR)ftp_relative_taglist}},
 
-	allow_resume_taglist[] = {{GTCustom_LocaleLabels, (ULONG)allow_resume_labels},
+	allow_resume_taglist[] = {{GTCustom_LocaleLabels, (IPTR)allow_resume_labels},
 							  {GTCustom_CopyTags, TRUE},
-							  {TAG_MORE, (ULONG)ftp_relative_taglist}},
+							  {TAG_MORE, (IPTR)ftp_relative_taglist}},
 
-	copy_type_taglist[] = {{GTCustom_LocaleLabels, (ULONG)copy_type_labels},
+	copy_type_taglist[] = {{GTCustom_LocaleLabels, (IPTR)copy_type_labels},
 						   {GTCustom_CopyTags, TRUE},
-						   {TAG_MORE, (ULONG)ftp_relative_taglist}},
+						   {TAG_MORE, (IPTR)ftp_relative_taglist}},
 
-	tls_mode_taglist[] = {{GTCustom_LocaleLabels, (ULONG)tls_mode_labels},
+	tls_mode_taglist[] = {{GTCustom_LocaleLabels, (IPTR)tls_mode_labels},
 						  {GTCustom_CopyTags, TRUE},
-						  {TAG_MORE, (ULONG)ftp_relative_taglist}},
+						  {TAG_MORE, (IPTR)ftp_relative_taglist}},
 
-	unklinks_taglist[] = {{GTCustom_LocaleLabels, (ULONG)unklinks_labels},
+	unklinks_taglist[] = {{GTCustom_LocaleLabels, (IPTR)unklinks_labels},
 						  {GTCustom_CopyTags, TRUE},
-						  {TAG_MORE, (ULONG)ftp_relative_taglist}},
+						  {TAG_MORE, (IPTR)ftp_relative_taglist}},
 
-	addr_dc_taglist[] = {{GTCustom_LocaleLabels, (ULONG)addr_dc_labels},
+	addr_dc_taglist[] = {{GTCustom_LocaleLabels, (IPTR)addr_dc_labels},
 						 {GTCustom_CopyTags, TRUE},
-						 {TAG_MORE, (ULONG)ftp_relative_taglist}},
+						 {TAG_MORE, (IPTR)ftp_relative_taglist}},
 
 	ftp_custom_format_taglist[] = {{GA_Disabled, TRUE},
 								   {GTCustom_NoGhost, TRUE},
 								   {GTCustom_Recessed, TRUE},
-								   {TAG_MORE, (ULONG)ftp_relative_taglist}};
+								   {TAG_MORE, (IPTR)ftp_relative_taglist}};
 
 #define LEFT_EDGE_GAD 10
 
@@ -958,23 +958,23 @@ static struct TagItem
 
 	ftp_connect_layout_tags[] = {{GTCustom_LayoutRel, GAD_CONNECT_LAYOUT}, {GTCustom_CopyTags, TRUE}, {TAG_DONE}},
 
-	ftp_connection_tags[] = {{GTCustom_LocaleLabels, (ULONG)connection_labels},
+	ftp_connection_tags[] = {{GTCustom_LocaleLabels, (IPTR)connection_labels},
 							 {GTCustom_CopyTags, TRUE},
-							 {TAG_MORE, (ULONG)ftp_connect_layout_tags}},
+							 {TAG_MORE, (IPTR)ftp_connect_layout_tags}},
 
-	ftp_connect_name_tags[] = {{GTST_MaxChars, HOSTNAMELEN}, {TAG_MORE, (ULONG)ftp_connect_layout_tags}},
+	ftp_connect_name_tags[] = {{GTST_MaxChars, HOSTNAMELEN}, {TAG_MORE, (IPTR)ftp_connect_layout_tags}},
 
 	ftp_connect_port_tags[] = {{GTIN_MaxChars, 5},
 							   {GTCustom_Justify, JUSTIFY_CENTER},
-							   {TAG_MORE, (ULONG)ftp_connect_layout_tags}},
+							   {TAG_MORE, (IPTR)ftp_connect_layout_tags}},
 
-	ftp_connect_user_tags[] = {{GTST_MaxChars, USERNAMELEN}, {TAG_MORE, (ULONG)ftp_connect_layout_tags}},
+	ftp_connect_user_tags[] = {{GTST_MaxChars, USERNAMELEN}, {TAG_MORE, (IPTR)ftp_connect_layout_tags}},
 
 	ftp_connect_pass_tags[] = {{GTST_MaxChars, PASSWORDLEN},
 							   {GTCustom_Secure, TRUE},
-							   {TAG_MORE, (ULONG)ftp_connect_layout_tags}},
+							   {TAG_MORE, (IPTR)ftp_connect_layout_tags}},
 
-	ftp_connect_dir_tags[] = {{GTST_MaxChars, PATHLEN}, {TAG_MORE, (ULONG)ftp_connect_layout_tags}};
+	ftp_connect_dir_tags[] = {{GTST_MaxChars, PATHLEN}, {TAG_MORE, (IPTR)ftp_connect_layout_tags}};
 
 ObjectDef
 
@@ -1127,9 +1127,9 @@ static struct TagItem
 	edit_custom_relative_tags[] = {{GTCustom_LayoutRel, GAD_EDIT_CUSTOM_LAYOUT}, {GTCustom_CopyTags, TRUE}, {TAG_DONE}},
 
 	//
-	edit_custom_options_taglist[] = {{GTCustom_LocaleLabels, (ULONG)custom_options_labels},
+	edit_custom_options_taglist[] = {{GTCustom_LocaleLabels, (IPTR)custom_options_labels},
 									 {GTCustom_CopyTags, TRUE},
-									 {TAG_MORE, (ULONG)edit_custom_relative_tags}};
+									 {TAG_MORE, (IPTR)edit_custom_relative_tags}};
 
 ObjectDef
 

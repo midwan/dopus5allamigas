@@ -36,27 +36,27 @@ struct TagItem diskinfo_layout[] = {{GTCustom_LayoutRel, DISKINFO_LAYOUT}, {TAG_
 
 			   button_tags[] = {{GTCustom_ThinBorders, TRUE}, {TAG_END}},
 
-			   name_tags[] = {{GTST_MaxChars, 31}, {GTCustom_PathFilter, 1}, {TAG_MORE, (ULONG)diskinfo_layout}},
+			   name_tags[] = {{GTST_MaxChars, 31}, {GTCustom_PathFilter, 1}, {TAG_MORE, (IPTR)diskinfo_layout}},
 
-			   key_tags[] = {{GTCustom_LayoutPos, GAD_NAME}, {TAG_MORE, (ULONG)diskinfo_layout}},
+			   key_tags[] = {{GTCustom_LayoutPos, GAD_NAME}, {TAG_MORE, (IPTR)diskinfo_layout}},
 
 			   handler_tags[] = {{GTCustom_Borderless, TRUE},
 								 {GTCustom_Justify, JUSTIFY_LEFT},
-								 {TAG_MORE, (ULONG)key_tags}},
+								 {TAG_MORE, (IPTR)key_tags}},
 
 			   space_tags[] = {{GTCustom_Borderless, TRUE},
 							   {GTCustom_Justify, JUSTIFY_RIGHT},
-							   {TAG_MORE, (ULONG)key_tags}},
+							   {TAG_MORE, (IPTR)key_tags}},
 
 			   errors_tags[] = {{GTCustom_Borderless, TRUE},
 								{GTCustom_Justify, JUSTIFY_RIGHT},
-								{TAG_MORE, (ULONG)diskinfo_layout}},
+								{TAG_MORE, (IPTR)diskinfo_layout}},
 
-			   used_mb_tags[] = {{GTCustom_LayoutPos, GAD_USED}, {TAG_MORE, (ULONG)errors_tags}},
+			   used_mb_tags[] = {{GTCustom_LayoutPos, GAD_USED}, {TAG_MORE, (IPTR)errors_tags}},
 
-			   free_mb_tags[] = {{GTCustom_LayoutPos, GAD_FREE}, {TAG_MORE, (ULONG)errors_tags}},
+			   free_mb_tags[] = {{GTCustom_LayoutPos, GAD_FREE}, {TAG_MORE, (IPTR)errors_tags}},
 
-			   capacity_mb_tags[] = {{GTCustom_LayoutPos, GAD_CAPACITY}, {TAG_MORE, (ULONG)errors_tags}};
+			   capacity_mb_tags[] = {{GTCustom_LayoutPos, GAD_CAPACITY}, {TAG_MORE, (IPTR)errors_tags}};
 
 // Disk info objects
 ObjectDef diskinfo_objects[] = {

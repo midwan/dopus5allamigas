@@ -65,11 +65,11 @@ const struct TagItem
 
 	_filetype_action_list_tags[] = {{DLV_ShowChecks, 2},
 									{DLV_ShowSelected, 0},
-									{TAG_MORE, (ULONG)_filetype_function_rel}},
+									{TAG_MORE, (IPTR)_filetype_function_rel}},
 
 	_filetype_icon_menu_tags[] = {{DLV_ShowSelected, 1},
 								  {DLV_DragNotify, 1},
-								  {TAG_MORE, (ULONG)_filetype_function_rel}},
+								  {TAG_MORE, (IPTR)_filetype_function_rel}},
 
 	_classed_name_tags[] = {{GTST_MaxChars, 31}, {TAG_END}},
 

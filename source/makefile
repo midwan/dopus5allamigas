@@ -11,6 +11,7 @@ export debug
 ###########################################################
 # Export arch to select the AROS architecture
 export arch
+PYTHON ?= python3
 ###########################################################
 # Example Commands:
 
@@ -24,12 +25,12 @@ export arch
 # Compiles debug version of dopus5 components for OS3 & creates
 # release archive.
 
-# make i386-aros release debug=no
-# Compiles normal version of dopus5 components for i386-AROS & creates
+# make x86_64-aros release debug=no
+# Compiles normal version of dopus5 components for x86_64-AROS & creates
 # release archive.
 ###########################################################
 # Read platform arguments from the "Make" command line:
-# Acceptable platform arguments are os3, os4, mos, i386-aros or arm-aros.
+# Acceptable platform arguments are os3, os4, mos, i386-aros or x86_64-aros.
 PLATFORM:= none
 NAME:=
 ifeq ($(findstring os3, $(MAKECMDGOALS)),os3)
@@ -44,26 +45,26 @@ ifeq ($(findstring mos, $(MAKECMDGOALS)),mos)
 	PLATFORM:= mos
 	NAME:= $(PLATFORM) $(NAME)
 endif
-ifeq ($(findstring arm, $(MAKECMDGOALS)),arm)
-	PLATFORM:= aros
-	arch:= arm
-	NAME:= $(arch)-$(PLATFORM) $(NAME)
-endif
 ifeq ($(findstring i386-aros, $(MAKECMDGOALS)),i386-aros)
 	PLATFORM:= aros
 	arch:= i386
+	NAME:= $(arch)-$(PLATFORM) $(NAME)
+endif
+ifeq ($(findstring x86_64-aros, $(MAKECMDGOALS)),x86_64-aros)
+	PLATFORM:= aros
+	arch:= x86_64
 	NAME:= $(arch)-$(PLATFORM) $(NAME)
 endif
 NAME := $(strip $(NAME))
 
 # Generate error if no platform entered on "Make" command line.
 ifeq ($(PLATFORM), none)
-$(error Error: Enter a platform (os3, os4, mos, arm-aros or i386-aros).)
+$(error Error: Enter a platform (os3, os4, mos, i386-aros or x86_64-aros).)
 endif
 
 #Generate error if multiple platforms entered on "Make" command line.
 ifneq ($(words $(NAME)), 1)
-$(error Error: Enter only 1 platform (os3, os4, mos, arm-aros or i386-aros).)
+$(error Error: Enter only 1 platform (os3, os4, mos, i386-aros or x86_64-aros).)
 endif
 
 # Compile all if only a platform is entered on "Make" command line.
@@ -193,7 +194,10 @@ clean-commands:
 ###########################################################
 
 .PHONY : release
-release: all
+release: all release-package
+
+.PHONY : release-package
+release-package:
 	@echo " "
 	@echo ">>>>>Creating release archive: Dopus5$(VERSION)$(NAME)$(TYPE).lha"
 	@$(REMOVE) $(RELEASE_DIR)
@@ -246,14 +250,18 @@ clean-release: cleanall
 # commands when entered as a goal for "make"
 # on the command line (like: make os3).
 
-.PHONY : os3 os4 mos aros i386-aros arm-aros
+.PHONY : os3 os4 mos aros i386-aros x86_64-aros
 i386-aros: mos
-arm-aros: mos
+x86_64-aros: mos
 os3: mos
 os4: mos
 aros: mos
 mos:
 	-@sh -c "echo -n"
+
+.PHONY: aros-void-headers
+aros-void-headers:
+	$(PYTHON) Include/defines/patch_aros_voidcalls.py
 
 .PHONY: Include/inline/dopus5.h
 
@@ -267,5 +275,5 @@ Include/inline/configopus.h: Include/fd/configopus.fd Include/clib/configopus_pr
 		fd2sfd Include/fd/configopus.fd Include/clib/configopus_protos.h Include/fd/configopus.sfd
 		sfdc --output=Include/inline/configopus.h --target=m68k-amigaos --mode=macros Include/fd/configopus.sfd
 
-headers: Include/inline/dopus5.h Include/inline/configopus.h
+headers: Include/inline/dopus5.h Include/inline/configopus.h aros-void-headers
 

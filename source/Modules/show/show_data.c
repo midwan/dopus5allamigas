@@ -42,17 +42,17 @@ struct TagItem info_layout[] = {{GTCustom_LayoutRel, GAD_INFO_AREA}, {TAG_END}},
 
 			   print_layout[] = {{GTCustom_LayoutRel, GAD_PRINT_AREA}, {TAG_END}},
 
-			   print_aspect_tags[] = {{GTCustom_LocaleLabels, (ULONG)print_aspect_labels},
-									  {TAG_MORE, (ULONG)print_layout}},
+			   print_aspect_tags[] = {{GTCustom_LocaleLabels, (IPTR)print_aspect_labels},
+									  {TAG_MORE, (IPTR)print_layout}},
 
-			   print_image_tags[] = {{GTCustom_LocaleLabels, (ULONG)print_image_labels},
-									 {TAG_MORE, (ULONG)print_layout}},
+			   print_image_tags[] = {{GTCustom_LocaleLabels, (IPTR)print_image_labels},
+									 {TAG_MORE, (IPTR)print_layout}},
 
-			   print_shade_tags[] = {{GTCustom_LocaleLabels, (ULONG)print_shade_labels},
-									 {TAG_MORE, (ULONG)print_layout}},
+			   print_shade_tags[] = {{GTCustom_LocaleLabels, (IPTR)print_shade_labels},
+									 {TAG_MORE, (IPTR)print_layout}},
 
-			   print_placement_tags[] = {{GTCustom_LocaleLabels, (ULONG)print_placement_labels},
-										 {TAG_MORE, (ULONG)print_layout}};
+			   print_placement_tags[] = {{GTCustom_LocaleLabels, (IPTR)print_placement_labels},
+										 {TAG_MORE, (IPTR)print_layout}};
 
 ObjectDef
 	picture_info_objects[] =

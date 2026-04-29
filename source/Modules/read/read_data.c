@@ -74,7 +74,7 @@ const ConfigWindow search_window = {{POS_CENTER, POS_CENTER, 48, 5}, {0, 0, 0, 4
 
 const struct TagItem search_layout[] = {{GTCustom_LayoutRel, GAD_SEARCH_LAYOUT}, {TAG_DONE}},
 
-					 search_text_tags[] = {{GTST_MaxChars, 80}, {TAG_MORE, (ULONG)search_layout}};
+					 search_text_tags[] = {{GTST_MaxChars, 80}, {TAG_MORE, (IPTR)search_layout}};
 
 const ObjectDef search_objects[] = {
 

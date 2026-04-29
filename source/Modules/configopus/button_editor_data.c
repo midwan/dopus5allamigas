@@ -36,21 +36,21 @@ const struct TagItem
 	_button_editor_functions[] = {{DLV_ShowSelected, TRUE},
 								  {DLV_DragNotify, 1},
 								  {DLV_ShowChecks, 2},
-								  {TAG_MORE, (ULONG)_button_editor_function_layout}},
+								  {TAG_MORE, (IPTR)_button_editor_function_layout}},
 
 	_button_editor_name[] = {{GTST_MaxChars, 255},
 							 {GTCustom_ThinBorders, TRUE},
-							 {TAG_MORE, (ULONG)_button_editor_function_layout}},
+							 {TAG_MORE, (IPTR)_button_editor_function_layout}},
 
 	_button_editor_label[] = {{GTST_MaxChars, 255},
-							  {GTCustom_CallBack, (ULONG)button_editor_task_callback},
-							  {GTCustom_CallBack, (ULONG)button_editor_bit_callback},
+							  {GTCustom_CallBack, (IPTR)button_editor_task_callback},
+							  {GTCustom_CallBack, (IPTR)button_editor_bit_callback},
 							  {GTCustom_ThinBorders, TRUE},
-							  {TAG_MORE, (ULONG)_button_editor_function_layout}},
+							  {TAG_MORE, (IPTR)_button_editor_function_layout}},
 
 	_button_editor_image[] = {{GTCustom_Control, GAD_BUTTONED_LABEL},
-							  {DFB_DefPath, (ULONG) "dopus5:images/"},
-							  {TAG_MORE, (ULONG)_button_editor_function_layout}};
+							  {DFB_DefPath, (IPTR) "dopus5:images/"},
+							  {TAG_MORE, (IPTR)_button_editor_function_layout}};
 
 // Button editor objects
 const ObjectDef _button_editor_objects[] =

@@ -32,9 +32,9 @@ search_labels[] = {MSG_SEARCH_PROMPT, MSG_SEARCH_LEAVE_SELECTED, MSG_SEARCH_OUTP
 // Tags
 struct TagItem search_layout[] = {{GTCustom_LayoutRel, GAD_SEARCH_LAYOUT}, {TAG_DONE}},
 
-			   search_text_tags[] = {{GTST_MaxChars, 80}, {TAG_MORE, (ULONG)search_layout}},
+			   search_text_tags[] = {{GTST_MaxChars, 80}, {TAG_MORE, (IPTR)search_layout}},
 
-			   search_result_tags[] = {{GTCustom_LocaleLabels, (ULONG)search_labels}, {TAG_MORE, (ULONG)search_layout}};
+			   search_result_tags[] = {{GTCustom_LocaleLabels, (IPTR)search_labels}, {TAG_MORE, (IPTR)search_layout}};
 
 // Search objects
 ObjectDef search_objects[] = {

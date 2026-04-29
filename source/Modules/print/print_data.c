@@ -51,24 +51,24 @@ static struct TagItem
 
 	header_layout[] = {{GTCustom_LayoutRel, GAD_PRINT_HEADER_LAYOUT}, {TAG_END}},
 
-	print_quality[] = {{GTCustom_LocaleLabels, (ULONG)print_quality_labels}, {TAG_MORE, (ULONG)text_layout}},
+	print_quality[] = {{GTCustom_LocaleLabels, (IPTR)print_quality_labels}, {TAG_MORE, (IPTR)text_layout}},
 
-	print_spacing[] = {{GTCustom_LocaleLabels, (ULONG)print_spacing_labels}, {TAG_MORE, (ULONG)text_layout}},
+	print_spacing[] = {{GTCustom_LocaleLabels, (IPTR)print_spacing_labels}, {TAG_MORE, (IPTR)text_layout}},
 
-	print_pitch[] = {{GTCustom_LocaleLabels, (ULONG)print_pitch_labels}, {TAG_MORE, (ULONG)text_layout}},
+	print_pitch[] = {{GTCustom_LocaleLabels, (IPTR)print_pitch_labels}, {TAG_MORE, (IPTR)text_layout}},
 
-	print_margin[] = {{GTIN_MaxChars, 3}, {TAG_MORE, (ULONG)text_layout}},
+	print_margin[] = {{GTIN_MaxChars, 3}, {TAG_MORE, (IPTR)text_layout}},
 
-	print_tab_size[] = {{GTIN_MaxChars, 1}, {TAG_MORE, (ULONG)text_layout}},
+	print_tab_size[] = {{GTIN_MaxChars, 1}, {TAG_MORE, (IPTR)text_layout}},
 
-	print_output[] = {{GTCustom_LocaleLabels, (ULONG)print_output_labels}, {TAG_MORE, (ULONG)text_layout}},
+	print_output[] = {{GTCustom_LocaleLabels, (IPTR)print_output_labels}, {TAG_MORE, (IPTR)text_layout}},
 
-	print_header_footer_tags[] = {{GTCustom_LocaleLabels, (ULONG)print_header_footer_labels},
-								  {TAG_MORE, (ULONG)header_layout}},
+	print_header_footer_tags[] = {{GTCustom_LocaleLabels, (IPTR)print_header_footer_labels},
+								  {TAG_MORE, (IPTR)header_layout}},
 
-	print_title[] = {{GTST_MaxChars, 40}, {TAG_MORE, (ULONG)header_layout}},
+	print_title[] = {{GTST_MaxChars, 40}, {TAG_MORE, (IPTR)header_layout}},
 
-	print_style[] = {{GTCustom_LocaleLabels, (ULONG)print_style_labels}, {TAG_MORE, (ULONG)header_layout}};
+	print_style[] = {{GTCustom_LocaleLabels, (IPTR)print_style_labels}, {TAG_MORE, (IPTR)header_layout}};
 
 ObjectDef print_objects[] = {
 

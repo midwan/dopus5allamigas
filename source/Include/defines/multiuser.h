@@ -7,6 +7,8 @@
 	#include <aros/libcall.h>
 #endif /* !AROS_LIBCALL_H */
 
+#include <defines/aros_voidcall.h>
+
 #include <aros/preprocessor/variadic/cast2iptr.hpp>
 
 #ifndef MULTIUSER_BASE_NAME
@@ -38,12 +40,12 @@
 #endif /* !NO_INLINE_STDARG */
 
 #define muFreeExtOwner(___info)                                                                                        \
-	AROS_LC1(                                                                                                          \
-		void, muFreeExtOwner, AROS_LCA(struct muExtOwner *, (___info), A0), struct Library *, MULTIUSER_BASE_NAME, 22, \
+	AROS_VOID_LC1(                                                                                                          \
+		 muFreeExtOwner, AROS_LCA(struct muExtOwner *, (___info), A0), struct Library *, MULTIUSER_BASE_NAME, 22, \
 		/* s */)
 
 #define muFreeGroupInfo(___info)                            \
-	AROS_LC1(void,                                          \
+	AROS_VOID_LC1(                                          \
 			 muFreeGroupInfo,                               \
 			 AROS_LCA(struct muGroupInfo *, (___info), A0), \
 			 struct Library *,                              \
@@ -52,8 +54,8 @@
 			 /* s */)
 
 #define muFreeUserInfo(___info)                                                                                        \
-	AROS_LC1(                                                                                                          \
-		void, muFreeUserInfo, AROS_LCA(struct muUserInfo *, (___info), A0), struct Library *, MULTIUSER_BASE_NAME, 10, \
+	AROS_VOID_LC1(                                                                                                          \
+		 muFreeUserInfo, AROS_LCA(struct muUserInfo *, (___info), A0), struct Library *, MULTIUSER_BASE_NAME, 10, \
 		/* s */)
 
 #define muFreeze(___task)                                                                                            \
@@ -163,8 +165,8 @@
 			 /* s */)
 
 #define muRemMonitor(___monitor)                                                                                       \
-	AROS_LC1(                                                                                                          \
-		void, muRemMonitor, AROS_LCA(struct muMonitor *, (___monitor), A0), struct Library *, MULTIUSER_BASE_NAME, 29, \
+	AROS_VOID_LC1(                                                                                                          \
+		 muRemMonitor, AROS_LCA(struct muMonitor *, (___monitor), A0), struct Library *, MULTIUSER_BASE_NAME, 29, \
 		/* s */)
 
 #define muSetDefProtectionA(___taglist)                    \

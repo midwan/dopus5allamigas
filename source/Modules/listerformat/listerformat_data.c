@@ -48,17 +48,17 @@ struct TagItem
 	lister_selitems_taglist[] = {{DLV_ShowSelected, 0},
 								 {DLV_Check, 1},
 								 {DLV_DragNotify, 2},
-								 {TAG_MORE, (ULONG)lister_relative_taglist}},
+								 {TAG_MORE, (IPTR)lister_relative_taglist}},
 
 	// Available display items lister
-	lister_items_taglist[] = {{DLV_DragNotify, 2}, {TAG_MORE, (ULONG)lister_relative_taglist}},
+	lister_items_taglist[] = {{DLV_DragNotify, 2}, {TAG_MORE, (IPTR)lister_relative_taglist}},
 
 	// Filter
-	lister_filter_taglist[] = {{GTST_MaxChars, 39}, {TAG_MORE, (ULONG)lister_relative_taglist}},
+	lister_filter_taglist[] = {{GTST_MaxChars, 39}, {TAG_MORE, (IPTR)lister_relative_taglist}},
 
 	// Separation method
-	lister_separation_taglist[] = {{GTCustom_LocaleLabels, (ULONG)lister_separation_labels},
-								   {TAG_MORE, (ULONG)lister_relative_taglist}};
+	lister_separation_taglist[] = {{GTCustom_LocaleLabels, (IPTR)lister_separation_labels},
+								   {TAG_MORE, (IPTR)lister_relative_taglist}};
 
 // Lister window gadgets
 ObjectDef listformat_objects[] =

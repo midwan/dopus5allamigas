@@ -32,9 +32,9 @@ struct TagItem
 
 	diskcopy_layout_tags[] = {{GTCustom_LayoutRel, GAD_DISKCOPY_LAYOUT}, {TAG_DONE}},
 
-	diskcopy_source_tags[] = {{DLV_ShowSelected, 0}, {DLV_Check, 1}, {TAG_MORE, (ULONG)&diskcopy_layout_tags}},
+	diskcopy_source_tags[] = {{DLV_ShowSelected, 0}, {DLV_Check, 1}, {TAG_MORE, (IPTR)&diskcopy_layout_tags}},
 
-	diskcopy_dest_tags[] = {{DLV_MultiSelect, 1}, {TAG_MORE, (ULONG)&diskcopy_layout_tags}};
+	diskcopy_dest_tags[] = {{DLV_MultiSelect, 1}, {TAG_MORE, (IPTR)&diskcopy_layout_tags}};
 
 ObjectDef diskcopy_objects[] = {
 

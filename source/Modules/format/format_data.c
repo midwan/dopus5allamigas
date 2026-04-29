@@ -32,9 +32,9 @@ struct TagItem
 
 	format_layout_tags[] = {{GTCustom_LayoutRel, GAD_FORMAT_LAYOUT}, {TAG_DONE}},
 
-	format_devices_tags[] = {{DLV_ShowSelected, 0}, {TAG_MORE, (ULONG)&format_layout_tags}},
+	format_devices_tags[] = {{DLV_ShowSelected, 0}, {TAG_MORE, (IPTR)&format_layout_tags}},
 
-	format_name_tags[] = {{GTST_MaxChars, 30}, {TAG_MORE, (ULONG)&format_layout_tags}};
+	format_name_tags[] = {{GTST_MaxChars, 30}, {TAG_MORE, (IPTR)&format_layout_tags}};
 
 ObjectDef format_objects[] = {
 
