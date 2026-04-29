@@ -974,7 +974,13 @@ static int ftp_sftp_known_hosts_check_file(struct ftp_sftp_session *session,
 		BPTR file = Open((char *)path, MODE_OLDFILE);
 
 		if (!file)
-			return 1;
+		{
+			if (IoErr() == ERROR_OBJECT_NOT_FOUND)
+				return 1;
+
+			ftp_sftp_set_host_detail(session, "Could not read SFTP known-hosts file: ", path);
+			return 0;
+		}
 
 		while (FGets(file, line, sizeof(line)))
 		{
@@ -1001,7 +1007,13 @@ static int ftp_sftp_known_hosts_check_file(struct ftp_sftp_session *session,
 		FILE *file = fopen(path, "r");
 
 		if (!file)
-			return 1;
+		{
+			if (errno == ENOENT)
+				return 1;
+
+			ftp_sftp_set_host_detail(session, "Could not read SFTP known-hosts file: ", path);
+			return 0;
+		}
 
 		while (fgets(line, sizeof(line), file))
 		{
@@ -1027,6 +1039,13 @@ static int ftp_sftp_known_hosts_check_file(struct ftp_sftp_session *session,
 
 	return 1;
 }
+
+#if defined(FTP_SFTP_TESTING)
+int ftp_sftp_test_known_hosts_check_file(struct ftp_sftp_session *session, const char *path, int *matched)
+{
+	return ftp_sftp_known_hosts_check_file(session, path, "example.com", 22, 1, "abcdef", matched);
+}
+#endif
 
 static int ftp_sftp_known_hosts_append(const char *path, const char *host, int port, int key_type, const char *key_hex)
 {

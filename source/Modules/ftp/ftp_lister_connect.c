@@ -60,6 +60,7 @@ struct connect_log_data
 	ULONG cld_handle;
 	struct connect_msg *cld_cm;
 	char *cld_errmsg;
+	char cld_sftp_errmsg[FTP_SFTP_ERROR_BUFSIZE + 1];
 	int cld_okay;
 	int cld_aborted;
 	ULONG cld_flags;  // The flags field of the connect IPCMessage
@@ -239,6 +240,26 @@ static int lister_sftp_connect_error_is_fatal(struct ftp_node *node, int error)
 	}
 
 	return 0;
+}
+
+static void lister_sftp_set_connect_error(struct connect_log_data *cld, const char *message)
+{
+	size_t len;
+
+	if (!cld)
+		return;
+
+	if (!message)
+		message = "";
+
+	len = strlen(message);
+	if (len > FTP_SFTP_ERROR_BUFSIZE)
+		len = FTP_SFTP_ERROR_BUFSIZE;
+
+	if (len)
+		memcpy(cld->cld_sftp_errmsg, message, len);
+	cld->cld_sftp_errmsg[len] = 0;
+	cld->cld_errmsg = cld->cld_sftp_errmsg;
 }
 
 //
@@ -618,7 +639,7 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 				const char *sftp_message = ftp_sftp_error_message(&node->fn_sftp);
 				int sftp_error = ftp_sftp_session_error(&node->fn_sftp);
 
-				cld->cld_errmsg = (char *)sftp_message;
+				lister_sftp_set_connect_error(cld, sftp_message);
 				if (node->fn_flags & LST_ABORT)
 					errno = EINTR;
 
@@ -810,7 +831,7 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 			if (!ftp_sftp_cwd(&node->fn_sftp, node->fn_site.se_path))
 			{
 				cld->cld_okay = FALSE;
-				cld->cld_errmsg = (char *)ftp_sftp_error_message(&node->fn_sftp);
+				lister_sftp_set_connect_error(cld, ftp_sftp_error_message(&node->fn_sftp));
 			}
 		}
 

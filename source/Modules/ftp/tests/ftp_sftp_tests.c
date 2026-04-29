@@ -29,6 +29,7 @@ int ftp_sftp_test_known_hosts_check_line(char *line,
 										 int port,
 										 int key_type,
 										 const char *key_hex);
+int ftp_sftp_test_known_hosts_check_file(struct ftp_sftp_session *session, const char *path, int *matched);
 #endif
 
 static void check_true(const char *name, int value)
@@ -192,6 +193,29 @@ static void test_known_hosts_lines(void)
 	check_int("known hosts malformed line",
 			  ftp_sftp_test_known_hosts_check_line(line, "example.com", 22, 1, "abcdef"),
 			  0);
+}
+
+static void test_known_hosts_files(void)
+{
+	static const char detail_prefix[] = "Could not read SFTP known-hosts file: ";
+	struct ftp_sftp_session session;
+	char bad_path[8192];
+	int matched = 123;
+
+	ftp_sftp_session_init(&session);
+	check_true("known hosts missing file allowed",
+			   ftp_sftp_test_known_hosts_check_file(&session, "/tmp/dopus5-sftp-missing-known-hosts", &matched));
+	check_int("known hosts missing file unmatched", matched, 0);
+	check_string("known hosts missing file detail", session.last_detail, "");
+
+	memset(bad_path, 'x', sizeof(bad_path) - 1);
+	bad_path[0] = '/';
+	bad_path[sizeof(bad_path) - 1] = 0;
+
+	matched = 123;
+	check_false("known hosts open error fails", ftp_sftp_test_known_hosts_check_file(&session, bad_path, &matched));
+	check_int("known hosts open error unmatched", matched, 0);
+	check_true("known hosts open error detail", !strncmp(session.last_detail, detail_prefix, strlen(detail_prefix)));
 }
 #endif
 
@@ -450,6 +474,7 @@ int main(void)
 #if defined(FTP_SFTP_BACKEND_LIBSSH2)
 	#if defined(FTP_SFTP_TESTING)
 	test_known_hosts_lines();
+	test_known_hosts_files();
 	#endif
 	test_connect_abort_callback();
 #endif
