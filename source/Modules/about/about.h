@@ -39,7 +39,7 @@ typedef struct
 	short height;
 	short depth;
 	short planesize;
-	const UWORD *imagedata;
+	UWORD *imagedata;
 	ULONG *palette;
 } image_data;
 #ifndef __amigaos3__
@@ -51,13 +51,13 @@ typedef struct
 
 extern const ConfigWindow about_window;
 extern const ObjectDef about_objects[];
-extern const UWORD logo_image[logo_frames][472];
+extern UWORD logo_image[logo_frames][472];
 
 extern APTR logo_obj[logo_frames];
 extern const image_data images[image_count];
 extern ImageRemap remap;
 
-extern FAR const UWORD jon_data[], greg_data[], leo_data[], andrew_data[], ben_data[], juggler_data[], tick_data[],
+extern FAR UWORD jon_data[], greg_data[], leo_data[], andrew_data[], ben_data[], juggler_data[], tick_data[],
 	coopers_data[], bill_data[], thomas_data[], frederic_data[], john_data[], trevor_data[], ash_data[], harv_data[],
 	martin_data[], dave_data[];
 extern const ULONG jon_palette[], greg_palette[], leo_palette[], andrew_palette[], ben_palette[], juggler_palette[],
