@@ -109,6 +109,6 @@ typedef struct
 	#pragma pack()
 #endif
 
-extern const unsigned char about_message[];
+extern unsigned char about_message[];
 
 #endif

@@ -151,6 +151,10 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 	remap.ir_PenArray = 0;
 	data.message = 0;
 	data.trans_info = 0;
+	data.text_reg = 0;
+	data.text_line = 0;
+	data.text_len = 0;
+	data.text_size = 0;
 
 	// Get dimensions
 	dims = about_window;
