@@ -10,11 +10,11 @@ struct TagItem _lister_menu_layout[] = {{GTCustom_CopyTags, 1},
 
 			   _lister_menu_items[] = {{DLV_ShowSelected, 0},
 									   {DLV_DragNotify, 2},
-									   {TAG_MORE, (ULONG)&_lister_menu_layout}},
+									   {TAG_MORE, (IPTR)&_lister_menu_layout}},
 
-			   script_list_items[] = {{DLV_ShowSelected, 0}, {TAG_MORE, (ULONG)&_lister_menu_layout}},
+			   script_list_items[] = {{DLV_ShowSelected, 0}, {TAG_MORE, (IPTR)&_lister_menu_layout}},
 
-			   _lister_menu_name[] = {{GTST_MaxChars, 64}, {TAG_MORE, (ULONG)&_lister_menu_layout}};
+			   _lister_menu_name[] = {{GTST_MaxChars, 64}, {TAG_MORE, (IPTR)&_lister_menu_layout}};
 
 ObjectDef hotkeys_objects[] =
 	{

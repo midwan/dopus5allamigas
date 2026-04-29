@@ -38,19 +38,19 @@ struct TagItem
 	path_relative_taglist[] = {{GTCustom_LayoutRel, GAD_PATHFORMAT_LAYOUT}, {TAG_END, 0}},
 
 	// Path lister
-	path_lister_taglist[] = {{DLV_ShowSelected, 0}, {TAG_MORE, (ULONG)path_relative_taglist}},
+	path_lister_taglist[] = {{DLV_ShowSelected, 0}, {TAG_MORE, (IPTR)path_relative_taglist}},
 
 	// Path folder
-	path_folder_taglist[] = {{GTCustom_Control, GAD_PATHFORMAT_PATH}, {TAG_MORE, (ULONG)path_relative_taglist}},
+	path_folder_taglist[] = {{GTCustom_Control, GAD_PATHFORMAT_PATH}, {TAG_MORE, (IPTR)path_relative_taglist}},
 
 	// Key
-	path_key_taglist[] = {{GTST_MaxChars, 80}, {TAG_MORE, (ULONG)path_relative_taglist}},
+	path_key_taglist[] = {{GTST_MaxChars, 80}, {TAG_MORE, (IPTR)path_relative_taglist}},
 
 	// Path
-	path_path_taglist[] = {{GTST_MaxChars, 256}, {TAG_MORE, (ULONG)path_relative_taglist}},
+	path_path_taglist[] = {{GTST_MaxChars, 256}, {TAG_MORE, (IPTR)path_relative_taglist}},
 
 	// Mode
-	path_mode_taglist[] = {{GTCustom_LocaleLabels, (ULONG)mode_labels}, {TAG_MORE, (ULONG)path_relative_taglist}};
+	path_mode_taglist[] = {{GTCustom_LocaleLabels, (IPTR)mode_labels}, {TAG_MORE, (IPTR)path_relative_taglist}};
 
 // Path window gadgets
 ObjectDef pathformat_objects[] = {

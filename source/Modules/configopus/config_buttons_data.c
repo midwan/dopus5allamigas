@@ -22,26 +22,26 @@ const struct TagItem _buttons_thin_tags[] = {{GTCustom_ThinBorders, TRUE}, {TAG_
 					 _buttons_relative_tags[] = {{GTCustom_LayoutRel, GAD_BUTTONS_LAYOUT_AREA}, {TAG_END}},
 
 					 _buttons_bank_layout[] = {{GTCustom_LayoutRel, GAD_BUTTONS_BANK_EDITING},
-											   {TAG_MORE, (ULONG)_buttons_thin_tags}},
+											   {TAG_MORE, (IPTR)_buttons_thin_tags}},
 
 					 _buttons_button_layout[] = {{GTCustom_LayoutRel, GAD_BUTTONS_BUTTON_EDITING},
-												 {TAG_MORE, (ULONG)_buttons_thin_tags}},
+												 {TAG_MORE, (IPTR)_buttons_thin_tags}},
 
 					 _buttons_visual_layout[] = {{GTCustom_LayoutRel, GAD_BUTTONS_VISUAL_DISPLAY},
-												 {TAG_MORE, (ULONG)_buttons_thin_tags}},
+												 {TAG_MORE, (IPTR)_buttons_thin_tags}},
 
-					 _buttons_name_tags[] = {{GTST_MaxChars, 31}, {TAG_MORE, (ULONG)_buttons_bank_layout}},
+					 _buttons_name_tags[] = {{GTST_MaxChars, 31}, {TAG_MORE, (IPTR)_buttons_bank_layout}},
 
-					 _buttons_fontname_tags[] = {{GTST_MaxChars, 50}, {TAG_MORE, (ULONG)_buttons_bank_layout}},
+					 _buttons_fontname_tags[] = {{GTST_MaxChars, 50}, {TAG_MORE, (IPTR)_buttons_bank_layout}},
 
 					 _buttons_fontsize_tags[] = {{GTIN_MaxChars, 2},
 												 {STRINGA_Justification, GACT_STRINGCENTER},
-												 {TAG_MORE, (ULONG)_buttons_bank_layout}},
+												 {TAG_MORE, (IPTR)_buttons_bank_layout}},
 
 					 _buttons_backpic_popup_tags[] = {{GTCustom_Control, GAD_BUTTONS_BACKPIC},
-													  {TAG_MORE, (ULONG)_buttons_bank_layout}},
+													  {TAG_MORE, (IPTR)_buttons_bank_layout}},
 
-					 _buttons_backpic_tags[] = {{GTST_MaxChars, 256}, {TAG_MORE, (ULONG)_buttons_bank_layout}},
+					 _buttons_backpic_tags[] = {{GTST_MaxChars, 256}, {TAG_MORE, (IPTR)_buttons_bank_layout}},
 
 					 _clipboard_scroller_tags[] = {{GTSC_Total, 1},
 												   {GA_Immediate, TRUE},
@@ -50,8 +50,8 @@ const struct TagItem _buttons_thin_tags[] = {{GTCustom_ThinBorders, TRUE}, {TAG_
 												   {PGA_Freedom, LORIENT_VERT},
 												   {TAG_END}},
 
-					 _buttons_dragbar_orientation[] = {{GTCustom_LocaleLabels, (ULONG)_buttons_dragbar_labels},
-													   {TAG_MORE, (ULONG)_buttons_visual_layout}};
+					 _buttons_dragbar_orientation[] = {{GTCustom_LocaleLabels, (IPTR)_buttons_dragbar_labels},
+													   {TAG_MORE, (IPTR)_buttons_visual_layout}};
 
 // Objects
 const ObjectDef _config_buttons_objects[] =

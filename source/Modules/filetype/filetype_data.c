@@ -64,7 +64,7 @@ struct TagItem
 	finder_listview_tags[] = {{DLV_ShowSelected, 0},
 							  {DLV_ShowChecks, 2},
 							  {DLV_ReadOnly, 1},
-							  {TAG_MORE, (ULONG)finder_layout}};
+							  {TAG_MORE, (IPTR)finder_layout}};
 
 ConfigWindow _finder_window = {{POS_CENTER, POS_CENTER, FWINW1, FWINH1}, {0, 0, FWINW2, FWINH2}};
 
@@ -246,13 +246,13 @@ struct TagItem
 
 	creator_layout[] = {{GTCustom_LayoutRel, GAD_CREATE_LAYOUT}, {TAG_END}},
 
-	creator_listview_tags[] = {{DLV_ShowSelected, 0}, {TAG_MORE, (ULONG)creator_layout}},
+	creator_listview_tags[] = {{DLV_ShowSelected, 0}, {TAG_MORE, (IPTR)creator_layout}},
 
-	creator_cycle_tags[] = {{GTCustom_LocaleLabels, (ULONG)creator_cycle_labels}, {TAG_MORE, (ULONG)creator_layout}},
+	creator_cycle_tags[] = {{GTCustom_LocaleLabels, (IPTR)creator_cycle_labels}, {TAG_MORE, (IPTR)creator_layout}},
 
 	creator_filetype_name_tags[] = {{GTST_MaxChars, FILETYPE_MAXLEN},
-									{GTST_String, (ULONG) "Untitled"},
-									{TAG_MORE, (ULONG)creator_layout}};
+									{GTST_String, (IPTR) "Untitled"},
+									{TAG_MORE, (IPTR)creator_layout}};
 
 ConfigWindow _creator_window = {{POS_CENTER, POS_CENTER, LISTVIEW_W1 * 3, 8},
 								{0,

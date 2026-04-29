@@ -25,23 +25,23 @@ struct TagItem
 
 	_function_key_taglist[] = {{GTST_MaxChars, 80},
 							   {GTCustom_NoSelectNext, TRUE},
-							   {TAG_MORE, (ULONG)_function_edit_layout}},
+							   {TAG_MORE, (IPTR)_function_edit_layout}},
 
-	_function_type_taglist[] = {{GTCustom_LocaleLabels, (ULONG)_function_type_labels},
-								{TAG_MORE, (ULONG)_function_edit_layout}},
+	_function_type_taglist[] = {{GTCustom_LocaleLabels, (IPTR)_function_type_labels},
+								{TAG_MORE, (IPTR)_function_edit_layout}},
 
-	_function_lister_taglist[] = {{DLV_ShowSelected, 0}, {DLV_DragNotify, 2}, {TAG_MORE, (ULONG)_function_edit_layout}},
+	_function_lister_taglist[] = {{DLV_ShowSelected, 0}, {DLV_DragNotify, 2}, {TAG_MORE, (IPTR)_function_edit_layout}},
 
 	_function_flags_lister_taglist[] = {{DLV_MultiSelect, 1},
 										{DLV_Flags, PLACETEXT_LEFT},
-										{TAG_MORE, (ULONG)_function_edit_layout}},
+										{TAG_MORE, (IPTR)_function_edit_layout}},
 
 	_function_edit_taglist[] = {{GTST_MaxChars, 255},
 								{GTCustom_NoSelectNext, TRUE},
-								{TAG_MORE, (ULONG)_function_edit_layout}},
+								{TAG_MORE, (IPTR)_function_edit_layout}},
 
 	_function_editor_image[] = {{GTCustom_Control, GAD_FUNCED_LABEL},
-								{DFB_DefPath, (ULONG) "dopus5:images/"},
+								{DFB_DefPath, (IPTR) "dopus5:images/"},
 								{GTCustom_LayoutRel, GAD_FUNCED_LAYOUT_1},
 								{TAG_END}};
 
@@ -189,7 +189,7 @@ ObjectDef _function_editor_label_objects[] =
 				   BUTTON_KIND,
 				   {POS_RIGHT_JUSTIFY, 5, 0, 1},
 				   {-4, 9, 28, 6},
-				   (ULONG) "{ }",
+				   (IPTR) "{ }",
 				   TEXTFLAG_TEXT_STRING,
 				   GAD_FUNCED_EDIT_ARGUMENT,
 				   _function_edit_layout},

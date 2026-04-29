@@ -38,9 +38,9 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - { name: os3, image: "sacredbanana/amiga-compiler:m68k-amigaos" }
-          - { name: os4, image: "sacredbanana/amiga-compiler:ppc-amigaos" }
-          - { name: mos, image: "sacredbanana/amiga-compiler:ppc-morphos" }
+          - { name: os3, image: "sacredbanana/amiga-compiler:m68k-amigaos", ftp_makefile: "makefile.os3", ftp_flags: "" }
+          - { name: os4, image: "sacredbanana/amiga-compiler:ppc-amigaos", ftp_makefile: "makefile.os4", ftp_flags: "" }
+          - { name: mos, image: "sacredbanana/amiga-compiler:ppc-morphos", ftp_makefile: "makefile.mos", ftp_flags: "" }
 
     name: sftp-build-${{ matrix.platform.name }}
 
@@ -49,7 +49,7 @@ jobs:
 
       - name: Build FTP module with SFTP (${{ matrix.platform.name }})
         run: |
-          docker run --rm -v ${{ github.workspace }}:/work ${{ matrix.platform.image }} sh -c "cd /work/source/Modules/ftp && make -f makefile.${{ matrix.platform.name }} clean && make -f makefile.${{ matrix.platform.name }} sftp=yes"
+          docker run --rm -v ${{ github.workspace }}:/work ${{ matrix.platform.image }} sh -c "cd /work/source/Modules/ftp && make -f ${{ matrix.platform.ftp_makefile }} clean ${{ matrix.platform.ftp_flags }} && make -f ${{ matrix.platform.ftp_makefile }} sftp=yes ${{ matrix.platform.ftp_flags }}"
 
   build:
     needs: ftp-tests
@@ -58,9 +58,11 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - { name: os3, image: "sacredbanana/amiga-compiler:m68k-amigaos" }
-          - { name: os4, image: "sacredbanana/amiga-compiler:ppc-amigaos" }
-          - { name: mos, image: "sacredbanana/amiga-compiler:ppc-morphos" }
+          - { name: os3, image: "sacredbanana/amiga-compiler:m68k-amigaos", package_image: "sacredbanana/amiga-compiler:m68k-amigaos" }
+          - { name: os4, image: "sacredbanana/amiga-compiler:ppc-amigaos", package_image: "sacredbanana/amiga-compiler:ppc-amigaos" }
+          - { name: mos, image: "sacredbanana/amiga-compiler:ppc-morphos", package_image: "sacredbanana/amiga-compiler:ppc-morphos" }
+          - { name: i386-aros, image: "midwan/aros-compiler:i386-aros", package_image: "sacredbanana/amiga-compiler:m68k-amigaos" }
+          - { name: x86_64-aros, image: "midwan/aros-compiler:x86_64-aros", package_image: "sacredbanana/amiga-compiler:m68k-amigaos" }
         variant:
           - { name: debug,   flags: "",          suffix: "_debug" }
           - { name: release, flags: "debug=no",  suffix: "" }
@@ -72,7 +74,8 @@ jobs:
 
       - name: Build (${{ matrix.platform.name }} ${{ matrix.variant.name }})
         run: |
-          docker run --rm -v ${{ github.workspace }}:/work ${{ matrix.platform.image }} sh -c "cd /work/source && make ${{ matrix.platform.name }} release ${{ matrix.variant.flags }}"
+          docker run --rm -v ${{ github.workspace }}:/work ${{ matrix.platform.image }} sh -c "cd /work/source && make ${{ matrix.platform.name }} all ${{ matrix.variant.flags }}"
+          docker run --rm -v ${{ github.workspace }}:/work ${{ matrix.platform.package_image }} sh -c "cd /work/source && make ${{ matrix.platform.name }} release-package ${{ matrix.variant.flags }}"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -97,7 +100,7 @@ jobs:
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "artifacts/Dopus5_*_os3.lha,artifacts/Dopus5_*_os4.lha,artifacts/Dopus5_*_mos.lha"
+          artifacts: "artifacts/Dopus5_*_os3.lha,artifacts/Dopus5_*_os4.lha,artifacts/Dopus5_*_mos.lha,artifacts/Dopus5_*_i386-aros.lha,artifacts/Dopus5_*_x86_64-aros.lha"
           generateReleaseNotes: true
           allowUpdates: true
         env:

@@ -21,7 +21,7 @@ const struct TagItem
 
 	font_display_tags[] = {{GTCustom_ThinBorders, TRUE}, {GTCustom_FrameFlags, AREAFLAG_RECESSED}, {TAG_END, 0}},
 
-	font_cycle_tags[] = {{GTCY_Labels, (ULONG)dummy_labels}, {TAG_END, 0}};
+	font_cycle_tags[] = {{GTCY_Labels, (IPTR)dummy_labels}, {TAG_END, 0}};
 
 const ObjectDef
 
@@ -62,7 +62,7 @@ const ObjectDef
 		 BUTTON_KIND,
 		 {POS_REL_RIGHT, 1, 2, 1},
 		 {0, 14, 4, 6},
-		 (ULONG) "_+",
+		 (IPTR) "_+",
 		 TEXTFLAG_TEXT_STRING,
 		 GAD_FONT_UP,
 		 0},
@@ -72,7 +72,7 @@ const ObjectDef
 		 BUTTON_KIND,
 		 {POS_REL_RIGHT, 1, 2, 1},
 		 {0, 14, 4, 6},
-		 (ULONG) "_-",
+		 (IPTR) "_-",
 		 TEXTFLAG_TEXT_STRING,
 		 GAD_FONT_DOWN,
 		 0},

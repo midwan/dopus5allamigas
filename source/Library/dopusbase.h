@@ -809,7 +809,7 @@ typedef struct _ObjectDef
 	UBYTE object_kind;
 	struct IBox char_dims;
 	struct IBox fine_dims;
-	ULONG gadget_text;
+	IPTR gadget_text;
 	ULONG flags;
 	UWORD gadgetid;
 	const struct TagItem *taglist;
