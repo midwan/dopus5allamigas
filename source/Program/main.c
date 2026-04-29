@@ -1314,7 +1314,7 @@ void startup_init_icons()
 	if ((arrow_lo_data_chip = AllocVec(sizeof(arrow_lo_data), MEMF_CHIP)))
 	{
 		CopyMem(arrow_lo_data, arrow_lo_data_chip, sizeof(arrow_lo_data));
-		arrow_image[1].ImageData = arrow_hi_data_chip;
+		arrow_image[1].ImageData = arrow_lo_data_chip;
 	}
 
 	if ((small_arrow_chip = AllocVec(sizeof(small_arrow), MEMF_CHIP)))
