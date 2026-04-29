@@ -168,7 +168,7 @@ struct Menu *LIBFUNC L_BuildMenuStrip(REG(a0, MenuData *menudata), REG(a1, struc
 			++level_value[level];
 
 		// Check label for special values
-		if (data->name == (ULONG)NM_BARLABEL)
+		if (data->name == NM_BAR_LABEL)
 			new_menu[count].nm_Label = NM_BARLABEL;
 
 		// Otherwise, see if it's valid
@@ -300,14 +300,14 @@ struct MenuItem *LIBFUNC L_FindMenuItem(REG(a0, struct Menu *menu), REG(d0, UWOR
 			struct MenuItem *sub;
 
 			// Is this what we're looking for?
-			if (id == (UWORD)GTMENUITEM_USERDATA(item))
+			if (id == (UWORD)(IPTR)GTMENUITEM_USERDATA(item))
 				return item;
 
 			// Go through sub items
 			for (sub = item->SubItem; sub; sub = sub->NextItem)
 			{
 				// Is this what we're looking for?
-				if (id == (UWORD)GTMENUITEM_USERDATA(sub))
+				if (id == (UWORD)(IPTR)GTMENUITEM_USERDATA(sub))
 					return sub;
 			}
 		}

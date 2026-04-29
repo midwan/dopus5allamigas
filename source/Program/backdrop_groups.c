@@ -630,7 +630,7 @@ IPC_EntryCode(backdrop_group_handler, static)
 							}
 
 							// Do the function
-							quit_flag = backdrop_group_do_function(group, (ULONG)GTMENUITEM_USERDATA(item), item);
+							quit_flag = backdrop_group_do_function(group, (ULONG)(IPTR)GTMENUITEM_USERDATA(item), item);
 
 							// Check valid next
 							if (!nextselect || !group->window || oldstrip != group->window->MenuStrip)

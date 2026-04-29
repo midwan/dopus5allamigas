@@ -74,7 +74,7 @@ int buttons_process_msg(Buttons *buttons, struct IntuiMessage *msg)
 			}
 
 			// See if we can handle it
-			if ((a = buttons_do_function(buttons, (ULONG)GTMENUITEM_USERDATA(item))) == -1)
+			if ((a = buttons_do_function(buttons, (ULONG)(IPTR)GTMENUITEM_USERDATA(item))) == -1)
 			{
 				MenuEvent *event;
 
@@ -82,7 +82,7 @@ int buttons_process_msg(Buttons *buttons, struct IntuiMessage *msg)
 				if ((event = AllocVec(sizeof(MenuEvent), 0)))
 				{
 					// Fill out event
-					event->id = (ULONG)GTMENUITEM_USERDATA(item);
+					event->id = (IPTR)GTMENUITEM_USERDATA(item);
 					event->menu = item;
 					event->window = buttons->window;
 

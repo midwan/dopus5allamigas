@@ -787,7 +787,7 @@ void event_loop()
 							}
 
 							// Process menu event
-							if ((quit_flag = menu_process_event((ULONG)GTMENUITEM_USERDATA(item), item, GUI->window)) ||
+							if ((quit_flag = menu_process_event((IPTR)GTMENUITEM_USERDATA(item), item, GUI->window)) ||
 								!GUI->window || oldstrip != GUI->window->MenuStrip)
 								break;
 
@@ -1037,7 +1037,7 @@ void event_loop()
 }
 
 // Process menu events
-BOOL menu_process_event(ULONG id, struct MenuItem *item, struct Window *window)
+BOOL menu_process_event(IPTR id, struct MenuItem *item, struct Window *window)
 {
 	Cfg_Button *button;
 	Cfg_Function *function = 0;
