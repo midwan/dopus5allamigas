@@ -32,6 +32,8 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_opusftp.h"
 #include "ftp.h"
 #include "ftp_listcmd.h"
+#include "ftp_protocol.h"
+#include "ftp_sftp.h"
 
 // Flags for entry_info_from_XXX function
 enum {
@@ -110,6 +112,7 @@ struct ftp_node
 	ULONG fn_handle;				// Lister handle
 	IPCData *fn_ipc;				// IPC of this lister process
 	struct ftp_info fn_ftp;			// Socket & site details + FTP reply code
+	struct ftp_sftp_session fn_sftp;	// SSH/SFTP session details
 	ULONG fn_flags;					// See below
 	char fn_opus[PORTNAMELEN + 1];	// DOPUS.1 etc
 	/*
@@ -122,6 +125,7 @@ struct ftp_node
 	struct Task *fn_signaltask;	 // Task to signal on abort
 	ULONG fn_proghandle;
 	struct site_entry fn_site;	// As used in Address book etc
+	int fn_protocol;			// FTP_PROTOCOL_*
 	ULONG fn_read_handle;		// Handle of our Opus text viewer
 };
 

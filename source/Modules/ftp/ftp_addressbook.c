@@ -60,6 +60,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_addrsupp.h"
 #include "ftp_addrformat.h"
 #include "ftp_ipc.h"
+#include "ftp_protocol.h"
 #include "ftp_recursive.h"
 #include "ftp_util.h"
 
@@ -68,6 +69,265 @@ For more information on Directory Opus for Windows please see:
 #define ToggleFlag(v, f) ((v) ^= (f))
 #define FlagIsSet(v, f) (((v) & (f)) != 0)
 #define FlagIsClear(v, f) (((v) & (f)) == 0)
+
+static int site_protocol(struct site_entry *entry)
+{
+	int protocol = entry && entry->se_protocol ? entry->se_protocol : FTP_PROTOCOL_FTP;
+
+	if (entry)
+		protocol = ftp_protocol_infer_from_connection(protocol, entry->se_port, entry->se_anon);
+
+	return protocol;
+}
+
+enum {
+	FTP_CONNECTION_STANDARD,
+	FTP_CONNECTION_FTPS_EXPLICIT,
+	FTP_CONNECTION_SFTP,
+};
+
+static struct ftp_environment *site_env(struct display_globals *dg, struct site_entry *entry)
+{
+	if (!entry)
+		return NULL;
+
+	if (!entry->se_env && dg && dg->dg_og)
+		entry->se_env = &dg->dg_og->og_oc.oc_env;
+
+	return entry->se_env;
+}
+
+static void site_make_custom_env(struct display_globals *dg, struct site_entry *entry)
+{
+	struct ftp_environment *env;
+
+	if (!entry)
+		return;
+
+	if (entry->se_has_custom_env)
+	{
+		entry->se_env = &entry->se_env_private;
+		return;
+	}
+
+	env = site_env(dg, entry);
+	if (env)
+		entry->se_env_private = *env;
+
+	entry->se_env = &entry->se_env_private;
+	entry->se_has_custom_env = TRUE;
+}
+
+static void site_set_tls_mode(struct display_globals *dg, struct site_entry *entry, int tls_mode)
+{
+	struct ftp_environment *env;
+
+	if (!entry)
+		return;
+
+	env = site_env(dg, entry);
+	if (!entry->se_has_custom_env && env && env->e_tls_mode == tls_mode)
+		return;
+
+	site_make_custom_env(dg, entry);
+	entry->se_env_private.e_tls_mode = tls_mode;
+}
+
+static int site_connection(struct site_entry *entry)
+{
+	if (site_protocol(entry) == FTP_PROTOCOL_SFTP)
+		return FTP_CONNECTION_SFTP;
+
+	if (entry && entry->se_env && ftp_tls_mode_uses_control_tls(entry->se_env->e_tls_mode))
+		return FTP_CONNECTION_FTPS_EXPLICIT;
+
+	return FTP_CONNECTION_STANDARD;
+}
+
+static const char *site_connection_short_name(struct site_entry *entry)
+{
+	switch (site_connection(entry))
+	{
+	case FTP_CONNECTION_FTPS_EXPLICIT:
+		return "FTPS";
+	case FTP_CONNECTION_SFTP:
+		return "SFTP";
+	}
+
+	return "FTP";
+}
+
+static int connection_cycle_value(int connection)
+{
+	switch (connection)
+	{
+	case FTP_CONNECTION_FTPS_EXPLICIT:
+		return 1;
+	case FTP_CONNECTION_SFTP:
+		return 2;
+	}
+
+	return 0;
+}
+
+static int connection_from_cycle_value(LONG value)
+{
+	switch (value)
+	{
+	case 1:
+		return FTP_CONNECTION_FTPS_EXPLICIT;
+	case 2:
+		return FTP_CONNECTION_SFTP;
+	}
+
+	return FTP_CONNECTION_STANDARD;
+}
+
+static void set_site_protocol(struct site_entry *entry, int protocol, LONG current_port)
+{
+	int old_protocol;
+
+	if (!entry)
+		return;
+
+	old_protocol = site_protocol(entry);
+	if (protocol != FTP_PROTOCOL_SFTP)
+		protocol = FTP_PROTOCOL_FTP;
+
+	entry->se_protocol = protocol;
+	if (current_port <= 0 || current_port == ftp_protocol_default_port(old_protocol))
+		entry->se_port = ftp_protocol_default_port(protocol);
+	else
+		entry->se_port = current_port;
+
+	if (protocol == FTP_PROTOCOL_SFTP)
+		entry->se_anon = FALSE;
+}
+
+static void set_site_connection(struct display_globals *dg, struct site_entry *entry, int connection, LONG current_port)
+{
+	if (!entry)
+		return;
+
+	if (connection == FTP_CONNECTION_SFTP)
+	{
+		set_site_protocol(entry, FTP_PROTOCOL_SFTP, current_port);
+		entry->se_anon = FALSE;
+	}
+	else
+	{
+		set_site_protocol(entry, FTP_PROTOCOL_FTP, current_port);
+		site_set_tls_mode(dg,
+						  entry,
+						  connection == FTP_CONNECTION_FTPS_EXPLICIT ? FTP_TLS_MODE_EXPLICIT : FTP_TLS_MODE_OFF);
+	}
+}
+
+static void set_site_host_from_text(struct display_globals *dg,
+									struct site_entry *entry,
+									const char *host_text,
+									LONG current_port)
+{
+	const char *host = host_text ? host_text : "";
+	const char *without_scheme;
+	int protocol;
+
+	if (!entry)
+		return;
+
+	if (!entry->se_protocol)
+		entry->se_protocol = FTP_PROTOCOL_FTP;
+
+	if (ftp_protocol_from_url_scheme(host, &without_scheme, &protocol))
+	{
+		int connection = protocol == FTP_PROTOCOL_SFTP ? FTP_CONNECTION_SFTP : FTP_CONNECTION_STANDARD;
+		const char *without_tls_scheme;
+		int tls_mode;
+
+		if (ftp_tls_mode_from_url_scheme(host, &without_tls_scheme, &tls_mode))
+		{
+			connection =
+				ftp_tls_mode_uses_control_tls(tls_mode) ? FTP_CONNECTION_FTPS_EXPLICIT : FTP_CONNECTION_STANDARD;
+			without_scheme = without_tls_scheme;
+		}
+
+		set_site_connection(dg, entry, connection, current_port);
+		host = without_scheme;
+	}
+
+	stccpy(entry->se_host, (char *)host, HOSTNAMELEN + 1);
+}
+
+static void update_connection_gadgets(ObjectList *objlist,
+									  struct display_globals *dg,
+									  struct site_entry *entry,
+									  UWORD protocol_gadget,
+									  UWORD port_gadget,
+									  UWORD anon_gadget,
+									  UWORD user_gadget,
+									  UWORD password_gadget)
+{
+	int protocol;
+
+	if (!objlist || !entry)
+		return;
+
+	protocol = site_protocol(entry);
+	site_env(dg, entry);
+	SetGadgetValue(objlist, protocol_gadget, connection_cycle_value(site_connection(entry)));
+	SetGadgetValue(objlist, port_gadget, entry->se_port);
+	SetGadgetValue(objlist, anon_gadget, protocol == FTP_PROTOCOL_SFTP ? FALSE : entry->se_anon);
+	DisableObject(objlist, anon_gadget, protocol == FTP_PROTOCOL_SFTP);
+	DisableObject(objlist, user_gadget, protocol != FTP_PROTOCOL_SFTP && entry->se_anon);
+	DisableObject(objlist, password_gadget, protocol != FTP_PROTOCOL_SFTP && entry->se_anon);
+}
+
+static void update_connection_from_protocol_gadget(ObjectList *objlist,
+												   struct display_globals *dg,
+												   struct site_entry *entry,
+												   UWORD protocol_gadget,
+												   UWORD port_gadget,
+												   UWORD anon_gadget,
+												   UWORD user_gadget,
+												   UWORD password_gadget)
+{
+	LONG port;
+	int connection;
+
+	if (!objlist || !entry)
+		return;
+
+	port = GetGadgetValue(objlist, port_gadget);
+	connection = connection_from_cycle_value(GetGadgetValue(objlist, protocol_gadget));
+	set_site_connection(dg, entry, connection, port > 65535 ? 0 : port);
+	update_connection_gadgets(
+		objlist, dg, entry, protocol_gadget, port_gadget, anon_gadget, user_gadget, password_gadget);
+}
+
+static void update_connection_from_host_gadget(ObjectList *objlist,
+											   struct display_globals *dg,
+											   struct site_entry *entry,
+											   UWORD host_gadget,
+											   UWORD protocol_gadget,
+											   UWORD port_gadget,
+											   UWORD anon_gadget,
+											   UWORD user_gadget,
+											   UWORD password_gadget)
+{
+	char *host;
+	LONG port;
+
+	if (!objlist || !entry)
+		return;
+
+	host = (char *)GetGadgetValue(objlist, host_gadget);
+	port = GetGadgetValue(objlist, port_gadget);
+	entry->se_port = port > 65535 ? 0 : port;
+	set_site_host_from_text(dg, entry, host, entry->se_port);
+	SetGadgetValue(objlist, host_gadget, (ULONG)entry->se_host);
+	update_connection_gadgets(
+		objlist, dg, entry, protocol_gadget, port_gadget, anon_gadget, user_gadget, password_gadget);
+}
 
 #if defined(__amigaos3__) || defined(__AROS__) || defined(__amigaos4__)
 struct Device *InputBase = NULL;
@@ -509,7 +769,7 @@ static int address_drag_to_editor(struct display_globals *dg, IPCData *ipc, int 
 				/************* New Stuff here *****************/
 
 				// Build label for function
-				lsprintf(label, "FTP %s", entry->se_name);
+				lsprintf(label, "%s %s", site_connection_short_name(entry), entry->se_name);
 
 				// Allocate label
 				if ((func->label = AllocMemH(0, strlen(label) + 1)))
@@ -563,9 +823,11 @@ static int address_drag_to_lister(struct display_globals *dg, IPCData *ipc)
 		if ((cm = AllocVec(sizeof(struct connect_msg), MEMF_CLEAR)))
 		{
 			copy_site_entry(dg->dg_og, &cm->cm_site, e);
+			cm->cm_protocol = site_protocol(e);
+			cm->cm_site.se_protocol = cm->cm_protocol;
 
 			// if anon the blank user and password
-			if (e->se_anon)
+			if (site_protocol(e) != FTP_PROTOCOL_SFTP && e->se_anon)
 			{
 				*cm->cm_site.se_user = 0;
 				*cm->cm_site.se_pass = 0;
@@ -578,7 +840,7 @@ static int address_drag_to_lister(struct display_globals *dg, IPCData *ipc)
 			// send IPC_CONNECT to MAIN proccess so it can open new connection
 			// in curent lister we dropped onto.
 
-			IPC_Command(dg->dg_og->og_main_ipc, IPC_CONNECT, 0, 0, cm, 0);
+			IPC_Command(dg->dg_og->og_main_ipc, IPC_CONNECT, CONN_OPT_PROTOCOL, 0, cm, 0);
 
 			ok = 1;
 		}
@@ -1066,9 +1328,11 @@ static void send_connect(struct display_globals *dg, int selection, struct windo
 				if ((cm = AllocVec(sizeof(struct connect_msg), MEMF_CLEAR)))
 				{
 					copy_site_entry(dg->dg_og, &cm->cm_site, e);
+					cm->cm_protocol = site_protocol(e);
+					cm->cm_site.se_protocol = cm->cm_protocol;
 
 					// if anon the blank user and password
-					if (e->se_anon)
+					if (site_protocol(e) != FTP_PROTOCOL_SFTP && e->se_anon)
 					{
 						*cm->cm_site.se_user = 0;
 						*cm->cm_site.se_pass = 0;
@@ -1076,7 +1340,7 @@ static void send_connect(struct display_globals *dg, int selection, struct windo
 
 					stccpy(cm->cm_opus, dg->dg_opusport, PORTNAMELEN);
 
-					IPC_Command(dg->dg_og->og_main_ipc, IPC_CONNECT, 0, 0, cm, 0);
+					IPC_Command(dg->dg_og->og_main_ipc, IPC_CONNECT, CONN_OPT_PROTOCOL, 0, cm, 0);
 				}
 			}
 		}
@@ -1520,17 +1784,24 @@ static void display_connect_gadgets(struct display_globals *dg, struct window_pa
 	e = wp->wp_se_copy;
 
 	SetGadgetValue(objlist, GAD_CONNECT_NAME, (ULONG)e->se_name);
+	SetGadgetValue(objlist, GAD_CONNECT_PROTOCOL, connection_cycle_value(site_connection(e)));
 	SetGadgetValue(objlist, GAD_CONNECT_HOST, (ULONG)e->se_host);
 	SetGadgetValue(objlist, GAD_CONNECT_PORT, e->se_port);
-	SetGadgetValue(objlist, GAD_CONNECT_ANON, e->se_anon);
+	SetGadgetValue(objlist, GAD_CONNECT_ANON, site_protocol(e) == FTP_PROTOCOL_SFTP ? FALSE : e->se_anon);
 
 	SetGadgetValue(objlist, GAD_CONNECT_USER, (ULONG)e->se_user);
 	SetGadgetValue(objlist, GAD_CONNECT_PASSWORD, (ULONG)e->se_pass);
 
 	SetGadgetValue(objlist, GAD_CONNECT_DIR, (ULONG)e->se_path);
 
-	DisableObject(objlist, GAD_CONNECT_USER, e->se_anon);
-	DisableObject(objlist, GAD_CONNECT_PASSWORD, e->se_anon);
+	update_connection_gadgets(objlist,
+							  dg,
+							  e,
+							  GAD_CONNECT_PROTOCOL,
+							  GAD_CONNECT_PORT,
+							  GAD_CONNECT_ANON,
+							  GAD_CONNECT_USER,
+							  GAD_CONNECT_PASSWORD);
 }
 
 static void display_edit_gadgets(struct display_globals *dg, struct window_params *wp)
@@ -1542,17 +1813,24 @@ static void display_edit_gadgets(struct display_globals *dg, struct window_param
 	e = wp->wp_se_copy;
 
 	SetGadgetValue(objlist, GAD_EDIT_NAME, (ULONG)e->se_name);
+	SetGadgetValue(objlist, GAD_EDIT_PROTOCOL, connection_cycle_value(site_connection(e)));
 	SetGadgetValue(objlist, GAD_EDIT_HOST, (ULONG)e->se_host);
 	SetGadgetValue(objlist, GAD_EDIT_PORT, e->se_port);
-	SetGadgetValue(objlist, GAD_EDIT_ANON, e->se_anon);
+	SetGadgetValue(objlist, GAD_EDIT_ANON, site_protocol(e) == FTP_PROTOCOL_SFTP ? FALSE : e->se_anon);
 
 	SetGadgetValue(objlist, GAD_EDIT_USER, (ULONG)e->se_user);
 	SetGadgetValue(objlist, GAD_EDIT_PASSWORD, (ULONG)e->se_pass);
 
 	SetGadgetValue(objlist, GAD_EDIT_DIR, (ULONG)e->se_path);
 
-	DisableObject(objlist, GAD_EDIT_USER, e->se_anon);
-	DisableObject(objlist, GAD_EDIT_PASSWORD, e->se_anon);
+	update_connection_gadgets(objlist,
+							  dg,
+							  e,
+							  GAD_EDIT_PROTOCOL,
+							  GAD_EDIT_PORT,
+							  GAD_EDIT_ANON,
+							  GAD_EDIT_USER,
+							  GAD_EDIT_PASSWORD);
 
 	SetGadgetValue(objlist, GAD_EDIT_CUSTOM_OPTIONS, e->se_has_custom_env);
 	DisableObject(objlist, GAD_EDIT_SET_CUSTOM_OPTIONS, !e->se_has_custom_env);
@@ -2149,11 +2427,13 @@ static struct window_params *show_connect(struct display_globals *dg, struct sub
 				// get site_entry from connect message
 				copy_site_entry(dg->dg_og, e, &cm->cm_site);
 
-				if (!*e->se_user)
+				if (site_protocol(e) == FTP_PROTOCOL_SFTP)
+					e->se_anon = FALSE;
+				else if (!*e->se_user)
 					e->se_anon = TRUE;
 
 				if (e->se_port <= 0)
-					e->se_port = 21;
+					e->se_port = ftp_protocol_default_port(site_protocol(e));
 
 				display_connect_gadgets(dg, wp);
 
@@ -2221,18 +2501,20 @@ static struct window_params *add_entry(struct display_globals *dg, struct subpro
 				// copy site_entry from connect message
 				copy_site_entry(dg->dg_og, e, &cm->cm_site);
 
-				if (!*e->se_user)
+				if (site_protocol(e) == FTP_PROTOCOL_SFTP)
+					e->se_anon = FALSE;
+				else if (!*e->se_user)
 					e->se_anon = TRUE;
 
 				// if anon the blank user and password
-				if (e->se_anon)
+				if (site_protocol(e) != FTP_PROTOCOL_SFTP && e->se_anon)
 				{
 					*e->se_user = 0;
 					*e->se_pass = 0;
 				}
 
 				if (e->se_port <= 0)
-					e->se_port = 21;
+					e->se_port = ftp_protocol_default_port(site_protocol(e));
 
 				display_edit_gadgets(dg, wp);
 
@@ -2269,7 +2551,9 @@ static void new_entry(struct display_globals *dg, struct Window *win)
 		if ((e = AllocVec(sizeof(struct site_entry), MEMF_CLEAR)))
 		{
 			e->se_anon = TRUE;
-			e->se_port = 21;
+			e->se_protocol = FTP_PROTOCOL_FTP;
+			e->se_port = ftp_protocol_default_port(e->se_protocol);
+			e->se_env = &dg->dg_og->og_oc.oc_env;
 
 			// IMPORTANT - Set this to null to indicate we are adding entry
 			wp->wp_se_real = NULL;
@@ -2333,6 +2617,8 @@ static void edit_entry(struct display_globals *dg, struct Window *win)
 
 				// make a copy of the old entry
 				copy_site_entry(dg->dg_og, new, wp->wp_se_real);
+				if (site_protocol(new) == FTP_PROTOCOL_SFTP)
+					new->se_anon = FALSE;
 
 				display_edit_gadgets(dg, wp);
 
@@ -2638,13 +2924,19 @@ static void end_connect(struct window_params *wp, BOOL flag)
 	if (flag)
 	{
 		ObjectList *objlist = wp->wp_objlist;
+		int connection;
+		LONG port;
 
 		// used selected OK
 		// get gadget values
 		// add allocated entry to the list
 
 		strcpy(copy->se_name, (char *)GetGadgetValue(objlist, GAD_CONNECT_NAME));
-		strcpy(copy->se_host, (char *)GetGadgetValue(objlist, GAD_CONNECT_HOST));
+		connection = connection_from_cycle_value(GetGadgetValue(objlist, GAD_CONNECT_PROTOCOL));
+		port = GetGadgetValue(objlist, GAD_CONNECT_PORT);
+		copy->se_port = port > 65535 ? 0 : port;
+		set_site_connection(dg, copy, connection, copy->se_port);
+		set_site_host_from_text(dg, copy, (char *)GetGadgetValue(objlist, GAD_CONNECT_HOST), copy->se_port);
 
 		// if no host or defaulted then erro msg
 
@@ -2660,18 +2952,18 @@ static void end_connect(struct window_params *wp, BOOL flag)
 			// strcpy(copy->se_name,copy->se_host);
 			sitename_from_host(copy->se_name, copy->se_host);
 
-		if ((copy->se_port = GetGadgetValue(objlist, GAD_CONNECT_PORT)) > 65535)
-			copy->se_port = 21;
+		if (copy->se_port <= 0)
+			copy->se_port = ftp_protocol_default_port(site_protocol(copy));
 
 		strcpy(copy->se_user, (char *)GetGadgetValue(objlist, GAD_CONNECT_USER));
 		strcpy(copy->se_pass, (char *)GetGadgetValue(objlist, GAD_CONNECT_PASSWORD));
 		strcpy(copy->se_path, (char *)GetGadgetValue(objlist, GAD_CONNECT_DIR));
 
-		copy->se_anon = GetGadgetValue(objlist, GAD_CONNECT_ANON);
+		copy->se_anon = site_protocol(copy) == FTP_PROTOCOL_SFTP ? FALSE : GetGadgetValue(objlist, GAD_CONNECT_ANON);
 
 		// if no user name then make anon entry
 
-		if (!*copy->se_user)
+		if (!*copy->se_user && site_protocol(copy) != FTP_PROTOCOL_SFTP)
 			copy->se_anon = TRUE;
 
 		if (imsg)
@@ -2682,6 +2974,8 @@ static void end_connect(struct window_params *wp, BOOL flag)
 
 			// copy site back to connect message
 			copy_site_entry(dg->dg_og, &cm->cm_site, copy);
+			cm->cm_protocol = site_protocol(copy);
+			cm->cm_site.se_protocol = cm->cm_protocol;
 		}
 	}
 
@@ -2728,13 +3022,28 @@ static BOOL end_edit(struct window_params *wp, BOOL flag)
 	if (flag)
 	{
 		ObjectList *objlist = wp->wp_objlist;
+		int connection;
+		int custom_options;
+		LONG port;
 
 		// used selected OK
 		// get gadget values
 		// add allocated entry to the list
 
 		strcpy(copy->se_name, (char *)GetGadgetValue(objlist, GAD_EDIT_NAME));
-		strcpy(copy->se_host, (char *)GetGadgetValue(objlist, GAD_EDIT_HOST));
+		connection = connection_from_cycle_value(GetGadgetValue(objlist, GAD_EDIT_PROTOCOL));
+		custom_options = GetGadgetValue(objlist, GAD_EDIT_CUSTOM_OPTIONS);
+		if (custom_options)
+			site_make_custom_env(dg, copy);
+		else
+		{
+			copy->se_has_custom_env = FALSE;
+			copy->se_env = &dg->dg_og->og_oc.oc_env;
+		}
+		port = GetGadgetValue(objlist, GAD_EDIT_PORT);
+		copy->se_port = port > 65535 ? 0 : port;
+		set_site_connection(dg, copy, connection, copy->se_port);
+		set_site_host_from_text(dg, copy, (char *)GetGadgetValue(objlist, GAD_EDIT_HOST), copy->se_port);
 
 		// if no host or defaulted then error msg
 
@@ -2749,21 +3058,19 @@ static BOOL end_edit(struct window_params *wp, BOOL flag)
 		if (!*copy->se_name)
 			sitename_from_host(copy->se_name, copy->se_host);
 
-		if ((copy->se_port = GetGadgetValue(objlist, GAD_EDIT_PORT)) > 65535)
-			copy->se_port = 21;
+		if (copy->se_port <= 0)
+			copy->se_port = ftp_protocol_default_port(site_protocol(copy));
 
 		strcpy(copy->se_user, (char *)GetGadgetValue(objlist, GAD_EDIT_USER));
 		strcpy(copy->se_pass, (char *)GetGadgetValue(objlist, GAD_EDIT_PASSWORD));
 		strcpy(copy->se_path, (char *)GetGadgetValue(objlist, GAD_EDIT_DIR));
 
-		copy->se_anon = GetGadgetValue(objlist, GAD_EDIT_ANON);
+		copy->se_anon = site_protocol(copy) == FTP_PROTOCOL_SFTP ? FALSE : GetGadgetValue(objlist, GAD_EDIT_ANON);
 
 		// if no user name then make anon entry
 
-		if (!*copy->se_user)
+		if (!*copy->se_user && site_protocol(copy) != FTP_PROTOCOL_SFTP)
 			copy->se_anon = TRUE;
-
-		copy->se_has_custom_env = GetGadgetValue(objlist, GAD_EDIT_CUSTOM_OPTIONS);
 
 		// check if we actually changed the entry
 		// if edit entry and unchanged then skip and just discard copy
@@ -2922,6 +3229,8 @@ static void end_options(struct window_params *wp, BOOL flag)
 					cm = (struct connect_msg *)wp->wp_imsg->data;
 
 					copy_site_entry(dg->dg_og, &cm->cm_site, wp->wp_se_copy);
+					cm->cm_protocol = site_protocol(wp->wp_se_copy);
+					cm->cm_site.se_protocol = cm->cm_protocol;
 				}
 			}
 
@@ -3910,6 +4219,14 @@ static void idle_loop(struct display_globals *dg, struct subproc_data *data, IPC
 						mx_value = GetGadgetValue(wp->wp_objlist, GAD_EDIT_CUSTOM_OPTIONS);
 						DisableObject(wp->wp_objlist, GAD_EDIT_SET_CUSTOM_OPTIONS, !mx_value);
 
+						if (mx_value)
+							site_make_custom_env(dg, wp->wp_se_copy);
+						else
+						{
+							wp->wp_se_copy->se_has_custom_env = FALSE;
+							wp->wp_se_copy->se_env = &dg->dg_og->og_oc.oc_env;
+						}
+
 						// user selected custom?
 						if (mx_value)
 							edit_options(dg, msg_copy.IDCMPWindow, WT_OPT);
@@ -3929,6 +4246,20 @@ static void idle_loop(struct display_globals *dg, struct subproc_data *data, IPC
 					case GAD_EDIT_HOST: {
 						char *host, *name;
 						char newname[HOSTNAMELEN + 1];
+
+						update_connection_from_host_gadget(wp->wp_objlist,
+														   dg,
+														   wp->wp_se_copy,
+														   GAD_EDIT_HOST,
+														   GAD_EDIT_PROTOCOL,
+														   GAD_EDIT_PORT,
+														   GAD_EDIT_ANON,
+														   GAD_EDIT_USER,
+														   GAD_EDIT_PASSWORD);
+						SetGadgetValue(wp->wp_objlist, GAD_EDIT_CUSTOM_OPTIONS, wp->wp_se_copy->se_has_custom_env);
+						DisableObject(
+							wp->wp_objlist, GAD_EDIT_SET_CUSTOM_OPTIONS, !wp->wp_se_copy->se_has_custom_env);
+
 						name = (char *)GetGadgetValue(wp->wp_objlist, GAD_EDIT_NAME);
 
 						if (!name || !*name)
@@ -3942,13 +4273,36 @@ static void idle_loop(struct display_globals *dg, struct subproc_data *data, IPC
 					break;
 
 					case GAD_EDIT_PORT:
-						check_bounds(dg, &msg_copy, 65535, 21);
+						check_bounds(dg, &msg_copy, 65535, ftp_protocol_default_port(site_protocol(wp->wp_se_copy)));
+						break;
+
+					case GAD_EDIT_PROTOCOL:
+						update_connection_from_protocol_gadget(wp->wp_objlist,
+															   dg,
+															   wp->wp_se_copy,
+															   GAD_EDIT_PROTOCOL,
+															   GAD_EDIT_PORT,
+															   GAD_EDIT_ANON,
+															   GAD_EDIT_USER,
+															   GAD_EDIT_PASSWORD);
+						SetGadgetValue(wp->wp_objlist, GAD_EDIT_CUSTOM_OPTIONS, wp->wp_se_copy->se_has_custom_env);
+						DisableObject(
+							wp->wp_objlist, GAD_EDIT_SET_CUSTOM_OPTIONS, !wp->wp_se_copy->se_has_custom_env);
 						break;
 
 					case GAD_EDIT_ANON:
-						wp->wp_se_copy->se_anon = GetGadgetValue(wp->wp_objlist, GAD_EDIT_ANON);
-						DisableObject(wp->wp_objlist, GAD_EDIT_USER, wp->wp_se_copy->se_anon);
-						DisableObject(wp->wp_objlist, GAD_EDIT_PASSWORD, wp->wp_se_copy->se_anon);
+						if (site_protocol(wp->wp_se_copy) == FTP_PROTOCOL_SFTP)
+							wp->wp_se_copy->se_anon = FALSE;
+						else
+							wp->wp_se_copy->se_anon = GetGadgetValue(wp->wp_objlist, GAD_EDIT_ANON);
+						update_connection_gadgets(wp->wp_objlist,
+												  dg,
+												  wp->wp_se_copy,
+												  GAD_EDIT_PROTOCOL,
+												  GAD_EDIT_PORT,
+												  GAD_EDIT_ANON,
+												  GAD_EDIT_USER,
+												  GAD_EDIT_PASSWORD);
 						break;
 
 					case GAD_EDIT_SET_CUSTOM_OPTIONS:
@@ -4144,10 +4498,31 @@ static void idle_loop(struct display_globals *dg, struct subproc_data *data, IPC
 					break;
 
 					case GAD_CONNECT_PORT:
-						check_bounds(dg, &msg_copy, 65535, 21);
+						check_bounds(dg, &msg_copy, 65535, ftp_protocol_default_port(site_protocol(wp->wp_se_copy)));
 						break;
 
 					case GAD_CONNECT_HOST:
+						update_connection_from_host_gadget(wp->wp_objlist,
+														   dg,
+														   wp->wp_se_copy,
+														   GAD_CONNECT_HOST,
+														   GAD_CONNECT_PROTOCOL,
+														   GAD_CONNECT_PORT,
+														   GAD_CONNECT_ANON,
+														   GAD_CONNECT_USER,
+														   GAD_CONNECT_PASSWORD);
+						break;
+
+					case GAD_CONNECT_PROTOCOL:
+						update_connection_from_protocol_gadget(wp->wp_objlist,
+															   dg,
+															   wp->wp_se_copy,
+															   GAD_CONNECT_PROTOCOL,
+															   GAD_CONNECT_PORT,
+															   GAD_CONNECT_ANON,
+															   GAD_CONNECT_USER,
+															   GAD_CONNECT_PASSWORD);
+						break;
 
 					case GAD_CONNECT_USER:
 					case GAD_CONNECT_PASSWORD:
@@ -4155,9 +4530,18 @@ static void idle_loop(struct display_globals *dg, struct subproc_data *data, IPC
 						break;
 
 					case GAD_CONNECT_ANON:
-						wp->wp_se_copy->se_anon = GetGadgetValue(wp->wp_objlist, GAD_CONNECT_ANON);
-						DisableObject(wp->wp_objlist, GAD_CONNECT_USER, wp->wp_se_copy->se_anon);
-						DisableObject(wp->wp_objlist, GAD_CONNECT_PASSWORD, wp->wp_se_copy->se_anon);
+						if (site_protocol(wp->wp_se_copy) == FTP_PROTOCOL_SFTP)
+							wp->wp_se_copy->se_anon = FALSE;
+						else
+							wp->wp_se_copy->se_anon = GetGadgetValue(wp->wp_objlist, GAD_CONNECT_ANON);
+						update_connection_gadgets(wp->wp_objlist,
+												  dg,
+												  wp->wp_se_copy,
+												  GAD_CONNECT_PROTOCOL,
+												  GAD_CONNECT_PORT,
+												  GAD_CONNECT_ANON,
+												  GAD_CONNECT_USER,
+												  GAD_CONNECT_PASSWORD);
 						break;
 
 					case GAD_CONNECT_LAST:

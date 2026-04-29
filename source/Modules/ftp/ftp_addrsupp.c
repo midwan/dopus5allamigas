@@ -33,6 +33,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_addrformat.h"
 #include "ftp_recursive.h"
 #include "ftp_util.h"
+#include "ftp_protocol.h"
 
 char *CONFIGFILE = "DOpus5:System/ftp.config";
 char *FTP_OPTIONS_NAME = "DOpus5:System/ftp_options";
@@ -53,7 +54,7 @@ static char *head1 =
 # Directory Opus 5.8 FTP client site list\n\
 #\n\
 # Site Template is	ANONYMOUS=ANON/S,USERACCOUNT=ACCT/S,ALIAS=NAME/K,HOST,\n\
-#			ADDRESS=ADDR/K,PORT/N,PATH=DIR,USER/K,PASSWORD=PASS/K\n\
+#			ADDRESS=ADDR/K,PORT/N,PATH=DIR,USER/K,PASSWORD=PASS/K,PROTOCOL=PROTO/K\n\
 #\n";
 
 #define LINEBUFLEN 512
@@ -221,7 +222,14 @@ static BOOL write_entry(BPTR cf, struct site_entry *e)
 	strcat(buf, e->se_host);
 	strcat(buf, " ");
 
-	if (e->se_port != 21)
+	if (e->se_protocol != FTP_PROTOCOL_FTP)
+	{
+		strcat(buf, "PROTO ");
+		strcat(buf, ftp_protocol_name(e->se_protocol));
+		strcat(buf, " ");
+	}
+
+	if (e->se_port != ftp_protocol_default_port(e->se_protocol))
 	{
 		sprintf(num, "%ld", e->se_port);  // se_port is LONG
 		// stcul_d(num, e->se_port);
@@ -263,6 +271,19 @@ static BOOL write_entry(BPTR cf, struct site_entry *e)
 		return (FALSE);
 
 	return (TRUE);
+}
+
+static BOOL write_site_protocol(APTR iff, LONG protocol)
+{
+#ifdef __AROS__
+	LONG protocol_be = AROS_LONG2BE(protocol);
+
+	return IFFPushChunk(iff, ID_FTPSITE_PROTOCOL) && IFFWriteChunkBytes(iff, (char *)&protocol_be, sizeof(protocol_be)) &&
+		   IFFPopChunk(iff);
+#else
+	return IFFPushChunk(iff, ID_FTPSITE_PROTOCOL) && IFFWriteChunkBytes(iff, (char *)&protocol, sizeof(protocol)) &&
+		   IFFPopChunk(iff);
+#endif
 }
 
 static int disk_error(struct opusftp_globals *ogp, struct Window *win, LONG err, int type, IPCData *ipc)
@@ -678,6 +699,9 @@ static BOOL do_save_sites_iff(struct display_globals *dg, char *filename, LONG *
 			if (!(ok = IFFPopChunk(iff)))
 				break;
 
+			if (e->se_protocol != FTP_PROTOCOL_FTP && !(ok = write_site_protocol(iff, e->se_protocol)))
+				break;
+
 			node = next;
 		}
 
@@ -711,10 +735,27 @@ static Att_List *do_read_sites_iff(struct opusftp_globals *og, char *filename, L
 	if ((iff = IFFOpen(filename, IFF_READ, ID_OPUS)))
 	{
 		struct site_entry *e;
+		struct site_entry *last_site = NULL;
 		ULONG chunk;
 
 		while (!err && (chunk = IFFNextChunk(iff, 0)))
 		{
+			if (chunk == ID_FTPSITE_PROTOCOL)
+			{
+				LONG protocol = FTP_PROTOCOL_FTP;
+
+				if (IFFChunkSize(iff) >= sizeof(protocol) &&
+					IFFReadChunkBytes(iff, (char *)&protocol, sizeof(protocol)) == sizeof(protocol))
+				{
+#ifdef __AROS__
+					protocol = AROS_BE2LONG(protocol);
+#endif
+					if (last_site && protocol == FTP_PROTOCOL_SFTP)
+						last_site->se_protocol = protocol;
+				}
+				continue;
+			}
+
 			if ((e = AllocVec(sizeof(struct site_entry), MEMF_CLEAR)))
 			{
 				int size;
@@ -722,7 +763,6 @@ static Att_List *do_read_sites_iff(struct opusftp_globals *og, char *filename, L
 
 				if (chunk == ID_FTPSITE_SHORT)
 					size = SMALL_SIZE;
-
 				else if (chunk == ID_FTPSITE_LONG)
 					size = LARGE_SIZE;
 				else
@@ -783,7 +823,10 @@ static Att_List *do_read_sites_iff(struct opusftp_globals *og, char *filename, L
 					else
 						e->se_env = &og->og_oc.oc_env;
 
+					e->se_protocol = FTP_PROTOCOL_FTP;
+
 					Att_NewNode(list, e->se_name, (ULONG)e, 0);
+					last_site = e;
 				}
 				else
 					FreeVec(e);
@@ -1232,6 +1275,7 @@ static Att_List *do_import_sites(struct opusftp_globals *og, char *path)
 						if ((e = AllocVec(sizeof(struct site_entry), MEMF_CLEAR)))
 						{
 							e->se_anon = anon;
+							e->se_protocol = FTP_PROTOCOL_FTP;
 
 							if (!anon)
 							{
@@ -1244,9 +1288,39 @@ static Att_List *do_import_sites(struct opusftp_globals *og, char *path)
 
 							/* Use Hostname or Address for the socket */
 							if (fa->FA_Arguments[A_OPT_HOST])
-								stccpy(e->se_host, (char *)fa->FA_Arguments[A_OPT_HOST], HOSTNAMELEN);
+							{
+								const char *host = (char *)fa->FA_Arguments[A_OPT_HOST];
+								const char *without_scheme;
+								int protocol;
+
+								if (ftp_protocol_from_url_scheme(host, &without_scheme, &protocol))
+								{
+									e->se_protocol = protocol;
+									host = without_scheme;
+								}
+								stccpy(e->se_host, host, HOSTNAMELEN);
+							}
 							else
-								stccpy(e->se_host, (char *)fa->FA_Arguments[A_OPT_ADDR], HOSTNAMELEN);
+							{
+								const char *host = (char *)fa->FA_Arguments[A_OPT_ADDR];
+								const char *without_scheme;
+								int protocol;
+
+								if (ftp_protocol_from_url_scheme(host, &without_scheme, &protocol))
+								{
+									e->se_protocol = protocol;
+									host = without_scheme;
+								}
+								stccpy(e->se_host, host, HOSTNAMELEN);
+							}
+
+							if (fa->FA_Arguments[A_OPT_PROTOCOL])
+							{
+								int protocol;
+
+								if (ftp_protocol_from_text((char *)fa->FA_Arguments[A_OPT_PROTOCOL], &protocol))
+									e->se_protocol = protocol;
+							}
 
 							// special port specified ?
 
@@ -1254,15 +1328,13 @@ static Att_List *do_import_sites(struct opusftp_globals *og, char *path)
 								e->se_port = *(int *)fa->FA_Arguments[A_OPT_PORT];
 
 							if (e->se_port <= 0 || e->se_port > 9999)
-								e->se_port = 21;
+								e->se_port = ftp_protocol_default_port(e->se_protocol);
 
 							/* Use Alias, Hostname, or Address in requester */
 							if (fa->FA_Arguments[A_OPT_ALIS])
 								stccpy(e->se_name, (char *)fa->FA_Arguments[A_OPT_ALIS], HOSTNAMELEN);
-							else if (fa->FA_Arguments[A_OPT_HOST])
-								stccpy(e->se_name, (char *)fa->FA_Arguments[A_OPT_HOST], HOSTNAMELEN);
-							else if (fa->FA_Arguments[A_OPT_ADDR])
-								stccpy(e->se_name, (char *)fa->FA_Arguments[A_OPT_ADDR], HOSTNAMELEN);
+							else
+								stccpy(e->se_name, e->se_host, HOSTNAMELEN);
 
 							if (fa->FA_Arguments[A_OPT_PATH])
 								stccpy(e->se_path, (char *)fa->FA_Arguments[A_OPT_PATH], PATHLEN);
@@ -1432,6 +1504,9 @@ struct connect_msg *get_blank_connectmsg(struct opusftp_globals *og)
 
 	if ((cm = AllocVec(sizeof(struct connect_msg), MEMF_CLEAR)))
 	{
+		cm->cm_protocol = FTP_PROTOCOL_FTP;
+		cm->cm_site.se_protocol = FTP_PROTOCOL_FTP;
+
 		// initialise pointer to default environment
 		cm->cm_site.se_env = &og->og_oc.oc_env;
 		cm->cm_site.se_has_custom_env = FALSE;
@@ -1459,7 +1534,8 @@ struct site_entry *get_blank_site_entry(struct opusftp_globals *og)
 	if ((e = AllocVec(sizeof(struct site_entry), MEMF_CLEAR)))
 	{
 		e->se_anon = TRUE;
-		e->se_port = 21;
+		e->se_protocol = FTP_PROTOCOL_FTP;
+		e->se_port = ftp_protocol_default_port(e->se_protocol);
 
 		// initialise pointer to default environment
 		e->se_env = &og->og_oc.oc_env;
@@ -1566,6 +1642,9 @@ done:
 VOID copy_site_entry(struct opusftp_globals *og, struct site_entry *to, struct site_entry *from)
 {
 	*to = *from;
+
+	if (!to->se_protocol)
+		to->se_protocol = FTP_PROTOCOL_FTP;
 
 	if (to->se_has_custom_env)
 		to->se_env = &to->se_env_private;
@@ -1697,6 +1776,8 @@ static Att_List *do_import_amftp(struct display_globals *dg, char *path)
 						if (p->amftp_host)
 							stccpy(e->se_host, p->amftp_host, HOSTNAMELEN);
 
+						e->se_protocol = FTP_PROTOCOL_FTP;
+
 						if (buf[520])
 							e->se_anon = TRUE;
 
@@ -1712,7 +1793,7 @@ static Att_List *do_import_amftp(struct display_globals *dg, char *path)
 						e->se_port = atoi(p->amftp_port);
 
 						if (e->se_port <= 0 || e->se_port > 16384)
-							e->se_port = 21;
+							e->se_port = ftp_protocol_default_port(e->se_protocol);
 
 						if (p->amftp_remote)
 							stccpy(e->se_path, p->amftp_remote, PATHLEN);

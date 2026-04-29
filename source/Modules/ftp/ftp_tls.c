@@ -148,7 +148,7 @@ static void ftp_tls_amissl_close(void)
 #endif
 
 #if defined(FTP_TLS_BACKEND_AMISSL)
-static int ftp_tls_backend_acquire(void)
+int ftp_tls_backend_acquire(void)
 {
 	if (!ftp_tls_amissl_open())
 		return 0;
@@ -157,16 +157,21 @@ static int ftp_tls_backend_acquire(void)
 	return 1;
 }
 #elif defined(FTP_TLS_BACKEND_OPENSSL)
-static int ftp_tls_backend_acquire(void)
+int ftp_tls_backend_acquire(void)
 {
 	SSL_library_init();
 	SSL_load_error_strings();
 	return 1;
 }
+#else
+int ftp_tls_backend_acquire(void)
+{
+	return 0;
+}
 #endif
 
 #if defined(FTP_TLS_BACKEND_AMISSL) || defined(FTP_TLS_BACKEND_OPENSSL)
-static void ftp_tls_backend_release(void)
+void ftp_tls_backend_release(void)
 {
 #if defined(FTP_TLS_BACKEND_AMISSL)
 	if (ftp_tls_amissl_users > 0)
@@ -176,6 +181,10 @@ static void ftp_tls_backend_release(void)
 			ftp_tls_amissl_close();
 	}
 #endif
+}
+#else
+void ftp_tls_backend_release(void)
+{
 }
 #endif
 

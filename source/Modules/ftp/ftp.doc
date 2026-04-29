@@ -1,5 +1,57 @@
 New ftp module features:
 
+	  SFTP support:
+
+		SFTP is available through the existing FTPConnect entry point
+			using either an sftp:// URL or PROTOCOL=SFTP, for example:
+
+				FTPConnect sftp://user@example.com/home/user
+				FTPConnect HOST example.com USER user PROTOCOL=SFTP
+
+		Address book entries preserve the selected protocol.  Existing
+			entries default to FTP; the edit and connect requesters have
+			a Connection cycle for choosing Standard FTP, Explicit FTPS,
+			or SFTP (SSH).  Entering an ftps:// host selects Explicit FTPS;
+			entering an sftp:// host selects SFTP and changes the default
+			port to 22.  ASCII site lists may also use PROTO SFTP.
+
+		SFTP host keys are checked against
+			DOpus5:System/ftp_known_hosts on Amiga targets.  The first
+			connection to a host prompts the user to approve the displayed
+			fingerprint before storing it; later key changes fail the
+			connection until the saved entry is reviewed or removed.
+
+		The protocol uses libssh2 when the module is built with
+			sftp=yes.  Without that build option the SFTP code remains
+			compiled in as a stub and reports protocol/backend failure
+			instead of pulling in libssh2.
+
+		Development tests:
+
+				make -f makefile.tests test
+				make -f makefile.tests test-libssh2
+
+		The libssh2 test target requires pkg-config and libssh2
+			development headers.  A live SFTP smoke test is optional and
+			is enabled by setting DOPUS_SFTP_TEST_HOST and
+			DOPUS_SFTP_TEST_USER; DOPUS_SFTP_TEST_PORT,
+			DOPUS_SFTP_TEST_PASS, and DOPUS_SFTP_TEST_PATH are optional.
+			Write/rename/delete live testing is disabled unless
+			DOPUS_SFTP_TEST_WRITE is set to a non-zero value.  Set
+			DOPUS_SFTP_TEST_WRITE_PATH to a disposable writable remote
+			directory if the read-test path is not writable.
+
+		Amiga cross builds with sftp=yes default to a bundled static
+			libssh2 build under third_party/libssh2.  To use a
+			preinstalled target libssh2 instead, pass
+			SFTP_BACKEND=system and provide SFTP_CFLAGS/SFTP_LIBS
+			values on the make command line.
+
+		SFTP-enabled binary releases include THIRD_PARTY_NOTICES.md
+			in the release archive's Documents directory.  Equivalent
+			notices are needed for libssh2, zlib, and any SSL/crypto
+			library used by the target build.
+
 	  .35	'Copy/Also Copy Source's xxx' and 'Copy/Set Source Archive
 			Bit' would use the local Opus settings if the source
 			lister was a local one.  Now the ftp settings are

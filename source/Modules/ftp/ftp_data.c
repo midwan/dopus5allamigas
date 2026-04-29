@@ -269,7 +269,9 @@ static UWORD allow_resume_labels[] = {MSG_REPLACE_ALWAYS, MSG_REPLACE_NEVER, MSG
 
 			 tls_mode_labels[] = {MSG_FTP_TLS_PLAIN, MSG_FTP_TLS_EXPLICIT, 0},
 
-			 addr_dc_labels[] = {MSG_ADR_CONNECT, MSG_ADR_EDIT, 0};
+			 addr_dc_labels[] = {MSG_ADR_CONNECT, MSG_ADR_EDIT, 0},
+
+			 connection_labels[] = {MSG_FTP_CONNECTION_STANDARD, MSG_FTP_CONNECTION_FTPS, MSG_FTP_CONNECTION_SFTP, 0};
 
 // Tags for gadgets
 static struct TagItem
@@ -950,11 +952,15 @@ SubOptionHandle ftp_default_suboptions[] = {{ENV_SUB_COPYFLAGS, MSG_FTP_SUB_COPY
 
 ConfigWindow
 
-	ftp_connect_window = {{POS_CENTER, POS_CENTER, 37, 6}, {0, 0, 24, 76}};
+	ftp_connect_window = {{POS_CENTER, POS_CENTER, 45, 8}, {0, 0, 24, 84}};
 
 static struct TagItem
 
 	ftp_connect_layout_tags[] = {{GTCustom_LayoutRel, GAD_CONNECT_LAYOUT}, {GTCustom_CopyTags, TRUE}, {TAG_DONE}},
+
+	ftp_connection_tags[] = {{GTCustom_LocaleLabels, (ULONG)connection_labels},
+							 {GTCustom_CopyTags, TRUE},
+							 {TAG_MORE, (ULONG)ftp_connect_layout_tags}},
 
 	ftp_connect_name_tags[] = {{GTST_MaxChars, HOSTNAMELEN}, {TAG_MORE, (ULONG)ftp_connect_layout_tags}},
 
@@ -987,7 +993,7 @@ ObjectDef
 		// Name Glass
 		{OD_GADGET,
 		 FILE_BUTTON_KIND,
-		 {6, 0, 0, 1},
+		 {13, 0, 0, 1},
 		 {4, 4, 28, STRHGT},
 		 MSG_EDIT_NAME,
 		 0,
@@ -997,18 +1003,28 @@ ObjectDef
 		// Name
 		{OD_GADGET,
 		 STRING_KIND,
-		 {6, 0, SIZE_MAX_LESS - 1, 1},
+		 {13, 0, SIZE_MAX_LESS - 1, 1},
 		 {32, 4, -4, STRHGT},
 		 0,
 		 0,
 		 GAD_CONNECT_NAME,
 		 ftp_connect_name_tags},
 
+		// Connection
+		{OD_GADGET,
+		 CYCLE_KIND,
+		 {13, 1, SIZE_MAX_LESS - 1, 1},
+		 {4, 12, -4, 6},
+		 MSG_FTP_CONNECTION,
+		 PLACETEXT_LEFT,
+		 GAD_CONNECT_PROTOCOL,
+		 ftp_connection_tags},
+
 		// Host
 		{OD_GADGET,
 		 STRING_KIND,
-		 {6, 1, SIZE_MAX_LESS - 1, 1},
-		 {4, 12, -4, STRHGT},
+		 {13, 2, SIZE_MAX_LESS - 1, 1},
+		 {4, 20, -4, STRHGT},
 		 MSG_EDIT_HOST,
 		 0,
 		 GAD_CONNECT_HOST,
@@ -1017,8 +1033,8 @@ ObjectDef
 		// Anonymous
 		{OD_GADGET,
 		 CHECKBOX_KIND,
-		 {6, 2, 0, 1},
-		 {4, 20, 24, CHECKBOX_HGT},
+		 {13, 3, 0, 1},
+		 {4, 28, 24, CHECKBOX_HGT},
 		 MSG_EDIT_ANON,
 		 PLACETEXT_LEFT,
 		 GAD_CONNECT_ANON,
@@ -1027,8 +1043,8 @@ ObjectDef
 		// Port
 		{OD_GADGET,
 		 INTEGER_KIND,
-		 {POS_RIGHT_JUSTIFY - 2, 2, 7, 1},
-		 {4, 20, 4, STRHGT},
+		 {POS_RIGHT_JUSTIFY - 2, 3, 7, 1},
+		 {4, 28, 4, STRHGT},
 		 MSG_EDIT_PORT,
 		 0,
 		 GAD_CONNECT_PORT,
@@ -1037,8 +1053,8 @@ ObjectDef
 		// User
 		{OD_GADGET,
 		 STRING_KIND,
-		 {6, 3, SIZE_MAX_LESS - 1, 1},
-		 {4, 28, -4, STRHGT},
+		 {13, 4, SIZE_MAX_LESS - 1, 1},
+		 {4, 36, -4, STRHGT},
 		 MSG_EDIT_USER,
 		 0,
 		 GAD_CONNECT_USER,
@@ -1047,8 +1063,8 @@ ObjectDef
 		// Password
 		{OD_GADGET,
 		 STRING_KIND,
-		 {6, 4, SIZE_MAX_LESS - 1, 1},
-		 {4, 36, -4, STRHGT},
+		 {13, 5, SIZE_MAX_LESS - 1, 1},
+		 {4, 44, -4, STRHGT},
 		 MSG_EDIT_PASSWORD,
 		 0,
 		 GAD_CONNECT_PASSWORD,
@@ -1057,8 +1073,8 @@ ObjectDef
 		// dir
 		{OD_GADGET,
 		 STRING_KIND,
-		 {6, 5, SIZE_MAX_LESS - 1, 1},
-		 {4, 44, -4, STRHGT},
+		 {13, 7, SIZE_MAX_LESS - 1, 1},
+		 {4, 60, -4, STRHGT},
 		 MSG_EDIT_DIR,
 		 0,
 		 GAD_CONNECT_DIR,
@@ -1101,7 +1117,7 @@ ObjectDef
 
 ConfigWindow
 
-	ftp_edit_window = {{POS_CENTER, POS_CENTER, 37, 15}, {0, 0, 24, 64}};
+	ftp_edit_window = {{POS_CENTER, POS_CENTER, 45, 17}, {0, 0, 24, 72}};
 
 // Labels
 UWORD custom_options_labels[] = {MSG_DEFAULT_OPTIONS, MSG_CUSTOM_OPTIONS, 0};
@@ -1132,18 +1148,28 @@ ObjectDef
 		// Name
 		{OD_GADGET,
 		 STRING_KIND,
-		 {6, 0, SIZE_MAX_LESS - 1, 1},
+		 {13, 0, SIZE_MAX_LESS - 1, 1},
 		 {4, 4, -4, STRHGT},
 		 MSG_EDIT_NAME,
 		 0,
 		 GAD_EDIT_NAME,
 		 ftp_connect_name_tags},
 
+		// Connection
+		{OD_GADGET,
+		 CYCLE_KIND,
+		 {13, 1, SIZE_MAX_LESS - 1, 1},
+		 {4, 12, -4, 6},
+		 MSG_FTP_CONNECTION,
+		 PLACETEXT_LEFT,
+		 GAD_EDIT_PROTOCOL,
+		 ftp_connection_tags},
+
 		// Host
 		{OD_GADGET,
 		 STRING_KIND,
-		 {6, 1, SIZE_MAX_LESS - 1, 1},
-		 {4, 12, -4, STRHGT},
+		 {13, 2, SIZE_MAX_LESS - 1, 1},
+		 {4, 20, -4, STRHGT},
 		 MSG_EDIT_HOST,
 		 0,
 		 GAD_EDIT_HOST,
@@ -1152,8 +1178,8 @@ ObjectDef
 		// Anonymous
 		{OD_GADGET,
 		 CHECKBOX_KIND,
-		 {6, 2, 0, 1},
-		 {4, 20, 24, CHECKBOX_HGT},
+		 {13, 3, 0, 1},
+		 {4, 28, 24, CHECKBOX_HGT},
 		 MSG_EDIT_ANON,
 		 PLACETEXT_LEFT,
 		 GAD_EDIT_ANON,
@@ -1162,8 +1188,8 @@ ObjectDef
 		// Port
 		{OD_GADGET,
 		 INTEGER_KIND,
-		 {POS_RIGHT_JUSTIFY - 2, 2, 7, 1},
-		 {4, 20, 4, STRHGT},
+		 {POS_RIGHT_JUSTIFY - 2, 3, 7, 1},
+		 {4, 28, 4, STRHGT},
 		 MSG_EDIT_PORT,
 		 0,
 		 GAD_EDIT_PORT,
@@ -1172,8 +1198,8 @@ ObjectDef
 		// User
 		{OD_GADGET,
 		 STRING_KIND,
-		 {6, 3, SIZE_MAX_LESS - 1, 1},
-		 {4, 28, -4, STRHGT},
+		 {13, 4, SIZE_MAX_LESS - 1, 1},
+		 {4, 36, -4, STRHGT},
 		 MSG_EDIT_USER,
 		 0,
 		 GAD_EDIT_USER,
@@ -1182,8 +1208,8 @@ ObjectDef
 		// Password
 		{OD_GADGET,
 		 STRING_KIND,
-		 {6, 4, SIZE_MAX_LESS - 1, 1},
-		 {4, 36, -4, STRHGT},
+		 {13, 5, SIZE_MAX_LESS - 1, 1},
+		 {4, 44, -4, STRHGT},
 		 MSG_EDIT_PASSWORD,
 		 0,
 		 GAD_EDIT_PASSWORD,
@@ -1192,8 +1218,8 @@ ObjectDef
 		// dir
 		{OD_GADGET,
 		 STRING_KIND,
-		 {6, 5, SIZE_MAX_LESS - 1, 1},
-		 {4, 44, -4, STRHGT},
+		 {13, 7, SIZE_MAX_LESS - 1, 1},
+		 {4, 60, -4, STRHGT},
 		 MSG_EDIT_DIR,
 		 0,
 		 GAD_EDIT_DIR,
@@ -1202,8 +1228,8 @@ ObjectDef
 		// Frame area custom rhs middle
 		{OD_AREA,
 		 TEXTPEN,
-		 {1, 7, SIZE_MAX_LESS - 1, SIZE_MAX_LESS - 2},
-		 {2, 56, -2, -10},
+		 {1, 9, SIZE_MAX_LESS - 1, SIZE_MAX_LESS - 2},
+		 {2, 72, -2, -10},
 		 MSG_ADVANCED_SETTINGS,
 		 AREAFLAG_TITLE | AREAFLAG_RECESSED,
 		 GAD_EDIT_CUSTOM_LAYOUT,

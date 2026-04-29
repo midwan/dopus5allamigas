@@ -30,6 +30,13 @@ WARNINGS := -Wall -Wno-pointer-sign -fno-strict-aliasing -Werror-implicit-functi
 CC       := $(ARCH)-aros-gcc
 CFLAGS   := $(OPTIONS) $(DEBUG) $(DEBUGSYM) $(OPTIMIZE)
 LIBS     := 
+SFTP_CFLAGS ?=
+SFTP_LIBS   ?= -lssh2
+
+ifeq ($(sftp), yes)
+CFLAGS   += -DFTP_SFTP_BACKEND_LIBSSH2 $(SFTP_CFLAGS)
+LIBS     += $(SFTP_LIBS)
+endif
 
 REMOVE = rm -f
 MAKEDIR := mkdir -p
@@ -40,7 +47,7 @@ all : $(TARGET)
 
 $(TARGET): $(OBJS)
 	$(MAKEDIR) $(DESTDIR)
-	$(CC) $^ $(LDFLAGS) $(LIBS) -o $@
+	$(CC) $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 
 %.o : %.c
 	@echo ">>>>>Compiling $<"

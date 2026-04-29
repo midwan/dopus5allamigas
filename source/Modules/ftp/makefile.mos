@@ -31,10 +31,22 @@ CC       := ppc-morphos-gcc -noixemul
 CFLAGS   := $(OPTIONS) $(DEBUG) $(DEBUGSYM) $(OPTIMIZE)
 LIBS     := -ldebug -lssl_shared -lcrypto_shared
 
+CROSS_ROOT ?= /opt/ppc-morphos
+SFTP_TARGET := ppc-morphos
+SFTP_DEP_CC := ppc-morphos-gcc
+SFTP_DEP_AR := ppc-morphos-ar
+SFTP_DEP_RANLIB := ppc-morphos-ranlib
+SFTP_DEP_CFLAGS := --std=gnu99 -noixemul $(OPTIMIZE)
+SFTP_DEP_CPPFLAGS := -D_NO_PPCINLINE
+SFTP_DEP_LIBS := -lssl_shared -lcrypto_shared -L$(CROSS_ROOT)/ppc-morphos/lib -lz_shared
+include makefile.sftp
+
 REMOVE = rm -f
 MAKEDIR := mkdir -p
 
 OBJS = $(COMMON_OBJS) $(MOS_OBJS)
+
+$(OBJS): $(SFTP_DEPS)
 
 ECHO = echo
 ECHE = echo -e
@@ -48,10 +60,10 @@ ARCHIVING = @$(ECHE) "archiving $(BOLD)$@$(NRML)..."
 
 all : $(TARGET)
 
-$(TARGET): $(OBJS)
+$(TARGET): $(OBJS) $(SFTP_DEPS)
 	@$(MAKEDIR) $(DESTDIR)
 	$(LINKING)
-	@$(CC) $^ $(LDFLAGS) $(LIBS) -o $@
+	@$(CC) $(OBJS) $(LDFLAGS) $(LIBS) -o $@
 	$(STRIPPING)
 	@$(STRIP)
 	@chmod $(TARGET) -x

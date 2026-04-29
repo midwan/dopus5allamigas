@@ -1111,3 +1111,15 @@ FTPS certificate check failed
 MSG_FTP_GETPUT_NO_FTPS (//)
 FTPS cannot use direct site-to-site copy
 ;
+MSG_FTP_CONNECTION (//)
+_Connection
+;
+MSG_FTP_CONNECTION_STANDARD (//)
+Standard FTP
+;
+MSG_FTP_CONNECTION_FTPS (//)
+Explicit FTPS
+;
+MSG_FTP_CONNECTION_SFTP (//)
+SFTP (SSH)
+;

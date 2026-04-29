@@ -155,6 +155,58 @@ static int list_update(struct update_info *ui, char *line)
 
 /***************************/
 
+static int sftp_list_update(void *userdata, const struct ftp_sftp_entry *entry)
+{
+	struct update_info *ui = userdata;
+#if defined(__AROS__) || defined(__amigaos3__)
+	struct Device *TimerBase;
+#else
+	struct Library *TimerBase;
+#endif
+#ifdef __amigaos4__
+	struct TimerIFace *ITimer;
+#endif
+
+	if (!ui || !entry)
+		return 1;
+
+#if defined(__AROS__) || defined(__amigaos3__)
+	TimerBase = (struct Device *)GetTimerBase();
+#else
+	TimerBase = GetTimerBase();
+#endif
+#ifdef __amigaos4__
+	ITimer = (struct TimerIFace *)GetInterface(TimerBase, "main", 1, NULL);
+#endif
+
+	ObtainSemaphore(&ui->ui_sem);
+
+	lister_add(ui->ui_ftpnode,
+			   (char *)entry->name,
+			   entry->size,
+			   entry->type,
+			   ftp_sftp_unix_to_amiga_seconds(entry->seconds),
+			   prot_unix_to_amiga(entry->unixprot),
+			   (char *)entry->comment);
+
+	GetSysTime(&ui->ui_curr);
+	if (ui->ui_curr.tv_secs - ui->ui_last.tv_secs >= ui->ui_ftpnode->fn_site.se_env->e_list_update)
+	{
+		ftplister_refresh(ui->ui_ftpnode, REFRESH_NODATE);
+		ui->ui_last = ui->ui_curr;
+	}
+
+	ReleaseSemaphore(&ui->ui_sem);
+
+#ifdef __amigaos4__
+	DropInterface((struct Interface *)ITimer);
+#endif
+
+	return !(ui->ui_ftpnode->fn_flags & LST_ABORT);
+}
+
+/***************************/
+
 //
 //	Ask if user wishes to grab index files
 //
@@ -397,12 +449,26 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 
 			for (;;)
 			{
-				// Send the LIST command
-				lsresult = list(&ftpnode->fn_ftp, list_update, ui, ftpnode->fn_lscmd, "");
+				if (ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+				{
+					ftpnode->fn_ftp.fi_aborted = 0;
+					*ftpnode->fn_ftp.fi_serverr = 0;
+					lsresult = ftp_sftp_list(&ftpnode->fn_sftp, "", sftp_list_update, ui) ? 0 : -1;
+					if (lsresult)
+					{
+						if (ftp_sftp_session_error(&ftpnode->fn_sftp) == FTP_SFTP_ERROR_ABORTED)
+							ftpnode->fn_ftp.fi_aborted = 1;
+						else
+							sprintf(ftpnode->fn_ftp.fi_serverr, "550 %s\r\n", ftp_sftp_error_message(&ftpnode->fn_sftp));
+					}
+				}
+				else
+					// Send the LIST command
+					lsresult = list(&ftpnode->fn_ftp, list_update, ui, ftpnode->fn_lscmd, "");
 
 				D(bug("list command result %d\n", lsresult));
 
-				if (lsresult == -2 && lister_fallback_list_command(ftpnode))
+				if (ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && lsresult == -2 && lister_fallback_list_command(ftpnode))
 				{
 					lister_clear_listing(ftpnode, handle, redo_cache);
 					GetSysTime(&ui->ui_last);
@@ -424,8 +490,20 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 				lister_prog_clear(ftpnode);
 		}
 
-		rexx_lst_label(ftpnode->fn_opus, handle, "FTP:", ftpnode->fn_site.se_host, NULL);
-		rexx_lst_title(ftpnode->fn_opus, handle, ftpnode->fn_site.se_host);
+		rexx_lst_label(ftpnode->fn_opus,
+					   handle,
+					   ftpnode->fn_protocol == FTP_PROTOCOL_SFTP ? "SFTP:" : "FTP:",
+					   ftpnode->fn_site.se_host,
+					   NULL);
+		if (ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+		{
+			char title[HOSTNAMELEN + 6];
+
+			sprintf(title, "SFTP:%s", ftpnode->fn_site.se_host);
+			rexx_lst_title(ftpnode->fn_opus, handle, title);
+		}
+		else
+			rexx_lst_title(ftpnode->fn_opus, handle, ftpnode->fn_site.se_host);
 		send_rexxa(ftpnode->fn_opus, FALSE, "lister refresh %lu full", handle);
 
 		rexx_lst_unlock(ftpnode->fn_opus, handle);

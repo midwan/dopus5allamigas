@@ -36,6 +36,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_opusftp.h"
 #include "ftp_recursive.h"
 #include "ftp_util.h"
+#include "ftp_protocol.h"
 #include "ftp.strings"
 #include "ftp_addressbook.h"
 #include "ftp_addrsupp_protos.h"
@@ -185,6 +186,7 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 		if ((cm = get_blank_connectmsg(&og)))
 		{
 			cm->cm_handle = 0;
+			cm->cm_protocol = FTP_PROTOCOL_FTP;
 
 			stccpy(cm->cm_opus, og.og_opusname, PORTNAMELEN + 1);
 
@@ -192,13 +194,20 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 			if (host_arg)
 			{
 				const char *without_scheme;
+				int scheme_protocol;
 				int scheme_mode;
 
-				if (ftp_tls_mode_from_url_scheme(host_arg, &without_scheme, &scheme_mode))
+				if (ftp_protocol_from_url_scheme(host_arg, &without_scheme, &scheme_protocol))
+				{
+					host_arg = without_scheme;
+					cm->cm_protocol = scheme_protocol;
+					flags |= CONN_OPT_PROTOCOL;
+				}
+
+				if (ftp_tls_mode_from_url_scheme((const char *)fa->FA_Arguments[D_OPT_HOST], &without_scheme, &scheme_mode))
 				{
 					struct ftp_environment *env;
 
-					host_arg = without_scheme;
 					if ((env = mod_connect_private_env(cm)))
 					{
 						env->e_tls_mode = scheme_mode;
@@ -238,6 +247,20 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 
 			if (fa->FA_Arguments[D_OPT_RECON])
 				flags |= CONN_OPT_RECON;
+
+			if (fa->FA_Arguments[D_OPT_PROTOCOL])
+			{
+				int protocol;
+
+				if (ftp_protocol_from_text((char *)fa->FA_Arguments[D_OPT_PROTOCOL], &protocol))
+				{
+					cm->cm_protocol = protocol;
+					flags |= CONN_OPT_PROTOCOL;
+				}
+				else
+					valid = FALSE;
+			}
+			cm->cm_site.se_protocol = cm->cm_protocol;
 
 			if (fa->FA_Arguments[D_OPT_TLS])
 			{
