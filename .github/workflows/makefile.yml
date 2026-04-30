@@ -51,6 +51,25 @@ jobs:
         run: |
           docker run --rm -v ${{ github.workspace }}:/work ${{ matrix.platform.image }} sh -c "cd /work/source/Modules/ftp && make -f ${{ matrix.platform.ftp_makefile }} clean ${{ matrix.platform.ftp_flags }} && make -f ${{ matrix.platform.ftp_makefile }} sftp=yes ${{ matrix.platform.ftp_flags }}"
 
+  aros-debug-build:
+    needs: ftp-tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { name: i386-aros, image: "midwan/aros-compiler:i386-aros" }
+          - { name: x86_64-aros, image: "midwan/aros-compiler:x86_64-aros" }
+
+    name: aros-debug-build-${{ matrix.platform.name }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Clean DEBUG build (${{ matrix.platform.name }})
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/work ${{ matrix.platform.image }} sh -c "cd /work/source && make ${{ matrix.platform.name }} clean && make ${{ matrix.platform.name }} all debug=yes"
+
   build:
     needs: ftp-tests
     runs-on: ubuntu-latest
@@ -84,7 +103,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    needs: [build, sftp-build]
+    needs: [build, sftp-build, aros-debug-build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
