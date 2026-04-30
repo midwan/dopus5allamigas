@@ -54,6 +54,181 @@ struct OwnDiskObject
 	#define ISOWN(x) (((struct OwnDiskObject *)x)->ownmagic == OWN_MAGIC && ((struct OwnDiskObject *)x)->ownptr == x)
 #endif
 
+BOOL backdrop_icon_uses_system_draw(BackdropObject *object)
+{
+#if defined(__amigaos3__)
+	return (object && object->icon && IconBase && IconBase->lib_Version >= 44);
+#elif defined(USE_DRAWICONSTATE)
+	return (object && object->icon);
+#else
+	return FALSE;
+#endif
+}
+
+#if defined(USE_DRAWICONSTATE) || defined(__amigaos3__)
+static void backdrop_expand_system_icon_rect_icon(struct DiskObject *icon, struct Rectangle *rect)
+{
+	struct Image *image;
+	short width, height;
+
+	if (!icon || !rect)
+		return;
+
+	width = rect->MaxX - rect->MinX + 1;
+	height = rect->MaxY - rect->MinY + 1;
+
+	if (icon->do_Gadget.Width > width)
+		width = icon->do_Gadget.Width;
+	if (icon->do_Gadget.Height > height)
+		height = icon->do_Gadget.Height;
+
+	if ((image = (struct Image *)icon->do_Gadget.GadgetRender))
+	{
+		if (image->Width > width)
+			width = image->Width;
+		if (image->Height > height)
+			height = image->Height;
+	}
+
+	if ((image = (struct Image *)icon->do_Gadget.SelectRender))
+	{
+		if (image->Width > width)
+			width = image->Width;
+		if (image->Height > height)
+			height = image->Height;
+	}
+
+	rect->MaxX = rect->MinX + width - 1;
+	rect->MaxY = rect->MinY + height - 1;
+}
+
+static void backdrop_expand_system_icon_rect(BackdropObject *object, struct Rectangle *rect)
+{
+	if (!object)
+		return;
+
+	backdrop_expand_system_icon_rect_icon(object->icon, rect);
+#if defined(__amigaos3__)
+	if (object->flags & BDOF_ICONLIB_DEFAULT)
+		backdrop_expand_system_icon_rect_icon(backdrop_get_iconlib_select_icon(object), rect);
+#endif
+}
+#endif
+
+BOOL backdrop_get_system_icon_rect(struct RastPort *rp, BackdropObject *object, struct Rectangle *rect)
+{
+#if defined(USE_DRAWICONSTATE) || defined(__amigaos3__)
+	if (!rp || !rect || !backdrop_icon_uses_system_draw(object))
+		return FALSE;
+
+	if (!GetIconRectangle(rp,
+						  object->icon,
+						  NULL,
+						  rect,
+						  ICONDRAWA_Frameless,
+						  TRUE,
+						  ICONDRAWA_Borderless,
+						  TRUE,
+						  TAG_DONE))
+		return FALSE;
+
+	backdrop_expand_system_icon_rect(object, rect);
+	return TRUE;
+#else
+	return FALSE;
+#endif
+}
+
+#if defined(__amigaos3__)
+static BOOL backdrop_system_icon_has_real_selected_image(BackdropObject *object)
+{
+	ULONG has_real_image2 = 0;
+
+	if (!object || !object->icon || !IconBase || IconBase->lib_Version < 44)
+		return FALSE;
+
+	IconControl(object->icon, ICONCTRLA_HasRealImage2, &has_real_image2, TAG_DONE);
+	return (has_real_image2 != 0);
+}
+#endif
+
+static BOOL backdrop_system_icon_uses_selected_state(BackdropObject *object)
+{
+	if (!object || !object->state)
+		return FALSE;
+
+#if defined(__amigaos3__)
+	if (object->flags & BDOF_ICONLIB_DEFAULT)
+	{
+		return (backdrop_get_iconlib_select_icon(object) != 0);
+	}
+
+	if ((object->flags & BDOF_FAKE_ICON) && !backdrop_system_icon_has_real_selected_image(object))
+		return FALSE;
+#endif
+
+	return TRUE;
+}
+
+static void backdrop_draw_system_icon(struct RastPort *rp,
+									  BackdropObject *object,
+									  short left,
+									  short top,
+									  BOOL selected_state,
+									  BOOL erase_background)
+{
+#if defined(USE_DRAWICONSTATE) || defined(__amigaos3__)
+	struct DiskObject *draw_icon = object->icon;
+
+	if (!draw_icon)
+		return;
+
+#if defined(__amigaos3__)
+	if (selected_state && (object->flags & BDOF_ICONLIB_DEFAULT))
+	{
+		struct DiskObject *select_icon = backdrop_get_iconlib_select_icon(object);
+
+		if (select_icon)
+			draw_icon = select_icon;
+	}
+#endif
+
+	DrawIconState(rp,
+				  draw_icon,
+				  NULL,
+				  left,
+				  top,
+				  selected_state ? IDS_SELECTED : IDS_NORMAL,
+				  ICONDRAWA_DrawInfo,
+				  GUI->draw_info,
+				  ICONDRAWA_Frameless,
+				  TRUE,
+				  ICONDRAWA_Borderless,
+				  TRUE,
+				  ICONDRAWA_EraseBackground,
+				  erase_background,
+				  TAG_DONE);
+#endif
+}
+
+void backdrop_release_system_icon_state(BackdropInfo *info, BackdropObject *object)
+{
+#if defined(__amigaos3__)
+	if (!info || !info->window || !object || !object->state || !backdrop_icon_uses_system_draw(object))
+		return;
+
+	backdrop_draw_system_icon(&info->rp,
+							  object,
+							  object->pos.Left + info->size.MinX - info->offset_x,
+							  object->pos.Top + info->size.MinY - info->offset_y,
+							  FALSE,
+							  FALSE);
+#else
+	(void)info;
+	(void)object;
+#endif
+}
+
 // Scroll the icons
 void backdrop_scroll_objects(BackdropInfo *info, short off_x, short off_y)
 {
@@ -402,17 +577,25 @@ void backdrop_draw_object(BackdropInfo *info,
 	struct Rectangle rect;
 	short len;
 	BOOL comp = 0, draw = 1, state = 0;
+	BOOL system_draw;
+	BOOL system_selected_state = FALSE;
 	short has_border;
 
 	// No icon?
 	if (!object->icon)
 		return;
 
+	system_draw = backdrop_icon_uses_system_draw(object);
+	if (system_draw)
+		system_selected_state = backdrop_system_icon_uses_selected_state(object);
+
 	// See if icon has no border
 	has_border = backdrop_icon_border(object);
+	if (system_draw)
+		has_border = 0;
 
 	// Not just clearing image?
-	if (!(flags & BRENDERF_CLEAR))
+	if (!(flags & BRENDERF_CLEAR) && !system_draw)
 	{
 		// Get image to render
 		if ((image = (struct Image *)object->icon->do_Gadget.GadgetRender))
@@ -433,13 +616,12 @@ void backdrop_draw_object(BackdropInfo *info,
 		}
 	}
 
-#ifdef USE_DRAWICONSTATE
-	if (GetIconRectangle(rp, object->icon, NULL, &rect, ICONDRAWA_Borderless, TRUE, TAG_DONE))
+	if (backdrop_get_system_icon_rect(rp, object, &rect))
 	{
 		object->pos.Width = rect.MaxX - rect.MinX + 1;
 		object->pos.Height = rect.MaxY - rect.MinY + 1;
 	}
-#elif defined(__MORPHOS__)
+#if defined(__MORPHOS__)
 	if (ISOWN(object->icon))
 	{
 		struct OwnDiskObject *o = (APTR)object->icon;
@@ -516,13 +698,12 @@ void backdrop_draw_object(BackdropInfo *info,
 	// Object state changed?
 	else if (object->flags & BDOF_STATE_CHANGE)
 	{
-#ifndef USE_DRAWICONSTATE
-	// Need to clear if transparent
+		// Need to clear if transparent
 	#if !defined(__MORPHOS__)
-		if (!has_border)
+		if (system_draw || !has_border)
 	#endif
 			EraseRect(rp, rect.MinX, rect.MinY, rect.MaxX, rect.MaxY);
-#endif
+
 		object->flags &= ~BDOF_STATE_CHANGE;
 	}
 
@@ -530,7 +711,7 @@ void backdrop_draw_object(BackdropInfo *info,
 	if (!(flags & BRENDERF_CLEAR))
 	{
 		// Not drawing if no image
-		if (!imagedata)
+		if (!system_draw && !imagedata)
 			draw = 0;
 
 		// Ok to draw?
@@ -543,7 +724,7 @@ void backdrop_draw_object(BackdropInfo *info,
 			if (flags & BRENDERF_REAL)
 			{
 				// Want border?
-				if (has_border)
+				if (has_border && !system_draw)
 				{
 					// Draw border around icon
 					DrawBox(rp, &rect, GUI->draw_info, object->state);
@@ -558,53 +739,39 @@ void backdrop_draw_object(BackdropInfo *info,
 #endif
 
 					// Clear boundary around image
-#ifdef USE_DRAWICONSTATE
-					RectFill(rp, rect.MinX + 1, rect.MinY + 1, rect.MaxX - 1, rect.MaxY - 1);
-#else
 					RectFill(rp, rect.MinX + 1, rect.MinY + 1, rect.MaxX - 1, rect.MinY + 2);
 					RectFill(rp, rect.MinX + 1, rect.MinY + 1, rect.MinX + 3, rect.MaxY - 1);
 					RectFill(rp, rect.MinX + 4, rect.MaxY - 3, rect.MaxX - 1, rect.MaxY - 1);
 					RectFill(rp, rect.MaxX - 3, rect.MinY + 3, rect.MaxX - 1, rect.MaxY - 4);
-#endif
 				}
-#ifdef USE_DRAWICONSTATE
-				else
-				{
-					EraseRect(rp, rect.MinX, rect.MinY, rect.MaxX, rect.MaxY);
-				}
-#endif
 			}
 
-#ifdef USE_DRAWICONSTATE
-			DrawIconState(rp,
-						  object->icon,
-						  NULL,
-						  left,
-						  top,
-						  object->state ? IDS_SELECTED : IDS_NORMAL,
-						  ICONDRAWA_Frameless,
-						  TRUE,
-						  ICONDRAWA_Borderless,
-						  TRUE,
-						  ICONDRAWA_EraseBackground,
-						  FALSE,
-						  TAG_DONE);
-#else
-	#if defined(__MORPHOS__)
-			if (ISOWN(object->icon))
+			if (system_draw)
 			{
-				IPTR tags[] = {BLTBMA_USESOURCEALPHA, TRUE, TAG_DONE};
-				struct OwnDiskObject *o = (APTR)object->icon;
-				BltBitMapRastPortAlpha(
-					o->pngimage, 0, 0, rp, left, top, o->pngimage_width, o->pngimage_height, (struct TagItem *)&tags);
-
-				if (object->state)
-				{
-					ProcessPixelArray(rp, left, top, o->pngimage_width, o->pngimage_height, POP_TINT, 0x5082ff, NULL);
-				}
+				backdrop_draw_system_icon(rp,
+										  object,
+										  left,
+										  top,
+										  system_selected_state,
+										  FALSE);
 			}
 			else
 			{
+	#if defined(__MORPHOS__)
+				if (ISOWN(object->icon))
+				{
+					IPTR tags[] = {BLTBMA_USESOURCEALPHA, TRUE, TAG_DONE};
+					struct OwnDiskObject *o = (APTR)object->icon;
+					BltBitMapRastPortAlpha(
+						o->pngimage, 0, 0, rp, left, top, o->pngimage_width, o->pngimage_height, (struct TagItem *)&tags);
+
+					if (object->state)
+					{
+						ProcessPixelArray(rp, left, top, o->pngimage_width, o->pngimage_height, POP_TINT, 0x5082ff, NULL);
+					}
+				}
+				else
+				{
 	#endif
 				// Get image as a bitmap
 				backdrop_image_bitmap(info, image, imagedata, &bitmap);
@@ -679,9 +846,9 @@ void backdrop_draw_object(BackdropInfo *info,
 					SetWrMsk(rp, mask);
 				}
 	#if defined(__MORPHOS__)
-			}
+				}
 	#endif
-#endif
+			}
 
 			// Left out (on desktop), or a link?
 			if (!(environment->env->desktop_flags & DESKTOPF_NO_ARROW) &&
@@ -775,6 +942,8 @@ void backdrop_draw_object(BackdropInfo *info,
 		{
 			struct TextExtent extent;
 			short max_width = 0, loop, textx, texty;
+			BOOL label_selected = (object->flags & BDOF_SELECTED) ||
+								  (object->state && (object->flags & BDOF_ICONLIB_DEFAULT) && !system_selected_state);
 
 			// Splitting long labels?
 			if (environment->env->desktop_flags & DESKTOPF_SPLIT_LABELS)
@@ -836,7 +1005,7 @@ void backdrop_draw_object(BackdropInfo *info,
 			else
 			{
 				// Is object selected?
-				if (object->flags & BDOF_SELECTED)
+				if (label_selected)
 				{
 					if (drawmode == JAM2)
 						SetDrMd(rp, INVERSVID | JAM2);
@@ -908,7 +1077,7 @@ void backdrop_draw_object(BackdropInfo *info,
 				}
 
 				// Reset draw mode if necessary
-				if (object->flags & BDOF_SELECTED)
+				if (label_selected)
 					SetDrMd(rp, drawmode);
 			}
 		}
@@ -972,6 +1141,9 @@ void backdrop_get_masks(BackdropObject *object)
 		FreeVec(object->image_mask[a]);
 		object->image_mask[a] = 0;
 	}
+
+	if (backdrop_icon_uses_system_draw(object))
+		return;
 
 	// See if icon has border - no mask if so
 	if (!backdrop_icon_border(object))

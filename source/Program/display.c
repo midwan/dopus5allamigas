@@ -25,6 +25,14 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopus.h"
 
+#if defined(__amigaos3__)
+static void display_set_iconlib_screen(struct Screen *screen)
+{
+	if (IconBase && IconBase->lib_Version >= 44)
+		IconControl(NULL, ICONCTRLA_SetGlobalScreen, screen, TAG_DONE);
+}
+#endif
+
 // Open the display
 BOOL display_open(long flags)
 {
@@ -389,6 +397,10 @@ BOOL display_open(long flags)
 			if (!GUI->draw_info)
 				GUI->draw_info = GetScreenDrawInfo(GUI->screen_pointer);
 
+#if defined(__amigaos3__)
+			display_set_iconlib_screen(GUI->screen_pointer);
+#endif
+
 			// Turn on appicon notification
 			SetNotifyRequest(GUI->notify_req, DN_APP_ICON_LIST, DN_APP_ICON_LIST);
 
@@ -486,11 +498,6 @@ BOOL display_open(long flags)
 
 	// Clear busy pointer
 	ClearPointer(GUI->window);
-
-	/*	// V44 icon stuff
-		if (IconBase->lib_Version>=44)
-			IconControl(NULL,ICONCTRLA_SetGlobalScreen,GUI->screen_pointer,TAG_DONE);
-	*/
 
 	// Success
 	return 1;
@@ -627,10 +634,9 @@ void close_display(int close_flags, BOOL quit_all)
 	if (screen_lock)
 		UnlockPubScreen(0, screen_lock);
 
-	/*
-		if (IconBase->lib_Version>=44)
-			IconControl(NULL,ICONCTRLA_SetGlobalScreen,NULL,TAG_DONE);
-	*/
+#if defined(__amigaos3__)
+	display_set_iconlib_screen(NULL);
+#endif
 
 	// Close the screen?
 	if (close_flags & CLOSE_SCREEN)

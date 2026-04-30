@@ -25,6 +25,275 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopus.h"
 
+#if defined(__amigaos3__)
+#define ICONLIB_SELECTF_REMAPPED (1 << 0)
+
+static struct Screen *backdrop_iconlib_screen(BackdropInfo *info)
+{
+	if (info && info->window)
+		return info->window->WScreen;
+	if (GUI)
+		return GUI->screen_pointer;
+	return 0;
+}
+
+struct DiskObject *backdrop_get_iconlib_select_icon(BackdropObject *object)
+{
+	return (object) ? object->iconlib_select_icon : 0;
+}
+
+void backdrop_remap_iconlib_select_icon(BackdropInfo *info, BackdropObject *object, struct Window *window, BOOL free_remap)
+{
+	struct Screen *screen = (window) ? window->WScreen : backdrop_iconlib_screen(info);
+
+	if (!object || !object->iconlib_select_icon)
+		return;
+
+	if (free_remap)
+	{
+		if (object->iconlib_select_flags & ICONLIB_SELECTF_REMAPPED)
+		{
+			RemapIcon(object->iconlib_select_icon, screen, 1);
+			object->iconlib_select_flags &= ~ICONLIB_SELECTF_REMAPPED;
+		}
+	}
+	else if (screen && !(object->iconlib_select_flags & ICONLIB_SELECTF_REMAPPED))
+	{
+		RemapIcon(object->iconlib_select_icon, screen, 0);
+		object->iconlib_select_flags |= ICONLIB_SELECTF_REMAPPED;
+	}
+}
+
+void backdrop_free_iconlib_select_icon(BackdropInfo *info, BackdropObject *object)
+{
+	if (!object || !object->iconlib_select_icon)
+		return;
+
+	if (object->iconlib_select_flags & ICONLIB_SELECTF_REMAPPED)
+		RemapIcon(object->iconlib_select_icon, backdrop_iconlib_screen(info), 1);
+
+	FreeCachedDiskObject(object->iconlib_select_icon);
+	object->iconlib_select_icon = 0;
+	object->iconlib_select_flags = 0;
+}
+
+static BOOL backdrop_icon_file_exists(char *name)
+{
+	char path[300];
+	BPTR lock;
+
+	if (!name || !*name)
+		return FALSE;
+
+	StrCombine(path, name, ".info", sizeof(path));
+
+	if ((lock = Lock(path, ACCESS_READ)))
+	{
+		UnLock(lock);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+static BOOL backdrop_iconlib_default_name_from_type(LONG type, char *buffer, int size)
+{
+	char *name = 0;
+
+	switch (type)
+	{
+	case WBDISK:
+		name = "def_disk";
+		break;
+	case WBDRAWER:
+		name = "def_drawer";
+		break;
+	case WBTOOL:
+		name = "def_tool";
+		break;
+	case WBPROJECT:
+		name = "def_project";
+		break;
+	case WBGARBAGE:
+		name = "def_trashcan";
+		break;
+	case WBKICK:
+		name = "def_kick";
+		break;
+	}
+
+	if (!name)
+		return FALSE;
+
+	stccpy(buffer, name, size);
+	return TRUE;
+}
+
+static BOOL backdrop_iconlib_identify_default_name(char *name, char *buffer, int size)
+{
+	char identify[260];
+	struct DiskObject *icon;
+	char *ptr;
+
+	if (!name || !*name || !buffer || size < 6 || !IconBase || IconBase->lib_Version < 44)
+		return FALSE;
+
+	identify[0] = 0;
+	icon = GetIconTags(name, ICONGETA_IdentifyBuffer, (Tag)identify, ICONGETA_IdentifyOnly, TRUE, TAG_DONE);
+	if (icon)
+		FreeDiskObject(icon);
+
+	if (!identify[0] || !stricmp(identify, "n.a."))
+		return FALSE;
+
+	if ((ptr = isicon(identify)))
+		*ptr = 0;
+
+	if (!strnicmp(identify, "def_", 4))
+		stccpy(buffer, identify, size);
+	else
+		StrCombine(buffer, "def_", identify, size);
+
+	return TRUE;
+}
+
+static struct DiskObject *backdrop_get_iconlib_file_icon(BackdropInfo *info, char *name)
+{
+	struct Screen *screen = backdrop_iconlib_screen(info);
+
+	if (!screen || !name || !*name || !IconBase || IconBase->lib_Version < 44)
+		return 0;
+
+	return GetIconTags(name,
+					   ICONGETA_FailIfUnavailable,
+					   TRUE,
+					   ICONGETA_RemapIcon,
+					   FALSE,
+					   ICONGETA_GenerateImageMasks,
+					   TRUE,
+					   ICONGETA_Screen,
+					   (Tag)screen,
+					   TAG_DONE);
+}
+
+static BOOL backdrop_prepare_iconlib_named_select_icon(BackdropInfo *info, BackdropObject *object, char *def_name)
+{
+	struct DiskObject *icon = 0;
+	char path[256];
+
+	if (!object || !def_name || !*def_name)
+		return FALSE;
+
+	StrCombine(path, "env:sys/", def_name, sizeof(path));
+	icon = backdrop_get_iconlib_file_icon(info, path);
+	if (!icon)
+	{
+		StrCombine(path, "envarc:sys/", def_name, sizeof(path));
+		icon = backdrop_get_iconlib_file_icon(info, path);
+	}
+	if (!icon)
+		return FALSE;
+
+	backdrop_free_iconlib_select_icon(info, object);
+	object->iconlib_select_icon = icon;
+	object->iconlib_select_flags = 0;
+	backdrop_remap_iconlib_select_icon(info, object, (info) ? info->window : 0, FALSE);
+
+	return TRUE;
+}
+
+BOOL backdrop_prepare_iconlib_select_icon(BackdropInfo *info, BackdropObject *object, char *source_name, LONG fallback_type)
+{
+	char def_name[80];
+
+	if (!object || !IconBase || IconBase->lib_Version < 44)
+		return FALSE;
+
+	if (backdrop_iconlib_identify_default_name(source_name, def_name, sizeof(def_name)) &&
+		backdrop_prepare_iconlib_named_select_icon(info, object, def_name))
+		return TRUE;
+
+	if (backdrop_iconlib_default_name_from_type(fallback_type, def_name, sizeof(def_name)) &&
+		backdrop_prepare_iconlib_named_select_icon(info, object, def_name))
+		return TRUE;
+
+	return FALSE;
+}
+
+static struct DiskObject *backdrop_get_iconlib_icon(BackdropInfo *info,
+													char *name,
+													char *label,
+													BOOL *is_default)
+{
+	struct Screen *screen = 0;
+	struct DiskObject *icon;
+	BOOL default_icon = FALSE;
+
+	if (is_default)
+		*is_default = FALSE;
+
+	if (!IconBase || IconBase->lib_Version < 44)
+		return 0;
+
+	if (info && info->window)
+		screen = info->window->WScreen;
+	else if (GUI)
+		screen = GUI->screen_pointer;
+
+	if (!screen)
+		return 0;
+
+	icon = GetIconTags(name,
+					   ICONGETA_FailIfUnavailable,
+					   FALSE,
+					   ICONGETA_IsDefaultIcon,
+					   (Tag)&default_icon,
+					   ICONGETA_RemapIcon,
+					   FALSE,
+					   ICONGETA_GenerateImageMasks,
+					   TRUE,
+					   ICONGETA_Label,
+					   (Tag)label,
+					   ICONGETA_Screen,
+					   (Tag)screen,
+					   TAG_DONE);
+
+	if (icon && is_default && default_icon)
+		*is_default = TRUE;
+
+	return icon;
+}
+#else
+struct DiskObject *backdrop_get_iconlib_select_icon(BackdropObject *object)
+{
+	(void)object;
+	return 0;
+}
+
+void backdrop_remap_iconlib_select_icon(BackdropInfo *info, BackdropObject *object, struct Window *window, BOOL free_remap)
+{
+	(void)info;
+	(void)object;
+	(void)window;
+	(void)free_remap;
+}
+
+void backdrop_free_iconlib_select_icon(BackdropInfo *info, BackdropObject *object)
+{
+	(void)info;
+	(void)object;
+}
+
+BOOL backdrop_prepare_iconlib_select_icon(BackdropInfo *info, BackdropObject *object, char *source_name, LONG fallback_type)
+{
+	(void)info;
+	(void)object;
+	(void)source_name;
+	(void)fallback_type;
+	return FALSE;
+}
+#endif
+
 // Create a new backdrop handle
 BackdropInfo *backdrop_new(IPCData *ipc, ULONG flags)
 {
@@ -141,6 +410,8 @@ void backdrop_init_info(BackdropInfo *info, struct Window *window, short no_icon
 
 			// Set flag to say we've been remapped
 			icon->flags |= BDOF_REMAPPED;
+
+			backdrop_remap_iconlib_select_icon(info, icon, info->window, FALSE);
 		}
 
 		// Unlock icon list
@@ -164,8 +435,16 @@ void backdrop_free_remap(BackdropInfo *info, struct Window *window)
 	for (icon = (BackdropObject *)info->objects.list.lh_Head; icon->node.ln_Succ;
 		 icon = (BackdropObject *)icon->node.ln_Succ)
 	{
+		backdrop_release_system_icon_state(info, icon);
+
 		// Remap the icon
-		RemapIcon(icon->icon, (window) ? window->WScreen : 0, 1);
+		if (icon->flags & BDOF_REMAPPED)
+		{
+			RemapIcon(icon->icon, (window) ? window->WScreen : 0, 1);
+			icon->flags &= ~BDOF_REMAPPED;
+		}
+
+		backdrop_remap_iconlib_select_icon(info, icon, window, TRUE);
 	}
 
 	// Unlock icon list
@@ -297,10 +576,14 @@ void backdrop_remove_object(BackdropInfo *info, BackdropObject *object)
 	// Not an appicon?
 	if (object->type != BDO_APP_ICON)
 	{
+		backdrop_release_system_icon_state(info, object);
+		backdrop_free_iconlib_select_icon(info, object);
+
 		if (object->icon)
 		{
 			// Free icon remapping
-			RemapIcon(object->icon, (info->window) ? info->window->WScreen : 0, 1);
+			if (object->flags & BDOF_REMAPPED)
+				RemapIcon(object->icon, (info->window) ? info->window->WScreen : 0, 1);
 
 			// Free icon
 			FreeCachedDiskObject(object->icon);
@@ -318,7 +601,7 @@ void backdrop_remove_object(BackdropInfo *info, BackdropObject *object)
 // Get icon for an object
 void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 {
-	short x, y, border_x = 0, border_y_top = 0, border_y_bottom = 0;
+	short x, y, border_x = 0, border_y_top = 0;
 	BOOL new_icon = 1;
 
 	// Keeping icon?
@@ -330,11 +613,18 @@ void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 	{
 		BPTR lock = 0, old = 0;
 
+		if (!(flags & GETICON_KEEP))
+		{
+			backdrop_release_system_icon_state(info, object);
+			backdrop_free_iconlib_select_icon(info, object);
+		}
+
 		// Already got icon?
 		if (object->icon && !(flags & GETICON_KEEP))
 		{
 			// Free icon remapping
-			RemapIcon(object->icon, (info->window) ? info->window->WScreen : 0, 1);
+			if (object->flags & BDOF_REMAPPED)
+				RemapIcon(object->icon, (info->window) ? info->window->WScreen : 0, 1);
 
 			// Free icon
 			FreeCachedDiskObject(object->icon);
@@ -342,6 +632,11 @@ void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 
 			// We'll be getting a new one
 			new_icon = 1;
+		}
+
+		if (!(flags & GETICON_KEEP))
+		{
+			object->flags &= ~(BDOF_ICONLIB_DEFAULT | BDOF_REMAPPED);
 		}
 
 		// Bad disk?
@@ -373,9 +668,13 @@ void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 				// No icon already?
 				if (!object->icon)
 				{
-					BOOL ok = 1;
 					Cfg_Filetype *type = 0;
 					char name[256], *ptr;
+					BOOL use_disk_icon = TRUE;
+#if defined(__amigaos3__)
+					BOOL iconlib_default = 0;
+					BOOL real_icon_file = TRUE;
+#endif
 
 					// Find a filetype-defined icon
 					if (object->device_name && (type = filetype_identify(object->device_name, FTTYPE_ICON, 0, 0)))
@@ -393,24 +692,40 @@ void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 						}
 					}
 
-					// Don't have icon yet?
-					if (!object->icon)
+					// Preserve the old MSDOS/filetype path: when there is no
+					// real Disk.info, the configured filetype icon should be
+					// tried before icon.library can generate a default disk.
+					if (object->misc_data == ID_MSDOS_DISK && type)
 					{
-						// Is this a MSDOS disk?
-						if (object->misc_data == ID_MSDOS_DISK)
+#if defined(__amigaos3__)
+						if (!backdrop_icon_file_exists("Disk"))
+#else
+						if (!(SetProtection("Disk.info", FIBF_ARCHIVE)) && IoErr() == ERROR_OBJECT_NOT_FOUND)
+#endif
+							use_disk_icon = FALSE;
+					}
+
+					// Don't have icon yet?
+					if (!object->icon && use_disk_icon)
+					{
+						// Get disk icon, letting icon.library provide its default if needed.
+#if defined(__amigaos3__)
+						real_icon_file = backdrop_icon_file_exists("Disk");
+						object->icon = backdrop_get_iconlib_icon(info, "Disk", object->name, &iconlib_default);
+#endif
+						if (!object->icon)
+							object->icon = GetCachedDiskObject("Disk", 0);
+#if defined(__amigaos3__)
+						if (object->icon && (iconlib_default || !real_icon_file))
 						{
-							// See if icon actually exists
-							if (type && !(SetProtection("Disk.info", FIBF_ARCHIVE)) &&
-								IoErr() == ERROR_OBJECT_NOT_FOUND)
+							object->flags |= BDOF_ICONLIB_DEFAULT;
+							if (!(object->device_name && !stricmp(object->device_name, "RAM:") &&
+								  backdrop_prepare_iconlib_named_select_icon(info, object, "def_ram")))
 							{
-								// We'll use default icon
-								ok = 0;
+								backdrop_prepare_iconlib_select_icon(info, object, "Disk", WBDISK);
 							}
 						}
-
-						// Get disk icon
-						if (ok)
-							object->icon = GetCachedDiskObject("Disk", 0);
+#endif
 
 #ifdef __AROS__
 						// maybe it's the Ram Disk?
@@ -436,8 +751,10 @@ void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 						if (object->icon->do_Type != WBDISK)
 						{
 							// It's not, free it and use default
+							backdrop_free_iconlib_select_icon(info, object);
 							FreeCachedDiskObject(object->icon);
 							object->icon = 0;
+							object->flags &= ~BDOF_ICONLIB_DEFAULT;
 						}
 					}
 
@@ -477,7 +794,6 @@ void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 					// Unix-style path, probably comes from ftp.module
 					else if (object->path[0] == '/')
 					{
-						struct DiskObject *deficon;
 						long type = WBPROJECT;
 
 						fake = 1;
@@ -496,7 +812,23 @@ void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 
 					// Get default icon if fails
 					else
-						object->icon = GetProperIcon(object->name, &fake, 0);
+					{
+#if defined(__amigaos3__)
+						BOOL iconlib_default = FALSE;
+						BOOL real_icon_file = backdrop_icon_file_exists(object->name);
+
+						object->icon = backdrop_get_iconlib_icon(info, object->name, object->name, &iconlib_default);
+						if (!object->icon)
+#endif
+							object->icon = GetProperIcon(object->name, &fake, 0);
+#if defined(__amigaos3__)
+						if (object->icon && (iconlib_default || !real_icon_file))
+						{
+							object->flags |= BDOF_ICONLIB_DEFAULT;
+							backdrop_prepare_iconlib_select_icon(info, object, object->name, object->icon->do_Type);
+						}
+#endif
+					}
 
 					// Ended up fake?
 					if (fake)
@@ -510,7 +842,11 @@ void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 				if (object->icon && object->type == BDO_GROUP)
 				{
 					// Auto-open group?
+#if defined(__amigaos3__)
+					if (FindToolType((CONST_STRPTR *)object->icon->do_ToolTypes, "OPEN"))
+#else
 					if (FindToolType(object->icon->do_ToolTypes, "OPEN"))
+#endif
 						object->flags |= BDOF_AUTO_OPEN;
 				}
 			}
@@ -588,11 +924,14 @@ void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 			// Window open?
 			if (info->window)
 			{
-				// Remap the icon
-				RemapIcon(object->icon, info->window->WScreen, 0);
+				if (!(object->flags & BDOF_REMAPPED))
+				{
+					// Remap the icon
+					RemapIcon(object->icon, info->window->WScreen, 0);
 
-				// Set flag
-				object->flags |= BDOF_REMAPPED;
+					// Set flag
+					object->flags |= BDOF_REMAPPED;
+				}
 			}
 		}
 
@@ -601,13 +940,11 @@ void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 		{
 			border_x = 0;
 			border_y_top = 0;
-			border_y_bottom = 0;
 		}
 		else
 		{
 			border_x = ICON_BORDER_X;
 			border_y_top = ICON_BORDER_Y_TOP;
-			border_y_bottom = ICON_BORDER_Y_BOTTOM;
 		}
 
 		// No label?
@@ -626,8 +963,26 @@ void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 		backdrop_get_masks(object);
 
 	// Get object size
-	object->pos.Width = object->icon->do_Gadget.Width;
-	object->pos.Height = object->icon->do_Gadget.Height;
+	if (info->window)
+	{
+		struct Rectangle rect;
+
+		if (backdrop_get_system_icon_rect(&info->rp, object, &rect))
+		{
+			object->pos.Width = rect.MaxX - rect.MinX + 1;
+			object->pos.Height = rect.MaxY - rect.MinY + 1;
+		}
+		else
+		{
+			object->pos.Width = object->icon->do_Gadget.Width;
+			object->pos.Height = object->icon->do_Gadget.Height;
+		}
+	}
+	else
+	{
+		object->pos.Width = object->icon->do_Gadget.Width;
+		object->pos.Height = object->icon->do_Gadget.Height;
+	}
 
 	// (Re)position?
 	if (!(flags & GETICON_SAVE_POS))

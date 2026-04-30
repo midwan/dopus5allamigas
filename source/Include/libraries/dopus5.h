@@ -811,6 +811,7 @@ typedef struct
 #define DRAGF_FREE (1 << 8)
 #define DRAGF_CUSTOM (1 << 9)	 // Custom rendering
 #define DRAGF_NO_MASK (1 << 10)	 // No masking
+#define DRAGF_FORCE_CUSTOM (1 << 11)	 // Ignore the user custom-drag disable for this drag
 
 #define DRAGF_NEED_GELS (1 << 0)  // Need GELs initialised
 #define DRAGF_REMOVE (1 << 0)	  // Remove only

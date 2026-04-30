@@ -99,11 +99,32 @@ struct DiskObject *LIBFUNC L_GetCachedDefDiskObject(REG(d0, long type), REG(a6, 
 		{
 			if (name)
 				icon = GetIconTags(
-					name, ICONGETA_FailIfUnavailable, TRUE, ICONGETA_Screen, (Tag)*libdata->backfill_screen, TAG_DONE);
+					name,
+					ICONGETA_FailIfUnavailable,
+					TRUE,
+	#if defined(__amigaos3__)
+					ICONGETA_RemapIcon,
+					FALSE,
+					ICONGETA_GenerateImageMasks,
+					TRUE,
+	#endif
+					ICONGETA_Screen,
+					(Tag)*libdata->backfill_screen,
+					TAG_DONE);
 
 			if (!icon)
-				icon = GetIconTags(
-					NULL, ICONGETA_GetDefaultType, type, ICONGETA_Screen, (Tag)*libdata->backfill_screen, TAG_DONE);
+				icon = GetIconTags(NULL,
+								   ICONGETA_GetDefaultType,
+								   type,
+	#if defined(__amigaos3__)
+								   ICONGETA_RemapIcon,
+								   FALSE,
+								   ICONGETA_GenerateImageMasks,
+								   TRUE,
+	#endif
+								   ICONGETA_Screen,
+								   (Tag)*libdata->backfill_screen,
+								   TAG_DONE);
 		}
 
 #ifdef __AROS__
@@ -216,8 +237,18 @@ struct DiskObject *LIBFUNC L_GetCachedDiskObject(REG(a0, char *name),
 		// icon=GetIconTags(name,ICONGETA_FailIfUnavailable,TRUE,ICONGETA_RemapIcon,FALSE,TAG_DONE);
 
 		if (data->backfill_screen)
-			icon = GetIconTags(
-				name, ICONGETA_FailIfUnavailable, FALSE, ICONGETA_Screen, (Tag)*data->backfill_screen, TAG_DONE);
+			icon = GetIconTags(name,
+							   ICONGETA_FailIfUnavailable,
+							   FALSE,
+#if defined(__amigaos3__)
+							   ICONGETA_RemapIcon,
+							   FALSE,
+							   ICONGETA_GenerateImageMasks,
+							   TRUE,
+#endif
+							   ICONGETA_Screen,
+							   (Tag)*data->backfill_screen,
+							   TAG_DONE);
 
 		return icon;
 	}

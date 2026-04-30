@@ -23,21 +23,172 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopus.h"
 
+#if defined(__amigaos3__)
+static BOOL backdrop_drag_has_system_icons(BackdropInfo *info)
+{
+	BackdropObject *object;
+
+	if (!info)
+		return FALSE;
+
+	for (object = (BackdropObject *)info->objects.list.lh_Head; object->node.ln_Succ;
+		 object = (BackdropObject *)object->node.ln_Succ)
+	{
+		if (object->state && backdrop_icon_uses_system_draw(object))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+static BOOL backdrop_force_custom_drag_ok(BackdropInfo *info)
+{
+	DragInfo *drag;
+	BOOL ok = FALSE;
+
+	if (!info || !info->window)
+		return FALSE;
+
+	if ((drag = GetDragInfo(info->window,
+							info->window->RPort,
+							1,
+							1,
+							DRAGF_CUSTOM | DRAGF_FORCE_CUSTOM | DRAGF_NO_MASK)))
+	{
+		ok = (drag->flags & DRAGF_CUSTOM) ? TRUE : FALSE;
+		FreeDragInfo(drag);
+	}
+
+	return ok;
+}
+
+static void backdrop_drag_get_icon_size(struct DiskObject *icon, BOOL selected, short *width, short *height)
+{
+	struct Image *image = 0;
+
+	*width = icon->do_Gadget.Width;
+	*height = icon->do_Gadget.Height;
+
+	if (selected && icon->do_Gadget.SelectRender && (icon->do_Gadget.Flags & GFLG_GADGHIMAGE))
+		image = (struct Image *)icon->do_Gadget.SelectRender;
+
+	if (!image)
+		image = (struct Image *)icon->do_Gadget.GadgetRender;
+
+	if (image)
+	{
+		if (image->Width > *width)
+			*width = image->Width;
+		if (image->Height > *height)
+			*height = image->Height;
+	}
+}
+
+static BOOL backdrop_apply_iconlib_drag_mask(DragInfo *drag, BackdropObject *object)
+{
+	struct DiskObject *icon;
+	PLANEPTR mask = 0;
+	BOOL selected;
+	short mask_width, mask_height;
+	short src_words, dst_words, rows, words, row;
+	UWORD *src, *dst;
+	long word, total_words;
+
+	if (!drag || !drag->bob.ImageShadow || !object || !object->icon || !IconBase || IconBase->lib_Version < 44)
+		return FALSE;
+
+	icon = object->icon;
+	selected = (object->state) ? TRUE : FALSE;
+
+	if (selected && (object->flags & BDOF_ICONLIB_DEFAULT))
+	{
+		struct DiskObject *select_icon;
+
+		if ((select_icon = backdrop_get_iconlib_select_icon(object)))
+			icon = select_icon;
+	}
+
+	if (selected)
+	{
+		IconControl(icon, ICONCTRLA_GetImageMask2, &mask, TAG_DONE);
+		if (!mask)
+			selected = FALSE;
+	}
+
+	if (!mask)
+		IconControl(icon, ICONCTRLA_GetImageMask1, &mask, TAG_DONE);
+
+	if (!mask)
+		return FALSE;
+
+	backdrop_drag_get_icon_size(icon, selected, &mask_width, &mask_height);
+	if (mask_width <= 0 || mask_height <= 0)
+		return FALSE;
+
+	src_words = (mask_width + 15) >> 4;
+	dst_words = (drag->width + 15) >> 4;
+	rows = (mask_height < drag->height) ? mask_height : drag->height;
+	words = (src_words < dst_words) ? src_words : dst_words;
+
+	if (src_words <= 0 || dst_words <= 0 || rows <= 0 || words <= 0)
+		return FALSE;
+
+	dst = (UWORD *)drag->bob.ImageShadow;
+	total_words = dst_words * drag->height;
+	for (word = 0; word < total_words; word++)
+		dst[word] = 0;
+
+	src = (UWORD *)mask;
+	for (row = 0; row < rows; row++)
+		CopyMem((char *)(src + (row * src_words)), (char *)(dst + (row * dst_words)), words * sizeof(UWORD));
+
+	if ((drag->width & 15) != 0)
+	{
+		UWORD remainder = ~((1 << ((dst_words << 4) - drag->width)) - 1);
+
+		for (row = 0; row < drag->height; row++)
+			dst[(row * dst_words) + dst_words - 1] &= remainder;
+	}
+
+	return TRUE;
+}
+#endif
+
 // Start dragging
 BOOL backdrop_start_drag(BackdropInfo *info, short x, short y)
 {
 	BackdropObject *object;
+	BOOL custom_drag;
 
-	// Set drag flag
-	info->flags |= BDIF_DRAGGING;
+	// Last selected icon?
+	if ((object = info->last_sel_object) && object->state)
+	{
+		// Check icon isn't locked
+		if (object->flags & BDOF_LOCKED)
+		{
+			// Called with the object list locked; this lets stop_drag release it.
+			info->flags |= BDIF_DRAGGING;
+			backdrop_stop_drag(info);
+			return 0;
+		}
+	}
+
+	custom_drag = DragCustomOk(GUI->screen_pointer->RastPort.BitMap);
+#if defined(__amigaos3__)
+	if (!custom_drag && backdrop_drag_has_system_icons(info))
+		custom_drag = backdrop_force_custom_drag_ok(info);
+#endif
 
 	// Copy RastPort and initialise GELs
 	GUI->drag_screen_rp = GUI->screen_pointer->RastPort;
 	GUI->drag_screen_rp.GelsInfo = &GUI->drag_info;
 	InitGels(&GUI->drag_head, &GUI->drag_tail, &GUI->drag_info);
 
+	// Set drag flag
+	info->flags |= BDIF_DRAGGING;
+
 	// Custom dragging?
-	if (DragCustomOk(GUI->drag_screen_rp.BitMap))
+	if (custom_drag)
 	{
 		// Set custom flag
 		info->flags |= BDIF_CUSTOM_DRAG;
@@ -61,18 +212,6 @@ BOOL backdrop_start_drag(BackdropInfo *info, short x, short y)
 
 	// Get start time
 	CurrentTime(&info->drag_sec, &info->drag_mic);
-
-	// Last selected icon?
-	if ((object = info->last_sel_object) && object->state)
-	{
-		// Check icon isn't locked
-		if (object->flags & BDOF_LOCKED)
-		{
-			// Can't drag at all
-			backdrop_stop_drag(info);
-			return 0;
-		}
-	}
 
 	// Go through backdrop list
 	for (object = (BackdropObject *)info->objects.list.lh_Head; object->node.ln_Succ;
@@ -101,28 +240,54 @@ BOOL backdrop_start_drag(BackdropInfo *info, short x, short y)
 // Start dragging an object
 BOOL backdrop_drag_object(BackdropInfo *info, BackdropObject *object)
 {
-	struct Image *image;
+	struct Image *image = 0;
 	ULONG flags = 0;
+	short width = 0, height = 0;
+	BOOL system_draw;
 
 	// Is object already being dragged?
 	if (object->drag_info)
 		return 1;
 
-	// Is there a select image?
-	if (object->icon->do_Gadget.SelectRender && (object->icon->do_Gadget.Flags & GFLG_GADGHIMAGE))
+	system_draw = backdrop_icon_uses_system_draw(object);
+	if (system_draw)
 	{
-		image = (struct Image *)object->icon->do_Gadget.SelectRender;
+		width = object->pos.Width;
+		height = object->pos.Height;
+	}
+	else
+	{
+		// Is there a select image?
+		if (object->icon->do_Gadget.SelectRender && (object->icon->do_Gadget.Flags & GFLG_GADGHIMAGE))
+		{
+			image = (struct Image *)object->icon->do_Gadget.SelectRender;
+		}
+
+		// No
+		else
+			image = (struct Image *)object->icon->do_Gadget.GadgetRender;
+
+		if (!image)
+			return 0;
+
+		width = (image->Width < object->pos.Width) ? object->pos.Width : image->Width;
+		height = (image->Height < object->pos.Height) ? object->pos.Height : image->Height;
 	}
 
-	// No
-	else
-		image = (struct Image *)object->icon->do_Gadget.GadgetRender;
+	if (width <= 0)
+		width = object->icon->do_Gadget.Width;
+	if (height <= 0)
+		height = object->icon->do_Gadget.Height;
 
 	// Get flags
 	if (info->flags & BDIF_CUSTOM_DRAG)
 	{
 		// Custom drag
 		flags = DRAGF_CUSTOM;
+#if defined(__amigaos3__)
+		if (system_draw || (environment->env->desktop_flags & DESKTOPF_NO_CUSTOMDRAG))
+			flags |= DRAGF_FORCE_CUSTOM;
+#endif
 
 		// Opaque?
 		if (environment->env->desktop_flags & DESKTOPF_QUICK_DRAG)
@@ -132,13 +297,10 @@ BOOL backdrop_drag_object(BackdropInfo *info, BackdropObject *object)
 	// Get drag info
 	if (!(object->drag_info = GetDragInfo(info->window,
 										  &GUI->drag_screen_rp,
-										  (image->Width < object->pos.Width) ? object->pos.Width : image->Width,
-										  (image->Height < object->pos.Height) ? object->pos.Height : image->Height,
+										  width,
+										  height,
 										  flags)))
 		return 0;
-
-	// Get image to drag
-	backdrop_draw_object(info, object, 0, &object->drag_info->drag_rp, 0, 0);
 
 	// Get mask
 	if (environment->env->desktop_flags & DESKTOPF_QUICK_DRAG)
@@ -147,7 +309,26 @@ BOOL backdrop_drag_object(BackdropInfo *info, BackdropObject *object)
 		object->drag_info->flags |= DRAGF_TRANSPARENT;
 	else
 		object->drag_info->flags |= DRAGF_TRANSPARENT | DRAGF_OPAQUE;
-	GetDragMask(object->drag_info);
+
+	// IconLib-rendered icons are copied from the screen so semi-transparent
+	// pixels match the visible icon, then masked with icon.library's own
+	// image mask so patterned backdrops do not become part of the drag image.
+	if (system_draw)
+	{
+		GetDragImage(object->drag_info,
+					 object->pos.Left + info->size.MinX - info->offset_x,
+					 object->pos.Top + info->size.MinY - info->offset_y);
+#if defined(__amigaos3__)
+		backdrop_apply_iconlib_drag_mask(object->drag_info, object);
+#endif
+	}
+	else
+	{
+		// Get image to drag
+		backdrop_draw_object(info, object, 0, &object->drag_info->drag_rp, 0, 0);
+
+		GetDragMask(object->drag_info);
+	}
 
 	return 1;
 }
