@@ -107,6 +107,16 @@ BOOL display_open(long flags)
 			0,
 			SA_LikeWorkbench,
 			TRUE,
+#if defined(SA_OffscreenDragging)
+			SA_OffscreenDragging,
+			TRUE,
+#elif defined(SA_OFFSCREENDRAGGING)
+			SA_OFFSCREENDRAGGING,
+			TRUE,
+#elif defined(SA_OffScreenDragging)
+			SA_OffScreenDragging,
+			TRUE,
+#endif
 			SA_Width,
 			(environment->env->screen_flags & SCRFLAGS_DEFWIDTH) ? STDSCREENWIDTH : environment->env->screen_width,
 			SA_Height,
