@@ -24,6 +24,82 @@ For more information on Directory Opus for Windows please see:
 #include "dopus.h"
 
 #define NUM_PATTERNS 3
+#define DISPLAY_FIP_KNOWN_MASK \
+	(PATF_LOCK | PATF_RANDOM | PATF_STRETCH | PATF_CENTER | PATF_TILE | PATF_FILL | 0x03000000 | 0x00030000)
+
+static ULONG display_prepare_fastiprefs_flags(ULONG flags)
+{
+#ifdef __AROS__
+	ULONG swapped = AROS_BE2LONG(flags);
+
+	if ((swapped & ~DISPLAY_FIP_KNOWN_MASK) < (flags & ~DISPLAY_FIP_KNOWN_MASK))
+		return swapped;
+#endif
+
+	return flags;
+}
+
+static BOOL display_wbpattern_prefs_valid(struct WBPatternPrefs *prefs, ULONG chunk_size)
+{
+	if (chunk_size < sizeof(struct WBPatternPrefs))
+		return FALSE;
+	if (prefs->wbp_Which > WBP_SCREEN)
+		return FALSE;
+	if (prefs->wbp_DataLength > chunk_size - sizeof(struct WBPatternPrefs))
+		return FALSE;
+	if ((prefs->wbp_Flags & WBPF_PATTERN) && prefs->wbp_Depth > MAXDEPTH)
+		return FALSE;
+	return TRUE;
+}
+
+static BOOL display_prepare_wbpattern_prefs(struct WBPatternPrefs *prefs, ULONG chunk_size, BOOL *swapped)
+{
+	*swapped = FALSE;
+	if (display_wbpattern_prefs_valid(prefs, chunk_size))
+		return TRUE;
+
+#ifdef __AROS__
+	{
+		struct WBPatternPrefs fixed;
+		short a;
+
+		fixed = *prefs;
+		for (a = 0; a < 4; a++)
+			fixed.wbp_Reserved[a] = AROS_BE2LONG(fixed.wbp_Reserved[a]);
+		fixed.wbp_Which = AROS_BE2WORD(fixed.wbp_Which);
+		fixed.wbp_Flags = AROS_BE2WORD(fixed.wbp_Flags);
+		fixed.wbp_DataLength = AROS_BE2WORD(fixed.wbp_DataLength);
+
+		if (display_wbpattern_prefs_valid(&fixed, chunk_size))
+		{
+			*prefs = fixed;
+			*swapped = TRUE;
+			return TRUE;
+		}
+	}
+#endif
+
+	return FALSE;
+}
+
+static void display_prepare_wbpattern_data(struct WBPatternPrefs *prefs, char *data, BOOL swapped)
+{
+#ifdef __AROS__
+	if (swapped && data && (prefs->wbp_Flags & WBPF_PATTERN))
+	{
+		UWORD *words = (UWORD *)data;
+		ULONG count = prefs->wbp_DataLength / sizeof(UWORD);
+		ULONG a;
+
+		for (a = 0; a < count; a++)
+			words[a] = AROS_BE2WORD(words[a]);
+	}
+#else
+	(void)prefs;
+	(void)data;
+	(void)swapped;
+#endif
+}
 
 // Get backdrop pattern
 short display_get_pattern(BOOL use_custom)
@@ -114,22 +190,31 @@ short display_get_pattern(BOOL use_custom)
 				if (id == ID_FIP0)
 				{
 					// Get flags
-					IFFReadChunkBytes(iff, &flags, sizeof(flags));
+					if (IFFReadChunkBytes(iff, &flags, sizeof(flags)) == sizeof(flags))
+						flags = display_prepare_fastiprefs_flags(flags);
 				}
 
 				// PTRN chunk?
 				else if (id == ID_PTRN)
 				{
 					struct WBPatternPrefs *prefs;
+					LONG chunk_size;
+					BOOL swapped;
 
 					// Allocate space for chunk
-					if ((prefs = AllocVec(IFFChunkSize(iff), MEMF_CLEAR)))
+					chunk_size = IFFChunkSize(iff);
+					if (chunk_size >= sizeof(struct WBPatternPrefs) && (prefs = AllocVec(chunk_size, MEMF_CLEAR)))
 					{
 						// Read chunk
-						IFFReadChunkBytes(iff, prefs, -1);
+						if (IFFReadChunkBytes(iff, prefs, chunk_size) != chunk_size)
+						{
+							FreeVec(prefs);
+							continue;
+						}
 
 						// Pattern we can handle?
-						if (prefs->wbp_Which == WBP_ROOT || prefs->wbp_Which == WBP_DRAWER)
+						if (display_prepare_wbpattern_prefs(prefs, chunk_size, &swapped) &&
+							(prefs->wbp_Which == WBP_ROOT || prefs->wbp_Which == WBP_DRAWER))
 						{
 							// Copy data
 							CopyMem((char *)prefs, (char *)&pattern[prefs->wbp_Which], sizeof(struct WBPatternPrefs));
@@ -140,6 +225,7 @@ short display_get_pattern(BOOL use_custom)
 							{
 								// Copy pattern data
 								CopyMem((char *)(prefs + 1), data[prefs->wbp_Which], prefs->wbp_DataLength);
+								display_prepare_wbpattern_data(prefs, data[prefs->wbp_Which], swapped);
 							}
 						}
 

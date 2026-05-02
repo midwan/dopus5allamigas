@@ -53,7 +53,7 @@ struct Window *LIBFUNC L_OpenStatusWindow(REG(a0, char *title),
 	NewConfigWindow newwin;
 	ObjectList *list;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -75,7 +75,7 @@ struct Window *LIBFUNC L_OpenStatusWindow(REG(a0, char *title),
 	{
 		// Display text
 		if (text)
-			L_SetGadgetValue(list, 1, (ULONG)text);
+			L_SetGadgetValue(list, 1, (IPTR)text);
 	}
 
 	// Make window busy
@@ -90,7 +90,7 @@ void LIBFUNC L_SetStatusText(REG(a0, struct Window *window), REG(a1, char *text)
 	if (window)
 	{
 		// Update text
-		L_SetGadgetValue(OBJLIST(window), 1, (ULONG)text);
+		L_SetGadgetValue(OBJLIST(window), 1, (IPTR)text);
 	}
 }
 

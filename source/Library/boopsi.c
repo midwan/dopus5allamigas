@@ -31,7 +31,7 @@ For more information on Directory Opus for Windows please see:
 #include "boopsi.h"
 
 // Initialise a BOOPSI class
-Class *init_class(struct LibData *data, char *name, char *super, unsigned long (*dispatcher)(), long data_size)
+Class *init_class(struct LibData *data, char *name, char *super, IPTR (*dispatcher)(), long data_size)
 {
 	Class *cl;
 	BoopsiLibs *libs;
@@ -112,7 +112,7 @@ struct Gadget *LIBFUNC L_AddScrollBars(REG(a0, struct Window *window),
 					  SYSIA_Which,
 					  LEFTIMAGE + a,
 					  SYSIA_DrawInfo,
-					  (ULONG)draw_info,
+					  (IPTR)draw_info,
 					  TAG_END)))
 				return 0;
 			DoMethod((Object *)image[a], OM_ADDTAIL, list);
@@ -374,7 +374,7 @@ struct Gadget *LIBFUNC L_CreateTitleGadget(REG(a0, struct Screen *screen),
 	struct Image *image = 0;
 	struct Screen *pubscr = 0;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 

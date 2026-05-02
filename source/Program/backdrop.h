@@ -55,7 +55,7 @@ typedef struct _BackdropObject
 	short drag_x_offset;
 	short drag_y_offset;
 
-	ULONG misc_data;		 // Miscellaneous data
+	IPTR misc_data;			 // Miscellaneous data
 	unsigned long value;	 // Value for position-sorting
 	Cfg_Filetype *filetype;	 // Filetype
 
@@ -341,7 +341,7 @@ void backdrop_check_groups(BackdropInfo *info);
 void backdrop_group_add_object(char *, BackdropInfo *, char *, short, short);
 void backdrop_delete_group(BackdropInfo *info, BackdropObject *object);
 void backdrop_remove_group_objects(GroupData *data, BackdropObject *);
-BOOL backdrop_group_do_function(GroupData *, ULONG, struct MenuItem *);
+BOOL backdrop_group_do_function(GroupData *, IPTR, struct MenuItem *);
 
 BOOL backdrop_new_group_object(BackdropInfo *info, BackdropObject *object, unsigned short);
 BOOL backdrop_check_notify(BackdropInfo *info, DOpusNotify *notify, Lister *lister);

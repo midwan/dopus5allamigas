@@ -57,9 +57,17 @@ IPC_StartupCode(buttons_init, Buttons *, buttons, static)
 	// Load button bank information
 	if (buttons->buttons_file[0] && !buttons->bank)
 	{
+#ifdef __AROS__
+		aros_debug_log("buttons_init OpenButtonBank path=");
+		aros_debug_log(buttons->buttons_file);
+		aros_debug_log("\n");
+#endif
 		// Open bank
 		if (!(buttons->bank = OpenButtonBank(buttons->buttons_file)))
 		{
+#ifdef __AROS__
+			aros_debug_log("buttons_init OpenButtonBank failed\n");
+#endif
 			// Failed, try to create a new one if we're allowed to
 			if (buttons->flags & BUTTONF_FAIL || !(buttons->bank = NewButtonBank(1, 0)))
 				return 0;
@@ -69,6 +77,21 @@ IPC_StartupCode(buttons_init, Buttons *, buttons, static)
 	// Valid bank?
 	if (buttons->bank)
 	{
+#ifdef __AROS__
+		{
+			Cfg_Button *button;
+			ULONG count = 0;
+			char buf[120];
+
+			for (button = (Cfg_Button *)buttons->bank->buttons.lh_Head; button->node.ln_Succ;
+				 button = (Cfg_Button *)button->node.ln_Succ)
+				++count;
+			lsprintf(buf, "buttons_init bank ok buttons=%ld path=", count);
+			aros_debug_log(buf);
+			aros_debug_log(buttons->bank->path);
+			aros_debug_log("\n");
+		}
+#endif
 		// Coordinates not supplied?
 		if (!(buttons->flags & BUTTONF_COORDS_SUPPLIED))
 			buttons->pos = buttons->bank->window.pos;
@@ -87,7 +110,7 @@ IPC_EntryCode(buttons_code)
 	IPCData *ipc;
 
 	// Do startup
-	if (!(IPC_ProcStartup((ULONG *)&buttons, &buttons_init)))
+	if (!(IPC_ProcStartup((IPTR *)&buttons, &buttons_init)))
 	{
 		buttons_cleanup(buttons, 0);
 		return;
@@ -447,7 +470,7 @@ IPC_EntryCode(buttons_code)
 
 			// Asked to supply bank pointer
 			case BUTTONEDIT_GIMME_BANK:
-				lmsg->command = (ULONG)buttons->bank;
+				lmsg->command = (IPTR)buttons->bank;
 				if (lmsg->data && buttons->window)
 				{
 					((Point *)lmsg->data)->x = buttons->window->LeftEdge;
@@ -482,18 +505,18 @@ IPC_EntryCode(buttons_code)
 			// Set selection
 			case BUTTONEDIT_SET_SELECTION:
 				buttons->editor_sel_col = (short)lmsg->flags;
-				buttons->editor_sel_row = (short)lmsg->data;
+				buttons->editor_sel_row = (short)(IPTR)lmsg->data;
 				lmsg->command = buttons_visible_select(buttons);
 				break;
 
 			// Get button
 			case BUTTONEDIT_GET_BUTTON:
-				lmsg->command = (ULONG)button_from_pos(buttons, (short)lmsg->flags, (short)lmsg->data);
+				lmsg->command = (IPTR)button_from_pos(buttons, (short)lmsg->flags, (short)(IPTR)lmsg->data);
 				break;
 
 			// Get button from a point
 			case BUTTONEDIT_GET_BUTTON_POINT:
-				lmsg->command = (ULONG)button_from_point(buttons, (short *)lmsg->flags, (short *)lmsg->data);
+				lmsg->command = (IPTR)button_from_point(buttons, (short *)lmsg->flags, (short *)lmsg->data);
 				break;
 
 			// Control flash
@@ -559,8 +582,8 @@ IPC_EntryCode(buttons_code)
 				Cfg_Button *button;
 
 				// Get coordinates
-				x = ((ULONG)lmsg->data) >> 16;
-				y = ((ULONG)lmsg->data) & 0xffff;
+				x = ((IPTR)lmsg->data) >> 16;
+				y = ((IPTR)lmsg->data) & 0xffff;
 
 				// Check point is within button area
 				if (x < buttons->internal.Left || y < buttons->internal.Top ||

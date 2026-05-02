@@ -26,6 +26,14 @@ For more information on Directory Opus for Windows please see:
 // Title buffer size (allocated in lister.c)
 #define LISTER_TITLE_SIZE 300
 
+static char *lister_get_string(LONG id)
+{
+	char *string;
+
+	string = GetString(&locale, id);
+	return string ? string : "";
+}
+
 // Display disk name and size
 // Called from the LISTER PROCESS
 void lister_show_name(Lister *lister)
@@ -52,11 +60,11 @@ void lister_show_name(Lister *lister)
 
 		// Device list?
 		else if (buffer->more_flags & DWF_DEVICE_LIST)
-			stccpy(lister->title, GetString(&locale, MSG_DEVICE_LIST), LISTER_TITLE_SIZE);
+			stccpy(lister->title, lister_get_string(MSG_DEVICE_LIST), LISTER_TITLE_SIZE);
 
 		// Cache list?
 		else if (buffer->more_flags & DWF_CACHE_LIST)
-			stccpy(lister->title, GetString(&locale, MSG_BUFFER_LIST), LISTER_TITLE_SIZE);
+			stccpy(lister->title, lister_get_string(MSG_BUFFER_LIST), LISTER_TITLE_SIZE);
 
 		// Invalid
 		else
@@ -124,7 +132,7 @@ void lister_show_name(Lister *lister)
 
 			// Add free string
 			strcat(space_buf, " ");
-			strcat(space_buf, GetString(&locale, MSG_FREE));
+			strcat(space_buf, lister_get_string(MSG_FREE));
 
 			// Space used
 			strcat(space_buf, ", ");
@@ -148,7 +156,7 @@ void lister_show_name(Lister *lister)
 
 			// Add free string
 			strcat(space_buf, " ");
-			strcat(space_buf, GetString(&locale, MSG_USED));
+			strcat(space_buf, lister_get_string(MSG_USED));
 
 			// Add comma
 			strcat(space_buf, ", ");
@@ -191,7 +199,7 @@ void lister_show_name(Lister *lister)
 							  buffer->buf_TotalDiskSpace64;
 					if (percent > 100)
 						percent = 100;
-					lsprintf(space_buf + strlen(space_buf), "%llu", percent);
+					ItoaU64(&percent, space_buf + strlen(space_buf), sizeof(space_buf) - strlen(space_buf), 0);
 				}
 				else
 				{
@@ -202,7 +210,7 @@ void lister_show_name(Lister *lister)
 
 			// Add percentage string
 			strcat(space_buf, "% ");
-			strcat(space_buf, GetString(&locale, MSG_FULL));
+			strcat(space_buf, lister_get_string(MSG_FULL));
 
 			// End ) if read-only
 			if (buffer->flags & DWF_READONLY)
@@ -314,19 +322,19 @@ void lister_show_status(Lister *lister)
 
 	// Get text for status.. busy?
 	if (lister->flags & LISTERF_BUSY)
-		strcpy(text, GetString(&locale, MSG_LISTER_STATUS_BUSY));
+		stccpy(text, lister_get_string(MSG_LISTER_STATUS_BUSY), sizeof(text));
 
 	// Source
 	else if (lister->flags & LISTERF_SOURCE)
-		strcpy(text, GetString(&locale, MSG_LISTER_STATUS_SOURCE));
+		stccpy(text, lister_get_string(MSG_LISTER_STATUS_SOURCE), sizeof(text));
 
 	// Destination
 	else if (lister->flags & LISTERF_DEST)
-		strcpy(text, GetString(&locale, MSG_LISTER_STATUS_DEST));
+		stccpy(text, lister_get_string(MSG_LISTER_STATUS_DEST), sizeof(text));
 
 	// Other
 	else
-		strcpy(text, GetString(&locale, MSG_LISTER_STATUS_OFF));
+		stccpy(text, lister_get_string(MSG_LISTER_STATUS_OFF), sizeof(text));
 
 	// Locked?
 	if (lock)
@@ -457,11 +465,11 @@ void select_show_info(Lister *lister, BOOL dodef)
 	{
 		// Device list?
 		if (buffer->more_flags & DWF_DEVICE_LIST)
-			strcpy(title_buffer, GetString(&locale, MSG_DEVICE_LIST));
+			stccpy(title_buffer, lister_get_string(MSG_DEVICE_LIST), sizeof(title_buffer));
 
 		// Cache list
 		else if (buffer->more_flags & DWF_CACHE_LIST)
-			strcpy(title_buffer, GetString(&locale, MSG_BUFFER_LIST));
+			stccpy(title_buffer, lister_get_string(MSG_BUFFER_LIST), sizeof(title_buffer));
 
 		// Custom header?
 		else if (buffer->buf_CustomHeader[0])
@@ -708,7 +716,17 @@ void lister_set_title(Lister *lister)
 	}
 
 	// Refresh title
+#ifdef __AROS__
+	{
+		char *screen_title = "";
+
+		if (lister->window->WScreen && lister->window->WScreen->Title)
+			screen_title = lister->window->WScreen->Title;
+		SetWindowTitles(lister->window, (lister->title) ? lister->title : "", screen_title);
+	}
+#else
 	SetWindowTitles(lister->window, lister->title, (char *)-1);
+#endif
 	lister->flags &= ~LISTERF_TITLE_DEFERRED;
 }
 
@@ -784,28 +802,46 @@ void lister_show_title(Lister *lister, BOOL show)
 	// Go through items
 	for (item = 0, num = 0, start = 0; item < DISPLAY_LAST; item++)
 	{
-		short length, next;
+		short length, next, display_item, field_item;
 		BOOL visible = 0;
 		char *text = 0;
 
+		display_item = buffer->buf_ListFormat.display_pos[item];
+		if (!(buffer->more_flags & DWF_DEVICE_LIST) && (display_item < 0 || display_item >= DISPLAY_LAST))
+			break;
+		field_item = display_item;
+		if ((buffer->more_flags & DWF_DEVICE_LIST) && (field_item < 0 || field_item >= DISPLAY_LAST))
+			field_item = item;
+
 		// Get length of item, skip if nothing there
-		if ((length = buffer->buf_FieldWidth[buffer->buf_ListFormat.display_pos[item]]) < 1 &&
-			!(buffer->more_flags & DWF_DEVICE_LIST))
+		length = buffer->buf_FieldWidth[field_item];
+		if (length < 1 && !(buffer->more_flags & DWF_DEVICE_LIST))
 			continue;
 
 		// Find the next valid item
 		for (next = item + 1; next < DISPLAY_LAST; next++)
 		{
+			short next_item;
+
+			next_item = buffer->buf_ListFormat.display_pos[next];
+			if (!(buffer->more_flags & DWF_DEVICE_LIST) && (next_item < 0 || next_item >= DISPLAY_LAST))
+				break;
+			if ((buffer->more_flags & DWF_DEVICE_LIST) && (next_item < 0 || next_item >= DISPLAY_LAST))
+				next_item = next;
+
 			// Use if field has something in it
-			if (buffer->buf_FieldWidth[buffer->buf_ListFormat.display_pos[next]] > 0)
+			if (buffer->buf_FieldWidth[next_item] > 0)
 				break;
 		}
 
 		// Get length to use (if last item, will fill lister)
-		len = (item == DISPLAY_LAST - 1 || buffer->buf_ListFormat.display_pos[next] == DISPLAY_LAST ||
-			   buffer->buf_ListFormat.display_pos[next] == -1)
-				  ? -1
-				  : length;
+		len = (next >= DISPLAY_LAST || item == DISPLAY_LAST - 1) ? -1 : length;
+		if (!(buffer->more_flags & DWF_DEVICE_LIST) && next < DISPLAY_LAST)
+		{
+			short next_item = buffer->buf_ListFormat.display_pos[next];
+			if (next_item < 0 || next_item >= DISPLAY_LAST)
+				len = -1;
+		}
 
 		// Get end position of this item
 		end = start + length - 1;
@@ -823,14 +859,14 @@ void lister_show_title(Lister *lister, BOOL show)
 			lister->title_boxes[num].tb_Item = -1;
 			lister->title_boxes[num].tb_ItemNum = item;
 			if (visible)
-				text = GetString(&locale, MSG_LISTER_TITLE_VOLUME + item);
+				text = lister_get_string(MSG_LISTER_TITLE_VOLUME + item);
 		}
 
 		// Normal files
 		else
 		{
 			// Save item
-			lister->title_boxes[num].tb_Item = buffer->buf_ListFormat.display_pos[item];
+			lister->title_boxes[num].tb_Item = display_item;
 			lister->title_boxes[num].tb_ItemNum = item;
 
 			// Get string to display
@@ -931,7 +967,7 @@ void lister_show_title(Lister *lister, BOOL show)
 			}
 
 			// Is this the sort field?
-			if (buffer->buf_ListFormat.sort.sort == buffer->buf_ListFormat.display_pos[item])
+			if (buffer->buf_ListFormat.sort.sort == display_item)
 			{
 				// Show arrow for sort field
 				if (tx < rect.MaxX - 11)
@@ -1124,10 +1160,12 @@ char *lister_title_string(DirBuffer *buffer, short item)
 
 	// Get string index
 	txt = buffer->buf_ListFormat.display_pos[item];
-	if (txt < DISPLAY_LAST && buffer->buf_TitleFields[txt])
+	if (txt >= 0 && txt < DISPLAY_LAST && buffer->buf_TitleFields[txt])
 		text = buffer->buf_TitleFields[txt];
+	else if (txt < 0 || txt >= DISPLAY_LAST)
+		text = "";
 	else
-		text = GetString(&locale, MSG_LISTER_TITLE_NAME + txt);
+		text = lister_get_string(MSG_LISTER_TITLE_NAME + txt);
 
 	return text;
 }

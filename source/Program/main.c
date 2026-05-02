@@ -48,6 +48,30 @@ static struct Library *main_open_library(char *lib, short ver);
 
 #define PROG(x) main_bump_progress(main_status, (x), TRUE)
 
+#ifdef __AROS__
+void aros_debug_log(char *text)
+{
+	BPTR file;
+	static BOOL first = TRUE;
+	char *paths[] = {"PROGDIR:DOpus5-startup.log", "T:DOpus5-startup.log", 0};
+	short a;
+
+	for (a = 0; paths[a]; a++)
+	{
+		if ((file = Open(paths[a], first ? MODE_NEWFILE : MODE_READWRITE)) ||
+			(!first && (file = Open(paths[a], MODE_NEWFILE))))
+		{
+			if (!first)
+				Seek(file, 0, OFFSET_END);
+			FPuts(file, text);
+			Close(file);
+		}
+	}
+
+	first = FALSE;
+}
+#endif
+
 // Main entry point
 int main(int argc, char **argv)
 {
@@ -56,6 +80,9 @@ int main(int argc, char **argv)
 	/******** Startup Stuff that happens before the progress bar is displayed ********/
 
 	startup_misc_init();						 // Miscellaneous startup stuff
+#ifdef __AROS__
+	aros_debug_log("DOpus5 AROS startup trace x64_boopsi_iptr " __DATE__ " " __TIME__ "\n");
+#endif
 	startup_check_assign();						 // Check for DOPUS5: assignment
 	startup_open_dopuslib();					 // Open dopus5.library
 	init_locale_data(&locale);					 // Initialise locale info
@@ -234,9 +261,11 @@ void startup_open_dopuslib()
 {
 	// Open the library
 #ifdef __amigaos4__
-	if (!OpenLibIFace("dopus5:libs/dopus5.library", (APTR)&DOpusBase, (APTR)&IDOpus, LIB_VERSION))
+	if (!OpenLibIFace("PROGDIR:Libs/dopus5.library", (APTR)&DOpusBase, (APTR)&IDOpus, LIB_VERSION) &&
+		!OpenLibIFace("dopus5:libs/dopus5.library", (APTR)&DOpusBase, (APTR)&IDOpus, LIB_VERSION))
 #else
-	if (!(DOpusBase = OpenLibrary("dopus5:libs/dopus5.library", LIB_VERSION)))
+	if (!(DOpusBase = OpenLibrary("PROGDIR:Libs/dopus5.library", LIB_VERSION)) &&
+		!(DOpusBase = OpenLibrary("dopus5:libs/dopus5.library", LIB_VERSION)))
 #endif
 	{
 #ifndef __amigaos3__
@@ -269,18 +298,36 @@ void startup_open_dopuslib()
 		}
 		exit(0);
 	}
+#ifdef __AROS__
+	{
+		char buf[120];
+
+		lsprintf(buf,
+				 "startup_open_dopuslib ok version=%ld revision=%ld\n",
+				 (ULONG)DOpusBase->lib_Version,
+				 (ULONG)DOpusBase->lib_Revision);
+		aros_debug_log(buf);
+	}
+#endif
 }
 
 // See if DOpus is already running
 void startup_check_duplicate()
 {
+	BOOL found;
+
 	Forbid();
-	if (FindPort(dopus_name))
+	found = (BOOL)(FindPort(dopus_name) != 0);
+	Permit();
+
+	if (found)
 	{
 		struct MsgPort *port;
 
 		// Ask if we want to run another copy
-		Permit();
+#ifdef __AROS__
+		aros_debug_log("startup_check_duplicate found existing Directory Opus port\n");
+#endif
 		if (SimpleRequest(0,
 						  dopus_name,
 						  GetString(&locale, MSG_ALREADY_RUNNING_BUTTONS),
@@ -303,7 +350,10 @@ void startup_check_duplicate()
 			quit(0);
 		}
 	}
-	Permit();
+#ifdef __AROS__
+	else
+		aros_debug_log("startup_check_duplicate no existing Directory Opus port\n");
+#endif
 }
 
 // Run the update module
@@ -316,9 +366,11 @@ void startup_run_update()
 
 	// Try and get update.module
 #ifdef __amigaos4__
-	if (OpenLibIFace("dopus5:modules/update.module", (APTR)&ModuleBase, (APTR)&IModule, LIB_VERSION))
+	if (OpenLibIFace("PROGDIR:Modules/update.module", (APTR)&ModuleBase, (APTR)&IModule, LIB_VERSION) ||
+		OpenLibIFace("dopus5:modules/update.module", (APTR)&ModuleBase, (APTR)&IModule, LIB_VERSION))
 #else
-	if ((ModuleBase = OpenLibrary("dopus5:modules/update.module", 0)))
+	if ((ModuleBase = OpenLibrary("PROGDIR:Modules/update.module", 0)) ||
+		(ModuleBase = OpenLibrary("dopus5:modules/update.module", 0)))
 #endif
 	{
 		// Launch update function
@@ -844,8 +896,9 @@ void startup_process_args(int argc, char **argv)
 	{
 		APTR handle;
 
-		// Valid OPUS file?
-		if (!(handle = IFFOpen(environment->path, IFF_READ, ID_OPUS)))
+		// Valid environment file?
+		if (!(handle = IFFOpen(environment->path, IFF_READ, ID_OPUS)) &&
+			!(handle = IFFOpen(environment->path, IFF_READ, ID_EPUS)))
 		{
 			BPTR dir, old;
 			BOOL fail = 1;
@@ -872,7 +925,7 @@ void startup_process_args(int argc, char **argv)
 
 			// Failed?
 			if (fail)
-				strcpy(environment->path, "dopus5:environment/default");
+				strcpy(environment->path, "PROGDIR:Environment/default");
 		}
 		else
 			IFFClose(handle);
@@ -906,9 +959,9 @@ void startup_show_startup_picture(IPCData **startup_pic)
 				if (!(IPC_Launch(&GUI->process_list,
 								 &ipc,
 								 "dopus_show",
-								 (ULONG)&misc_proc,
+								 (IPTR)&misc_proc,
 								 STACK_DEFAULT,
-								 (ULONG)startup,
+								 (IPTR)startup,
 								 (struct Library *)DOSBase)))
 				{
 					// Failed
@@ -1167,7 +1220,7 @@ void startup_init_arexx_cx()
 	IPC_Launch(&GUI->process_list,
 			   &GUI->rexx_proc,
 			   "dopus_rexx",
-			   (ULONG)&rexx_proc,
+			   (IPTR)&rexx_proc,
 			   STACK_DEFAULT,
 			   0,
 			   (struct Library *)DOSBase);
@@ -1184,7 +1237,10 @@ void startup_init_environment()
 	// Create main environment
 	if (!(environment = environment_new()))
 		quit(0);
-	strcpy(environment->path, "dopus5:environment/default");
+	strcpy(environment->path, "PROGDIR:Environment/default");
+#ifdef __AROS__
+	aros_debug_log("startup_init_environment path=PROGDIR:Environment/default\n");
+#endif
 }
 
 // Initialise commands
@@ -1204,7 +1260,7 @@ void startup_init_commands()
 		// Get description
 		if (commandlist_internal[a].desc)
 		{
-			commandlist_internal[a].desc = (ULONG)GetString(&locale, commandlist_internal[a].desc);
+			commandlist_internal[a].desc = (IPTR)GetString(&locale, commandlist_internal[a].desc);
 		}
 	}
 

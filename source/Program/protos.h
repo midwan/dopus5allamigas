@@ -27,7 +27,7 @@ For more information on Directory Opus for Windows please see:
 void STDARGS v_loc_printf(char *, char *, APTR);
 #define loc_printf(buf, str, dat, ...)         \
 	({                                         \
-		IPTR __args[] = {__VA_ARGS__};         \
+		IPTR __args[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)}; \
 		v_loc_printf(buf, str, (APTR)&__args); \
 	})
 
@@ -36,6 +36,9 @@ int main(int, char **);
 Cfg_Function *new_default_function(char *func, APTR);
 void process_args(int argc, char **argv);
 void env_update_settings(BOOL save);
+#ifdef __AROS__
+void aros_debug_log(char *);
+#endif
 IPCData *show_startup_picture(void);
 BOOL main_bump_progress(APTR, short, BOOL);
 void startup_misc_init(void);

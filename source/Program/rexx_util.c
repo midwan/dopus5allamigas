@@ -248,7 +248,7 @@ BOOL rexx_lister_valid(Lister *lister)
 }
 
 // Set a variable
-void rexx_set_var(struct RexxMsg *msg, char *stem, char *name, ULONG data, short type)
+void rexx_set_var(struct RexxMsg *msg, char *stem, char *name, IPTR data, short type)
 {
 	char buf[80], buf2[60];
 
@@ -256,14 +256,14 @@ void rexx_set_var(struct RexxMsg *msg, char *stem, char *name, ULONG data, short
 	if (type == RX_LONG)
 	{
 		lsprintf(buf2, "%ld", data);
-		data = (ULONG)buf2;
+		data = (IPTR)buf2;
 	}
 
 	// Char?
 	else if (type == RX_CHAR)
 	{
 		lsprintf(buf2, "%lc", data);
-		data = (ULONG)buf2;
+		data = (IPTR)buf2;
 	}
 
 	// Build variable name

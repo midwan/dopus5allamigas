@@ -198,7 +198,7 @@ void LIBFUNC L_WriteFileIcon(REG(a0, char *source), REG(a1, char *dest), REG(a6,
 	BPTR lock;
 	struct DiskObject *icon;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -488,7 +488,9 @@ void LIBFUNC L_DivideToString(REG(a0, char *string),
 		if (atoi(rem_buf) != 0)
 		{
 			char *ptr = string + strlen(string);
-			lsprintf(ptr, "%lc%s", decimal_point, (IPTR)&rem_buf);
+
+			*ptr++ = decimal_point;
+			strcpy(ptr, rem_buf);
 		}
 	}
 }
@@ -743,7 +745,7 @@ BOOL LIBFUNC L_GetWBArgPath(REG(a0, struct WBArg *arg),
 							REG(d0, long size),
 							REG(a6, struct MyLibrary *libbase))
 {
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -805,7 +807,7 @@ ULONG LIBFUNC L_SetLibraryFlags(REG(d0, ULONG flags), REG(d1, ULONG mask), REG(a
 	ULONG oldflags;
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -828,7 +830,7 @@ ULONG LIBFUNC L_GetLibraryFlags(REG(a6, struct MyLibrary *libbase))
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -981,7 +983,7 @@ void LIBFUNC L_SetReqBackFill(REG(a0, struct Hook *hook),
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -1008,7 +1010,7 @@ struct Hook *LIBFUNC L_LockReqBackFill(REG(a0, struct Screen *screen), REG(a6, s
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -1035,7 +1037,7 @@ void LIBFUNC L_UnlockReqBackFill(REG(a6, struct MyLibrary *libbase))
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -1073,7 +1075,7 @@ long LIBFUNC L_GetStatistics(REG(d0, long id), REG(a6, struct MyLibrary *libbase
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 

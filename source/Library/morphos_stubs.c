@@ -237,8 +237,8 @@ LIBSTUB_4(L_UpdateGadgetValue,
 		  REG(a1, struct IntuiMessage *msg),
 		  REG(d0, UWORD id),
 		  REG(a6, struct MyLibrary *libbase))
-LIBSTUB_3(L_SetGadgetValue, void, REG(a0, ObjectList *list), REG(d0, UWORD id), REG(d1, ULONG value))
-LIBSTUB_3(L_GetGadgetValue, long, REG(a0, ObjectList *list), REG(a1, UWORD id), REG(a6, struct MyLibrary *libbase))
+LIBSTUB_3(L_SetGadgetValue, void, REG(a0, ObjectList *list), REG(d0, UWORD id), REG(d1, IPTR value))
+LIBSTUB_3(L_GetGadgetValue, IPTR, REG(a0, ObjectList *list), REG(a1, UWORD id), REG(a6, struct MyLibrary *libbase))
 LIBSTUB_3(L_CheckObjectArea, BOOL, REG(a0, GL_Object *object), REG(d0, int x), REG(d1, int y))
 LIBSTUB_5(L_DisplayObject,
 		  void,
@@ -825,7 +825,7 @@ LIBSTUB_2(L_RemoveNotifyRequest, void, REG(a0, NotifyNode *node), REG(a6, struct
 LIBSTUB_7(L_SendNotifyMsg,
 		  void,
 		  REG(d0, ULONG type),
-		  REG(d1, ULONG data),
+		  REG(d1, IPTR data),
 		  REG(d2, ULONG flags),
 		  REG(d3, short wait),
 		  REG(a0, char *name),
@@ -1069,8 +1069,8 @@ LIBSTUB_1(L_WB_Install_Patch, void, REG(a6, struct MyLibrary *libbase))
 LIBSTUB_1(L_WB_Remove_Patch, BOOL, REG(a6, struct MyLibrary *libbase))
 LIBSTUB_7(L_WB_AddAppIcon,
 		  struct AppIcon *,
-		  REG(d0, ULONG id),
-		  REG(d1, ULONG userdata),
+		  REG(d0, IPTR id),
+		  REG(d1, IPTR userdata),
 		  REG(a0, char *text),
 		  REG(a1, struct MsgPort *port),
 		  REG(a2, BPTR lock),
@@ -1080,8 +1080,8 @@ LIBSTUB_1(L_WB_RemoveAppIcon, BOOL, REG(a0, struct AppIcon *icon))
 
 LIBSTUB_5(L_WB_AddAppMenuItem,
 		  struct AppMenuItem *,
-		  REG(d0, ULONG id),
-		  REG(d1, ULONG userdata),
+		  REG(d0, IPTR id),
+		  REG(d1, IPTR userdata),
 		  REG(a0, char *text),
 		  REG(a1, struct MsgPort *port),
 		  REG(a2, struct TagItem *tags))
@@ -1090,8 +1090,8 @@ LIBSTUB_2(L_WB_FindAppWindow, struct AppWindow *, REG(a0, struct Window *window)
 LIBSTUB_3(L_WB_AppWindowData,
 		  struct MsgPort *,
 		  REG(a0, struct AppWindow *window),
-		  REG(a1, ULONG *id),
-		  REG(a2, ULONG *userdata))
+		  REG(a1, IPTR *id),
+		  REG(a2, IPTR *userdata))
 
 LIBSTUB_1(L_WB_AppWindowLocal, BOOL, REG(a0, struct AppWindow *window))
 

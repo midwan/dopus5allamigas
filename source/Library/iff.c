@@ -88,7 +88,7 @@ IFFHandle *LIBFUNC L_IFFOpen(REG(a0, char *name), REG(d0, unsigned short mode), 
 		if (!(handle->iff_ClipPort = CreateMsgPort()) ||
 			!(handle->iff_ClipReq =
 				  (struct IOClipReq *)CreateIORequest(handle->iff_ClipPort, sizeof(struct IOClipReq))) ||
-			(OpenDevice("clipboard.device", (ULONG)name, (struct IORequest *)handle->iff_ClipReq, 0)))
+			(OpenDevice("clipboard.device", (IPTR)name, (struct IORequest *)handle->iff_ClipReq, 0)))
 		{
 			L_IFFClose(handle);
 			return 0;
@@ -501,18 +501,17 @@ long LIBFUNC L_IFFPopChunk(REG(a0, IFFHandle *handle))
 	if (!handle->iff_ChunkOK)
 	{
 		long cur_pos;
+		ULONG chunk_size;
 
 		// Seek back to start of chunk
-		cur_pos = iff_Seek(handle, handle->iff_ChunkPos + sizeof(long), OFFSET_BEGINNING);
+		cur_pos = iff_Seek(handle, handle->iff_ChunkPos + sizeof(ULONG), OFFSET_BEGINNING);
 
 		// Write chunk size
+		chunk_size = handle->iff_ChunkSize;
 #ifdef __AROS__
-		handle->iff_ChunkSize = AROS_LONG2BE(handle->iff_ChunkSize);
+		chunk_size = AROS_LONG2BE(chunk_size);
 #endif
-		iff_Write(handle, &handle->iff_ChunkSize, sizeof(long));
-#ifdef __AROS__
-		handle->iff_ChunkSize = AROS_BE2LONG(handle->iff_ChunkSize);
-#endif
+		iff_Write(handle, &chunk_size, sizeof(ULONG));
 
 		// Seek back to end of chunk
 		iff_Seek(handle, cur_pos, OFFSET_BEGINNING);
@@ -522,19 +521,22 @@ long LIBFUNC L_IFFPopChunk(REG(a0, IFFHandle *handle))
 	else
 	{
 		IFFChunkData *data;
+		ULONG foo[2];
 
 		// Write chunk header
+		foo[0] = handle->iff_Chunk;
+		foo[1] = handle->iff_ChunkSize;
 #ifdef __AROS__
-		handle->iff_Chunk = AROS_LONG2BE(handle->iff_Chunk);
-		handle->iff_ChunkSize = AROS_LONG2BE(handle->iff_ChunkSize);
+		foo[0] = AROS_LONG2BE(foo[0]);
+		foo[1] = AROS_LONG2BE(foo[1]);
 #endif
-		if (iff_Write(handle, &handle->iff_Chunk, sizeof(long) * 2) != sizeof(long) * 2)
+		if (iff_Write(handle, foo, sizeof(ULONG) * 2) != sizeof(ULONG) * 2)
 			result = 0;
 
 		else
 		{
 			// Increment total size
-			handle->iff_Size += sizeof(long) * 2;
+			handle->iff_Size += sizeof(ULONG) * 2;
 
 			// Go through data chunks
 			for (data = (IFFChunkData *)handle->iff_ChunkData.mlh_Head; data->chk_Node.mln_Succ;
@@ -551,10 +553,6 @@ long LIBFUNC L_IFFPopChunk(REG(a0, IFFHandle *handle))
 				handle->iff_Size += data->chk_Size;
 			}
 		}
-#ifdef __AROS__
-		handle->iff_Chunk = AROS_BE2LONG(handle->iff_Chunk);
-		handle->iff_ChunkSize = AROS_BE2LONG(handle->iff_ChunkSize);
-#endif
 	}
 
 	// Ok so far?
@@ -641,17 +639,24 @@ unsigned long LIBFUNC L_IFFNextChunk(REG(a0, IFFHandle *handle), REG(d0, unsigne
 
 		// Clear ID
 		handle->iff_Chunk = 0;
+		handle->iff_ChunkSize = 0;
 		handle->iff_ChunkOK = 0;
 		handle->iff_ChunkPos = 0;
 
 		// Read chunk header
-		if ((iff_Read(handle, &handle->iff_Chunk, sizeof(ULONG) * 2)) != sizeof(ULONG) * 2)
-			return 0;
+		{
+			ULONG foo[2];
+
+			if ((iff_Read(handle, foo, sizeof(ULONG) * 2)) != sizeof(ULONG) * 2)
+				return 0;
 
 #ifdef __AROS__
-		handle->iff_Chunk = AROS_BE2LONG(handle->iff_Chunk);
-		handle->iff_ChunkSize = AROS_BE2LONG(handle->iff_ChunkSize);
+			foo[0] = AROS_BE2LONG(foo[0]);
+			foo[1] = AROS_BE2LONG(foo[1]);
 #endif
+			handle->iff_Chunk = foo[0];
+			handle->iff_ChunkSize = foo[1];
+		}
 
 		// Is this a FORM?
 		if (handle->iff_Chunk == ID_FORM)

@@ -66,11 +66,11 @@ void rexx_custom_app_msg(DOpusAppMessage *msg,
 }
 
 // Build a string of filenames
-char *rexx_build_filestring(DOpusAppMessage *msg, ULONG *lister_ptr, ULONG flags)
+char *rexx_build_filestring(DOpusAppMessage *msg, IPTR *lister_ptr, ULONG flags)
 {
 	long len = 0, num;
 	char buf[256], *string;
-	ULONG lister = 0;
+	IPTR lister = 0;
 
 	// Do files come from a lister?
 	get_appmsg_data(msg, &lister, 0, 0);
@@ -459,7 +459,7 @@ short rexx_lister_add_file(Lister *lister, char *args, struct RexxMsg *msg)
 
 			// Fill out tags
 			tags[0].ti_Tag = DE_PopupMenu;
-			tags[0].ti_Data = (ULONG)list;
+			tags[0].ti_Data = (IPTR)list;
 			tags[1].ti_Tag = TAG_END;
 
 			// Chain tags
@@ -741,7 +741,7 @@ short rexx_lister_reload_file(Lister *lister, char *args)
 
 				// Fill out tags
 				tags[0].ti_Tag = DE_PopupMenu;
-				tags[0].ti_Data = (ULONG)menu;
+				tags[0].ti_Data = (IPTR)menu;
 				tags[1].ti_Tag = TAG_END;
 
 				// Chain tags

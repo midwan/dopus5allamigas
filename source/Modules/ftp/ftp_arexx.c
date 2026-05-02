@@ -97,7 +97,7 @@ return result;
 // Add an entry to a lister which is NOT under our control
 
 void rexx_lst_add(const char *opus,
-				  ULONG handle,
+				  IPTR handle,
 				  char *name,
 				  unsigned int size,
 				  int type,
@@ -143,7 +143,7 @@ void rexx_doubleclick(const char *opus, const char *path)
 //
 //	Refresh a lister
 //
-void rexx_lst_refresh(const char *opus, ULONG handle, int date)
+void rexx_lst_refresh(const char *opus, IPTR handle, int date)
 {
 	D(bug("Refresh lister - start - "));
 
@@ -160,7 +160,7 @@ void rexx_lst_refresh(const char *opus, ULONG handle, int date)
  *	Set or clear a lister's busy state
  */
 
-void rexx_lst_busy(const char *opus, ULONG handle, int val)
+void rexx_lst_busy(const char *opus, IPTR handle, int val)
 {
 	/*
 	if	(val)
@@ -181,7 +181,7 @@ void rexx_lst_busy(const char *opus, ULONG handle, int val)
  *
  */
 
-void rexx_lst_empty(const char *opus, ULONG handle)
+void rexx_lst_empty(const char *opus, IPTR handle)
 {
 	D(bug("rexx_lst_empty(%ld)\n", handle));
 
@@ -196,7 +196,7 @@ void rexx_lst_empty(const char *opus, ULONG handle)
  *	Opus clears the current buffer, does not move to a new one
  */
 
-void rexx_lst_clear(const char *opus, ULONG handle)
+void rexx_lst_clear(const char *opus, IPTR handle)
 {
 	D(bug("rexx_lst_clear(%ld)\n", handle));
 
@@ -209,7 +209,7 @@ void rexx_lst_clear(const char *opus, ULONG handle)
  *	Close a lister and clear cache buffers
  */
 
-void rexx_lst_close(const char *opus, ULONG handle)
+void rexx_lst_close(const char *opus, IPTR handle)
 {
 	// new command : lister freecaches <handle> <handler>
 	// eg, lister freecaches 129384849 _OPUS_FTP_
@@ -227,7 +227,7 @@ void rexx_lst_close(const char *opus, ULONG handle)
  *
  *	returns 1/0 for entry cached or not
  */
-int rexx_lst_findcache(const char *opus, ULONG handle, char *path)
+int rexx_lst_findcache(const char *opus, IPTR handle, char *path)
 {
 	char *string;
 	int value = 0;
@@ -242,7 +242,7 @@ int rexx_lst_findcache(const char *opus, ULONG handle, char *path)
 }
 
 // Remember to do a refresh after this
-void rexx_lst_title(const char *opus, ULONG handle, char *title)
+void rexx_lst_title(const char *opus, IPTR handle, char *title)
 {
 	if (strncmp(title, "FTP:", 4) && strncmp(title, "SFTP:", 5))
 		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu title FTP:%s", handle, title);
@@ -251,7 +251,7 @@ void rexx_lst_title(const char *opus, ULONG handle, char *title)
 }
 
 // Remember to do a refresh after this
-char *rexx_lst_title_swap(const char *opus, ULONG handle, char *title)
+char *rexx_lst_title_swap(const char *opus, IPTR handle, char *title)
 {
 	if (strncmp(title, "FTP:", 4) && strncmp(title, "SFTP:", 5))
 		return (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister set %lu title FTP:%s", handle, title);
@@ -264,7 +264,7 @@ char *rexx_lst_title_swap(const char *opus, ULONG handle, char *title)
 //
 //	Set the label that the lister will have while iconified
 //
-void rexx_lst_label(const char *opus, ULONG handle, char *pref, char *label, char *suff)
+void rexx_lst_label(const char *opus, IPTR handle, char *pref, char *label, char *suff)
 {
 	if (!pref)
 		pref = "";
@@ -282,7 +282,7 @@ void rexx_lst_label(const char *opus, ULONG handle, char *pref, char *label, cha
 //
 //	Ensure a lister becomes busy
 //
-void rexx_lst_lock(const char *opus, ULONG handle)
+void rexx_lst_lock(const char *opus, IPTR handle)
 {
 	int notdone = 1;
 	char *r;
@@ -311,7 +311,7 @@ void rexx_lst_lock(const char *opus, ULONG handle)
 //
 //	Create a new lister and set it's title and handler
 //
-ULONG rexx_lst_new(const char *opus, ULONG handle, char *host, const char *toolbar)
+IPTR rexx_lst_new(const char *opus, IPTR handle, char *host, const char *toolbar)
 {
 	char *asciihandle;
 	ULONG new_handle;
@@ -374,7 +374,7 @@ ULONG rexx_lst_new(const char *opus, ULONG handle, char *host, const char *toolb
 
 /*********************************/
 
-BOOL rexx_lst_query_handler(const char *opus, ULONG handle)
+BOOL rexx_lst_query_handler(const char *opus, IPTR handle)
 {
 	char *handler;
 	BOOL result = FALSE;
@@ -396,7 +396,7 @@ BOOL rexx_lst_query_handler(const char *opus, ULONG handle)
 //	Is lister visible?
 //	Still there after an inactive msg?
 //
-int rexx_lst_query_visible(const char *opus, ULONG handle)
+int rexx_lst_query_visible(const char *opus, IPTR handle)
 {
 	char *string;
 	int value = 0;
@@ -437,14 +437,14 @@ ULONG rexx_lst_query_dest1(const char *opus)
  *	Get the fileinfo string for a list entry
  */
 
-char *rexx_lst_query_entry(const char *opus, ULONG handle, char *entry)
+char *rexx_lst_query_entry(const char *opus, IPTR handle, char *entry)
 {
 	return (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister query %lu entry \"%s\"", handle, entry);
 }
 
 /********************************/
 
-static int rexx_lst_query_numblah(const char *opus, ULONG handle, const char *blah)
+static int rexx_lst_query_numblah(const char *opus, IPTR handle, const char *blah)
 {
 	char *s;
 	int n = 0;
@@ -460,42 +460,42 @@ static int rexx_lst_query_numblah(const char *opus, ULONG handle, const char *bl
 
 /********************************/
 
-int rexx_lst_query_numentries(const char *opus, ULONG handle)
+int rexx_lst_query_numentries(const char *opus, IPTR handle)
 {
 	return rexx_lst_query_numblah(opus, handle, "entries");
 }
 
 /********************************/
 
-int rexx_lst_query_numfiles(const char *opus, ULONG handle)
+int rexx_lst_query_numfiles(const char *opus, IPTR handle)
 {
 	return rexx_lst_query_numblah(opus, handle, "files");
 }
 
 /********************************/
 
-int rexx_lst_query_numseldirs(const char *opus, ULONG handle)
+int rexx_lst_query_numseldirs(const char *opus, IPTR handle)
 {
 	return rexx_lst_query_numblah(opus, handle, "seldirs");
 }
 
 /********************************/
 
-int rexx_lst_query_numselentries(const char *opus, ULONG handle)
+int rexx_lst_query_numselentries(const char *opus, IPTR handle)
 {
 	return rexx_lst_query_numblah(opus, handle, "selentries");
 }
 
 /********************************/
 
-int rexx_lst_query_numselfiles(const char *opus, ULONG handle)
+int rexx_lst_query_numselfiles(const char *opus, IPTR handle)
 {
 	return rexx_lst_query_numblah(opus, handle, "selfiles");
 }
 
 /********************************/
 
-char *rexx_lst_query_path(const char *opus, ULONG handle)
+char *rexx_lst_query_path(const char *opus, IPTR handle)
 {
 	char *path;
 
@@ -529,7 +529,7 @@ ULONG rexx_lst_query_src1(const char *opus)
 
 /********************************/
 
-void rexx_lst_remove(const char *opus, ULONG handle, char *name)
+void rexx_lst_remove(const char *opus, IPTR handle, char *name)
 {
 	send_rexxa(opus, REXX_REPLY_NONE, "lister remove %lu \"%s\"", handle, name);
 }
@@ -540,14 +540,14 @@ void rexx_lst_remove(const char *opus, ULONG handle, char *name)
  *	Select or deselect an entry in a lister
  */
 
-void rexx_lst_select(const char *opus, ULONG handle, char *name, int state)
+void rexx_lst_select(const char *opus, IPTR handle, char *name, int state)
 {
 	send_rexxa(opus, REXX_REPLY_NONE, "lister select %lu \"%s\" %d", handle, name, state);
 }
 
 /********************************/
 
-void rexx_lst_set_path(const char *opus, ULONG handle, char *path)
+void rexx_lst_set_path(const char *opus, IPTR handle, char *path)
 {
 	D(bug("rexx_lst_set_path(%ld)\n", handle));
 	D(bug("-> '%s'\n", path));
@@ -559,7 +559,7 @@ void rexx_lst_set_path(const char *opus, ULONG handle, char *path)
 
 /********************************/
 
-void rexx_prog_bar(const char *opus, ULONG handle, int type, int total, int count)
+void rexx_prog_bar(const char *opus, IPTR handle, int type, int total, int count)
 {
 	if (type == PROGRESS_FREE)
 		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu bar %ld %ld", handle, total, count);
@@ -569,7 +569,7 @@ void rexx_prog_bar(const char *opus, ULONG handle, int type, int total, int coun
 
 /********************************/
 
-void rexx_prog_bytes(const char *opus, ULONG handle, int type, int total, int count)
+void rexx_prog_bytes(const char *opus, IPTR handle, int type, int total, int count)
 {
 	if (type == PROGRESS_FREE)
 		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu file %ld %ld", handle, total, count);
@@ -579,7 +579,7 @@ void rexx_prog_bytes(const char *opus, ULONG handle, int type, int total, int co
 
 /********************************/
 
-void rexx_prog_clear(const char *opus, ULONG handle, int type)
+void rexx_prog_clear(const char *opus, IPTR handle, int type)
 {
 	if (type == PROGRESS_FREE)
 		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu off", handle);
@@ -594,7 +594,7 @@ void rexx_prog_clear(const char *opus, ULONG handle, int type)
 //	If no handle is passed in, a free-floating progress bar will be created.
 //	Returns the handle passed in or the handle of the free-floating bar.
 //
-ULONG rexx_prog_init(const char *opus, ULONG handle, int type, char *title, char *info, char *name, int file, int bar)
+IPTR rexx_prog_init(const char *opus, IPTR handle, int type, char *title, char *info, char *name, int file, int bar)
 {
 	char buf[80];
 	char *str;
@@ -660,8 +660,8 @@ ULONG rexx_prog_init(const char *opus, ULONG handle, int type, char *title, char
 //	If no handle is passed in, a free-floating progress bar will be created.
 //	Returns the handle passed in or the handle of the free-floating bar.
 //
-ULONG rexx_prog_init3(const char *opus,
-					  ULONG handle,
+IPTR rexx_prog_init3(const char *opus,
+					  IPTR handle,
 					  int type,
 					  char *title,
 					  char *info,
@@ -742,7 +742,7 @@ ULONG rexx_prog_init3(const char *opus,
 
 /********************************/
 
-void rexx_prog_name(const char *opus, ULONG handle, int type, char *name)
+void rexx_prog_name(const char *opus, IPTR handle, int type, char *name)
 {
 	if (type == PROGRESS_FREE)
 		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu name %s", handle, name);
@@ -752,7 +752,7 @@ void rexx_prog_name(const char *opus, ULONG handle, int type, char *name)
 
 /********************************/
 
-void rexx_prog_info(const char *opus, ULONG handle, int type, char *info)
+void rexx_prog_info(const char *opus, IPTR handle, int type, char *info)
 {
 	if (type == PROGRESS_FREE)
 		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu info %s", handle, info);
@@ -760,7 +760,7 @@ void rexx_prog_info(const char *opus, ULONG handle, int type, char *info)
 		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu newprogress info %s", handle, info);
 }
 
-void rexx_prog_info2(const char *opus, ULONG handle, int type, char *info)
+void rexx_prog_info2(const char *opus, IPTR handle, int type, char *info)
 {
 	if (type == PROGRESS_FREE)
 		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu info2 %s", handle, info);
@@ -768,7 +768,7 @@ void rexx_prog_info2(const char *opus, ULONG handle, int type, char *info)
 		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu newprogress info2 %s", handle, info);
 }
 
-void rexx_prog_info3(const char *opus, ULONG handle, int type, char *info)
+void rexx_prog_info3(const char *opus, IPTR handle, int type, char *info)
 {
 	if (type == PROGRESS_FREE)
 		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu info %s", handle, info);
@@ -782,10 +782,10 @@ void rexx_prog_info3(const char *opus, ULONG handle, int type, char *info)
  *	Send an Arexx command, get an optional result back
  */
 
-LONG STDARGS send_rexxa(const char *dest_portname, int reply_type, const char *fmt, ...)
+IPTR STDARGS send_rexxa(const char *dest_portname, int reply_type, const char *fmt, ...)
 {
 	va_list ap;
-	int retval = NULL;
+	IPTR retval = 0;
 	char *buf;
 
 	if ((buf = AllocVec(1024, MEMF_ANY)))
@@ -812,9 +812,9 @@ LONG STDARGS send_rexxa(const char *dest_portname, int reply_type, const char *f
 //	gjp changed to make return RC/RESULT easier by using
 //	reply_type is emum REXX_REPLY_NONE,REXX_REPLY_RESULT,REXX_REPLY_RC;
 //
-LONG send_rexx(const char *dest_portname, int reply_type, const char *cmd)
+IPTR send_rexx(const char *dest_portname, int reply_type, const char *cmd)
 {
-	LONG *retptr, retval = -1;		// The result and a pointer to it
+	IPTR *retptr, retval = -1;		// The result and a pointer to it
 	struct MsgPort *destport, *rp;	// The destination and reply ports
 	UBYTE *argstr;					// The arexx argument string
 	struct RexxMsg *rxmsg;			// The arexx message
@@ -856,7 +856,7 @@ LONG send_rexx(const char *dest_portname, int reply_type, const char *cmd)
 					rxmsg->rm_Action |= RXFF_RESULT;
 				}
 
-				rxmsg->rm_Args[0] = argstr;
+				rxmsg->rm_Args[0] = (IPTR)argstr;
 
 				Forbid();
 				if ((destport = FindPort((char *)dest_portname)))

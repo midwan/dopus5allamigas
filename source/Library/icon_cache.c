@@ -45,7 +45,7 @@ struct DiskObject *LIBFUNC L_GetCachedDefDiskObject(REG(d0, long type), REG(a6, 
 	struct DiskObject *icon = NULL;
 	ULONG flags = 0;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -99,11 +99,11 @@ struct DiskObject *LIBFUNC L_GetCachedDefDiskObject(REG(d0, long type), REG(a6, 
 		{
 			if (name)
 				icon = GetIconTags(
-					name, ICONGETA_FailIfUnavailable, TRUE, ICONGETA_Screen, (Tag)*libdata->backfill_screen, TAG_DONE);
+					name, ICONGETA_FailIfUnavailable, TRUE, ICONGETA_Screen, (IPTR)*libdata->backfill_screen, TAG_DONE);
 
 			if (!icon)
 				icon = GetIconTags(
-					NULL, ICONGETA_GetDefaultType, type, ICONGETA_Screen, (Tag)*libdata->backfill_screen, TAG_DONE);
+					NULL, ICONGETA_GetDefaultType, type, ICONGETA_Screen, (IPTR)*libdata->backfill_screen, TAG_DONE);
 		}
 
 #ifdef __AROS__
@@ -133,7 +133,7 @@ struct DiskObject *LIBFUNC L_GetCachedDefDiskObject(REG(d0, long type), REG(a6, 
 
 void LIBFUNC L_FreeCachedDiskObject(REG(a0, struct DiskObject *icon), REG(a6, struct MyLibrary *libbase))
 {
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -198,7 +198,7 @@ struct DiskObject *LIBFUNC L_GetCachedDiskObject(REG(a0, char *name),
 	unsigned long checksum[2];
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -217,7 +217,7 @@ struct DiskObject *LIBFUNC L_GetCachedDiskObject(REG(a0, char *name),
 
 		if (data->backfill_screen)
 			icon = GetIconTags(
-				name, ICONGETA_FailIfUnavailable, FALSE, ICONGETA_Screen, (Tag)*data->backfill_screen, TAG_DONE);
+				name, ICONGETA_FailIfUnavailable, FALSE, ICONGETA_Screen, (IPTR)*data->backfill_screen, TAG_DONE);
 
 		return icon;
 	}
@@ -389,7 +389,7 @@ struct DiskObject *LIBFUNC L_GetCachedDiskObjectNew(REG(a0, char *name),
 	D_S(struct FileInfoBlock, fib)
 	long type = WBPROJECT, val = 0;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -609,7 +609,7 @@ void LIBFUNC L_SetNewIconsFlags(REG(d0, ULONG flags), REG(d1, short precision), 
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 

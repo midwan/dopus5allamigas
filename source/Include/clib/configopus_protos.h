@@ -26,7 +26,7 @@ ULONG Config_Menu(char *,
 				  short,
 				  Att_List *);
 BOOL ConvertConfig(char *, struct Screen *, IPCData *);
-ULONG Config_Menus(IPCData *, IPCData *, struct Screen *, Cfg_ButtonBank *, ULONG, ULONG, char *);
+IPTR Config_Menus(IPCData *, IPCData *, struct Screen *, Cfg_ButtonBank *, IPTR, ULONG, char *);
 Cfg_Function *Config_EditFunction(IPCData *, IPCData *, struct Window *, Cfg_Function *, APTR, ULONG);
 long ShowPaletteBox(struct Window *, DOpusScreenData *, short *, short *, struct TextAttr *, ColourSpec32 *, short *);
 BOOL FunctionExportASCII(char *, Cfg_Button *, Cfg_Function *, ULONG);

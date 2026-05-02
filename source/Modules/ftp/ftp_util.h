@@ -113,7 +113,7 @@ void build_url_flags(char *buffer,
 					 ULONG flags);
 
 // Split a URL into its component parts
-int split_url(const char *url, char *user, char *pass, char *host, long *port, char *path);
+int split_url(const char *url, char *user, char *pass, char *host, LONG *port, char *path);
 
 // Create a desktop function file
 BOOL CreateFunctionFile(char *name, short type, char *instruction, char *icon);
@@ -122,7 +122,7 @@ BOOL CreateFunctionFile(char *name, short type, char *instruction, char *icon);
 int ftpmod_request(struct opusftp_globals *og, IPCData *ipc, struct TagItem *taglist);
 #define ftpmod_request_tags(og, ipc, ...)                  \
 	({                                                     \
-		IPTR _tags[] = {__VA_ARGS__};                      \
+		IPTR _tags[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)}; \
 		ftpmod_request(og, ipc, (struct TagItem *)&_tags); \
 	})
 

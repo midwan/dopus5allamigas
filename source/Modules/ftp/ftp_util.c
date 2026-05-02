@@ -58,12 +58,12 @@ const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", 
 long display_msg(struct opusftp_globals *ogp, IPCData *ipc, struct Window *win, ULONG flags, char *str)
 {
 	long result;
-	struct TagItem tags[] = {{AR_Window, NULL},
-							 {AR_Screen, NULL},
-							 {AR_Message, NULL},
-							 {AR_Button, NULL},
-							 {TAG_IGNORE, NULL},
-							 {TAG_IGNORE, NULL},
+	struct TagItem tags[] = {{AR_Window, 0},
+							 {AR_Screen, 0},
+							 {AR_Message, 0},
+							 {AR_Button, 0},
+							 {TAG_IGNORE, 0},
+							 {TAG_IGNORE, 0},
 							 {TAG_DONE}};
 
 	if (!ipc || !str)
@@ -77,32 +77,32 @@ long display_msg(struct opusftp_globals *ogp, IPCData *ipc, struct Window *win, 
 	// see if they supplied a window
 	if (win)
 	{
-		tags[0].ti_Data = (ULONG)win;
-		tags[1].ti_Data = (ULONG)win->WScreen;
+		tags[0].ti_Data = (IPTR)win;
+		tags[1].ti_Data = (IPTR)win->WScreen;
 	}
 
 	// if not then use the global pointer to get the Opus screen
 	else if (ogp)
 	{
-		tags[1].ti_Data = (ULONG)ogp->og_screen;
+		tags[1].ti_Data = (IPTR)ogp->og_screen;
 	}
 
-	tags[2].ti_Data = (ULONG)str;
+	tags[2].ti_Data = (IPTR)str;
 
 	// Retry/Abort buttons?
 	if (flags & DSPMSG_RETRYABORT)
 	{
-		tags[3].ti_Data = (ULONG)GetString(locale, MSG_TRY_AGAIN);
+		tags[3].ti_Data = (IPTR)GetString(locale, MSG_TRY_AGAIN);
 		tags[4].ti_Tag = AR_Button;
-		tags[4].ti_Data = (ULONG)GetString(locale, MSG_FTP_SKIP);
+		tags[4].ti_Data = (IPTR)GetString(locale, MSG_FTP_SKIP);
 		tags[5].ti_Tag = AR_Button;
-		tags[5].ti_Data = (ULONG)GetString(locale, MSG_ABORT);
+		tags[5].ti_Data = (IPTR)GetString(locale, MSG_ABORT);
 	}
 
 	// Just an OK button
 	else
 	{
-		tags[3].ti_Data = (ULONG)GetString(locale, MSG_FTP_OKAY);
+		tags[3].ti_Data = (IPTR)GetString(locale, MSG_FTP_OKAY);
 	}
 
 	result = AsyncRequest(ipc, REQTYPE_SIMPLE, win, NULL, NULL, tags);
@@ -479,7 +479,7 @@ int unix_line_to_entryinfo(struct entry_info *entry, const char *line, ULONG fla
 	char byt_dat[BDLEN + 1] = {0};		 // Could be Bytes or Date
 	int nametail;						 // Last character of file name
 	int commenttail = 0;				 // Last character of file comment
-	int fred_hack;						 // Number of spaces between date and year/time
+	IPTR fred_hack;						 // Number of spaces between date and year/time
 	BOOL date_ok = TRUE;				 // For foreign dates in non english
 
 	struct ClockData filedate = {0};
@@ -666,11 +666,11 @@ int unix_line_to_entryinfo(struct entry_info *entry, const char *line, ULONG fla
 		return 0;
 
 	// Keep track of number of spaces between date and year/time for Fred
-	fred_hack = (int)p;
+	fred_hack = (IPTR)p;
 
 	p = stpblk(p);
 
-	fred_hack = (int)p - fred_hack;
+	fred_hack = (IPTR)p - fred_hack;
 
 	// Hour/Minute format?
 	if (p[1] == ':' || p[2] == ':')
@@ -1197,7 +1197,7 @@ void build_url(char *buffer,
 
 /********************************/
 
-int split_url(const char *url, char *p_user, char *p_pass, char *p_host, long *p_port, char *p_path)
+int split_url(const char *url, char *p_user, char *p_pass, char *p_host, LONG *p_port, char *p_path)
 {
 	const char *user;
 	const char *pass;
@@ -1372,14 +1372,14 @@ int ftpmod_request(struct opusftp_globals *og, IPCData *ipc, struct TagItem *tag
 			if (!GetTagData(AR_Screen, 0, taglist))
 			{
 				tags[0].ti_Tag = AR_Screen;
-				tags[0].ti_Data = (ULONG)og->og_screen;
+				tags[0].ti_Data = (IPTR)og->og_screen;
 			}
 
 		// Need to add OK button?
 		if (GetTagData(AR_Button, -1, taglist) == -1 && GetTagData(FR_ButtonNum, -1, taglist) == -1)
 		{
 			tags[1].ti_Tag = AR_Button;
-			tags[1].ti_Data = (ULONG)GetString(locale, MSG_FTP_OKAY);
+			tags[1].ti_Data = (IPTR)GetString(locale, MSG_FTP_OKAY);
 		}
 
 		// Look up locale strings
@@ -1389,12 +1389,12 @@ int ftpmod_request(struct opusftp_globals *og, IPCData *ipc, struct TagItem *tag
 			if (tagptr->ti_Tag == FR_MsgNum)
 			{
 				tagptr->ti_Tag = AR_Message;
-				tagptr->ti_Data = (ULONG)GetString(locale, tagptr->ti_Data);
+				tagptr->ti_Data = (IPTR)GetString(locale, tagptr->ti_Data);
 			}
 			else if (tagptr->ti_Tag == FR_ButtonNum)
 			{
 				tagptr->ti_Tag = AR_Button;
-				tagptr->ti_Data = (ULONG)GetString(locale, tagptr->ti_Data);
+				tagptr->ti_Data = (IPTR)GetString(locale, tagptr->ti_Data);
 			}
 		}
 
@@ -1427,7 +1427,7 @@ int ftpmod_request(struct opusftp_globals *og, IPCData *ipc, struct TagItem *tag
 					// vsprintf( buffer, (char *)fmttag->ti_Data, (va_list)array );
 					LSprintf(buffer, (char *)fmttag->ti_Data, array);
 					tags[2].ti_Tag = AR_Message;
-					tags[2].ti_Data = (ULONG)buffer;
+					tags[2].ti_Data = (IPTR)buffer;
 
 					fmttag->ti_Tag = TAG_SKIP;
 					fmttag->ti_Data = tagcount;
@@ -1436,7 +1436,7 @@ int ftpmod_request(struct opusftp_globals *og, IPCData *ipc, struct TagItem *tag
 		}
 
 		// Link user tags
-		tags[3].ti_Data = (ULONG)taglist;
+		tags[3].ti_Data = (IPTR)taglist;
 
 		result = AsyncRequest(ipc, REQTYPE_SIMPLE, window, 0, 0, tags);
 
@@ -1493,7 +1493,7 @@ BPTR open_temp_file(char *filename, IPCData *ipc)
 	D(bug("open_temp_file()\n"));
 
 	// Get temporary key
-	temp_key = (ULONG)ipc;
+	temp_key = (IPTR)ipc;
 	CurrentTime(&secs, &micros);
 	if (micros)
 		temp_key *= micros;

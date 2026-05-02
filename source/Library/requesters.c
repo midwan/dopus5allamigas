@@ -64,7 +64,7 @@ long LIBFUNC L_AsyncRequest(REG(a0, IPCData *my_ipc),
 	IPCData *ipc;
 	long result = 0;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -85,7 +85,7 @@ long LIBFUNC L_AsyncRequest(REG(a0, IPCData *my_ipc),
 					   "dopus_requester_proc",
 					   IPC_NATIVE(requester_proc),
 					   STACK_DEFAULT,
-					   (ULONG)startup,
+					   (IPTR)startup,
 					   (struct Library *)DOSBase,
 					   libbase)))
 	{
@@ -190,7 +190,7 @@ void SAVEDS requester_proc(void)
 	long result = 0;
 
 	// Do startup
-	if (!(ipc = L_IPC_ProcStartup((ULONG *)&startup, 0)))
+	if (!(ipc = L_IPC_ProcStartup((IPTR *)&startup, 0)))
 		return;
 
 	// Get library data pointer
@@ -243,7 +243,7 @@ void SAVEDS requester_proc(void)
 
 		// Get title
 		data->request.title =
-			(char *)GetTagData(AR_Title, (ULONG)GetString(&libdata->locale, MSG_DIRECTORY_OPUS_REQUEST), tags);
+			(char *)GetTagData(AR_Title, (IPTR)GetString(&libdata->locale, MSG_DIRECTORY_OPUS_REQUEST), tags);
 
 		// Get message
 		data->request.message = (char *)GetTagData(AR_Message, 0, tags);

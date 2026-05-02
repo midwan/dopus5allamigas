@@ -45,7 +45,7 @@ void *LIBFUNC L_NewMemHandle(REG(d0, ULONG puddle_size), REG(d1, ULONG thresh_si
 		return 0;
 
 	// Initialise check value
-	handle->check_val = (ULONG)handle;
+	handle->check_val = (IPTR)handle;
 
 	// Want pooling?
 	if (puddle_size > 0)
@@ -56,10 +56,10 @@ void *LIBFUNC L_NewMemHandle(REG(d0, ULONG puddle_size), REG(d1, ULONG thresh_si
 		thresh_count = UDivMod32(puddle_size, thresh_size);
 
 		// Increment thresh size by size of allocation headers
-		thresh_size += 3 * sizeof(ULONG);
+		thresh_size += 3 * sizeof(IPTR);
 
 		// Increment puddle size by size of allocation headers
-		puddle_size += 3 * sizeof(ULONG) * thresh_count;
+		puddle_size += 3 * sizeof(IPTR) * thresh_count;
 	}
 
 	// Initialise handle
@@ -148,14 +148,14 @@ void LIBFUNC L_ClearMemHandle(REG(a0, MemHandle *handle))
 			// Go through list, free all allocations
 			for (node = handle->memory_list.mlh_Head; node->mln_Succ; node = next)
 			{
-				ULONG *ptr;
+				IPTR *ptr;
 
 				// Get next pointer
 				next = node->mln_Succ;
 
 				// Free this entry
-				ptr = (ULONG *)node;
-				FreeMem(node, ptr[3]);
+				ptr = (IPTR *)node;
+				FreeMem(node, (ULONG)ptr[3]);
 			}
 		}
 
@@ -187,8 +187,8 @@ void LIBFUNC L_ClearMemHandle(REG(a0, MemHandle *handle))
 
 	Allocated as :    [<mln_Succ>]		-16
 					  [<mln_Pred>]		-12
-					  <handle>			-8
-					  <size>			-4
+					  <handle>			-2 * sizeof(IPTR)
+					  <size>			-1 * sizeof(IPTR)
 					  <memory pointer>	0
 
 	handle = handle to use for allocations
@@ -199,10 +199,11 @@ void LIBFUNC L_ClearMemHandle(REG(a0, MemHandle *handle))
 
 void *LIBFUNC L_AllocMemH(REG(a0, MemHandle *handle), REG(d0, ULONG size))
 {
-	register ULONG *mem;
+	register IPTR *mem;
 
 	// Get size to allocate (size rounded up plus 2 longwords)
-	size = (((size + 3) >> 2) + 2) << 2;
+	size = (size + sizeof(IPTR) - 1) & ~(sizeof(IPTR) - 1);
+	size += 2 * sizeof(IPTR);
 
 	// If no handle supplied, use AllocMem()
 	if (!handle)
@@ -229,12 +230,13 @@ void *LIBFUNC L_AllocMemH(REG(a0, MemHandle *handle), REG(d0, ULONG size))
 				// Need to clear?
 				if (handle->flags & MEMHF_CLEAR)
 				{
-					register ULONG clr, clrsize;
+					register UBYTE *clr;
+					register ULONG clrsize;
 
 					// Clear memory
-					clrsize = size >> 2;
-					for (clr = 0; clr < clrsize; clr++)
-						mem[clr] = 0;
+					clr = (UBYTE *)mem;
+					for (clrsize = 0; clrsize < size; clrsize++)
+						clr[clrsize] = 0;
 				}
 			}
 		}
@@ -268,7 +270,7 @@ void *LIBFUNC L_AllocMemH(REG(a0, MemHandle *handle), REG(d0, ULONG size))
 	if (mem)
 	{
 		// Store header pointer and size
-		mem[0] = (ULONG)handle;
+		mem[0] = (IPTR)handle;
 		mem[1] = size;
 
 		// Return bumped pointer
@@ -284,17 +286,17 @@ void LIBFUNC L_FreeMemH(REG(a0, void *memory))
 	// Check valid pointer
 	if (memory)
 	{
-		register ULONG *mem;
+		register IPTR *mem;
 		register MemHandle *handle;
 
 		// Decrement pointer
-		mem = ((ULONG *)memory) - 2;
+		mem = ((IPTR *)memory) - 2;
 
 		// Do we have a memory handle?
 		if ((handle = (MemHandle *)mem[0]))
 		{
 			// See if handle is valid
-			if (handle->check_val != (ULONG)handle)
+			if (handle->check_val != (IPTR)handle)
 			{
 				/*
 								D(bug("** Invalid MemHandle : %lx %lx %ld\n",handle,memory,mem[1]));
@@ -309,12 +311,12 @@ void LIBFUNC L_FreeMemH(REG(a0, void *memory))
 					ObtainSemaphore(&handle->lock);
 
 				// Decrement from allocation total
-				handle->total -= mem[1];
+				handle->total -= (ULONG)mem[1];
 
 				// Is there a memory pool?
 				if (handle->pool_header)
 				{
-					FreePooled(handle->pool_header, mem, mem[1]);
+					FreePooled(handle->pool_header, mem, (ULONG)mem[1]);
 				}
 
 				// Otherwise
@@ -329,7 +331,7 @@ void LIBFUNC L_FreeMemH(REG(a0, void *memory))
 					Remove((struct Node *)node);
 
 					// Free allocation
-					FreeMem(node, mem[1]);
+					FreeMem(node, (ULONG)mem[1]);
 				}
 
 				// Unlock if necessary
@@ -340,6 +342,6 @@ void LIBFUNC L_FreeMemH(REG(a0, void *memory))
 
 		// Free with FreeMem()
 		else
-			FreeMem(mem, mem[1]);
+			FreeMem(mem, (ULONG)mem[1]);
 	}
 }

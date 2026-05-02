@@ -30,6 +30,10 @@ long write_button_list(struct _IFFHandle *iff, struct List *list, long flags);
 short write_function_list(struct _IFFHandle *iff, struct List *list);
 extern void do_backup(char *name);
 
+#ifdef __AROS__
+#define AROS_CFG_BUTN_DISK_SIZE 14
+#endif
+
 int LIBFUNC L_SaveSettings(REG(a0, CFG_SETS *settings), REG(a1, char *name), REG(a6, struct MyLibrary *libbase))
 {
 	struct _IFFHandle *iff;
@@ -38,7 +42,7 @@ int LIBFUNC L_SaveSettings(REG(a0, CFG_SETS *settings), REG(a1, char *name), REG
 	CFG_SETS *settings_be;
 #endif
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -173,7 +177,7 @@ int LIBFUNC L_SaveButtonBank(REG(a0, Cfg_ButtonBank *bank), REG(a1, char *name),
 	CFG_STRT *startmenu_be = NULL;
 #endif
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -299,7 +303,7 @@ int LIBFUNC L_SaveFiletypeList(REG(a0, Cfg_FiletypeList *list), REG(a1, char *na
 	CFG_TYPE type_be;
 #endif
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -376,7 +380,7 @@ short LIBFUNC L_SaveButton(REG(a0, struct _IFFHandle *iff), REG(a1, Cfg_Button *
 {
 	Cfg_ButtonFunction *func;
 #ifdef __AROS__
-	CFG_BUTN button_be;
+	UBYTE button_be[AROS_CFG_BUTN_DISK_SIZE];
 #endif
 
 	// Count number of functions
@@ -387,12 +391,23 @@ short LIBFUNC L_SaveButton(REG(a0, struct _IFFHandle *iff), REG(a1, Cfg_Button *
 
 	// Write button data
 #ifdef __AROS__
-	CopyMem(&button->button, &button_be, sizeof(CFG_BUTN));
+	button_be[0] = button->button.fpen;
+	button_be[1] = button->button.bpen;
+	button_be[2] = (UBYTE)(button->button.flags >> 24);
+	button_be[3] = (UBYTE)(button->button.flags >> 16);
+	button_be[4] = (UBYTE)(button->button.flags >> 8);
+	button_be[5] = (UBYTE)button->button.flags;
+	button_be[6] = (UBYTE)((UWORD)button->button.count >> 8);
+	button_be[7] = (UBYTE)button->button.count;
+	button_be[8] = (UBYTE)((UWORD)button->button.pad_1 >> 8);
+	button_be[9] = (UBYTE)button->button.pad_1;
+	button_be[10] = (UBYTE)(button->button.pad_2 >> 24);
+	button_be[11] = (UBYTE)(button->button.pad_2 >> 16);
+	button_be[12] = (UBYTE)(button->button.pad_2 >> 8);
+	button_be[13] = (UBYTE)button->button.pad_2;
 
-	button_be.flags = AROS_LONG2BE(button_be.flags);
-	button_be.count = AROS_WORD2BE(button_be.count);
-
-	if (!(L_IFFPushChunk(iff, ID_BUTN)) || !(L_IFFWriteChunkBytes(iff, (char *)&button_be, sizeof(CFG_BUTN))))
+	if (!(L_IFFPushChunk(iff, ID_BUTN)) ||
+		!(L_IFFWriteChunkBytes(iff, (char *)button_be, sizeof(button_be))))
 #else
 	if (!(L_IFFPushChunk(iff, ID_BUTN)) || !(L_IFFWriteChunkBytes(iff, (char *)&button->button, sizeof(CFG_BUTN))))
 #endif

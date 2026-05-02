@@ -154,7 +154,7 @@ short LIBFUNC L_SelectionList(REG(a0, Att_List *list),
 	short fontsize;
 	char *size_name = "dopus/windows/selection", namebuf[80];
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	lib = dopuslibbase_global;
 #endif
 
@@ -266,7 +266,7 @@ short LIBFUNC L_SelectionList(REG(a0, Att_List *list),
 			CopyMem((char *)&_switch_template, (char *)&objects[8 + num], sizeof(ObjectDef));
 			objects[8 + num].char_dims.Top = num;
 			objects[8 + num].fine_dims.Top = 3 + (num * 6);
-			objects[8 + num].gadget_text = (ULONG)switch_txt[num];
+			objects[8 + num].gadget_text = (IPTR)switch_txt[num];
 			objects[8 + num].gadgetid = GAD_SELECTION_SWITCH_BASE + num;
 		}
 
@@ -275,8 +275,8 @@ short LIBFUNC L_SelectionList(REG(a0, Att_List *list),
 	}
 
 	// Fill in strings
-	objects[GAD_SELECTION_OKAY].gadget_text = (ULONG)okay_txt;
-	objects[GAD_SELECTION_CANCEL].gadget_text = (ULONG)cancel_txt;
+	objects[GAD_SELECTION_OKAY].gadget_text = (IPTR)okay_txt;
+	objects[GAD_SELECTION_CANCEL].gadget_text = (IPTR)cancel_txt;
 
 	// Open requester
 	if (!(window = L_OpenConfigWindow(&newwin, lib)) || !(objlist = L_AddObjectList(window, objects, lib)))
@@ -327,7 +327,7 @@ short LIBFUNC L_SelectionList(REG(a0, Att_List *list),
 		{
 			// Set buffer value
 			if (buffer)
-				L_SetGadgetValue(objlist, GAD_SELECTION_DIR_FIELD, (ULONG)buffer);
+				L_SetGadgetValue(objlist, GAD_SELECTION_DIR_FIELD, (IPTR)buffer);
 		}
 	}
 
@@ -353,7 +353,7 @@ short LIBFUNC L_SelectionList(REG(a0, Att_List *list),
 					// Get path from first argument
 					L_DevNameFromLockDopus(amsg->am_ArgList[0].wa_Lock, buf, 256, lib);
 					AddPart(buf, (flags & SLF_FILE_FIELD) ? (STRPTR)amsg->am_ArgList[0].wa_Name : (STRPTR) "", 256);
-					L_SetGadgetValue(objlist, GAD_SELECTION_DIR_FIELD, (ULONG)buf);
+					L_SetGadgetValue(objlist, GAD_SELECTION_DIR_FIELD, (IPTR)buf);
 				}
 				ReplyMsg((struct Message *)amsg);
 			}

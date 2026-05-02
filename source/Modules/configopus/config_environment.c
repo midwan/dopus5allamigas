@@ -137,7 +137,16 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 				{
 					// Build entry name
 					char name_buf[128];
-					lsprintf(name_buf, "%s:%s", pubscreen->psn_Node.ln_Name, GetString(locale, MSG_ENVIRONMENT_USE));
+					size_t len;
+
+					stccpy(name_buf, pubscreen->psn_Node.ln_Name, sizeof(name_buf));
+					len = strlen(name_buf);
+					if (len < sizeof(name_buf) - 1)
+					{
+						name_buf[len++] = ':';
+						name_buf[len] = 0;
+						stccpy(name_buf + len, GetString(locale, MSG_ENVIRONMENT_USE), sizeof(name_buf) - len);
+					}
 
 					// Add node
 					Att_NewNode(data->mode_list, name_buf, MODE_PUBLICSCREEN, ADDNODE_SORT | ADDNODE_EXCLUSIVE);
@@ -311,7 +320,7 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 
 						// Get full name and store in field
 						GetWBArgPath(appmsg->am_ArgList, name, 256);
-						SetGadgetValue(data->option_list, obj->id, (ULONG)name);
+						SetGadgetValue(data->option_list, obj->id, (IPTR)name);
 						ok = 1;
 					}
 				}
@@ -325,7 +334,7 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 
 						// Get full name and store in field
 						GetWBArgPath(appmsg->am_ArgList, name, 256);
-						SetGadgetValue(data->option_list, GAD_SETTINGS_SOUNDLIST_PATH, (ULONG)name);
+						SetGadgetValue(data->option_list, GAD_SETTINGS_SOUNDLIST_PATH, (IPTR)name);
 						ok = 1;
 					}
 				}
@@ -823,8 +832,18 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 						if ((ptr = (char *)GetGadgetValue(data->option_list, GAD_ENVIRONMENT_MAIN_WINDOW_FIELD)) &&
 							*ptr)
 						{
+							size_t len;
+
 							// Tack it on
-							lsprintf(func + strlen(func), " \"%s\"", ptr);
+							strcat(func, " \"");
+							len = strlen(func);
+							if (len < sizeof(func) - 2)
+							{
+								stccpy(func + len, ptr, sizeof(func) - len - 1);
+								len = strlen(func);
+								func[len++] = '"';
+								func[len] = 0;
+							}
 						}
 
 						// Launch function
@@ -1538,7 +1557,7 @@ BOOL _config_env_open(config_env_data *data, struct Screen *screen)
 	AddWindowMenus(data->window, button_toolbar_menu);
 
 	// Store data pointer in window
-	DATA(data->window)->data = (ULONG)data;
+	DATA(data->window)->data = (IPTR)data;
 
 	// Are we open on our own screen?
 	if (data->env->env->screen_mode != MODE_WORKBENCHUSE && data->env->env->screen_mode != MODE_PUBLICSCREEN)
@@ -1766,7 +1785,7 @@ void _config_env_set(config_env_data *data, short option)
 
 		// Font
 		SetGadgetValue(
-			data->option_list, GAD_ENVIRONMENT_SCREENMODE_FONTNAME, (ULONG)data->config->font_name[FONT_SCREEN]);
+			data->option_list, GAD_ENVIRONMENT_SCREENMODE_FONTNAME, (IPTR)data->config->font_name[FONT_SCREEN]);
 		SetGadgetValue(
 			data->option_list, GAD_ENVIRONMENT_SCREENMODE_FONTSIZE, (ULONG)data->config->font_size[FONT_SCREEN]);
 
@@ -1800,10 +1819,10 @@ void _config_env_set(config_env_data *data, short option)
 	case ENVIRONMENT_LISTER_DISPLAY:
 
 		// Status bar text
-		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_LISTER_STATUS, (ULONG)data->config->status_text);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_LISTER_STATUS, (IPTR)data->config->status_text);
 
 		// Font
-		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_LISTER_FONTNAME, (ULONG)data->config->font_name[FONT_DIRS]);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_LISTER_FONTNAME, (IPTR)data->config->font_name[FONT_DIRS]);
 		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_LISTER_FONTSIZE, (ULONG)data->config->font_size[FONT_DIRS]);
 
 		// Field titles
@@ -1867,25 +1886,25 @@ void _config_env_set(config_env_data *data, short option)
 		SetGadgetValue(data->option_list,
 					   GAD_ENVIRONMENT_OPTIONS_DISPLAY_BACKDROP,
 					   !(data->config->display_options & DISPOPTF_NO_BACKDROP));
-		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_MAIN_WINDOW_FIELD, (ULONG)data->config->backdrop_prefs);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_MAIN_WINDOW_FIELD, (IPTR)data->config->backdrop_prefs);
 		SetGadgetValue(data->option_list,
 					   GAD_ENVIRONMENT_PICTURE_USE_WBPATTERN,
 					   data->config->display_options & DISPOPTF_USE_WBPATTERN);
 		for (a = 0; a < 3; a++)
 			SetGadgetValue(
-				data->option_list, GAD_ENVIRONMENT_PICTURE_DESK_FIELD + a, (ULONG)data->config->env_BackgroundPic[a]);
+				data->option_list, GAD_ENVIRONMENT_PICTURE_DESK_FIELD + a, (IPTR)data->config->env_BackgroundPic[a]);
 
 		// Disable gadgets appropriately
 		config_env_fix_picture_gads(data);
 
 		// Themes path
-		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_THEMES_FIELD, (ULONG)data->config->themes_location);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_THEMES_FIELD, (IPTR)data->config->themes_location);
 		break;
 
 	// Output window
 	case ENVIRONMENT_OUTPUT_WINDOW:
 		_config_env_update_output(data);
-		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_OUTPUT_DEVICE, (ULONG)data->config->output_device);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_OUTPUT_DEVICE, (IPTR)data->config->output_device);
 		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_STACK, data->config->default_stack);
 		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_CLL, data->config->settings.command_line_length);
 		break;
@@ -1972,7 +1991,7 @@ void _config_env_set(config_env_data *data, short option)
 		SetGadgetChoices(data->option_list, GAD_ENVIRONMENT_HIDDEN_DRIVES, data->desktop_drives[0]);
 
 		// Folder location
-		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_DESKTOP_LOCATION, (ULONG)data->config->desktop_location);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_DESKTOP_LOCATION, (IPTR)data->config->desktop_location);
 
 		// Set default action
 		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_DESKTOP_DEFAULT, data->config->desktop_popup_default);
@@ -2144,7 +2163,7 @@ void _config_env_set(config_env_data *data, short option)
 			}
 
 			// Fill out gadget
-			SetGadgetValue(data->objlist, GAD_SETTINGS_POPKEY, (ULONG)buffer);
+			SetGadgetValue(data->objlist, GAD_SETTINGS_POPKEY, (IPTR)buffer);
 		}
 
 		// Clear string
@@ -2165,7 +2184,7 @@ void _config_env_set(config_env_data *data, short option)
 					   data->config->settings.general_flags & GENERALF_FILETYPE_SNIFFER);
 		SetGadgetValue(
 			data->option_list, GAD_SETTINGS_THIN_BORDERS, data->config->display_options & DISPOPTF_THIN_BORDERS);
-		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_SCREEN_TITLE, (ULONG)data->config->scr_title_text);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_SCREEN_TITLE, (IPTR)data->config->scr_title_text);
 		SetGadgetValue(data->option_list, GAD_SETTINGS_POPUP_DELAY, (ULONG)data->config->settings.popup_delay);
 		SetGadgetValue(data->option_list, GAD_SETTINGS_MAX_OPENWITH, (ULONG)data->config->settings.max_openwith);
 		break;
@@ -2334,15 +2353,23 @@ void _config_env_store(config_env_data *data, short option)
 
 	// Output window
 	case ENVIRONMENT_OUTPUT_WINDOW:
+	{
+		char *name;
+		size_t len;
 
 		// Build output string
 		lsprintf(data->config->output_window,
-				 "%ld/%ld/%ld/%ld/%s",
+				 "%ld/%ld/%ld/%ld/",
 				 data->output_dims[0],
 				 data->output_dims[1],
 				 data->output_dims[2],
-				 data->output_dims[3],
-				 GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OUTPUT_NAME));
+				 data->output_dims[3]);
+
+		// Append name without passing a string pointer through RawDoFmt.
+		name = (char *)GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OUTPUT_NAME);
+		len = strlen(data->config->output_window);
+		if (name && len < sizeof(data->config->output_window))
+			stccpy(data->config->output_window + len, name, sizeof(data->config->output_window) - len);
 
 		// Get device
 		stccpy(data->config->output_device,
@@ -2359,6 +2386,7 @@ void _config_env_store(config_env_data *data, short option)
 		if (data->config->settings.command_line_length < 256)
 			data->config->settings.command_line_length = 256;
 		break;
+	}
 
 	// Lister options
 	case ENVIRONMENT_LISTER_OPTIONS:
@@ -2670,7 +2698,7 @@ void config_env_check_device(config_env_data *data)
 
 		// See if entry is there, and not a disk
 		if (!(dos = FindDosEntry(dos, name, LDF_DEVICES)) || dos->dol_Task ||
-			dos->dol_misc.dol_handler.dol_Startup > 511)
+			(IPTR)dos->dol_misc.dol_handler.dol_Startup > 511)
 		{
 			// Error
 			DisplayBeep(data->window->WScreen);
@@ -2691,7 +2719,7 @@ void config_env_check_device(config_env_data *data)
 		strcpy(name, "CON:");
 
 	// Refresh gadget
-	SetGadgetValue(data->option_list, GAD_ENVIRONMENT_OUTPUT_DEVICE, (ULONG)name);
+	SetGadgetValue(data->option_list, GAD_ENVIRONMENT_OUTPUT_DEVICE, (IPTR)name);
 }
 
 // Get popkey string
@@ -2968,7 +2996,7 @@ BOOL config_env_save(config_env_data *data, short saveas)
 		}
 
 		// Try to save
-		if ((ret = IPC_Command(data->main_ipc, MAINCMD_SAVE_ENV, (ULONG)data->config, path, 0, REPLY_NO_PORT)))
+		if ((ret = IPC_Command(data->main_ipc, MAINCMD_SAVE_ENV, (IPTR)data->config, path, 0, REPLY_NO_PORT)))
 		{
 			char buf[80];
 

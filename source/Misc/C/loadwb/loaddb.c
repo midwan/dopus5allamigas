@@ -62,10 +62,12 @@ int main(int argc, char **arg_string)
 	struct IOStdReq input_req;
 	short a;
 	char *arg_ptr = 0;
+	char arg_buf[256];
 	struct RDArgs *args;
 	IPTR arg_array[ARG_COUNT];
 
 	// Initialise arguments
+	arg_buf[0] = 0;
 	for (a = 0; a < ARG_COUNT; a++)
 		arg_array[a] = 0;
 
@@ -156,10 +158,19 @@ int main(int argc, char **arg_string)
 	}
 
 	// Find argument pointer
-	for (a = 0; arg_string[a] && (int)arg_string[a] != ' '; a++)
-		;
-	if (arg_string[a])
-		arg_ptr = (char *)arg_string + a;
+	for (a = 1; a < argc; a++)
+	{
+		size_t len = strlen(arg_buf);
+
+		if (len < sizeof(arg_buf) - 1 && arg_buf[0])
+		{
+			arg_buf[len++] = ' ';
+			arg_buf[len] = 0;
+		}
+		strncat(arg_buf, arg_string[a], sizeof(arg_buf) - strlen(arg_buf) - 1);
+	}
+	if (arg_buf[0])
+		arg_ptr = arg_buf;
 
 	// Try to run DOpus?
 	if (!run_wb)

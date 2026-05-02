@@ -248,30 +248,30 @@ For more information on Directory Opus for Windows please see:
 	#define LIBCALL_0(ret, func, callbase, dummy) ((ret ASM(*)(REG(a6, APTR)))func)((APTR)callbase)
 
 	#define LIBCALL_1(ret, func, callbase, dummy, r1, n1) \
-		((ret ASM(*)(REG(r1, ULONG), REG(a6, APTR)))func)((ULONG)n1, (APTR)callbase)
+		((ret ASM(*)(REG(r1, IPTR), REG(a6, APTR)))func)((IPTR)n1, (APTR)callbase)
 
 	#define LIBCALL_2(ret, func, callbase, dummy, r1, n1, r2, n2) \
-		((ret ASM(*)(REG(r1, ULONG), REG(r2, ULONG), REG(a6, APTR)))func)((ULONG)n1, (ULONG)n2, (APTR)callbase)
+		((ret ASM(*)(REG(r1, IPTR), REG(r2, IPTR), REG(a6, APTR)))func)((IPTR)n1, (IPTR)n2, (APTR)callbase)
 
 	#define LIBCALL_3(ret, func, callbase, dummy, r1, n1, r2, n2, r3, n3)                  \
-		((ret ASM(*)(REG(r1, ULONG), REG(r2, ULONG), REG(r3, ULONG), REG(a6, APTR)))func)( \
-			(ULONG)n1, (ULONG)n2, (ULONG)n3, (APTR)callbase)
+		((ret ASM(*)(REG(r1, IPTR), REG(r2, IPTR), REG(r3, IPTR), REG(a6, APTR)))func)(    \
+			(IPTR)n1, (IPTR)n2, (IPTR)n3, (APTR)callbase)
 
 	#define LIBCALL_5(ret, func, callbase, dummy, r1, n1, r2, n2, r3, n3, r4, n4, r5, n5)                         \
 		((ret ASM(*)(                                                                                             \
-			REG(r1, ULONG), REG(r2, ULONG), REG(r3, ULONG), REG(r4, ULONG), REG(r5, ULONG), REG(a6, APTR)))func)( \
-			(ULONG)n1, (ULONG)n2, (ULONG)n3, (ULONG)n4, (ULONG)n5, (APTR)callbase)
+			REG(r1, IPTR), REG(r2, IPTR), REG(r3, IPTR), REG(r4, IPTR), REG(r5, IPTR), REG(a6, APTR)))func)(      \
+			(IPTR)n1, (IPTR)n2, (IPTR)n3, (IPTR)n4, (IPTR)n5, (APTR)callbase)
 
 	#define LIBCALL_7(ret, func, callbase, dummy, r1, n1, r2, n2, r3, n3, r4, n4, r5, n5, r6, n6, r7, n7) \
-		((ret ASM(*)(REG(r1, ULONG),                                                                      \
-					 REG(r2, ULONG),                                                                      \
-					 REG(r3, ULONG),                                                                      \
-					 REG(r4, ULONG),                                                                      \
-					 REG(r5, ULONG),                                                                      \
-					 REG(r6, ULONG),                                                                      \
-					 REG(r7, ULONG),                                                                      \
+		((ret ASM(*)(REG(r1, IPTR),                                                                       \
+					 REG(r2, IPTR),                                                                       \
+					 REG(r3, IPTR),                                                                       \
+					 REG(r4, IPTR),                                                                       \
+					 REG(r5, IPTR),                                                                       \
+					 REG(r6, IPTR),                                                                       \
+					 REG(r7, IPTR),                                                                       \
 					 REG(a6, APTR)))func)(                                                                \
-			(ULONG)n1, (ULONG)n2, (ULONG)n3, (ULONG)n4, (ULONG)n5, (ULONG)n6, (ULONG)n7, (APTR)callbase)
+			(IPTR)n1, (IPTR)n2, (IPTR)n3, (IPTR)n4, (IPTR)n5, (IPTR)n6, (IPTR)n7, (APTR)callbase)
 
 	#define PATCH(offset, iface_dummy, func, type) \
 		{                                          \
@@ -376,7 +376,7 @@ enum {
 };
 
 AppEntry *
-new_app_entry(ULONG type, ULONG id, ULONG userdata, APTR object, char *text, struct MsgPort *port, WB_Data *wb_data);
+new_app_entry(ULONG type, IPTR id, IPTR userdata, APTR object, char *text, struct MsgPort *port, WB_Data *wb_data);
 APTR rem_app_entry(AppEntry *entry, WB_Data *wb_data, BOOL *);
 void free_app_entry(AppEntry *entry, WB_Data *);
 AppEntry *find_app_entry(AppEntry *entry, WB_Data *wb_data);

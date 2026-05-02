@@ -55,7 +55,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *ipc),
 						   REG(a3, IPCData *main_ipc),
-						   REG(d0, ULONG mod_id),
+						   REG(d0, IPTR mod_id),
 						   REG(d1, ULONG mod_data))
 {
 	icon_data *data;
@@ -104,49 +104,49 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 				data->remap = 1;
 
 			// Initialise menu items
-			data->menu_items[IIM_EDIT].item_name = (char *)MSG_EDIT;
+			data->menu_items[IIM_EDIT].item_name = (IPTR)MSG_EDIT;
 			data->menu_items[IIM_EDIT].id = MENU_ICON_EDIT;
 			data->menu_items[IIM_EDIT].flags = POPUPF_LOCALE;
-			data->menu_items[IIM_PICK_EDITOR].item_name = (char *)MSG_PICK_EDITOR;
+			data->menu_items[IIM_PICK_EDITOR].item_name = (IPTR)MSG_PICK_EDITOR;
 			data->menu_items[IIM_PICK_EDITOR].id = MENU_ICON_PICK_EDITOR;
 			data->menu_items[IIM_PICK_EDITOR].flags = POPUPF_LOCALE;
 			data->menu_items[IIM_BARN1].item_name = POPUP_BARLABEL;
-			data->menu_items[IIM_DISK].item_name = (char *)MSG_ICON_DEVICE;
+			data->menu_items[IIM_DISK].item_name = (IPTR)MSG_ICON_DEVICE;
 			data->menu_items[IIM_DISK].id = MENU_DISK;
 			data->menu_items[IIM_DISK].flags = POPUPF_LOCALE | POPUPF_CHECKIT;
-			data->menu_items[IIM_DRAWER].item_name = (char *)MSG_ICON_DRAWER;
+			data->menu_items[IIM_DRAWER].item_name = (IPTR)MSG_ICON_DRAWER;
 			data->menu_items[IIM_DRAWER].id = MENU_DRAWER;
 			data->menu_items[IIM_DRAWER].flags = POPUPF_LOCALE | POPUPF_CHECKIT;
-			data->menu_items[IIM_TOOL].item_name = (char *)MSG_ICON_TOOL;
+			data->menu_items[IIM_TOOL].item_name = (IPTR)MSG_ICON_TOOL;
 			data->menu_items[IIM_TOOL].id = MENU_TOOL;
 			data->menu_items[IIM_TOOL].flags = POPUPF_LOCALE | POPUPF_CHECKIT;
-			data->menu_items[IIM_PROJECT].item_name = (char *)MSG_ICON_PROJECT;
+			data->menu_items[IIM_PROJECT].item_name = (IPTR)MSG_ICON_PROJECT;
 			data->menu_items[IIM_PROJECT].id = MENU_PROJECT;
 			data->menu_items[IIM_PROJECT].flags = POPUPF_LOCALE | POPUPF_CHECKIT;
-			data->menu_items[IIM_GARBAGE].item_name = (char *)MSG_ICON_GARBAGE;
+			data->menu_items[IIM_GARBAGE].item_name = (IPTR)MSG_ICON_GARBAGE;
 			data->menu_items[IIM_GARBAGE].id = MENU_GARBAGE;
 			data->menu_items[IIM_GARBAGE].flags = POPUPF_LOCALE | POPUPF_CHECKIT;
 			data->menu_items[IIM_BAR0].item_name = POPUP_BARLABEL;
-			data->menu_items[IIM_BORDERLESS].item_name = (char *)MSG_BORDER_MENU;
+			data->menu_items[IIM_BORDERLESS].item_name = (IPTR)MSG_BORDER_MENU;
 			data->menu_items[IIM_BORDERLESS].id = MENU_BORDERLESS;
 			data->menu_items[IIM_BORDERLESS].flags = POPUPF_LOCALE | POPUPF_CHECKIT;
-			data->menu_items[IIM_LABEL].item_name = (char *)MSG_LABEL_MENU;
+			data->menu_items[IIM_LABEL].item_name = (IPTR)MSG_LABEL_MENU;
 			data->menu_items[IIM_LABEL].id = MENU_NO_LABEL;
 			data->menu_items[IIM_LABEL].flags = POPUPF_LOCALE | POPUPF_CHECKIT;
 			data->menu_items[IIM_BAR1].item_name = POPUP_BARLABEL;
 
-			data->menu_items[IIM_STRIP_NEWICONS].item_name = (char *)MSG_STRIP_NEWICONS;
+			data->menu_items[IIM_STRIP_NEWICONS].item_name = (IPTR)MSG_STRIP_NEWICONS;
 			data->menu_items[IIM_STRIP_NEWICONS].id = MENU_STRIP_NEWICONS;
 			data->menu_items[IIM_STRIP_NEWICONS].flags = POPUPF_LOCALE | POPUPF_DISABLED;
 
-			data->menu_items[IIM_STRIP_OLD].item_name = (char *)MSG_STRIP_OLD;
+			data->menu_items[IIM_STRIP_OLD].item_name = (IPTR)MSG_STRIP_OLD;
 			data->menu_items[IIM_STRIP_OLD].id = MENU_STRIP_OLD;
 			data->menu_items[IIM_STRIP_OLD].flags = POPUPF_LOCALE | POPUPF_DISABLED;
 			data->menu_items[IIM_BAR2].item_name = POPUP_BARLABEL;
-			data->menu_items[IIM_NEWICONS].item_name = (char *)MSG_NEWICONS;
+			data->menu_items[IIM_NEWICONS].item_name = (IPTR)MSG_NEWICONS;
 			data->menu_items[IIM_NEWICONS].id = MENU_NEWICONS;
 			data->menu_items[IIM_NEWICONS].flags = POPUPF_LOCALE | POPUPF_CHECKIT | POPUPF_CHECKED | POPUPF_DISABLED;
-			data->menu_items[IIM_OLDICONS].item_name = (char *)MSG_OLDICONS;
+			data->menu_items[IIM_OLDICONS].item_name = (IPTR)MSG_OLDICONS;
 			data->menu_items[IIM_OLDICONS].id = MENU_OLDICONS;
 			data->menu_items[IIM_OLDICONS].flags = POPUPF_LOCALE | POPUPF_CHECKIT | POPUPF_DISABLED;
 
@@ -177,17 +177,17 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 			}
 
 			// Initialise dropmenu items
-			data->dropmenu_items[IDM_OLDICONS].item_name = (char *)MSG_COPY_OLDICON;
+			data->dropmenu_items[IDM_OLDICONS].item_name = (IPTR)MSG_COPY_OLDICON;
 			data->dropmenu_items[IDM_OLDICONS].id = MENU_COPY_OLDICON;
 			data->dropmenu_items[IDM_OLDICONS].flags = POPUPF_LOCALE;
-			data->dropmenu_items[IDM_NEWICONS].item_name = (char *)MSG_COPY_NEWICON;
+			data->dropmenu_items[IDM_NEWICONS].item_name = (IPTR)MSG_COPY_NEWICON;
 			data->dropmenu_items[IDM_NEWICONS].id = MENU_COPY_NEWICON;
 			data->dropmenu_items[IDM_NEWICONS].flags = POPUPF_LOCALE;
-			data->dropmenu_items[IDM_BOTHICONS].item_name = (char *)MSG_COPY_BOTHICONS;
+			data->dropmenu_items[IDM_BOTHICONS].item_name = (IPTR)MSG_COPY_BOTHICONS;
 			data->dropmenu_items[IDM_BOTHICONS].id = MENU_COPY_BOTHICONS;
 			data->dropmenu_items[IDM_BOTHICONS].flags = POPUPF_LOCALE;
 			data->dropmenu_items[IDM_BAR].item_name = POPUP_BARLABEL;
-			data->dropmenu_items[IDM_TOOLTYPES].item_name = (char *)MSG_COPY_TOOLTYPES;
+			data->dropmenu_items[IDM_TOOLTYPES].item_name = (IPTR)MSG_COPY_TOOLTYPES;
 			data->dropmenu_items[IDM_TOOLTYPES].id = MENU_COPY_TOOLTYPES;
 			data->dropmenu_items[IDM_TOOLTYPES].flags = POPUPF_LOCALE;
 
@@ -378,16 +378,16 @@ void icon_build_tooltypes(icon_data *data)
 				if (!*data->author)
 				{
 					// Author string?
-					//				if	(*data->icon->do_ToolTypes[num]/*[0]*/=='»' ||
-					//					*data->icon->do_ToolTypes[num]/*[0]*/=='«')
-					if ('»' == (char)*data->icon->do_ToolTypes[num] /*[0]*/ ||
-						'«' == (char)*data->icon->do_ToolTypes[num] /*[0]*/)
+					//				if	(*data->icon->do_ToolTypes[num]/*[0]*/=='ï¿½' ||
+					//					*data->icon->do_ToolTypes[num]/*[0]*/=='ï¿½')
+					if ('ï¿½' == (char)*data->icon->do_ToolTypes[num] /*[0]*/ ||
+						'ï¿½' == (char)*data->icon->do_ToolTypes[num] /*[0]*/)
 					{
 						char *ptr;
 
 						// Skip through
 						ptr = data->icon->do_ToolTypes[num];
-						while (*ptr == '»' || *ptr == '«')
+						while (*ptr == 'ï¿½' || *ptr == 'ï¿½')
 							++ptr;
 
 						// Find 'Icon by' string
@@ -405,7 +405,7 @@ void icon_build_tooltypes(icon_data *data)
 							ptr = data->author + strlen(data->author) - 1;
 
 							// Strip trailing characters
-							while (*ptr == '«' || *ptr == '»' || *ptr == ' ')
+							while (*ptr == 'ï¿½' || *ptr == 'ï¿½' || *ptr == ' ')
 								*(ptr--) = 0;
 
 							// Get next tooltype
@@ -696,7 +696,7 @@ int openwindow(icon_data *data, int next)
 		Itoa(data->fib.fib_NumBlocks, buf, data->decimal_sep);
 	else
 		strcpy(buf, "---");
-	SetGadgetValue(data->list, GAD_ICON_BLOCKS, (ULONG)buf);
+	SetGadgetValue(data->list, GAD_ICON_BLOCKS, (IPTR)buf);
 
 	// Bytes
 	if (lock)
@@ -705,7 +705,7 @@ int openwindow(icon_data *data, int next)
 #else
 		Itoa(data->fib.fib_Size, buf, data->decimal_sep);
 #endif
-	SetGadgetValue(data->list, GAD_ICON_BYTES, (ULONG)buf);
+	SetGadgetValue(data->list, GAD_ICON_BYTES, (IPTR)buf);
 
 	// Stack
 	SetGadgetValue(
@@ -713,19 +713,19 @@ int openwindow(icon_data *data, int next)
 
 	// Date
 	lsprintf(buf, "%s %s", (IPTR)data->datebuf, (IPTR)data->timebuf);
-	SetGadgetValue(data->list, GAD_ICON_LAST_CHANGED, (ULONG)buf);
+	SetGadgetValue(data->list, GAD_ICON_LAST_CHANGED, (IPTR)buf);
 
 	// Comment
 	if (lock)
-		SetGadgetValue(data->list, GAD_ICON_COMMENT, (ULONG)data->fib.fib_Comment);
+		SetGadgetValue(data->list, GAD_ICON_COMMENT, (IPTR)data->fib.fib_Comment);
 	else
 		DisableObject(data->list, GAD_ICON_COMMENT, TRUE);
 
 	// Location
-	SetGadgetValue(data->list, GAD_ICON_LOCATION, (ULONG)data->path);
+	SetGadgetValue(data->list, GAD_ICON_LOCATION, (IPTR)data->path);
 
 	// Default tool
-	SetGadgetValue(data->list, GAD_ICON_DEFAULT_TOOL, (ULONG)data->icon->do_DefaultTool);
+	SetGadgetValue(data->list, GAD_ICON_DEFAULT_TOOL, (IPTR)data->icon->do_DefaultTool);
 
 // Disk size
 #ifdef USE_64BIT
@@ -738,7 +738,7 @@ int openwindow(icon_data *data, int next)
 	Itoa((data->info.id_NumBlocks * data->info.id_BytesPerBlock) >> 10, buf, data->decimal_sep);
 #endif
 	strcat(buf, "K");
-	SetGadgetValue(data->list, GAD_ICON_SIZE, (ULONG)buf);
+	SetGadgetValue(data->list, GAD_ICON_SIZE, (IPTR)buf);
 
 // Disk used
 #ifdef USE_64BIT
@@ -751,7 +751,7 @@ int openwindow(icon_data *data, int next)
 	Itoa((data->info.id_NumBlocksUsed * data->info.id_BytesPerBlock) >> 10, buf, data->decimal_sep);
 #endif
 	strcat(buf, "K");
-	SetGadgetValue(data->list, GAD_ICON_USED, (ULONG)buf);
+	SetGadgetValue(data->list, GAD_ICON_USED, (IPTR)buf);
 
 // Disk free
 #ifdef USE_64BIT
@@ -767,7 +767,7 @@ int openwindow(icon_data *data, int next)
 		 data->decimal_sep);
 #endif
 	strcat(buf, "K");
-	SetGadgetValue(data->list, GAD_ICON_FREE, (ULONG)buf);
+	SetGadgetValue(data->list, GAD_ICON_FREE, (IPTR)buf);
 
 	// Disk type
 	for (a = 0; filesystem_table[a]; a += 2)
@@ -779,21 +779,21 @@ int openwindow(icon_data *data, int next)
 		if (data->disktype == filesystem_table[a] || data->info.id_DiskType == filesystem_table[a])
 			break;
 	}
-	SetGadgetValue(data->list, GAD_ICON_FILE_SYSTEM, (ULONG)GetString(locale, filesystem_table[a + 1]));
+	SetGadgetValue(data->list, GAD_ICON_FILE_SYSTEM, (IPTR)GetString(locale, filesystem_table[a + 1]));
 
 	// Disk state
 	switch (data->info.id_DiskState)
 	{
 	case ID_VALIDATING:
-		SetGadgetValue(data->list, GAD_ICON_STATUS, (ULONG)GetString(locale, MSG_VALIDATING));
+		SetGadgetValue(data->list, GAD_ICON_STATUS, (IPTR)GetString(locale, MSG_VALIDATING));
 		break;
 
 	case ID_WRITE_PROTECTED:
-		SetGadgetValue(data->list, GAD_ICON_STATUS, (ULONG)GetString(locale, MSG_WRITE_PROTECTED));
+		SetGadgetValue(data->list, GAD_ICON_STATUS, (IPTR)GetString(locale, MSG_WRITE_PROTECTED));
 		break;
 
 	default:
-		SetGadgetValue(data->list, GAD_ICON_STATUS, (ULONG)GetString(locale, MSG_READ_WRITE));
+		SetGadgetValue(data->list, GAD_ICON_STATUS, (IPTR)GetString(locale, MSG_READ_WRITE));
 		break;
 	}
 
@@ -1147,7 +1147,7 @@ BPTR open_temp_file(char *filename, IPCData *ipc)
 	BPTR file = 0;
 
 	// Get temporary key
-	temp_key = (ULONG)ipc;
+	temp_key = (IPTR)ipc;
 	CurrentTime(&secs, &micros);
 	if (micros)
 		temp_key *= micros;
@@ -1731,7 +1731,7 @@ BOOL icon_edit_reload(icon_data *data)
 							   (data->icon->do_StackSize == 0) ? STACK_DEFAULT : data->icon->do_StackSize);
 
 				// Default tool
-				SetGadgetValue(data->list, GAD_ICON_DEFAULT_TOOL, (ULONG)data->icon->do_DefaultTool);
+				SetGadgetValue(data->list, GAD_ICON_DEFAULT_TOOL, (IPTR)data->icon->do_DefaultTool);
 
 				// Set tooltype list
 				SetGadgetChoices(data->list, GAD_ICON_TOOLTYPES, data->tool_list);
@@ -2423,7 +2423,7 @@ short icon_info(icon_data *data, char *name, struct Node *next)
 						AddPart(data->buffer, WINREQUESTER(data->window)->fr_File, 256);
 
 						// Update gadgets
-						SetGadgetValue(data->list, GAD_ICON_DEFAULT_TOOL, (ULONG)data->buffer);
+						SetGadgetValue(data->list, GAD_ICON_DEFAULT_TOOL, (IPTR)data->buffer);
 
 						ClearWindowBusy(data->window);
 					}
@@ -2914,7 +2914,7 @@ void icon_fix_toolgads(icon_data *data, Att_Node *sel)
 		GL_Object *object;
 
 		// Fill out edit field
-		SetGadgetValue(data->list, GAD_ICON_TOOLTYPES_EDIT, (ULONG)sel->node.ln_Name);
+		SetGadgetValue(data->list, GAD_ICON_TOOLTYPES_EDIT, (IPTR)sel->node.ln_Name);
 
 		// Different to last selection?
 		if (sel != data->edit_tool)
@@ -3303,20 +3303,20 @@ BOOL icon_save(icon_data *data, char *save_name, BOOL err)
 int tooltype_strcmp(char *name1, char *name2, ULONG flags)
 {
 	// Ignore euro quotes if both are authors
-	if ((name1[0] == '«' || name1[0] == '»') && (name2[0] == '«' || name2[0] == '»'))
+	if ((name1[0] == 'ï¿½' || name1[0] == 'ï¿½') && (name2[0] == 'ï¿½' || name2[0] == 'ï¿½'))
 	{
-		while (*name1 == '«' || *name1 == '»')
+		while (*name1 == 'ï¿½' || *name1 == 'ï¿½')
 			++name1;
 
-		while (*name2 == '«' || *name2 == '»')
+		while (*name2 == 'ï¿½' || *name2 == 'ï¿½')
 			++name2;
 	}
 
 	// Author comes before all else
-	else if (name1[0] == '«' || name1[0] == '»')
+	else if (name1[0] == 'ï¿½' || name1[0] == 'ï¿½')
 		return -1;
 
-	else if (name2[0] == '«' || name2[0] == '»')
+	else if (name2[0] == 'ï¿½' || name2[0] == 'ï¿½')
 		return 1;
 
 	// Enabled tooltypes at top when seperated

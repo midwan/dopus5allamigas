@@ -216,7 +216,7 @@ void iconpos_openwindow(iconpos_info *info, struct MsgPort *port)
 	PopUpItem *item;
 
 	// Get menu handle
-	if (!(info->ip_Data.ip_Menu = PopUpNewHandle((ULONG)info, 0, &locale)))
+	if (!(info->ip_Data.ip_Menu = PopUpNewHandle((IPTR)info, 0, &locale)))
 		return;
 
 	// Build menu
@@ -269,7 +269,7 @@ void iconpos_openwindow(iconpos_info *info, struct MsgPort *port)
 
 			// Create item
 			if ((info->ip_Data.ip_Item[IPITEM_PRIORITY + a] = PopUpNewItem(info->ip_Data.ip_Menu,
-																		   (ULONG)info->ip_Data.ip_Buf[a],
+																		   (IPTR)info->ip_Data.ip_Buf[a],
 																		   MENU_ICONPOS_PRIORITY0 + a,
 																		   POPUPF_STRING | POPUPF_CHECKIT)))
 			{

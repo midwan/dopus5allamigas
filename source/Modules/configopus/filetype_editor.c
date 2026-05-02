@@ -76,7 +76,7 @@ void FiletypeEditor(void)
 	BOOL change_flag = 0;
 
 	// Do startup
-	if (!(ipc = Local_IPC_ProcStartup((ULONG *)&data, (APTR)&_filetypeed_init)))
+	if (!(ipc = Local_IPC_ProcStartup((IPTR *)&data, (APTR)&_filetypeed_init)))
 		return;
 
 	// Create App stuff
@@ -150,13 +150,13 @@ void FiletypeEditor(void)
 
 			// Editor saying goodbye
 			case IPC_GOODBYE: {
-				ULONG which;
+				IPTR which;
 
 				// What's just gone?
 				which = IPC_GetGoodbye(msg);
 
 				// Class editor?
-				if (which == (ULONG)-1)
+				if (which == (IPTR)-1)
 					data->class_editor = 0;
 
 				// Icon menu editor?
@@ -568,7 +568,7 @@ void FiletypeEditor(void)
 	// Need to send button back?
 	if (success == 1 && change_flag)
 	{
-		if (IPC_Command(data->owner_ipc, FILETYPEEDIT_RETURN, (ULONG)data->type, data->node, 0, REPLY_NO_PORT))
+		if (IPC_Command(data->owner_ipc, FILETYPEEDIT_RETURN, (IPTR)data->type, data->node, 0, REPLY_NO_PORT))
 		{
 			data->node = 0;
 		}
@@ -593,7 +593,7 @@ void FiletypeEditor(void)
 	}
 
 	// Say goodbye
-	IPC_Goodbye(ipc, data->owner_ipc, (success == -1) ? 0 : (ULONG)data->node);
+	IPC_Goodbye(ipc, data->owner_ipc, (success == -1) ? 0 : (IPTR)data->node);
 
 	// Free icon image
 #ifdef USE_DRAWICONSTATE
@@ -685,9 +685,9 @@ void filetypeed_edit_action(filetype_ed_data *data, short action, char *name)
 		if ((IPC_Launch(&data->proc_list,
 						&data->editor[action],
 						"dopus_function_editor",
-						(ULONG)IPC_NATIVE(FunctionEditor),
+						IPC_NATIVE(FunctionEditor),
 						STACK_DEFAULT,
-						(ULONG)startup,
+						(IPTR)startup,
 						(struct Library *)DOSBase)) &&
 			data->editor[action])
 			success = 1;
@@ -727,10 +727,10 @@ short filetypeed_receive_edit(filetype_ed_data *data, FunctionReturn *ret)
 				 node = (Att_Node *)node->node.ln_Succ)
 			{
 				// Match function
-				if (((func_node *)node->data)->func == (Cfg_Function *)ret->object_flags)
+				if (((func_node *)node->data)->func == (Cfg_Function *)(IPTR)ret->object_flags)
 				{
 					// Get function pointer
-					function = (Cfg_Function *)ret->object_flags;
+					function = (Cfg_Function *)(IPTR)ret->object_flags;
 					break;
 				}
 			}
@@ -817,9 +817,9 @@ void filetypeed_edit_definition(filetype_ed_data *data)
 	if ((IPC_Launch(&data->proc_list,
 					&data->class_editor,
 					"dopus_class_editor",
-					(ULONG)IPC_NATIVE(FileclassEditor),
+					IPC_NATIVE(FileclassEditor),
 					STACK_DEFAULT,
-					(ULONG)startup,
+					(IPTR)startup,
 					(struct Library *)DOSBase)) &&
 		data->class_editor)
 		success = 1;
@@ -1084,7 +1084,7 @@ void filetypeed_update_iconmenu(filetype_ed_data *data)
 							node->func = func;
 
 							// Create node
-							if (!(Att_NewNode(data->icon_list, ins->string, (ULONG)node, 0)))
+							if (!(Att_NewNode(data->icon_list, ins->string, (IPTR)node, 0)))
 								FreeVec(node);
 						}
 						break;
@@ -1123,7 +1123,7 @@ void filetypeed_add_iconmenu(filetype_ed_data *data)
 	func->function.flags2 |= FUNCF2_LABEL_FUNC;
 
 	// Add to lister
-	if (!(node = Att_NewNode(data->icon_list, 0, (ULONG)fndata, 0)))
+	if (!(node = Att_NewNode(data->icon_list, 0, (IPTR)fndata, 0)))
 	{
 		// Failed
 		FreeVec(fndata);
@@ -1175,7 +1175,7 @@ void filetypeed_edit_iconmenu(filetype_ed_data *data, Att_Node *node)
 		startup->function = function;
 		startup->owner_ipc = data->ipc;
 		startup->object = data->type;
-		startup->object_flags = (ULONG)fndata->func;
+		startup->object_flags = (IPTR)fndata->func;
 		startup->flags |= FUNCEDF_LABEL;
 
 		// Build title
@@ -1185,9 +1185,9 @@ void filetypeed_edit_iconmenu(filetype_ed_data *data, Att_Node *node)
 		if ((IPC_Launch(&data->proc_list,
 						&fndata->editor,
 						"dopus_function_editor",
-						(ULONG)IPC_NATIVE(FunctionEditor),
+						IPC_NATIVE(FunctionEditor),
 						STACK_DEFAULT,
-						(ULONG)startup,
+						(IPTR)startup,
 						(struct Library *)DOSBase)) &&
 			fndata->editor)
 			success = 1;
@@ -1533,7 +1533,7 @@ BOOL filetypeed_get_button(filetype_ed_data *data, Cfg_Button *button, Point *po
 				fndata->func = newfunc;
 
 				// Add to node
-				if (!(node = Att_NewNode(data->icon_list, name, (ULONG)fndata, 0)))
+				if (!(node = Att_NewNode(data->icon_list, name, (IPTR)fndata, 0)))
 				{
 					// Failed
 					FreeVec(fndata);

@@ -26,8 +26,9 @@ For more information on Directory Opus for Windows please see:
 // Valid toolbar?
 BOOL lister_valid_toolbar(Lister *lister)
 {
-	return (BOOL)(lister->toolbar && !(IsListEmpty(&lister->toolbar->buttons->buttons)) &&
-				  lister->toolbar->button_height &&
+	return (BOOL)(lister->toolbar && lister->toolbar->buttons &&
+				  !(IsListEmpty(&lister->toolbar->buttons->buttons)) && lister->toolbar->button_height &&
+				  lister->toolbar->button_array && lister->toolbar->count > 0 && lister->toolbar->cols > 0 &&
 				  (!(lister->flags & LISTERF_VIEW_ICONS) || lister->flags & LISTERF_ICON_ACTION));
 }
 
@@ -57,6 +58,10 @@ void lister_show_toolbar(Lister *lister)
 
 	// Cache toolbar pointer
 	toolbar = lister->toolbar;
+	if (lister->toolbar_offset < 0)
+		lister->toolbar_offset = 0;
+	if (lister->toolbar_offset >= toolbar->count)
+		lister->toolbar_offset = toolbar->count - 1;
 
 	// Initialise position
 	button_end = lister->toolbar_area.rect.MinX - 1;
@@ -64,7 +69,7 @@ void lister_show_toolbar(Lister *lister)
 
 	// Initialise draw tags
 	draw_tags[0].ti_Tag = IM_Rectangle;
-	draw_tags[0].ti_Data = (ULONG)&rect;
+	draw_tags[0].ti_Data = (IPTR)&rect;
 	draw_tags[1].ti_Tag = IM_ClipBoundary;
 	draw_tags[1].ti_Data = (toolbar->buttons->window.flags & BTNWF_BORDERLESS) ? 0 : 2;
 	draw_tags[2].ti_Tag = IM_NoIconRemap;
@@ -129,12 +134,19 @@ void lister_show_toolbar(Lister *lister)
 
 	// Get number of buttons we can show
 	num = x - lister->toolbar_offset;
+	if (num < 1)
+	{
+		lister->toolbar_show = 0;
+		return;
+	}
 
 	// Bounds-check offset
 	if (lister->toolbar_offset + num >= toolbar->cols)
 		lister->toolbar_offset = toolbar->cols - num;
 	if (lister->toolbar_offset < 0)
 		lister->toolbar_offset = 0;
+	if (lister->toolbar_offset >= toolbar->count)
+		lister->toolbar_offset = toolbar->count - 1;
 
 	// Get first displayed button
 	for (button = (Cfg_Button *)toolbar->buttons->buttons.lh_Head, col = 0;
@@ -260,7 +272,9 @@ void lister_toolbar_click(Lister *lister, short x, short y, unsigned short code,
 	ToolBarInfo *toolbar;
 
 	// Cache toolbar pointer
-	if (!(toolbar = lister->toolbar))
+	if (!lister_valid_toolbar(lister) || !(toolbar = lister->toolbar))
+		return;
+	if (lister->toolbar_offset < 0 || lister->toolbar_offset >= toolbar->count)
 		return;
 
 	// Get the button we're over
@@ -322,7 +336,7 @@ void lister_toolbar_click(Lister *lister, short x, short y, unsigned short code,
 
 	// Draw tags in case we need to redraw the button
 	draw_tags[0].ti_Tag = IM_Rectangle;
-	draw_tags[0].ti_Data = (ULONG)&rect;
+	draw_tags[0].ti_Data = (IPTR)&rect;
 	draw_tags[1].ti_Tag = IM_State;
 	draw_tags[1].ti_Data = 0;
 	draw_tags[2].ti_Tag = IM_Erase;
@@ -632,6 +646,10 @@ Cfg_Button *lister_get_toolbar_button(Lister *lister, short x, short y, short *b
 	Cfg_Button *button;
 	short num;
 
+	if (!lister_valid_toolbar(lister) || lister->toolbar_offset < 0 ||
+		lister->toolbar_offset >= lister->toolbar->count)
+		return 0;
+
 	// Got toolbar arrow?
 	if (lister->toolbar_arrow_left > -1)
 	{
@@ -691,7 +709,19 @@ void lister_new_toolbar(Lister *lister, char *name, ToolBarInfo *bank)
 		// No, assume it's in the buttons drawer
 		else
 		{
-			lsprintf(lister->toolbar_path, "dopus5:buttons/%s", name);
+			strcpy(lister->toolbar_path, "PROGDIR:Buttons/");
+			stccpy(lister->toolbar_path + strlen(lister->toolbar_path),
+				   name,
+				   sizeof(lister->toolbar_path) - strlen(lister->toolbar_path));
+			if (!(lock = Lock(lister->toolbar_path, ACCESS_READ)))
+			{
+				strcpy(lister->toolbar_path, "dopus5:buttons/");
+				stccpy(lister->toolbar_path + strlen(lister->toolbar_path),
+					   name,
+					   sizeof(lister->toolbar_path) - strlen(lister->toolbar_path));
+			}
+			else
+				UnLock(lock);
 		}
 	}
 	else if (!bank)
@@ -718,7 +748,7 @@ void lister_new_toolbar(Lister *lister, char *name, ToolBarInfo *bank)
 	else
 	{
 		// Try to get new toolbar
-		if ((lister->toolbar_alloc = OpenToolBar(0, name)))
+		if ((lister->toolbar_alloc = OpenToolBar(0, lister->toolbar_path)))
 			GetToolBarCache(lister->toolbar_alloc, TRUE);
 
 		// Use as new toolbar
@@ -803,8 +833,12 @@ void lister_toolbar_edit(short which)
 		if (GUI->toolbar)
 			bank = CopyButtonBank(GUI->toolbar->buttons);
 
+		// Otherwise, load it synchronously so the editor never sees a null bank
+		else if (environment->toolbar_path[0])
+			bank = OpenButtonBank(environment->toolbar_path);
+
 		// Open toolbar as a button bank
-		if (!(buttons = buttons_new(environment->toolbar_path, bank, 0, 0, BUTTONF_FAIL | BUTTONF_TOOLBAR)))
+		if (!(buttons = buttons_new((bank) ? environment->toolbar_path : 0, bank, 0, 1, BUTTONF_TOOLBAR)))
 		{
 			// Create new bank
 			if (!(buttons = buttons_new(0, 0, 0, 1, 0)))
@@ -815,6 +849,11 @@ void lister_toolbar_edit(short which)
 		}
 
 		// Set flag in bank
+		if (!buttons->bank)
+		{
+			DisplayBeep(GUI->screen_pointer);
+			return;
+		}
 		buttons->bank->window.flags |= BTNWF_TOOLBAR;
 
 		// Open bank
@@ -984,8 +1023,8 @@ static void lister_toolbar_tooltip_show(Lister *lister, short but)
 							   WA_Height, height,
 							   WA_Borderless, TRUE,
 							   WA_SimpleRefresh, TRUE,
-							   WA_CustomScreen, GUI->screen_pointer,
-							   WA_WindowName, DOPUS_WIN_NAME,
+							   WA_CustomScreen, (IPTR)GUI->screen_pointer,
+							   WA_WindowName, (IPTR)DOPUS_WIN_NAME,
 							   WA_IDCMP, IDCMP_REFRESHWINDOW,
 							   TAG_END)))
 		return;

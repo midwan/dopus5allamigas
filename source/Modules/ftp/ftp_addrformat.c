@@ -135,7 +135,7 @@ static void format_code(void)
 		IDOpus = (struct DOpusIFace *)GetInterface(DOpusBase, "main", 1, NULL);
 		#endif*/
 
-	if (IPC_ProcStartup((ULONG *)&data, (APTR)&format_init))
+	if (IPC_ProcStartup((IPTR *)&data, (APTR)&format_init))
 	{
 		struct window_params *wp = NULL;
 
@@ -161,7 +161,7 @@ static void format_code(void)
 								  data->fd_ipc,
 								  data->fd_main_ipc,
 								  function_no,
-								  (ULONG)&data->fd_f);
+								  (IPTR)&data->fd_f);
 #ifdef __amigaos4__
 			DropInterface((struct Interface *)IModule);
 #endif
@@ -244,9 +244,9 @@ static BOOL do_list_format(struct opusftp_globals *og,
 		result = IPC_Launch(0,								 // List to add task to (optional, but useful)
 							&format_ipc,					 // IPCData ** to store task IPC pointer in (optional)
 							"dopus_ftp_format",				 // Name
-							(ULONG)IPC_NATIVE(format_code),	 // Code
+							IPC_NATIVE(format_code),	 // Code
 							STACK_DEFAULT,					 // Stack size
-							(ULONG)data,					 // Data passed to task
+							(IPTR)data,					 // Data passed to task
 							(struct Library *)DOSBase);		 // Needs pointer to dos.library
 
 		// failed? then dump

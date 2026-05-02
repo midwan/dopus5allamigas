@@ -31,7 +31,14 @@ void init_locale_data(struct DOpusLocale *locale)
 {
 	// Initialise, get pointer to built-in strings
 	locale->li_Catalog = 0;
+#ifdef __AROS__
+	if ((locale->li_BuiltIn = AllocVec(sizeof(CatCompBlock), MEMF_PUBLIC)))
+		CopyMem((APTR)CatCompBlock, locale->li_BuiltIn, sizeof(CatCompBlock));
+	else
+		locale->li_BuiltIn = (char *)CatCompBlock;
+#else
 	locale->li_BuiltIn = (char *)CatCompBlock;
+#endif
 
 	// Try to open locale library
 	if ((locale->li_LocaleBase = OpenLibrary("locale.library", 38)))
@@ -55,6 +62,13 @@ void free_locale_data(struct DOpusLocale *locale)
 {
 	if (locale)
 	{
+#ifdef __AROS__
+		if (locale->li_BuiltIn && locale->li_BuiltIn != CatCompBlock)
+		{
+			FreeVec(locale->li_BuiltIn);
+			locale->li_BuiltIn = 0;
+		}
+#endif
 		if (locale->li_LocaleBase)
 		{
 			CloseLocale(locale->li_Locale);

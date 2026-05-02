@@ -352,7 +352,7 @@ void event_loop()
 			case MAINCMD_GET_LIST:
 
 				// Return pointer to command list
-				ipc_msg->command = (ULONG)&GUI->command_list.list;
+				ipc_msg->command = (IPTR)&GUI->command_list.list;
 				break;
 
 			// Reset display
@@ -533,13 +533,13 @@ void event_loop()
 			case MAINCMD_GET_ICON:
 
 				// Get the icon
-				ipc_msg->command = (ULONG)GetProperIcon((char *)ipc_msg->data, 0, ipc_msg->flags);
+				ipc_msg->command = (IPTR)GetProperIcon((char *)ipc_msg->data, 0, ipc_msg->flags);
 				break;
 
 			// Save environment
 			case MAINCMD_SAVE_ENV:
 				ipc_msg->command =
-					(ULONG)environment_save(environment, (char *)ipc_msg->data, 0, (CFG_ENVR *)ipc_msg->flags);
+					(IPTR)environment_save(environment, (char *)ipc_msg->data, 0, (CFG_ENVR *)ipc_msg->flags);
 				break;
 			}
 
@@ -1183,7 +1183,7 @@ BOOL menu_process_event(IPTR id, struct MenuItem *item, struct Window *window)
 	case MENU_NEW_BUTTONS_GFX:
 	case MENU_NEW_BUTTONS_TEXT:
 	case BUTTONEDIT_MENU_NEW: {
-		misc_startup("dopus_new_button_bank", id, window, (APTR)(id == BUTTONEDIT_MENU_NEW), 0);
+		misc_startup("dopus_new_button_bank", id, window, (APTR)(IPTR)(id == BUTTONEDIT_MENU_NEW), 0);
 	}
 	break;
 
@@ -1293,9 +1293,9 @@ BOOL menu_process_event(IPTR id, struct MenuItem *item, struct Window *window)
 			IPC_Launch(&GUI->process_list,
 					   0,
 					   "dopus_environment",
-					   (ULONG)&environment_proc,
+					   (IPTR)&environment_proc,
 					   STACK_LARGE,
-					   (ULONG)packet,
+					   (IPTR)packet,
 					   (struct Library *)DOSBase);
 		}
 	}

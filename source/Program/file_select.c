@@ -1050,7 +1050,7 @@ short select_select_files(Lister *lister, UWORD qual, short mouse_x, short mouse
 					msg->da_Msg.am_MouseY = mouse_y - ((window) ? window->TopEdge : 0);
 
 					// Set source lister pointer
-					set_appmsg_data(msg, (ULONG)lister, over_parent, (ULONG)over_entry);
+					set_appmsg_data(msg, (IPTR)lister, over_parent, (IPTR)over_entry);
 
 					// Custom handler assigned?
 					if (lister->cur_buffer->buf_CustomHandler[0])

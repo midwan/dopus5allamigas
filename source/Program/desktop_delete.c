@@ -66,7 +66,7 @@ void desktop_delete(IPCData *ipc, BackdropInfo *info, BackdropObject *only_one)
 			continue;
 
 		// Add to list
-		Att_NewNode(list, 0, (ULONG)object, 0);
+		Att_NewNode(list, 0, (IPTR)object, 0);
 	}
 
 	// Unlock backdrop list

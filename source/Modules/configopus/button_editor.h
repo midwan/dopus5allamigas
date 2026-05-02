@@ -33,7 +33,7 @@ typedef struct
 	ObjectDef *obj_name;
 	ObjectDef *obj_image;
 
-	ULONG command_list;
+	IPTR command_list;
 
 	IPCData *main_owner;
 
@@ -108,7 +108,7 @@ void _button_editor_edit_function(ButtonEdData *);
 BOOL _button_editor_receive_edit(ButtonEdData *, FunctionReturn *);
 void button_editor_init(ButtonEdStartup *);
 void palette_editor_init(PaletteBoxData *);
-void function_editor_init(FunctionStartup *, ULONG);
+void function_editor_init(FunctionStartup *, IPTR);
 void buttoned_copy_string(ButtonEdData *, char *, char **);
 Cfg_ButtonFunction *buttoned_get_function(ButtonEdData *, short);
 void buttoned_start_drag(ButtonEdData *, struct IntuiMessage *);

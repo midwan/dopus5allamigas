@@ -83,7 +83,7 @@ DiskHandle *LIBFUNC L_OpenDisk(REG(a0, char *disk), REG(a1, struct MsgPort *port
 	}
 	else
 #endif
-		handle->dh_result = DoPkt(dl->dol_Task, ACTION_DISK_INFO, MKBADDR(&handle->dh_info), 0, 0, 0, 0);
+	handle->dh_result = DoPkt(dl->dol_Task, ACTION_DISK_INFO, (SIPTR)MKBADDR(&handle->dh_info), 0, 0, 0, 0);
 
 	// Unlock dos list
 	UnLockDosList(LDF_DEVICES | LDF_READ);

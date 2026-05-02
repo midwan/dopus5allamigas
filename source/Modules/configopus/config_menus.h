@@ -40,7 +40,7 @@ typedef struct
 	struct AppWindow *app_window;
 	struct MsgPort *app_port;
 
-	ULONG command_list;
+	IPTR command_list;
 	short type;
 
 	char last_saved[256];

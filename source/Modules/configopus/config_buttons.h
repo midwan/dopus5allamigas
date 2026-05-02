@@ -56,7 +56,7 @@ typedef struct
 	BOOL pos_valid;			 // Position valid
 	ConfigWindow win_dims;	 // Window dimensions
 
-	ULONG command_list;
+	IPTR command_list;
 
 	struct AppWindow *appwindow;
 

@@ -324,7 +324,7 @@ static void update_connection_from_host_gadget(ObjectList *objlist,
 	port = GetGadgetValue(objlist, port_gadget);
 	entry->se_port = port > 65535 ? 0 : port;
 	set_site_host_from_text(dg, entry, host, entry->se_port);
-	SetGadgetValue(objlist, host_gadget, (ULONG)entry->se_host);
+	SetGadgetValue(objlist, host_gadget, (IPTR)entry->se_host);
 	update_connection_gadgets(
 		objlist, dg, entry, protocol_gadget, port_gadget, anon_gadget, user_gadget, password_gadget);
 }
@@ -835,7 +835,7 @@ static int address_drag_to_lister(struct display_globals *dg, IPCData *ipc)
 
 			stccpy(cm->cm_opus, dg->dg_opusport, PORTNAMELEN);
 
-			cm->cm_handle = (ULONG)IPCDATA(ipc);
+			cm->cm_handle = (IPTR)IPCDATA(ipc);
 
 			// send IPC_CONNECT to MAIN proccess so it can open new connection
 			// in curent lister we dropped onto.
@@ -1516,7 +1516,7 @@ static void close_a_child(struct window_params *wp)
 	}
 
 	// remove us from parent child list
-	if ((node = Att_FindNodeData(parentwp->wp_children, (ULONG)wp)))
+	if ((node = Att_FindNodeData(parentwp->wp_children, (IPTR)wp)))
 		Att_RemNode(node);
 
 	// Remove busy pointer from parent
@@ -1646,7 +1646,7 @@ static struct window_params *open_configwin(struct display_globals *dg,
 				if ((wp->wp_objlist = AddObjectList(wp->wp_win, objects)))
 				{
 					// add this window to main list
-					if ((wp->wp_node = Att_NewNode(dg->dg_wp_list, NULL, (ULONG)wp, 0)))
+					if ((wp->wp_node = Att_NewNode(dg->dg_wp_list, NULL, (IPTR)wp, 0)))
 					{
 						wp->wp_dg = dg;
 						wp->wp_type = type;
@@ -1660,7 +1660,7 @@ static struct window_params *open_configwin(struct display_globals *dg,
 						// set back pointer in userdata structure
 						// cannot use win->UserData so use next available
 
-						DATA(wp->wp_win)->userdata = (ULONG)wp;
+						DATA(wp->wp_win)->userdata = (IPTR)wp;
 
 						return (wp);
 					}
@@ -1710,7 +1710,7 @@ static struct window_params *open_childwin(struct display_globals *dg,
 		wp->wp_parentwp = parentwp;
 
 		// add this window to parents children list
-		if ((node = Att_NewNode(parentwp->wp_children, NULL, (ULONG)wp, 0)))
+		if ((node = Att_NewNode(parentwp->wp_children, NULL, (IPTR)wp, 0)))
 		{
 			// Opened ok?
 			// Make parent busy unless main addresbook
@@ -1752,8 +1752,8 @@ static void display_main_gadgets(struct display_globals *dg, int number)
 		struct site_entry *e;
 
 		e = (struct site_entry *)node->data;
-		SetGadgetValue(dg->dg_addrwp->wp_objlist, GAD_FTP_SITE_NAME, (ULONG)e->se_name);
-		SetGadgetValue(dg->dg_addrwp->wp_objlist, GAD_FTP_HOST_NAME, (ULONG)e->se_host);
+		SetGadgetValue(dg->dg_addrwp->wp_objlist, GAD_FTP_SITE_NAME, (IPTR)e->se_name);
+		SetGadgetValue(dg->dg_addrwp->wp_objlist, GAD_FTP_HOST_NAME, (IPTR)e->se_host);
 		SetGadgetValue(dg->dg_addrwp->wp_objlist, GAD_FTP_PORT, e->se_port);
 		SetGadgetValue(dg->dg_addrwp->wp_objlist, GAD_FTP_ANON, e->se_anon);
 		dg->dg_selected = number;
@@ -1763,8 +1763,8 @@ static void display_main_gadgets(struct display_globals *dg, int number)
 	else
 	{
 		// else clear the display
-		SetGadgetValue(dg->dg_addrwp->wp_objlist, GAD_FTP_SITE_NAME, (ULONG) "");
-		SetGadgetValue(dg->dg_addrwp->wp_objlist, GAD_FTP_HOST_NAME, (ULONG) "");
+		SetGadgetValue(dg->dg_addrwp->wp_objlist, GAD_FTP_SITE_NAME, (IPTR) "");
+		SetGadgetValue(dg->dg_addrwp->wp_objlist, GAD_FTP_HOST_NAME, (IPTR) "");
 		SetGadgetValue(dg->dg_addrwp->wp_objlist, GAD_FTP_PORT, 21);
 		SetGadgetValue(dg->dg_addrwp->wp_objlist, GAD_FTP_ANON, TRUE);
 		dg->dg_selected = 0;
@@ -1783,16 +1783,16 @@ static void display_connect_gadgets(struct display_globals *dg, struct window_pa
 	objlist = wp->wp_objlist;
 	e = wp->wp_se_copy;
 
-	SetGadgetValue(objlist, GAD_CONNECT_NAME, (ULONG)e->se_name);
+	SetGadgetValue(objlist, GAD_CONNECT_NAME, (IPTR)e->se_name);
 	SetGadgetValue(objlist, GAD_CONNECT_PROTOCOL, connection_cycle_value(site_connection(e)));
-	SetGadgetValue(objlist, GAD_CONNECT_HOST, (ULONG)e->se_host);
+	SetGadgetValue(objlist, GAD_CONNECT_HOST, (IPTR)e->se_host);
 	SetGadgetValue(objlist, GAD_CONNECT_PORT, e->se_port);
 	SetGadgetValue(objlist, GAD_CONNECT_ANON, site_protocol(e) == FTP_PROTOCOL_SFTP ? FALSE : e->se_anon);
 
-	SetGadgetValue(objlist, GAD_CONNECT_USER, (ULONG)e->se_user);
-	SetGadgetValue(objlist, GAD_CONNECT_PASSWORD, (ULONG)e->se_pass);
+	SetGadgetValue(objlist, GAD_CONNECT_USER, (IPTR)e->se_user);
+	SetGadgetValue(objlist, GAD_CONNECT_PASSWORD, (IPTR)e->se_pass);
 
-	SetGadgetValue(objlist, GAD_CONNECT_DIR, (ULONG)e->se_path);
+	SetGadgetValue(objlist, GAD_CONNECT_DIR, (IPTR)e->se_path);
 
 	update_connection_gadgets(objlist,
 							  dg,
@@ -1812,16 +1812,16 @@ static void display_edit_gadgets(struct display_globals *dg, struct window_param
 	objlist = wp->wp_objlist;
 	e = wp->wp_se_copy;
 
-	SetGadgetValue(objlist, GAD_EDIT_NAME, (ULONG)e->se_name);
+	SetGadgetValue(objlist, GAD_EDIT_NAME, (IPTR)e->se_name);
 	SetGadgetValue(objlist, GAD_EDIT_PROTOCOL, connection_cycle_value(site_connection(e)));
-	SetGadgetValue(objlist, GAD_EDIT_HOST, (ULONG)e->se_host);
+	SetGadgetValue(objlist, GAD_EDIT_HOST, (IPTR)e->se_host);
 	SetGadgetValue(objlist, GAD_EDIT_PORT, e->se_port);
 	SetGadgetValue(objlist, GAD_EDIT_ANON, site_protocol(e) == FTP_PROTOCOL_SFTP ? FALSE : e->se_anon);
 
-	SetGadgetValue(objlist, GAD_EDIT_USER, (ULONG)e->se_user);
-	SetGadgetValue(objlist, GAD_EDIT_PASSWORD, (ULONG)e->se_pass);
+	SetGadgetValue(objlist, GAD_EDIT_USER, (IPTR)e->se_user);
+	SetGadgetValue(objlist, GAD_EDIT_PASSWORD, (IPTR)e->se_pass);
 
-	SetGadgetValue(objlist, GAD_EDIT_DIR, (ULONG)e->se_path);
+	SetGadgetValue(objlist, GAD_EDIT_DIR, (IPTR)e->se_path);
 
 	update_connection_gadgets(objlist,
 							  dg,
@@ -1888,10 +1888,10 @@ static void display_options_gadgets(struct window_params *wp)
 				stccpy(dg->dg_anonpass, "Unknown - No Socket", PASSWORDLEN);
 		}
 
-		DisableObject(objlist, GAD_ENV_ANON_PASSWORD, !(BOOL)((struct globals *)dg->dg_ipc->userdata)->g_socketbase);
-		SetGadgetValue(objlist, GAD_ENV_ANON_PASSWORD, (ULONG)dg->dg_anonpass);
+		DisableObject(objlist, GAD_ENV_ANON_PASSWORD, !(((struct globals *)dg->dg_ipc->userdata)->g_socketbase != NULL));
+		SetGadgetValue(objlist, GAD_ENV_ANON_PASSWORD, (IPTR)dg->dg_anonpass);
 
-		SetGadgetValue(objlist, GAD_ENV_LOG_FILE, (ULONG)tmp_oc->oc_logname);
+		SetGadgetValue(objlist, GAD_ENV_LOG_FILE, (IPTR)tmp_oc->oc_logname);
 		SetGadgetValue(objlist, GAD_ENV_LOG_ENABLE, tmp_oc->oc_enable_log);
 		SetGadgetValue(objlist, GAD_ENV_DEBUG, tmp_oc->oc_log_debug);
 
@@ -1928,7 +1928,7 @@ static void display_options_gadgets(struct window_params *wp)
 		break;
 
 	case ENV_SUB_LISTER:
-		SetGadgetValue(objlist, GAD_ENV_TOOLBAR, (ULONG)env->e_toolbar);
+		SetGadgetValue(objlist, GAD_ENV_TOOLBAR, (IPTR)env->e_toolbar);
 		SetGadgetValue(objlist, GAD_ENV_CUST_FORMAT, env->e_custom_format);
 		break;
 
@@ -2722,7 +2722,7 @@ static VOID change_site_list_entry(struct display_globals *dg, struct site_entry
 	}
 
 	// add the new entry
-	if ((node = Att_NewNode(dg->dg_og->og_SiteList, e->se_name, (ULONG)e, ADDNODE_SORT)))
+	if ((node = Att_NewNode(dg->dg_og->og_SiteList, e->se_name, (IPTR)e, ADDNODE_SORT)))
 	{
 		// Specific place to put this node?
 		if (nextnode)
@@ -2943,7 +2943,7 @@ static void end_connect(struct window_params *wp, BOOL flag)
 		if (!*copy->se_host || !strcmp(copy->se_host, "Shrubbery"))
 		{
 			display_msg(dg->dg_og, dg->dg_ipc, wp->wp_win, 0, GetString(locale, MSG_BADSITE));
-			SetGadgetValue(objlist, GAD_CONNECT_HOST, (ULONG) "Shrubbery");
+			SetGadgetValue(objlist, GAD_CONNECT_HOST, (IPTR) "Shrubbery");
 			return;
 		}
 
@@ -3050,7 +3050,7 @@ static BOOL end_edit(struct window_params *wp, BOOL flag)
 		if (!*copy->se_host || !strcmp(copy->se_host, "Shrubbery"))
 		{
 			display_msg(dg->dg_og, dg->dg_ipc, wp->wp_win, 0, GetString(locale, MSG_BADSITE));
-			SetGadgetValue(objlist, GAD_EDIT_HOST, (ULONG) "Shrubbery");
+			SetGadgetValue(objlist, GAD_EDIT_HOST, (IPTR) "Shrubbery");
 			return (FALSE);
 		}
 
@@ -3421,7 +3421,7 @@ static struct window_params *show_addrbook(struct display_globals *dg, struct su
 			// disable connect if no socket
 			DisableObject(dg->dg_addrwp->wp_objlist,
 						  GAD_FTP_CONNECT,
-						  !(BOOL)((struct globals *)(data->spd_ipc->userdata))->g_socketbase);
+						  !(((struct globals *)(data->spd_ipc->userdata))->g_socketbase != NULL));
 
 			// read config and display
 			// config is read in setup_config
@@ -3501,7 +3501,7 @@ static void add_to_main_list(struct display_globals *dg, Att_List *atlist)
 
 		// add to current list
 
-		if (!Att_NewNode(dg->dg_og->og_SiteList, e->se_name, (ULONG)e, ADDNODE_SORT))
+		if (!Att_NewNode(dg->dg_og->og_SiteList, e->se_name, (IPTR)e, ADDNODE_SORT))
 			break;
 	}
 	// discard any remaining list stuff
@@ -4267,7 +4267,7 @@ static void idle_loop(struct display_globals *dg, struct subproc_data *data, IPC
 							host = (char *)GetGadgetValue(wp->wp_objlist, GAD_EDIT_HOST);
 
 							sitename_from_host(newname, host);
-							SetGadgetValue(wp->wp_objlist, GAD_EDIT_NAME, (ULONG)newname);
+							SetGadgetValue(wp->wp_objlist, GAD_EDIT_NAME, (IPTR)newname);
 						}
 					}
 					break;
@@ -4394,7 +4394,7 @@ static void idle_loop(struct display_globals *dg, struct subproc_data *data, IPC
 						stccpy(new, (char *)GetGadgetValue(wp->wp_sub_objlist, GAD_ENV_TOOLBAR), 256);
 
 						if (get_toolbar(wp, new))
-							SetGadgetValue(wp->wp_sub_objlist, GAD_ENV_TOOLBAR, (ULONG) new);
+							SetGadgetValue(wp->wp_sub_objlist, GAD_ENV_TOOLBAR, (IPTR) new);
 					}
 					break;
 
@@ -4711,7 +4711,7 @@ static struct display_globals *init_globals(struct subproc_data *data)
 			if (!dg->dg_og->og_SiteList)
 				read_build_addressbook(dg->dg_og, dg->dg_ipc);
 
-			if ((dg->idcmp_port = (struct MsgPort *)CreatePort(NULL, NULL)))
+			if ((dg->idcmp_port = (struct MsgPort *)CreatePort(NULL, 0)))
 			{
 				dg->win_sig = 1L << dg->idcmp_port->mp_SigBit;
 				return (dg);
@@ -4804,7 +4804,7 @@ void addressbook(void)
 		#endif*/
 
 	/* returns true if 'data' is filled in correctly */
-	if (IPC_ProcStartup((ULONG *)&data, (APTR)&addressbook_init))
+	if (IPC_ProcStartup((IPTR *)&data, (APTR)&addressbook_init))
 	{
 		if ((dg = init_globals(data)))
 		{

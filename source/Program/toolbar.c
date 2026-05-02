@@ -33,17 +33,53 @@ ToolBarInfo *OpenToolBar(Cfg_ButtonBank *buttons, char *pathname)
 	// Allocate toolbar structure
 	if ((toolbar = AllocVec(sizeof(ToolBarInfo), MEMF_CLEAR)))
 	{
+		BOOL cache_ok = FALSE;
+
 		// Bank provided?
 		if (buttons)
 			toolbar->buttons = buttons;
 
 		// Load disk file
 		else if (pathname && pathname[0])
+		{
+#ifdef __AROS__
+			aros_debug_log("OpenToolBar path=");
+			aros_debug_log(pathname);
+			aros_debug_log("\n");
+#endif
 			toolbar->buttons = OpenButtonBank(pathname);
+		}
+
+#ifdef __AROS__
+		if (!toolbar->buttons)
+			aros_debug_log("OpenToolBar OpenButtonBank failed\n");
+		else
+		{
+			Cfg_Button *button;
+			ULONG count = 0;
+			char buf[120];
+
+			for (button = (Cfg_Button *)toolbar->buttons->buttons.lh_Head; button->node.ln_Succ;
+				 button = (Cfg_Button *)button->node.ln_Succ)
+				++count;
+
+			lsprintf(buf,
+					 "OpenToolBar bank ok buttons=%ld flags=%ld\n",
+					 count,
+					 (ULONG)toolbar->buttons->window.flags);
+			aros_debug_log(buf);
+		}
+#endif
+		if (toolbar->buttons)
+			cache_ok = GetToolBarCache(toolbar, FALSE);
 
 		// Invalid?
-		if (!toolbar->buttons || !(GetToolBarCache(toolbar, FALSE)))
+		if (!toolbar->buttons || !cache_ok)
 		{
+#ifdef __AROS__
+			if (toolbar->buttons)
+				aros_debug_log("OpenToolBar GetToolBarCache failed\n");
+#endif
 			FreeToolBar(toolbar);
 			return 0;
 		}
@@ -138,6 +174,9 @@ BOOL GetToolBarCache(ToolBarInfo *toolbar, BOOL real)
 	{
 		Cfg_ButtonFunction *func;
 		short width, height, x;
+#ifdef __AROS__
+		BOOL logged_button = FALSE;
+#endif
 
 		// Get left button image
 		if ((func = (Cfg_ButtonFunction *)FindFunctionType((struct List *)&button->function_list, FTYPE_LEFT_BUTTON)) &&
@@ -153,6 +192,21 @@ BOOL GetToolBarCache(ToolBarInfo *toolbar, BOOL real)
 			// Get size
 			width = tags[1].ti_Data;
 			height = tags[2].ti_Data;
+#ifdef __AROS__
+			if (num < 8)
+			{
+				char buf[120];
+
+				lsprintf(buf,
+						 "GetToolBarCache image button=%ld w=%ld h=%ld depth=%ld\n",
+						 (ULONG)num,
+						 (ULONG)width,
+						 (ULONG)height,
+						 (ULONG)depth);
+				aros_debug_log(buf);
+				logged_button = TRUE;
+			}
+#endif
 		}
 
 		// Or textual button?
@@ -171,6 +225,20 @@ BOOL GetToolBarCache(ToolBarInfo *toolbar, BOOL real)
 		// Use last size
 		else
 		{
+#ifdef __AROS__
+			if (num < 8 && !logged_button)
+			{
+				aros_debug_log("GetToolBarCache no image for button ");
+				if (func)
+				{
+					if (func->label)
+						aros_debug_log(func->label);
+					aros_debug_log(" func\n");
+				}
+				else
+					aros_debug_log("no left function\n");
+			}
+#endif
 			width = last_width;
 			height = last_height;
 		}
@@ -283,14 +351,37 @@ BOOL GetToolBarCache(ToolBarInfo *toolbar, BOOL real)
 	// Got cache successfully
 	toolbar->cache = 1;
 
+#ifdef __AROS__
+	// AROS can have pen 0 as black; initialise the off-screen cache
+	// with the screen background pen before images and button frames are drawn.
+	if (GUI->draw_info && toolbar->width > 0 && toolbar->height > 0)
+	{
+		SetAPen(&toolbar->rp, GUI->draw_info->dri_Pens[BACKGROUNDPEN]);
+		RectFill(&toolbar->rp, 0, 0, toolbar->width - 1, toolbar->height - 1);
+	}
+#endif
+
 	// Set pens and font
+#ifdef __AROS__
+	if (GUI->draw_info)
+	{
+		SetAPen(&toolbar->rp, GUI->draw_info->dri_Pens[TEXTPEN]);
+		SetBPen(&toolbar->rp, GUI->draw_info->dri_Pens[BACKGROUNDPEN]);
+	}
+	else
+	{
+		SetAPen(&toolbar->rp, 1);
+		SetBPen(&toolbar->rp, 0);
+	}
+#else
 	SetAPen(&toolbar->rp, 1);
 	SetBPen(&toolbar->rp, 0);
+#endif
 	SetFont(&toolbar->rp, GUI->screen_pointer->RastPort.Font);
 
 	// Initialise draw tags
 	tags[0].ti_Tag = IM_Rectangle;
-	tags[0].ti_Data = (ULONG)&rect;
+	tags[0].ti_Data = (IPTR)&rect;
 	tags[1].ti_Tag = IM_ClipBoundary;
 	tags[1].ti_Data = (toolbar->buttons->window.flags & BTNWF_BORDERLESS) ? 0 : 2;
 	tags[2].ti_Tag = IM_NoIconRemap;

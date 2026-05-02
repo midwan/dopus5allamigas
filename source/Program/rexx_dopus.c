@@ -945,7 +945,7 @@ BOOL rexx_dopus_cmd(struct RexxMsg *msg, short command, char *args)
 				custom = 1;
 
 			// Launch process to read pattern
-			misc_startup(NAME_PATTERNS, CMD_REMAP_PATTERNS, 0, (APTR)custom, TRUE);
+			misc_startup(NAME_PATTERNS, CMD_REMAP_PATTERNS, 0, (APTR)(IPTR)custom, TRUE);
 		}
 		break;
 

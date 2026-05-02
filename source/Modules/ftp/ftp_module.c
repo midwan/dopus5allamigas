@@ -55,6 +55,43 @@ void dopus_ftp(void);
 
 struct opusftp_globals og;
 
+static IPCData *mod_ipc_from_port(struct MsgPort *port)
+{
+	struct Task *task;
+	IPCData *ipc = NULL;
+
+	if (!port)
+		return NULL;
+
+	task = port->mp_SigTask;
+	if (task)
+		ipc = (IPCData *)task->tc_UserData;
+
+	if (ipc && ipc->command_port && !(ipc->flags & IPCF_INVALID))
+		return ipc;
+
+	return NULL;
+}
+
+static struct MsgPort *mod_find_ftp_port(void)
+{
+	struct MsgPort *ftpport;
+	IPCData *ipc;
+
+	Forbid();
+	ftpport = FindPort(PORTNAME);
+	ipc = mod_ipc_from_port(ftpport);
+	Permit();
+
+	if (ipc)
+	{
+		og.og_main_ipc = ipc;
+		og.og_ftp_launched = TRUE;
+	}
+
+	return ftpport;
+}
+
 //
 //	Setup global variables and launch main task
 //	Must be done only once for the life of the module
@@ -64,6 +101,8 @@ static int mod_init(EXT_FUNC(func_callback), IPCData *opus_ipc, IPCData *functio
 	struct modlaunch_data *mldata;	// Startup data we send to new process
 	DOpusCallbackInfo *hooks;
 	int okay = FALSE;
+
+	og.og_main_ipc = NULL;
 
 	// Setup global constants
 	og.og_opus_ipc = opus_ipc;	// ** GJP IMPORTANT Must be set
@@ -108,9 +147,9 @@ static int mod_init(EXT_FUNC(func_callback), IPCData *opus_ipc, IPCData *functio
 		if (IPC_Launch(NULL,						  // List to add task to (optional, but useful)
 					   &og.og_main_ipc,				  // IPCData ** to store task IPC pointer in (optional)
 					   "dopus_ftp",					  // Name
-					   (ULONG)IPC_NATIVE(dopus_ftp),  // Code
+					   IPC_NATIVE(dopus_ftp),  // Code
 					   STACK_DEFAULT,				  // Stack size
-					   (ULONG)mldata,				  // Data passed to task
+					   (IPTR)mldata,				  // Data passed to task
 					   (struct Library *)DOSBase))	  // Needs pointer to dos.library
 		{
 			if (mldata->mld_okay)
@@ -142,7 +181,7 @@ static int mod_addrbook(IPCData *function_ipc, char *args, int arglen)
 		FreeVec(am);
 	}
 
-	D(bug("module addrbook done (%ld)\n", okay));
+	D(bug("module addrbook done (%d)\n", okay));
 
 	return okay;
 }
@@ -319,7 +358,7 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 		DisposeArgs(fa);
 	}
 
-	D(bug("module connect done (%ld)\n", okay));
+	D(bug("module connect done (%d)\n", okay));
 
 	return okay;
 }
@@ -354,7 +393,7 @@ static int mod_setvar(IPCData *function_ipc, char *args, int arglen)
 		FreeVec(fm);
 	}
 
-	D(bug("module setvar done (%ld)\n", okay));
+	D(bug("module setvar done (%d)\n", okay));
 
 	return okay;
 }
@@ -376,7 +415,7 @@ static int mod_ftpadd(IPCData *function_ipc, char *args, int arglen)
 		FreeVec(fm);
 	}
 
-	D(bug("module ftpadd done (%ld)\n", okay));
+	D(bug("module ftpadd done (%d)\n", okay));
 
 	return okay;
 }
@@ -428,7 +467,7 @@ static int mod_ftpcommand(IPCData *function_ipc, char *args, int arglen)
 		DisposeArgs(fa);
 	}
 
-	D(bug("module ftpcommand done (%ld)\n", okay));
+	D(bug("module ftpcommand done (%d)\n", okay));
 
 	return okay;
 }
@@ -466,7 +505,7 @@ static int mod_options(IPCData *function_ipc, char *args, int arglen)
 		DisposeArgs(fa);
 	}
 
-	D(bug("module options done (%ld)\n", okay));
+	D(bug("module options done (%d)\n", okay));
 
 	return okay;
 }
@@ -527,7 +566,7 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *function_ipc),	// 'dopus_function' - the spawned module process
 						   REG(a3, IPCData *opus_ipc),		// 'DOpus5' - the main Opus process
-						   REG(d0, ULONG mod_id),
+						   REG(d0, IPTR mod_id),
 						   REG(d1, EXT_FUNC(func_callback)))
 {
 	// struct Library             *DOpusBase, *DOSBase;	// Avoid stomping on the global bases!
@@ -579,9 +618,7 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 		args[arglen - 1] = 0;
 	}
 
-	Forbid();
-	ftpport = FindPort(PORTNAME);
-	Permit();
+	ftpport = mod_find_ftp_port();
 
 	// Get Opus's ARexx port name
 	REFCALL(func_callback, EXTCMD_GET_PORT, IPCDATA(function_ipc), og.og_opusname);
@@ -608,6 +645,9 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 		// cleared when process quits mod_quit and at end of
 		// fn dopus_ftp()
 
+		if (!og.og_main_ipc || og.og_main_ipc->flags & IPCF_INVALID)
+			og.og_ftp_launched = FALSE;
+
 		if (!og.og_ftp_launched)
 		{
 			if (!(okay = mod_init(func_callback, opus_ipc, function_ipc)))
@@ -615,10 +655,18 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 		}
 	}
 
+	if (okay && (!og.og_main_ipc || og.og_main_ipc->flags & IPCF_INVALID))
+	{
+		mod_find_ftp_port();
+
+		if (!og.og_main_ipc || og.og_main_ipc->flags & IPCF_INVALID)
+			okay = FALSE;
+	}
+
 	// If OpusFTP process already existed or launched successfully, send a command to it
 	if (okay)
 	{
-		D(bug("  sending message for running process: %d\n", mod_id));
+		D(bug("  sending message for running process: %ld\n", (long)mod_id));
 
 		// Send a message to the main FTP process
 		for (mci = module_command_table; mci->mci_id != 0xffffffff; ++mci)
@@ -631,7 +679,7 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 		}
 
 		if (mci->mci_id == 0xffffffff)
-			D(bug("unknown mod_id:%ld\n", mod_id));
+			D(bug("unknown mod_id:%ld\n", (long)mod_id));
 	}
 	/*#ifdef __amigaos4__
 	DropInterface((struct Interface *)IDOS);

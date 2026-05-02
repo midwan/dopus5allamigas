@@ -128,7 +128,7 @@ void function_read_directory(FunctionHandle *handle, Lister *lister, char *sourc
 
 		// Look for path
 		if ((buffer = (DirBuffer *)IPC_Command(
-				 lister->ipc, LISTER_BUFFER_FIND, (ULONG)stamp_ptr, (APTR)PATH_FULL_DEVICE, 0, REPLY_NO_PORT)))
+				 lister->ipc, LISTER_BUFFER_FIND, (IPTR)stamp_ptr, (APTR)(IPTR)PATH_FULL_DEVICE, 0, REPLY_NO_PORT)))
 		{
 			// Found it
 			UnLock(lock);
@@ -155,7 +155,7 @@ void function_read_directory(FunctionHandle *handle, Lister *lister, char *sourc
 		if (handle->flags & GETDIRF_CANMOVEEMPTY)
 		{
 			IPC_Command(
-				lister->ipc, LISTER_BUFFER_FIND_EMPTY, (ULONG)stamp_ptr, (APTR)PATH_FULL_DEVICE, 0, REPLY_NO_PORT);
+				lister->ipc, LISTER_BUFFER_FIND_EMPTY, (IPTR)stamp_ptr, (APTR)(IPTR)PATH_FULL_DEVICE, 0, REPLY_NO_PORT);
 		}
 
 		// Get buffer
@@ -494,7 +494,7 @@ void network_get_info(NetworkInfo *network,
 
 		// Try sending packet
 		else if (buffer->user_info &&
-				 (DoPkt(proc->dvp_Port, ACTION_UID_TO_USERINFO, owner, (ULONG)buffer->user_info, 0, 0, 0)))
+				 (DoPkt(proc->dvp_Port, ACTION_UID_TO_USERINFO, owner, (IPTR)buffer->user_info, 0, 0, 0)))
 		{
 			// Store owner for next time
 			buffer->last_owner = owner;
@@ -543,7 +543,7 @@ void network_get_info(NetworkInfo *network,
 
 		// Try sending packet
 		else if (buffer->group_info &&
-				 (DoPkt(proc->dvp_Port, ACTION_GID_TO_GROUPINFO, group, (ULONG)buffer->group_info, 0, 0, 0)))
+				 (DoPkt(proc->dvp_Port, ACTION_GID_TO_GROUPINFO, group, (IPTR)buffer->group_info, 0, 0, 0)))
 		{
 			// Store owner for next time
 			buffer->last_group = group;

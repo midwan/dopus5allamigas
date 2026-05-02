@@ -29,7 +29,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *ipc),
 						   REG(a3, IPCData *main_ipc),
-						   REG(d0, ULONG mod_id),
+						   REG(d0, IPTR mod_id),
 						   REG(d1, ULONG mod_data))
 {
 	show_data *data;
@@ -139,6 +139,10 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 		if (!data->pic_ok && !dt_first)
 			show_get_dtpic(data, node);
 
+		// Ignore malformed successes that did not leave a drawable source
+		if (data->pic_ok && !data->dt_object && !data->ilbm)
+			data->pic_ok = 0;
+
 		// Got a picture?
 		if (data->pic_ok)
 		{
@@ -236,9 +240,9 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 													   SA_AutoScroll,
 													   TRUE,
 													   SA_Pens,
-													   (ULONG)pens,
+													   (IPTR)pens,
 													   SA_ErrorCode,
-													   (ULONG)&data->error,
+													   (IPTR)&data->error,
 													   SA_Overscan,
 													   OSCAN_MAX,
 													   SA_Behind,
@@ -284,7 +288,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 				}
 
 				// Otherwise, load ILBM palette
-				else
+				else if (data->ilbm && data->ilbm->palette)
 					LoadPalette32(&data->display_screen->ViewPort, data->ilbm->palette);
 
 				// Open window
@@ -790,7 +794,7 @@ BOOL show_help(show_data *data)
 									   SA_Depth,
 									   2,
 									   SA_Pens,
-									   pens,
+									   (IPTR)pens,
 									   SA_SysFont,
 									   1,
 									   SA_Title,
@@ -836,11 +840,11 @@ BOOL show_help(show_data *data)
 		AddObjectList(help_window, print_objects);
 
 		// File name
-		SetGadgetValue(list, GAD_INFO_FILE, (ULONG)FilePart(data->file));
+		SetGadgetValue(list, GAD_INFO_FILE, (IPTR)FilePart(data->file));
 
 		// Image size
 		lsprintf(buf, "%ld x %ld", data->width, data->height);
-		SetGadgetValue(list, GAD_INFO_IMAGE_SIZE, (ULONG)buf);
+		SetGadgetValue(list, GAD_INFO_IMAGE_SIZE, (IPTR)buf);
 
 		// Get mode
 		mode_id = GetVPModeID(&data->display_screen->ViewPort);
@@ -864,30 +868,30 @@ BOOL show_help(show_data *data)
 				lsprintf(buf, "%ld (EHB)", (1 << data->depth));
 			}
 		}
-		SetGadgetValue(list, GAD_INFO_COLOURS, (ULONG)buf);
+		SetGadgetValue(list, GAD_INFO_COLOURS, (IPTR)buf);
 
 		// Get display mode name
 		if (GetDisplayInfoData(0, buf, sizeof(struct NameInfo), DTAG_NAME, (mode_id & ~(HAM_KEY | EXTRAHALFBRITE_KEY))))
-			SetGadgetValue(list, GAD_INFO_MODE, (ULONG)((struct NameInfo *)buf)->Name);
+			SetGadgetValue(list, GAD_INFO_MODE, (IPTR)((struct NameInfo *)buf)->Name);
 
 		// Animation info?
 		if (data->anim_ok)
 		{
 			// Frame number
 			lsprintf(buf, GetString(locale, MSG_INFO_FRAME_NUM), data->frame_num, data->frame_count, data->frame_speed);
-			SetGadgetValue(list, GAD_INFO_FRAME, (ULONG)buf);
+			SetGadgetValue(list, GAD_INFO_FRAME, (IPTR)buf);
 
 			// Anim type
 			if (data->last_frame)
 			{
 				lsprintf(buf, "ANIM Op %ld", data->last_frame->header.operation);
-				SetGadgetValue(list, GAD_INFO_ANIM, (ULONG)buf);
+				SetGadgetValue(list, GAD_INFO_ANIM, (IPTR)buf);
 			}
 		}
 
 		// Otherwise, picture type
 		else
-			SetGadgetValue(list, GAD_INFO_TYPE, (ULONG)data->picture_type);
+			SetGadgetValue(list, GAD_INFO_TYPE, (IPTR)data->picture_type);
 
 		// Get preferences
 		GetPrefs(&data->prefs, sizeof(struct Preferences));
@@ -1630,6 +1634,18 @@ BOOL show_get_dtpic(show_data *data, struct Node *node)
 				data->width = data->frameinfo.fri_Dimensions.Width;
 				data->height = data->frameinfo.fri_Dimensions.Height;
 				data->depth = data->frameinfo.fri_Dimensions.Depth;
+
+				// AROS can return a laid-out picture datatype without a usable bitmap
+				if (!data->dt_bm || data->width <= 0 || data->height <= 0 || data->depth <= 0)
+				{
+					DisposeDTObject(data->dt_object);
+					data->dt_object = 0;
+					data->cregs = 0;
+					data->dt_bm = 0;
+					data->numcolours = 0;
+					((struct Process *)FindTask(NULL))->pr_WindowPtr = (APTR)-1;
+					return 0;
+				}
 
 				// Get type
 				if (dt)

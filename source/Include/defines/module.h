@@ -18,8 +18,8 @@
 			 AROS_LCA(struct Screen *, (___screen), A1),                       \
 			 AROS_LCA(IPCData *, (___ipc), A2),                                \
 			 AROS_LCA(IPCData *, (___main_ipc), A3),                           \
-			 AROS_LCA(ULONG, (___id), D0),                                     \
-			 AROS_LCA(ULONG, (___data), D1),                                   \
+			 AROS_LCA(IPTR, (___id), D0),                                      \
+			 AROS_LCA(IPTR, (___data), D1),                                    \
 			 struct Library *,                                                 \
 			 MODULE_BASE_NAME,                                                 \
 			 5,                                                                \

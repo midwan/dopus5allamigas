@@ -349,7 +349,7 @@ void rexx_custom_app_msg(struct _DOpusAppMessage *msg,
 						 Lister *,
 						 char *,
 						 unsigned short);
-char *rexx_build_filestring(struct _DOpusAppMessage *, ULONG *, ULONG);
+char *rexx_build_filestring(struct _DOpusAppMessage *, IPTR *, ULONG);
 short rexx_lister_add_file(Lister *lister, char *args, struct RexxMsg *);
 DirEntry *rexx_lister_get_file(DirBuffer *buffer, char **args);
 short rexx_lister_remove_file(Lister *lister, char *args);
@@ -363,7 +363,7 @@ BOOL rexx_parse_number_byte(char **, UBYTE *);
 short rexx_parse_word(char **ptr, char *buffer, short bufferlen);
 short rexx_match_keyword(char **ptr, char **keys, long *);
 BOOL rexx_lister_valid(Lister *lister);
-void rexx_set_var(struct RexxMsg *, char *, char *, ULONG, short);
+void rexx_set_var(struct RexxMsg *, char *, char *, IPTR, short);
 BOOL rexx_get_var(struct RexxMsg *, char *, char *, char *, short);
 
 short AddFunctionTrap(char *, char *, char *);
@@ -395,7 +395,7 @@ typedef struct
 {
 	ULONG ha_Type;
 	ULONG ha_Arg;
-	ULONG ha_Data;
+	IPTR ha_Data;
 } HandlerArg;
 
 #ifndef __amigaos3__
@@ -404,7 +404,7 @@ typedef struct
 
 #define rexx_handler_msg(handler, buffer, flags, ...)                                \
 	({                                                                               \
-		IPTR __args[] = {__VA_ARGS__};                                               \
+		IPTR __args[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)};                         \
 		(short)rexx_handler_msg_args(handler, buffer, flags, (HandlerArg *)&__args); \
 	})
 short STDARGS rexx_handler_msg_args(char *handler, DirBuffer *buffer, short flags, HandlerArg *args);

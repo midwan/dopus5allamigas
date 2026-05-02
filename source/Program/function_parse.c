@@ -1325,7 +1325,7 @@ void function_parse_arguments(FunctionHandle *handle, InstructionParsed *ins)
 				if (strcmp((char *)ins->funcargs->FA_ArgArray[arg], buf))
 				{
 					// Allocate copy
-					if ((ins->funcargs->FA_Arguments[arg] = (long)AllocVec(strlen((char *)buf) + 1, 0)))
+					if ((ins->funcargs->FA_Arguments[arg] = (IPTR)AllocVec(strlen((char *)buf) + 1, 0)))
 					{
 						// Copy new argument string
 						strcpy((char *)ins->funcargs->FA_Arguments[arg], buf);

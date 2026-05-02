@@ -205,7 +205,7 @@ int main(int argc, char **argv)
 						break;
 
 					// Get ID
-					id = GTMENUITEM_USERDATA(item);
+					id = (UWORD)(IPTR)GTMENUITEM_USERDATA(item);
 
 					// Fall through
 				}
@@ -550,7 +550,7 @@ void font_get_font(font_data *data)
 	data->font = OpenDiskFont(&data->attr);
 
 	// Show font name and size
-	SetGadgetValue(data->list, GAD_FONT_FONT, (ULONG)FilePart(data->font_name));
+	SetGadgetValue(data->list, GAD_FONT_FONT, (IPTR)FilePart(data->font_name));
 	SetGadgetValue(data->list, GAD_FONT_SIZE, data->font_size);
 
 	// Got font?
@@ -860,7 +860,7 @@ ULONG ASM SAVEDS font_refresh(REG(a0, struct Hook *hook), REG(a1, struct IntuiMe
 		data->resized = TRUE;
 	}
 
-	return (ULONG)msg;
+	return (IPTR)msg;
 }
 
 // Get next font size

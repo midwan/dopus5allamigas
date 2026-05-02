@@ -190,13 +190,13 @@ struct DOpusScreenData
 
 #if !defined(__amigaos4__) && !defined(__MORPHOS__)
 struct _FunctionHandle;
-ULONG ASM SAVEDS function_external_hook(REG(d0, ULONG command),
+IPTR ASM SAVEDS function_external_hook(REG(d0, ULONG command),
 										REG(a0, struct _FunctionHandle *handle),
 										REG(a1, APTR packet));
 #endif
 
-#define EXT_FUNC(name) unsigned long ASM (*name)(REG(d0, ULONG), REG(a0, APTR), REG(a1, APTR))
-#define TYPE_EXT(var) (unsigned long (*)()) var
+#define EXT_FUNC(name) IPTR ASM (*name)(REG(d0, ULONG), REG(a0, APTR), REG(a1, APTR))
+#define TYPE_EXT(var) (IPTR (*)()) var
 
 #define IDCMP_FUNC(name) unsigned long ASM (*name)(REG(d0, ULONG), REG(a0, struct IntuiMessage *))
 

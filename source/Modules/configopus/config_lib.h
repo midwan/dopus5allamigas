@@ -109,4 +109,4 @@ short error_saving(short, struct Window *);
 	#define IPCF_NATIVE (0x0)
 #endif
 
-#define IPC_NATIVE(entry) ((ULONG)&entry | IPCF_NATIVE)
+#define IPC_NATIVE(entry) ((IPTR)&entry | (IPTR)(IPCF_NATIVE))

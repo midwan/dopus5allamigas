@@ -104,7 +104,11 @@ DOPUS_FUNC(function_getsizes)
 			if (strncmp(path->path, "RAM:", 4) == 0)
 			{
 				// Kludge for RAM
-				dest_blocks = (AvailMem(MEMF_ANY) >> 10) - 2;
+				dest_blocks = AvailMem(MEMF_ANY) >> 10;
+				if (dest_blocks > 2)
+					dest_blocks -= 2;
+				else
+					dest_blocks = 0;
 				info->id_BytesPerBlock = 1024;
 				info->id_DiskType = ID_FFS_DISK;
 			}
@@ -117,7 +121,11 @@ DOPUS_FUNC(function_getsizes)
 				UnLock(lock);
 
 				// Number of blocks free
-				dest_blocks = info->id_NumBlocks - info->id_NumBlocksUsed;
+				{
+					ULONG num_blocks = (ULONG)info->id_NumBlocks;
+					ULONG used_blocks = (ULONG)info->id_NumBlocksUsed;
+					dest_blocks = (used_blocks < num_blocks) ? (num_blocks - used_blocks) : 0;
+				}
 			}
 
 			// Couldn't lock; assume FFS
@@ -283,29 +291,46 @@ DOPUS_FUNC(function_getsizes)
 				}
 
 				// Build string
-				lsprintf(handle->work_buffer, "\n%s %s %ld%%", path->path, GetString(&locale, MSG_FIT), percent);
+				lsprintf(handle->work_buffer,
+						 "\n%s %s %ld%%",
+						 (IPTR)path->path,
+						 (IPTR)GetString(&locale, MSG_FIT),
+						 percent);
 #else
-				char percent[27];
+				ULONG percent;
 
 				// Fit completely?
 				if (dest_blocks >= total_blocks)
-					strncpy(percent, "100", sizeof(percent));
-				else if (dest_blocks == 0)
-					strncpy(percent, "0", sizeof(percent));
+					percent = 100;
+				else if (dest_blocks == 0 || total_blocks == 0)
+					percent = 0;
 				else
 				{
 					// Get percent that will fit
-					DivideToString(percent, dest_blocks * 100, total_blocks, 0, 0);
+					percent = (ULONG)(((UQUAD)(ULONG)dest_blocks * 100) / (ULONG)total_blocks);
 				}
 
 				// Build string
-				lsprintf(handle->work_buffer, "\n%s %s %s%%", path->path, GetString(&locale, MSG_FIT), percent);
+				lsprintf(handle->work_buffer,
+						 "\n%s %s %lu%%",
+						 (IPTR)path->path,
+						 (IPTR)GetString(&locale, MSG_FIT),
+						 percent);
 #endif
 			}
 
 			// No
 			else
-				lsprintf(handle->work_buffer, "%ld %s", total_blocks, GetString(&locale, MSG_BLOCKS_NEEDED));
+			{
+#ifdef USE_64BIT
+				char blocks[32];
+
+				ItoaU64(&total_blocks, blocks, sizeof(blocks), 0);
+				lsprintf(handle->work_buffer, "%s %s", (IPTR)blocks, (IPTR)GetString(&locale, MSG_BLOCKS_NEEDED));
+#else
+				lsprintf(handle->work_buffer, "%ld %s", total_blocks, (IPTR)GetString(&locale, MSG_BLOCKS_NEEDED));
+#endif
+			}
 
 			// Add to requester text
 			strcat(req_text, handle->work_buffer);

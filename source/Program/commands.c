@@ -82,8 +82,9 @@ void init_commands_scan(short type)
 	struct AnchorPath *anchor;
 	ModuleNode *node;
 	long error;
-	short a;
+	short a, pat;
 	char *ptr;
+	char *patterns[3] = {0};
 
 	// Allocate anchor path
 	if (!(anchor = AllocVec(sizeof(struct AnchorPath) + 256, MEMF_CLEAR)))
@@ -95,237 +96,252 @@ void init_commands_scan(short type)
 
 	// Get pointer to match on
 	if (type == SCAN_BOTH)
-		ptr = "dopus5:modules/#?.(module|dopus5)";
-	else if (type == SCAN_MODULES)
-		ptr = "dopus5:modules/#?.module";
-	else if (type == SCAN_USER)
-		ptr = "dopus5:commands/~(#?.info)";
-	else
-		ptr = "dopus5:modules/#?.dopus5";
-
-	// Search for modules
-	error = MatchFirst(ptr, anchor);
-
-	// Continue while there's files
-	while (!error)
 	{
-		BOOL ok = 1, real_module = 0;
-		char *name_ptr = 0;
+		patterns[0] = "PROGDIR:Modules/#?.(module|dopus5)";
+		patterns[1] = "dopus5:modules/#?.(module|dopus5)";
+	}
+	else if (type == SCAN_MODULES)
+	{
+		patterns[0] = "PROGDIR:Modules/#?.module";
+		patterns[1] = "dopus5:modules/#?.module";
+	}
+	else if (type == SCAN_USER)
+		patterns[0] = "dopus5:commands/~(#?.info)";
+	else
+	{
+		patterns[0] = "PROGDIR:Modules/#?.dopus5";
+		patterns[1] = "dopus5:modules/#?.dopus5";
+	}
 
-		// A user command?
-		if (type == SCAN_USER)
+	for (pat = 0; patterns[pat]; pat++)
+	{
+		ptr = patterns[pat];
+
+		// Search for modules
+		error = MatchFirst(ptr, anchor);
+
+		// Continue while there's files
+		while (!error)
 		{
-			// Use full name
-			name_ptr = anchor->ap_Buf;
-		}
+			BOOL ok = 1, real_module = 0;
+			char *name_ptr = 0;
 
-		// A real module?
-		else if (sufcmp(anchor->ap_Info.fib_FileName, ".module"))
-		{
-			// Set flag
-			real_module = 1;
-
-			// See if module is in the exclusion list
-			for (a = 0; module_exclusions[a]; a++)
+			// A user command?
+			if (type == SCAN_USER)
 			{
-				if (stricmp(anchor->ap_Info.fib_FileName, module_exclusions[a]) == 0)
-				{
-					ok = 0;
-					break;
-				}
-			}
-		}
-
-		// Not an excluded module?
-		if (ok)
-		{
-			// Get filename if name not already set
-			if (!name_ptr)
-				name_ptr = anchor->ap_Info.fib_FileName;
-
-			// Lock modules list
-			lock_listlock(&GUI->modules_list, TRUE);
-
-			// Module already in list?
-			if ((node = (ModuleNode *)FindNameI(&GUI->modules_list.list, name_ptr)))
-			{
-				// Check datestamp
-				if (CompareDates(&node->date, &anchor->ap_Info.fib_Date) != 0)
-				{
-					// Update datestamp, ok to reread
-					node->date = anchor->ap_Info.fib_Date;
-
-					// Expunge functions for this module
-					command_expunge(name_ptr);
-				}
-
-				// Don't reread
-				else
-					ok = 0;
-
-				// Set 'temp' flag
-				node->flags |= MNF_TEMP;
+				// Use full name
+				name_ptr = anchor->ap_Buf;
 			}
 
-			// Allocate new module
-			else if ((node = AllocMemH(global_memory_pool, sizeof(ModuleNode) + strlen(name_ptr) + 1)))
+			// A real module?
+			else if (sufcmp(anchor->ap_Info.fib_FileName, ".module"))
 			{
-				// Fill out node, add to list
-				node->node.ln_Name = (char *)(node + 1);
-				strcpy(node->node.ln_Name, name_ptr);
-				node->date = anchor->ap_Info.fib_Date;
-				AddTail(&GUI->modules_list.list, &node->node);
+				// Set flag
+				real_module = 1;
 
-				// Set 'temp' flag
-				node->flags |= MNF_TEMP;
-			}
-
-			// Unlock modules list
-			unlock_listlock(&GUI->modules_list);
-		}
-
-		// Not ok to read?
-		if (!ok)
-		{
-		}
-
-		// User command?
-		else if (type == SCAN_USER)
-		{
-			// Add the command
-			add_command(anchor->ap_Info.fib_FileName, anchor->ap_Info.fib_Comment, 0, anchor->ap_Buf, 0, 0, 0, 0, 0);
-		}
-
-		// ARexx module?
-		else if (!real_module)
-		{
-			// Function to run
-			lsprintf(anchor->ap_Buf, "dopus5:modules/%s %s init", anchor->ap_Info.fib_FileName, GUI->rexx_port_name);
-
-			// Run rexx thing
-			rexx_send_command(anchor->ap_Buf, FALSE);
-		}
-
-		// Otherwise
-		else
-		{
-			struct Library *ModuleBase = NULL;
-#ifdef __amigaos4__
-			struct ModuleIFace *IModule = NULL;
-#endif
-			short ver = 0;
-			// See if this is one of our modules
-			for (a = 0; dopus_modules[a]; a++)
-				if (stricmp(anchor->ap_Info.fib_FileName, dopus_modules[a]) == 0)
+				// See if module is in the exclusion list
+				for (a = 0; module_exclusions[a]; a++)
 				{
-					// Need newest version
-					ver = LIB_VERSION;
-					break;
-				}
-
-				// Try to open library
-#ifdef __amigaos4__
-			if (OpenLibIFace(anchor->ap_Buf, (APTR)&ModuleBase, (APTR)&IModule, ver))
-#else
-			if ((ModuleBase = OpenLibrary(anchor->ap_Buf, ver)))
-#endif
-			{
-				ModuleInfo *info;
-
-				// Ask module to identify itself.
-				// This retrieves module-wide metadata (name, function count, flags).
-				if ((info = Module_Identify(-1)))
-				{
-					short num;
-					CommandList *command;
-					char helpname[256], *helpptr = 0;
-
-					// Help available?
-					if (info->flags & MODULEF_HELP_AVAILABLE && info->name)
+					if (stricmp(anchor->ap_Info.fib_FileName, module_exclusions[a]) == 0)
 					{
-						// Copy module name, strip suffix
-						strcpy(helpname, info->name);
-						helpptr = helpname + strlen(helpname) - 1;
-						while (helpptr >= helpname && *helpptr != '.')
-							--helpptr;
-						if (*helpptr == '.')
-							*helpptr = 0;
+						ok = 0;
+						break;
+					}
+				}
+			}
 
-						// Add '.guide' suffix
-						strcat(helpname, ".guide");
+			// Not an excluded module?
+			if (ok)
+			{
+				// Get filename if name not already set
+				if (!name_ptr)
+					name_ptr = anchor->ap_Info.fib_FileName;
 
-						// Get pointer to help name
-						helpptr = helpname;
+				// Lock modules list
+				lock_listlock(&GUI->modules_list, TRUE);
+
+				// Module already in list?
+				if ((node = (ModuleNode *)FindNameI(&GUI->modules_list.list, name_ptr)))
+				{
+					// Check datestamp
+					if (CompareDates(&node->date, &anchor->ap_Info.fib_Date) != 0)
+					{
+						// Update datestamp, ok to reread
+						node->date = anchor->ap_Info.fib_Date;
+
+						// Expunge functions for this module
+						command_expunge(name_ptr);
 					}
 
-					// Go through module's functions
-					for (num = 0; num < info->function_count; num++)
+					// Don't reread
+					else
+						ok = 0;
+
+					// Set 'temp' flag
+					node->flags |= MNF_TEMP;
+				}
+
+				// Allocate new module
+				else if ((node = AllocMemH(global_memory_pool, sizeof(ModuleNode) + strlen(name_ptr) + 1)))
+				{
+					// Fill out node, add to list
+					node->node.ln_Name = (char *)(node + 1);
+					strcpy(node->node.ln_Name, name_ptr);
+					node->date = anchor->ap_Info.fib_Date;
+					AddTail(&GUI->modules_list.list, &node->node);
+
+					// Set 'temp' flag
+					node->flags |= MNF_TEMP;
+				}
+
+				// Unlock modules list
+				unlock_listlock(&GUI->modules_list);
+			}
+
+			// Not ok to read?
+			if (!ok)
+			{
+			}
+
+			// User command?
+			else if (type == SCAN_USER)
+			{
+				// Add the command
+				add_command(anchor->ap_Info.fib_FileName, anchor->ap_Info.fib_Comment, 0, anchor->ap_Buf, 0, 0, 0, 0, 0);
+			}
+
+			// ARexx module?
+			else if (!real_module)
+			{
+				// Function to run
+				lsprintf(anchor->ap_Buf, "dopus5:modules/%s %s init", anchor->ap_Info.fib_FileName, GUI->rexx_port_name);
+
+				// Run rexx thing
+				rexx_send_command(anchor->ap_Buf, FALSE);
+			}
+
+			// Otherwise
+			else
+			{
+				struct Library *ModuleBase = NULL;
+#ifdef __amigaos4__
+				struct ModuleIFace *IModule = NULL;
+#endif
+				short ver = 0;
+				// See if this is one of our modules
+				for (a = 0; dopus_modules[a]; a++)
+					if (stricmp(anchor->ap_Info.fib_FileName, dopus_modules[a]) == 0)
 					{
-						// Add command
-						if ((command = add_command(info->function[num].name,
-												   (char *)Module_Identify(num),
-												   info->function[num].template,
-												   anchor->ap_Info.fib_FileName,
-												   info->function[num].flags,
-												   0,
-												   0,
-												   helpptr,
-												   0)))
+						// Need newest version
+						ver = LIB_VERSION;
+						break;
+					}
+
+					// Try to open library
+#ifdef __amigaos4__
+				if (OpenLibIFace(anchor->ap_Buf, (APTR)&ModuleBase, (APTR)&IModule, ver))
+#else
+				if ((ModuleBase = OpenLibrary(anchor->ap_Buf, ver)))
+#endif
+				{
+					ModuleInfo *info;
+
+					// Ask module to identify itself.
+					// This retrieves module-wide metadata (name, function count, flags).
+					if ((info = Module_Identify(-1)))
+					{
+						short num;
+						CommandList *command;
+						char helpname[256], *helpptr = 0;
+
+						// Help available?
+						if (info->flags & MODULEF_HELP_AVAILABLE && info->name)
 						{
-							// Set function ID
-							command->function = info->function[num].id;
+							// Copy module name, strip suffix
+							strcpy(helpname, info->name);
+							helpptr = helpname + strlen(helpname) - 1;
+							while (helpptr >= helpname && *helpptr != '.')
+								--helpptr;
+							if (*helpptr == '.')
+								*helpptr = 0;
 
-							// Got template?
-							if (command->template && *command->template)
+							// Add '.guide' suffix
+							strcat(helpname, ".guide");
+
+							// Get pointer to help name
+							helpptr = helpname;
+						}
+
+						// Go through module's functions
+						for (num = 0; num < info->function_count; num++)
+						{
+							// Add command
+							if ((command = add_command(info->function[num].name,
+													   (char *)Module_Identify(num),
+													   info->function[num].template,
+													   anchor->ap_Info.fib_FileName,
+													   info->function[num].flags,
+													   0,
+													   0,
+													   helpptr,
+													   0)))
 							{
-								char *ptr;
+								// Set function ID
+								command->function = info->function[num].id;
 
-								// Newline marks template key
-								if ((ptr = strchr(command->template, '\n')))
+								// Got template?
+								if (command->template && *command->template)
 								{
-									// Set template key pointer, and clear join
-									command->template_key = ptr + 1;
-									*ptr = 0;
+									char *ptr;
+
+									// Newline marks template key
+									if ((ptr = strchr(command->template, '\n')))
+									{
+										// Set template key pointer, and clear join
+										command->template_key = ptr + 1;
+										*ptr = 0;
+									}
 								}
 							}
 						}
-					}
 
-					// Does module want to be called?
-					if (info->flags & MODULEF_CALL_STARTUP)
-					{
-						// Run synchronously?
-						if (info->flags & MODULEF_STARTUP_SYNC)
+						// Does module want to be called?
+						if (info->flags & MODULEF_CALL_STARTUP)
 						{
-							// Launch on our context
-							Module_Entry(0,
-										 0,
-										 &main_ipc,
-										 &main_ipc,
-										 FUNCID_STARTUP,
-										 (ULONG)GET_CALLBACK(function_external_hook));
-						}
+							// Run synchronously?
+							if (info->flags & MODULEF_STARTUP_SYNC)
+							{
+								// Launch on our context
+								Module_Entry(0,
+											 0,
+											 &main_ipc,
+											 &main_ipc,
+											 FUNCID_STARTUP,
+											 (IPTR)GET_CALLBACK(function_external_hook));
+							}
 
-						// Run module function in background
-						else if (misc_startup("dopus_module_init", MODULE_STARTUP, 0, ModuleBase, 0))
-							ModuleBase = 0;
+							// Run module function in background
+							else if (misc_startup("dopus_module_init", MODULE_STARTUP, 0, ModuleBase, 0))
+								ModuleBase = 0;
+						}
 					}
-				}
 
 // Close module
 #ifdef __amigaos4__
-				DropInterface((struct Interface *)IModule);
+					DropInterface((struct Interface *)IModule);
 #endif
-				CloseLibrary(ModuleBase);
+					CloseLibrary(ModuleBase);
+				}
 			}
+
+			// Find next file in directory
+			error = MatchNext(anchor);
 		}
 
-		// Find next file in directory
-		error = MatchNext(anchor);
+		// Clean up match stuff
+		MatchEnd(anchor);
 	}
 
-	// Clean up match stuff
-	MatchEnd(anchor);
 	FreeVec(anchor);
 
 	// Lock modules list
@@ -459,7 +475,7 @@ CommandList *add_command(char *name,
 	// Description
 	if (desc)
 	{
-		command->desc = (ULONG)ptr;
+		command->desc = (IPTR)ptr;
 		strcpy((char *)command->desc, desc);
 		ptr += strlen(desc) + 1;
 	}
@@ -675,7 +691,7 @@ void command_new(BackdropInfo *info, IPCData *ipc, char *filename)
 
 	// Create a new command
 	func = Config_EditFunction(
-		ipc, &main_ipc, info->window, edit_func, global_memory_pool, (ULONG)&GUI->command_list.list);
+		ipc, &main_ipc, info->window, edit_func, global_memory_pool, (IPTR)&GUI->command_list.list);
 
 	// Free edit function
 	FreeFunction(edit_func);

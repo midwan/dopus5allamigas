@@ -692,8 +692,14 @@ void builddisplaystring(DirEntry *entry, char *display_buf, Lister *lister)
 	// Go through display items
 	for (item = 0; item < DISPLAY_LAST; item++)
 	{
+		short display_item;
+
+		display_item = buffer->buf_ListFormat.display_pos[item];
+		if (display_item < 0 || display_item >= DISPLAY_LAST)
+			break;
+
 		// Look at item type
-		switch (buffer->buf_ListFormat.display_pos[item])
+		switch (display_item)
 		{
 		// Name
 		case DISPLAY_NAME:
@@ -1341,6 +1347,8 @@ struct BitMap *builddisplaystring_prop(DirEntry *entry, char *display_buf, Liste
 
 		// Cache item type
 		num = buffer->buf_ListFormat.display_pos[item];
+		if (num < 0 || num >= DISPLAY_LAST)
+			break;
 
 		// Look at item type
 		switch (num)
@@ -1490,7 +1498,7 @@ struct BitMap *builddisplaystring_prop(DirEntry *entry, char *display_buf, Liste
 		}
 
 		// Increment position
-		if ((pos += lister->cur_buffer->buf_FieldWidth[buffer->buf_ListFormat.display_pos[item]]) >= width + PEXTRA)
+		if ((pos += lister->cur_buffer->buf_FieldWidth[num]) >= width + PEXTRA)
 			break;
 	}
 

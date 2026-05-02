@@ -28,6 +28,11 @@ For more information on Directory Opus for Windows please see:
 #include <intuition/intuitionbase.h>
 #include <proto/newicon.h>
 
+#ifdef __AROS__
+static void aros_image_debug_log(char *);
+static Image_Data *aros_read_image_fallback(char *, OpenImageInfo *);
+#endif
+
 // Open an image
 APTR LIBFUNC L_OpenImage(REG(a0, char *name), REG(a1, OpenImageInfo *info))
 {
@@ -46,7 +51,12 @@ APTR LIBFUNC L_OpenImage(REG(a0, char *name), REG(a1, OpenImageInfo *info))
 	{
 #endif
 		// Read a new image
-		if ((image = read_image(name, info)))
+		image = read_image(name, info);
+#ifdef __AROS__
+		if (!image)
+			image = aros_read_image_fallback(name, info);
+#endif
+		if (image)
 		{
 			// Allocate name
 			if (!name || (image->node.ln_Name = L_AllocMemH(image_memory, strlen(name) + 1)))
@@ -325,7 +335,7 @@ short LIBFUNC L_RenderImage(REG(a0, struct RastPort *rp),
 		if ((bitmap.Planes[0] = AllocVec(planesize << 1, MEMF_CHIP)))
 		{
 			// Set fake plane pointers
-			for (plane = 1; plane < rp->BitMap->Depth; plane++)
+			for (plane = 1; plane < bitmap.Depth; plane++)
 				bitmap.Planes[plane] = bitmap.Planes[0];
 		}
 	}
@@ -336,7 +346,7 @@ short LIBFUNC L_RenderImage(REG(a0, struct RastPort *rp),
 		// Set plane pointers in bitmap
 		for (plane = 0; plane < depth; plane++)
 			bitmap.Planes[plane] = (PLANEPTR)image->planes[state][plane];
-		for (; plane < rp->BitMap->Depth; plane++)
+		for (; plane < bitmap.Depth; plane++)
 			bitmap.Planes[plane] = 0;
 	}
 
@@ -355,7 +365,7 @@ short LIBFUNC L_RenderImage(REG(a0, struct RastPort *rp),
 				remap = 1;
 
 				// Remap to top of palette
-				for (plane = 3; plane < rp->BitMap->Depth; plane++)
+				for (plane = 3; plane < bitmap.Depth; plane++)
 					bitmap.Planes[plane] = bitmap.Planes[2];
 			}
 		}
@@ -563,7 +573,7 @@ short LIBFUNC L_RenderImage(REG(a0, struct RastPort *rp),
 			old_mask = rp->Mask;
 
 			// Draw image
-			for (plane = 0; plane < rp->BitMap->Depth; plane++)
+			for (plane = 0; plane < bitmap.Depth; plane++)
 			{
 				// Valid plane?
 				if (plane < depth || remap)
@@ -693,7 +703,7 @@ Image_Data *read_image(char *name, OpenImageInfo *info)
 				struct Screen *screen;
 				if ((screen = LockPubScreen(0)))
 				{
-					if ((obj = GetIconTags(path, ICONGETA_Screen, (Tag)screen, TAG_DONE)))
+					if ((obj = GetIconTags(path, ICONGETA_Screen, (IPTR)screen, TAG_DONE)))
 					{
 						struct Image *image;
 						LONG IsPaletteMapped, IsNewIcon;
@@ -702,9 +712,9 @@ Image_Data *read_image(char *name, OpenImageInfo *info)
 
 						IconControl(obj,
 									ICONCTRLA_IsPaletteMapped,
-									(Tag)&IsPaletteMapped,
+									(IPTR)&IsPaletteMapped,
 									ICONCTRLA_IsNewIcon,
-									(Tag)&IsNewIcon,
+									(IPTR)&IsNewIcon,
 									TAG_DONE);
 
 						if (!IsPaletteMapped && !IsNewIcon)
@@ -1015,6 +1025,91 @@ Image_Data *read_image(char *name, OpenImageInfo *info)
 	return 0;
 }
 
+#ifdef __AROS__
+static void aros_image_debug_log(char *text)
+{
+	BPTR file;
+	char *paths[] = {"PROGDIR:DOpus5-startup.log", "T:DOpus5-startup.log", 0};
+	short a;
+
+	if (!text)
+		return;
+
+	for (a = 0; paths[a]; a++)
+	{
+		if ((file = Open(paths[a], MODE_READWRITE)) || (file = Open(paths[a], MODE_NEWFILE)))
+		{
+			Seek(file, 0, OFFSET_END);
+			FPuts(file, text);
+			Close(file);
+		}
+	}
+}
+
+static Image_Data *aros_try_image_path(char *prefix, char *leaf)
+{
+	char path[256];
+	Image_Data *image;
+	static short log_count = 0;
+	BOOL do_log;
+
+	if (!prefix || !leaf || strlen(prefix) + strlen(leaf) >= sizeof(path))
+		return 0;
+
+	strcpy(path, prefix);
+	strcat(path, leaf);
+
+	do_log = (log_count < 32);
+	if (do_log)
+	{
+		BPTR lock;
+
+		aros_image_debug_log("OpenImage fallback try ");
+		aros_image_debug_log(path);
+
+		if ((lock = Lock(path, ACCESS_READ)))
+		{
+			UnLock(lock);
+			aros_image_debug_log(" lock ok");
+		}
+		else
+			aros_image_debug_log(" lock failed");
+	}
+
+	image = read_image(path, 0);
+
+	if (do_log)
+	{
+		aros_image_debug_log((image) ? " read ok\n" : " read failed\n");
+		++log_count;
+	}
+
+	return image;
+}
+
+static Image_Data *aros_read_image_fallback(char *name, OpenImageInfo *info)
+{
+	char *leaf = 0;
+	Image_Data *image;
+
+	if (info || !name || !name[0])
+		return 0;
+
+	if (strnicmp(name, "dopus5:images/", 14) == 0 || strnicmp(name, "dopus5:Images/", 14) == 0)
+		leaf = name + 14;
+	else if (strnicmp(name, "PROGDIR:images/", 15) == 0 || strnicmp(name, "PROGDIR:Images/", 15) == 0)
+		leaf = name + 15;
+
+	if (!leaf || !leaf[0])
+		return 0;
+
+	if ((image = aros_try_image_path("dopus5:Images/", leaf)))
+		return image;
+
+	return aros_try_image_path("PROGDIR:Images/", leaf);
+}
+#endif
+
 // Allocate a new image
 Image_Data *new_image(short width, short height, short depth)
 {
@@ -1238,8 +1333,17 @@ BOOL add_remap_pen(struct Screen *screen, ImageRemap *remap, unsigned short pen)
 	// Don't have pen array?
 	if (!remap->ir_PenArray)
 	{
-		// Allocate array big enough for screen depth
-		if (!(remap->ir_PenArray = AllocVec((4 << screen->RastPort.BitMap->Depth), MEMF_CLEAR)))
+		short depth;
+
+		// The remap code stores planar pen values and only supports up to
+		// 8 destination planes. True-colour screens can report 24/32-bit
+		// depths, so cap the bookkeeping array to the same range.
+		depth = screen->RastPort.BitMap->Depth;
+		if (depth > 8)
+			depth = 8;
+
+		// Allocate two UWORDs for every possible remapped pen.
+		if (!(remap->ir_PenArray = AllocVec((sizeof(UWORD) * 2) << depth, MEMF_CLEAR)))
 			return 0;
 	}
 

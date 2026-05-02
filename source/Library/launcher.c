@@ -267,7 +267,7 @@ static ErrorNode *launch_error(struct LibData *data, LaunchPacket *packet, short
 
 #define v_launch_error(data, packet, msg, buttons, ...)          \
 	({                                                           \
-		IPTR __args[] = {__VA_ARGS__};                           \
+		IPTR __args[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)};      \
 		launch_error(data, packet, msg, buttons, (APTR)&__args); \
 	})
 
@@ -373,7 +373,7 @@ void SAVEDS launcher_proc(void)
 	struct TimerHandle *timer, *secondtimer = 0;
 
 	// Do startup
-	if (!(ipc = L_IPC_ProcStartup((ULONG *)&data, 0)))
+	if (!(ipc = L_IPC_ProcStartup((IPTR *)&data, 0)))
 		return;
 
 #ifdef FAKEWB
@@ -1421,7 +1421,7 @@ BOOL install_fake_workbench(struct LibData *data)
 
 	// Launch workbench task
 	IPC_Launch(
-		0, &data->fake_wb, "Workbench", IPC_NATIVE(fake_workbench), STACK_DEFAULT | IPCF_GETPATH, (ULONG)data, DOSBase);
+		0, &data->fake_wb, "Workbench", IPC_NATIVE(fake_workbench), STACK_DEFAULT | IPCF_GETPATH, (IPTR)data, DOSBase);
 
 	// Success?
 	return (BOOL)((data->fake_wb) ? 1 : 0);
@@ -1446,7 +1446,7 @@ void SAVEDS fake_workbench(void)
 	IPCMessage *msg = 0;
 
 	// Do startup
-	if (!(ipc = L_IPC_ProcStartup((ULONG *)&data, 0)))
+	if (!(ipc = L_IPC_ProcStartup((IPTR *)&data, 0)))
 		return;
 
 	// Set program name
@@ -1742,7 +1742,7 @@ BOOL doslist_get(struct LibData *data, struct MinList *list, APTR memory, ULONG 
 		}
 		else
 #endif
-			res = DoPkt(devproc->dvp_Port, ACTION_DISK_INFO, MKBADDR(info), 0, 0, 0, 0);
+			res = DoPkt(devproc->dvp_Port, ACTION_DISK_INFO, (SIPTR)MKBADDR(info), 0, 0, 0, 0);
 
 		if (res)
 		{
@@ -1986,7 +1986,7 @@ void LIBFUNC L_GetDosListCopy(REG(a0, struct List *list), REG(a1, APTR memory), 
 	struct LibData *data;
 	DosListEntry *entry;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -2043,7 +2043,7 @@ void LIBFUNC L_FreeDosListCopy(REG(a0, struct List *list), REG(a6, struct MyLibr
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 

@@ -95,7 +95,7 @@ static void time_from_seconds(char *buf, ULONG seconds)
 //	Which in turn requires a fake IPCData structure with its proc field filled out
 //	We then add our ARexx handler to the lister so we can trap the 'abort' message
 //
-static struct ftp_node *add_abort_trap(struct opusftp_globals *ogp, char *opus, ULONG lclhandle, IPCData *rmtipc)
+static struct ftp_node *add_abort_trap(struct opusftp_globals *ogp, char *opus, IPTR lclhandle, IPCData *rmtipc)
 {
 	struct ftp_node *tmpnode;
 	int ok = 0;
@@ -132,7 +132,7 @@ static struct ftp_node *add_abort_trap(struct opusftp_globals *ogp, char *opus, 
 //
 //	Remove an abort trap from a local lister (not controlled by us)
 //
-static void rem_abort_trap(struct opusftp_globals *ogp, char *opus, struct ftp_node *tmpnode, ULONG lclhandle)
+static void rem_abort_trap(struct opusftp_globals *ogp, char *opus, struct ftp_node *tmpnode, IPTR lclhandle)
 {
 	if (tmpnode)
 	{
@@ -930,7 +930,7 @@ void lister_xfer(struct ftp_node *remotenode, IPCMessage *msg)
 {
 	struct xfer_msg *xm;
 	struct ftp_node *srcnode, *destnode, *prognode;
-	ULONG srchandle, desthandle, proghandle;
+	IPTR srchandle, desthandle, proghandle;
 	char *names, *p;  // Quoted names of all selected entries
 	int entrycount;
 	int dircount = 0;
@@ -1494,7 +1494,7 @@ void lister_xfer(struct ftp_node *remotenode, IPCMessage *msg)
 //
 void lister_doubleclick(struct ftp_node *node, IPCMessage *msg)
 {
-	ULONG handle = node->fn_handle;	 // Handle of the lister
+	IPTR handle = node->fn_handle;	 // Handle of the lister
 	struct ftp_msg *fm;
 	struct connect_msg *cm;
 	struct entry_info ei = {0};
@@ -1710,7 +1710,7 @@ void lister_doubleclick(struct ftp_node *node, IPCMessage *msg)
 void lister_traptemp(struct ftp_node *node, IPCMessage *msg)
 {
 	struct traptemp_msg *tm;			 // Our message
-	ULONG handle = node->fn_handle;		 // Lister handle
+	IPTR handle = node->fn_handle;		 // Lister handle
 	char *names, name[FILENAMELEN], *p;	 // Files to act on
 	BOOL gotfileinfo;					 // Real name (for links)
 	struct entry_info ei = {0};
@@ -1877,7 +1877,7 @@ void lister_traptemp(struct ftp_node *node, IPCMessage *msg)
 //
 BOOL lister_xferindex(struct ftp_node *ftpnode, char *localname, char *remotename, int size)
 {
-	ULONG handle;		  // Handle of the lister
+	IPTR handle;		  // Handle of the lister
 	unsigned int actual;  // Length actually read
 	BOOL abort;			  // passed to get(), (ignored)
 	struct update_info ui = {0};
@@ -1986,7 +1986,7 @@ void lister_getput(struct ftp_node *thisnode, IPCMessage *msg)
 {
 	struct xfer_msg *xm;
 	struct ftp_node *srcnode, *destnode, *prognode;
-	ULONG srchandle, desthandle, proghandle;
+	IPTR srchandle, desthandle, proghandle;
 	char *names, *p;  // Quoted names of all selected entries
 	int entrycount;
 	int dircount = 0;

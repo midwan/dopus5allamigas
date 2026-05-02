@@ -68,7 +68,7 @@ static void lister_reset_index_state(struct ftp_node *ftpnode)
 	ftpnode->fn_ftp.fi_found_fbbs_size = 0;
 }
 
-static void lister_clear_listing(struct ftp_node *ftpnode, ULONG handle, BOOL redo_cache)
+static void lister_clear_listing(struct ftp_node *ftpnode, IPTR handle, BOOL redo_cache)
 {
 	if (redo_cache)
 		rexx_lst_clear(ftpnode->fn_opus, handle);
@@ -262,13 +262,13 @@ static void update_lister_comments(struct ftp_node *ftpnode, char *indexname)
 	char comment[COMMENTLEN];
 	char buf[256];
 	BPTR cf;
-	ULONG lister;
+	APTR lister;
 	DOpusCallbackInfo *infoptr = &ftpnode->fn_og->og_hooks;
 
-	lister = ftpnode->fn_handle;
+	lister = (APTR)ftpnode->fn_handle;
 
 	// lock list.  lister is still busy from previous fn call
-	DC_CALL2(infoptr, dc_LockFileList, DC_REGA0, (ULONG)lister, DC_REGD0, TRUE);
+	DC_CALL2(infoptr, dc_LockFileList, DC_REGA0, lister, DC_REGD0, TRUE);
 	// ftpnode->fn_og->og_hooks.dc_LockFileList( (ULONG)lister, TRUE );
 
 	// open file
@@ -276,7 +276,7 @@ static void update_lister_comments(struct ftp_node *ftpnode, char *indexname)
 	{
 		while (FGets(cf, buf, 256))
 		{
-			*fname = *comment = NULL;
+			*fname = *comment = 0;
 
 			if (*buf == '|' || *buf == '\n')
 				continue;
@@ -302,14 +302,14 @@ static void update_lister_comments(struct ftp_node *ftpnode, char *indexname)
 
 			// update the lister
 			if (*fname && *comment)
-				DC_CALL3(infoptr, dc_SetFileComment, DC_REGA0, (ULONG)lister, DC_REGA1, fname, DC_REGA2, comment);
+				DC_CALL3(infoptr, dc_SetFileComment, DC_REGA0, lister, DC_REGA1, fname, DC_REGA2, comment);
 			// ftpnode->fn_og->og_hooks.dc_SetFileComment( (ULONG)lister, fname, comment );
 		}
 		Close(cf);
 	}
 
 	// unlock list
-	DC_CALL1(infoptr, dc_UnlockFileList, DC_REGA0, (ULONG)lister);
+	DC_CALL1(infoptr, dc_UnlockFileList, DC_REGA0, lister);
 	// ftpnode->fn_og->og_hooks.dc_UnlockFileList( (ULONG)lister );
 
 	// refresh lister
@@ -371,7 +371,7 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 	int lsresult;
 	BOOL abort = FALSE;
 	struct update_info *ui;
-	ULONG handle;
+	IPTR handle;
 #if defined(__AROS__) || defined(__amigaos3__)
 	struct Device *TimerBase = (struct Device *)GetTimerBase();
 #else

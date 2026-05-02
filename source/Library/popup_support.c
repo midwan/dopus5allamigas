@@ -23,10 +23,10 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopuslib.h"
 
-PopUpItem *LIBFUNC L_PopUpNewItem(REG(a0, PopUpHandle *), REG(d0, ULONG), REG(d1, ULONG), REG(d2, ULONG));
+PopUpItem *LIBFUNC L_PopUpNewItem(REG(a0, PopUpHandle *), REG(d0, IPTR), REG(d1, ULONG), REG(d2, ULONG));
 
 // New PopUpHandle
-PopUpHandle *LIBFUNC L_PopUpNewHandle(REG(d0, ULONG userdata),
+PopUpHandle *LIBFUNC L_PopUpNewHandle(REG(d0, IPTR userdata),
 									  REG(a0, REF_CALLBACK callback),
 									  REG(a1, struct DOpusLocale *locale))
 {
@@ -71,7 +71,7 @@ void LIBFUNC L_PopUpFreeHandle(REG(a0, PopUpHandle *handle))
 
 // Add item to a menu
 PopUpItem *LIBFUNC L_PopUpNewItem(REG(a0, PopUpHandle *handle),
-								  REG(d0, ULONG string),
+								  REG(d0, IPTR string),
 								  REG(d1, ULONG id),
 								  REG(d2, ULONG flags))
 {
@@ -81,18 +81,18 @@ PopUpItem *LIBFUNC L_PopUpNewItem(REG(a0, PopUpHandle *handle),
 	if ((item = L_AllocMemH(handle->ph_Memory, sizeof(PopUpItem))))
 	{
 		// Fill out item
-		item->item_name = (char *)string;
+		item->item_name = string;
 		item->id = id;
 		item->flags = flags & (~POPUPF_LOCALE);
 
 		// Not bar label?
-		if (string != (ULONG)POPUP_BARLABEL)
+		if (string != (IPTR)POPUP_BARLABEL)
 		{
 			// Locale ID supplied?
 			if (!(flags & POPUPF_STRING))
 			{
 				// Get string
-				item->item_name = L_GetString(handle->ph_Menu.locale, string);
+				item->item_name = (IPTR)L_GetString(handle->ph_Menu.locale, string);
 			}
 			else
 				item->flags &= ~POPUPF_STRING;
@@ -112,7 +112,7 @@ PopUpItem *LIBFUNC L_PopUpNewItem(REG(a0, PopUpHandle *handle),
 void LIBFUNC L_PopUpSeparator(REG(a0, PopUpHandle *handle))
 {
 	// Add separator
-	L_PopUpNewItem(handle, (ULONG)POPUP_BARLABEL, 0, 0);
+	L_PopUpNewItem(handle, (IPTR)POPUP_BARLABEL, 0, 0);
 
 	// Set flag
 	handle->ph_Flags |= POPHF_SEP;

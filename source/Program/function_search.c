@@ -382,7 +382,7 @@ static int search_get_data(FunctionHandle *handle, SearchData *data)
 	}
 
 	// Initial settings
-	SetGadgetValue(objlist, GAD_SEARCH_TEXT, (ULONG)data->search_text);
+	SetGadgetValue(objlist, GAD_SEARCH_TEXT, (IPTR)data->search_text);
 	SetGadgetValue(objlist, GAD_SEARCH_CASE, data->search_flags & SEARCH_NOCASE);
 	SetGadgetValue(objlist, GAD_SEARCH_WILD, data->search_flags & SEARCH_WILDCARD);
 	SetGadgetValue(objlist, GAD_SEARCH_ONLYWORD, data->search_flags & SEARCH_ONLYWORDS);

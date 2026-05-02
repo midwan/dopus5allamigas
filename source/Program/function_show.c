@@ -87,7 +87,7 @@ DOPUS_FUNC(function_show)
 										   handle->ipc,
 										   &main_ipc,
 										   0,  // FindFileType
-										   (ULONG)GET_CALLBACK(function_external_hook));
+										   (IPTR)GET_CALLBACK(function_external_hook));
 
 // Close module
 #ifdef __amigaos4__
@@ -129,7 +129,7 @@ DOPUS_FUNC(function_show)
 		function_build_source(handle, entry, handle->work_buffer);
 
 		// Add entry to list
-		Att_NewNode(list, handle->work_buffer, (ULONG)entry, 0);
+		Att_NewNode(list, handle->work_buffer, (IPTR)entry, 0);
 
 		// Get next entry
 		function_end_entry(handle, entry, 1);
@@ -167,7 +167,7 @@ DOPUS_FUNC(function_show)
 								 GUI->screen_pointer,
 								 handle->ipc,
 								 &main_ipc,
-								 (ULONG)startup,
+								 (IPTR)startup,
 								 funcid - FUNC_READ);
 
 // Close module
@@ -239,7 +239,7 @@ DOPUS_FUNC(function_show)
 								 GUI->screen_pointer,
 								 handle->ipc,
 								 &main_ipc,
-								 (ULONG)window,
+								 (IPTR)window,
 								 (volume << 8) | ((func == FUNC_PLAY_QUIET) ? (1 << 0) : 0)) == 1)
 					ret = 1;
 

@@ -196,7 +196,7 @@ BackdropObject *backdrop_add_appicon(AppEntry *appicon, BackdropInfo *info, shor
 
 		// Store icon and owner
 		object->icon = appicon->object;
-		object->misc_data = (ULONG)appicon;
+		object->misc_data = (IPTR)appicon;
 
 		// Background colour?
 		if (((AppEntry *)appicon)->flags & APPENTF_BACKGROUND)
@@ -280,7 +280,7 @@ BackdropObject *backdrop_find_appicon(BackdropInfo *info, AppEntry *appicon)
 		 object = (BackdropObject *)object->node.ln_Succ)
 	{
 		// Check if we already have this appicon
-		if (object->type == BDO_APP_ICON && object->misc_data == (ULONG)appicon)
+		if (object->type == BDO_APP_ICON && object->misc_data == (IPTR)appicon)
 			return object;
 	}
 
@@ -411,7 +411,7 @@ DOpusAppMessage *backdrop_appmessage(BackdropInfo *info, BOOL need_obj)
 	}
 
 	// Set flags in message
-	set_appmsg_data(msg, (ULONG)info->lister, DROPF_ICON_MODE, 0);
+	set_appmsg_data(msg, (IPTR)info->lister, DROPF_ICON_MODE, 0);
 	return msg;
 }
 
@@ -428,7 +428,7 @@ void backdrop_drop_appwindow(BackdropInfo *info, struct AppWindow *appwindow, sh
 		msg->da_Msg.am_Type = MTYPE_APPWINDOW;
 		msg->da_Msg.am_MouseX = x;
 		msg->da_Msg.am_MouseY = y;
-		port = WB_AppWindowData(appwindow, (ULONG *)&msg->da_Msg.am_ID, (ULONG *)&msg->da_Msg.am_UserData);
+		port = WB_AppWindowData(appwindow, &msg->da_Msg.am_ID, &msg->da_Msg.am_UserData);
 
 		// Send the message
 		PutMsg(port, (struct Message *)msg);

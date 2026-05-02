@@ -6,7 +6,7 @@ int LIBFUNC L_Config_Buttons(REG(a0, ButtonsStartup *startup),
 							 REG(a1, IPCData *ipc),
 							 REG(a2, IPCData *owner_ipc),
 							 REG(a3, struct Screen *screen),
-							 REG(d0, ULONG command_list))
+							 REG(d0, IPTR command_list))
 {
 	config_buttons_data *data;
 	IPCMessage *quit_msg = 0;
@@ -153,7 +153,7 @@ int LIBFUNC L_Config_Buttons(REG(a0, ButtonsStartup *startup),
 							 bank = (bank_node *)bank->node.ln_Succ)
 						{
 							// Tell children to appear
-							IPC_ListCommand(&bank->proc_list, IPC_SHOW, 0, (ULONG)data->window, 0);
+							IPC_ListCommand(&bank->proc_list, IPC_SHOW, 0, (IPTR)data->window, 0);
 						}
 					}
 				}
@@ -171,7 +171,7 @@ int LIBFUNC L_Config_Buttons(REG(a0, ButtonsStartup *startup),
 			// Process a key
 			case BUTTONEDIT_PROCESS_KEY:
 				if (!pending_quit && data->window &&
-					(_config_buttons_handle_key(data, (UWORD)imsg->flags, (UWORD)imsg->data)))
+			(_config_buttons_handle_key(data, (UWORD)imsg->flags, (UWORD)(IPTR)imsg->data)))
 				{
 					ret = CONFIG_CHANGE_BUTTONS;
 					data->change = 1;
@@ -181,7 +181,7 @@ int LIBFUNC L_Config_Buttons(REG(a0, ButtonsStartup *startup),
 			// Edit a button
 			case BUTTONEDIT_EDIT_BUTTON:
 				if (!pending_quit && data->window)
-					_config_buttons_edit_button(data, (short)imsg->flags, (short)imsg->data);
+					_config_buttons_edit_button(data, (short)imsg->flags, (short)(IPTR)imsg->data);
 				break;
 
 			// Got a button back from the editor
@@ -241,7 +241,7 @@ int LIBFUNC L_Config_Buttons(REG(a0, ButtonsStartup *startup),
 
 				// Store selected button
 				data->select_col = (short)imsg->flags;
-				data->select_row = (short)imsg->data;
+					data->select_row = (short)(IPTR)imsg->data;
 				_config_buttons_fix_controls(data);
 
 				// Valid button?
@@ -582,7 +582,7 @@ int LIBFUNC L_Config_Buttons(REG(a0, ButtonsStartup *startup),
 						ClearWindowBusy(data->window);
 
 						// Update gadgets
-						SetGadgetValue(data->objlist, GAD_BUTTONS_FONT_NAME, (ULONG)data->font_req->fo_Attr.ta_Name);
+						SetGadgetValue(data->objlist, GAD_BUTTONS_FONT_NAME, (IPTR)data->font_req->fo_Attr.ta_Name);
 						SetGadgetValue(data->objlist, GAD_BUTTONS_FONT_SIZE, (ULONG)data->font_req->fo_Attr.ta_YSize);
 
 					// Font name/size
@@ -604,7 +604,7 @@ int LIBFUNC L_Config_Buttons(REG(a0, ButtonsStartup *startup),
 						{
 							StrConcat(data->bank_node->bank->window.font_name, ".font", 30);
 							SetGadgetValue(
-								data->objlist, GAD_BUTTONS_FONT_NAME, (ULONG)data->bank_node->bank->window.font_name);
+								data->objlist, GAD_BUTTONS_FONT_NAME, (IPTR)data->bank_node->bank->window.font_name);
 						}
 
 						// Unlock bank
@@ -966,9 +966,9 @@ int LIBFUNC L_Config_Buttons(REG(a0, ButtonsStartup *startup),
 								IPC_Launch(0,
 										   &data->paint_box,
 										   "dopus_paint_box",
-										   (ULONG)IPC_NATIVE(PaletteBox),
+										   IPC_NATIVE(PaletteBox),
 										   STACK_DEFAULT,
-										   (ULONG)&data->palette_data,
+										   (IPTR)&data->palette_data,
 										   (struct Library *)DOSBase);
 							}
 						}
@@ -1566,7 +1566,7 @@ void _config_buttons_update(config_buttons_data *data)
 		GetSemaphore(&data->bank_node->bank->lock, SEMF_SHARED, 0);
 
 		// Initialise name field
-		SetGadgetValue(data->objlist, GAD_BUTTONS_NAME, (ULONG)data->bank_node->bank->window.name);
+		SetGadgetValue(data->objlist, GAD_BUTTONS_NAME, (IPTR)data->bank_node->bank->window.name);
 
 		// Update column display
 		SetGadgetValue(data->objlist, GAD_BUTTONS_COLUMNS, data->bank_node->bank->window.columns);
@@ -1585,11 +1585,11 @@ void _config_buttons_update(config_buttons_data *data)
 					  (data->bank_node->toolbar || data->bank_node->bank->window.rows < 2));
 
 		// Initialise font
-		SetGadgetValue(data->objlist, GAD_BUTTONS_FONT_NAME, (ULONG)data->bank_node->bank->window.font_name);
+		SetGadgetValue(data->objlist, GAD_BUTTONS_FONT_NAME, (IPTR)data->bank_node->bank->window.font_name);
 		SetGadgetValue(data->objlist, GAD_BUTTONS_FONT_SIZE, (ULONG)data->bank_node->bank->window.font_size);
 
 		// Initialise picture
-		SetGadgetValue(data->objlist, GAD_BUTTONS_BACKPIC, (ULONG)data->bank_node->bank->backpic);
+		SetGadgetValue(data->objlist, GAD_BUTTONS_BACKPIC, (IPTR)data->bank_node->bank->backpic);
 
 		// Unlock bank
 		FreeSemaphore(&data->bank_node->bank->lock);

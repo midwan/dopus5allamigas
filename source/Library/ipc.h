@@ -30,8 +30,8 @@ For more information on Directory Opus for Windows please see:
 typedef struct
 {
 	struct Message msg;
-	ULONG command;
-	ULONG flags;
+	IPTR command;
+	IPTR flags;
 	APTR data;
 	APTR data_free;
 } IPCMessage;
@@ -61,7 +61,7 @@ enum {
 // protos
 ipc_launch(struct ListLock *, IPCData **, char *, ULONG, ULONG, ULONG);
 ipc_startup(IPCData *ipc, APTR data, struct MsgPort *reply);
-ULONG ipc_command(IPCData *ipc, ULONG command, ULONG flags, APTR data, APTR data_free, struct MsgPort *reply);
+IPTR ipc_command(IPCData *ipc, ULONG command, IPTR flags, APTR data, APTR data_free, struct MsgPort *reply);
 void ipc_reply(IPCMessage *msg);
 void ipc_free(IPCData *);
 void ipc_free_port(IPCData *ipc);

@@ -112,6 +112,7 @@
 #ifdef __AROS__
 	#include <proto/alib.h>
 	#include <graphics/gfxbase.h>
+	#include <aros/preprocessor/variadic/cast2iptr.hpp>
 #endif
 
 #include <dopus/debug.h>
@@ -135,7 +136,7 @@
  */
 #define D_S(type, name)              \
 	char a_##name[sizeof(type) + 3]; \
-	type *name = (type *)((LONG)(a_##name + 3) & ~3);
+	type *name = (type *)((IPTR)(a_##name + 3) & ~3);
 
 // no need for old functions
 #undef UDivMod32
@@ -144,6 +145,12 @@
 #define SDivMod32(x, y) (((LONG)x) / ((LONG)y))
 #undef UMult32
 #define UMult32(x, y) (((ULONG)x) * ((ULONG)y))
+
+#ifdef __AROS__
+	#define DOPUS_VARIADIC_IPTR(...) AROS_PP_VARIADIC_CAST2IPTR(__VA_ARGS__)
+#else
+	#define DOPUS_VARIADIC_IPTR(...) __VA_ARGS__
+#endif
 
 /* Replacement functions for functions not available in some SDKs/GCCs */
 #if !defined(__MORPHOS__) && !defined(__AROS__)
@@ -155,8 +162,8 @@ int stccpy(char *p, const char *q, int n);
 	#define lsprintf(buf, fmt, ...)                                                \
 		({                                                                         \
 			static ULONG StuffChar = 0x16c04e75;                                   \
-			IPTR vargs[] = {__VA_ARGS__};                                          \
-			RawDoFmt((STRPTR)fmt, (APTR)&vargs, (void(*)) & StuffChar, (APTR)buf); \
+			IPTR vargs[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)};                    \
+			RawDoFmt((STRPTR)(IPTR)fmt, (APTR)&vargs, (void(*)) & StuffChar, (APTR)buf); \
 		})
 	#define LSprintf(buffer, string, data)                         \
 		({                                                         \
@@ -166,8 +173,8 @@ int stccpy(char *p, const char *q, int n);
 #else
 	#define lsprintf(buf, fmt, ...)                               \
 		({                                                        \
-			IPTR vargs[] = {__VA_ARGS__};                         \
-			RawDoFmt((STRPTR)fmt, (APTR)&vargs, NULL, (APTR)buf); \
+			IPTR vargs[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)};    \
+			RawDoFmt((STRPTR)(IPTR)fmt, (APTR)&vargs, NULL, (APTR)buf); \
 		})
 	#define LSprintf(buffer, string, data) RawDoFmt(string, data, NULL, buffer)
 #endif

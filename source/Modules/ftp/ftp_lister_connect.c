@@ -1181,7 +1181,7 @@ struct ftp_node *lister_new_connection(struct opusftp_globals *ogp, struct msg_l
 {
 	struct connect_msg *cm = NULL;	// Connection message - this must be FreeVec'd
 	struct ftp_node *node = NULL;	// The new node
-	ULONG handle = 0;				// Lister handle
+	IPTR handle = 0;				// Lister handle
 	struct connect_log_data cld = {0};
 	DOpusCallbackInfo *infoptr = &ogp->og_hooks;
 
@@ -1308,7 +1308,7 @@ static int errno_known(void)
 //
 static int opus_lostconn(struct opusftp_globals *og, struct ftp_node *ftpnode)
 {
-	ULONG handle = ftpnode->fn_handle;
+	IPTR handle = ftpnode->fn_handle;
 	int msg;
 	int retval = 0;
 
@@ -1392,7 +1392,7 @@ void lister_disconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 	struct ftp_node *ftpnode = mld->mld_node;
 	struct connect_msg *sm;
 	struct quit_msg *qm;
-	ULONG handle;
+	IPTR handle;
 	BOOL do_script = 0;
 	DOpusCallbackInfo *infoptr = &og->og_hooks;
 

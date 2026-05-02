@@ -11,7 +11,7 @@ void config_env_show_sound(config_env_data *data)
 	if ((num = GetGadgetValue(data->option_list, GAD_SETTINGS_SOUNDLIST)) > -1 &&
 		(sound = (Cfg_SoundEntry *)Att_FindNode((Att_List *)&data->sound_list, num)) && sound->dse_Sound[0])
 	{
-		SetGadgetValue(data->option_list, GAD_SETTINGS_SOUNDLIST_PATH, (ULONG)sound->dse_Sound);
+		SetGadgetValue(data->option_list, GAD_SETTINGS_SOUNDLIST_PATH, (IPTR)sound->dse_Sound);
 		SetGadgetValue(data->option_list, GAD_SETTINGS_VOLUME, sound->dse_Volume);
 		SetGadgetValue(data->option_list, GAD_SETTINGS_VOLUME_SLIDER, sound->dse_Volume);
 	}
@@ -101,7 +101,7 @@ void config_env_test_sound(config_env_data *data)
 
 			// Play the sound
 			Module_Entry(
-				&list, data->window->WScreen, data->ipc, data->main_ipc, (ULONG)data->window, sound->dse_Volume << 8);
+				&list, data->window->WScreen, data->ipc, data->main_ipc, (IPTR)data->window, sound->dse_Volume << 8);
 			ok = 1;
 		}
 

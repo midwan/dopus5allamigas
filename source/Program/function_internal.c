@@ -209,7 +209,7 @@ int function_internal_command(CommandList *command, char *args, FunctionHandle *
 							   (handle) ? handle->ipc : 0,
 							   &main_ipc,
 							   command->function,
-							   (ULONG)GET_CALLBACK(function_external_hook));
+							   (IPTR)GET_CALLBACK(function_external_hook));
 
 // Close module
 #ifdef __amigaos4__
@@ -226,13 +226,13 @@ int function_internal_command(CommandList *command, char *args, FunctionHandle *
 
 	// Valid code?
 	else if (command->stuff.code)
-		ret = (int)((int (*)())(command->stuff.code)(command, handle, args, instruction));
+		ret = command->stuff.code(command, handle, args, instruction);
 
 	return ret;
 }
 
 // Hook for external commands
-REF_CALLBACK_BEGIN(ULONG,
+REF_CALLBACK_BEGIN(IPTR,
 				   ASM SAVEDS function_external_hook,
 				   d0,
 				   ULONG,
@@ -249,11 +249,11 @@ REF_CALLBACK_BEGIN(ULONG,
 	{
 	// Get current source path
 	case EXTCMD_GET_SOURCE:
-		return (ULONG)HookGetSource(handle, (char *)packet);
+		return (IPTR)HookGetSource(handle, (char *)packet);
 
 	// Get next source path
 	case EXTCMD_NEXT_SOURCE:
-		return (ULONG)HookNextSource(handle, (char *)packet);
+		return (IPTR)HookNextSource(handle, (char *)packet);
 
 	// Unlock source paths
 	case EXTCMD_UNLOCK_SOURCE:
@@ -262,7 +262,7 @@ REF_CALLBACK_BEGIN(ULONG,
 
 	// Get destination path
 	case EXTCMD_GET_DEST:
-		return (ULONG)HookGetDest(handle, (char *)packet);
+		return (IPTR)HookGetDest(handle, (char *)packet);
 
 	// Finished with this source
 	case EXTCMD_END_SOURCE:
@@ -276,7 +276,7 @@ REF_CALLBACK_BEGIN(ULONG,
 
 	// Get next entry
 	case EXTCMD_GET_ENTRY:
-		return (ULONG)HookGetEntry(handle);
+		return (IPTR)HookGetEntry(handle);
 
 	// End this entry
 	case EXTCMD_END_ENTRY:
@@ -333,7 +333,7 @@ REF_CALLBACK_BEGIN(ULONG,
 
 	// Get a window handle
 	case EXTCMD_GET_WINDOW:
-		return (ULONG)HookGetWindow((PathNode *)packet);
+		return (IPTR)HookGetWindow((PathNode *)packet);
 		break;
 
 	// Get help on a topic
@@ -343,15 +343,15 @@ REF_CALLBACK_BEGIN(ULONG,
 
 	// Get rexx portname
 	case EXTCMD_GET_PORT:
-		return (ULONG)HookGetPort((char *)packet);
+		return (IPTR)HookGetPort((char *)packet);
 
 	// Get screen name
 	case EXTCMD_GET_SCREEN:
-		return (ULONG)HookGetScreen((char *)packet);
+		return (IPTR)HookGetScreen((char *)packet);
 
 	// Get screen data
 	case EXTCMD_GET_SCREENDATA:
-		return (ULONG)HookGetScreenData();
+		return (IPTR)HookGetScreenData();
 
 	// Free screen data
 	case EXTCMD_FREE_SCREENDATA:

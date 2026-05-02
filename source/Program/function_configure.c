@@ -33,6 +33,7 @@ DOPUS_FUNC(function_configure)
 	struct ModuleIFace *IModule;
 #endif
 	ListFormat format;
+	ListFormat default_format;
 	ListFormat *pass_format = 0;
 	ULONG ret;
 
@@ -42,6 +43,7 @@ DOPUS_FUNC(function_configure)
 
 	// Get current format
 	format = lister->cur_buffer->buf_ListFormat;
+	default_format = environment->env->list_format;
 
 	// Open lister format module
 	if (!(ModuleBase = OpenModule("listerformat.module"))
@@ -63,7 +65,7 @@ DOPUS_FUNC(function_configure)
 					   handle->ipc,
 					   &main_ipc,
 					   1,
-					   (ULONG)&environment->env->list_format);
+					   (IPTR)&environment->env->list_format);
 
 // Close library
 #ifdef __amigaos4__
@@ -74,6 +76,10 @@ DOPUS_FUNC(function_configure)
 	// Need to refresh the lister?
 	if (ret)
 	{
+		// Persist "Set as defaults" changes made by the lister format editor
+		if ((ret & CONFIG_SAVE) && CompareListFormat(&default_format, &environment->env->list_format))
+			IPC_Command(&main_ipc, MAINCMD_SAVE_ENV, 0, environment->path, 0, REPLY_NO_PORT);
+
 		// Allocate format
 		if ((pass_format = AllocVec(sizeof(ListFormat), 0)))
 		{
@@ -83,5 +89,5 @@ DOPUS_FUNC(function_configure)
 	}
 
 	// Send message to say goodbye
-	return IPC_Command(lister->ipc, LISTER_CONFIGURE, 0, (APTR)ret, pass_format, 0);
+	return IPC_Command(lister->ipc, LISTER_CONFIGURE, 0, (APTR)(IPTR)ret, pass_format, 0);
 }

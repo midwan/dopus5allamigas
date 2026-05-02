@@ -161,7 +161,7 @@ struct connect_msg
 	APTR cm_function_handle;		// Useful for callback functions
 	char cm_opus[PORTNAMELEN + 1];	// Port name of this copy of Opus (DOPUS.1, DOPUS.2, ...)
 	struct Window *cm_window;		// Window to open requester over
-	ULONG cm_handle;				// Lister handle if called with one
+	IPTR cm_handle;				// Lister handle if called with one
 	int cm_protocol;				// FTP_PROTOCOL_*
 	struct site_entry cm_site;
 };

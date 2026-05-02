@@ -732,7 +732,7 @@ static struct MyLibrary *LIBFUNC LibInit(REG(d0, struct MyLibrary *base),
 	if ((NewlibBase = OpenLibrary("newlib.library", 3)) && GETINTERFACE(INewlib, NewlibBase))
 #endif
 #ifdef __AROS__
-	if (set_call_funcs(SETNAME(INIT), 1, 1))
+	if (set_open_libraries() && set_call_funcs(SETNAME(INIT), 1, 1))
 #endif
 	{
 		// cleanup the library header structure beginning with the
@@ -793,6 +793,7 @@ STATIC BPTR LibDelete(struct MyLibrary *base)
 #endif
 #ifdef __AROS__
 	set_call_funcs(SETNAME(EXIT), -1, 0);
+	set_close_libraries();
 #endif
 
 	// make sure the system deletes the library as well.
@@ -1198,7 +1199,7 @@ int UserLibInit(REG(a6, struct MyLibrary *libbase))
 	if (!(data = AllocVec(sizeof(struct LibData), MEMF_CLEAR)))
 		return 1;
 
-	libbase->ml_UserData = (ULONG)data;
+	libbase->ml_UserData = data;
 
 	// Check for OS 3.5 icon library
 	// if <44 then try for NewIcons. Don't open NewIcons under V44
@@ -1300,7 +1301,7 @@ int UserLibInit(REG(a6, struct MyLibrary *libbase))
 	InitSemaphore(&data->backfill_lock);
 	data->popup_delay = 10;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	dopuslibbase_global = libbase;
 #endif
 
@@ -1348,33 +1349,33 @@ int UserLibInit(REG(a6, struct MyLibrary *libbase))
 
 	// Initialise boopsi classes
 	if (!(image_class = init_class(
-			  data, "dopusiclass", "imageclass", (unsigned long (*)())image_dispatch, sizeof(BoopsiImageData))) ||
+			  data, "dopusiclass", "imageclass", (IPTR (*)())image_dispatch, sizeof(BoopsiImageData))) ||
 
 		!(button_class = init_class(
-			  data, "dopusbuttongclass", "gadgetclass", (unsigned long (*)())button_dispatch, sizeof(ButtonData))) ||
+			  data, "dopusbuttongclass", "gadgetclass", (IPTR (*)())button_dispatch, sizeof(ButtonData))) ||
 
 		!(string_class = init_class(
-			  data, "dopusstrgclass", "strgclass", (unsigned long (*)())button_dispatch, sizeof(StringData))) ||
+			  data, "dopusstrgclass", "strgclass", (IPTR (*)())button_dispatch, sizeof(StringData))) ||
 
 		!(check_class = init_class(
-			  data, "dopuscheckgclass", "gadgetclass", (unsigned long (*)())button_dispatch, sizeof(CheckData))) ||
+			  data, "dopuscheckgclass", "gadgetclass", (IPTR (*)())button_dispatch, sizeof(CheckData))) ||
 
 		!(view_class = init_class(
-			  data, "dopusviewgclass", "gadgetclass", (unsigned long (*)())button_dispatch, sizeof(ButtonData))) ||
+			  data, "dopusviewgclass", "gadgetclass", (IPTR (*)())button_dispatch, sizeof(ButtonData))) ||
 
 		!(palette_class = init_class(
-			  data, "dopuspalettegclass", "gadgetclass", (unsigned long (*)())palette_dispatch, sizeof(PaletteData))) ||
+			  data, "dopuspalettegclass", "gadgetclass", (IPTR (*)())palette_dispatch, sizeof(PaletteData))) ||
 
 		!(frame_class = init_class(
-			  data, "dopusframeclass", "gadgetclass", (unsigned long (*)())button_dispatch, sizeof(ButtonData))) ||
+			  data, "dopusframeclass", "gadgetclass", (IPTR (*)())button_dispatch, sizeof(ButtonData))) ||
 
 		!(gauge_class = init_class(
-			  data, "dopusgaugeclass", "gadgetclass", (unsigned long (*)())button_dispatch, sizeof(GaugeData))) ||
+			  data, "dopusgaugeclass", "gadgetclass", (IPTR (*)())button_dispatch, sizeof(GaugeData))) ||
 
 		!(listview_class = init_class(data,
 									  "dopuslistviewgclass",
 									  "gadgetclass",
-									  (unsigned long (*)())listview_dispatch,
+									  (IPTR (*)())listview_dispatch,
 									  sizeof(ListViewData))))
 		return 1;
 
@@ -1410,7 +1411,7 @@ int UserLibInit(REG(a6, struct MyLibrary *libbase))
 					   "DO_LAUNCHER",
 					   IPC_NATIVE(launcher_proc),
 					   STACK_LARGE | IPCF_GETPATH,
-					   (ULONG)data,
+					   (IPTR)data,
 					   (struct Library *)DOSBase,
 					   libbase)) ||
 		!launcher_ipc)

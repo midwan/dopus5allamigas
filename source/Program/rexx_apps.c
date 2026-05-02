@@ -205,7 +205,7 @@ long rexx_add_appicon(char *str, struct RexxMsg *msg)
 			if (rexx_get_var(msg, menustem, iconfile, buffer, 80))
 			{
 				// Allocate buffer
-				if ((tags[count + 6].ti_Data = (ULONG)AllocMemH(memory, strlen(buffer) + 1)))
+				if ((tags[count + 6].ti_Data = (IPTR)AllocMemH(memory, strlen(buffer) + 1)))
 				{
 					// Copy name
 					strcpy((char *)tags[count + 6].ti_Data, buffer);
@@ -224,7 +224,7 @@ long rexx_add_appicon(char *str, struct RexxMsg *msg)
 	}
 
 	// Add AppIcon
-	app->app_thing = AddAppIconA(app->id, (ULONG)app, app->icon_name, GUI->rexx_app_port, 0, app->icon, tags);
+	app->app_thing = AddAppIconA(app->id, (IPTR)app, app->icon_name, GUI->rexx_app_port, 0, app->icon, tags);
 
 	// Free memory
 	FreeMemHandle(memory);
@@ -386,7 +386,7 @@ BOOL rexx_send_appmsg(RexxAppThing *app, short type, struct AppMessage *msg)
 {
 	char buf[40];
 	char *files = 0, *entry = 0;
-	ULONG lister = 0;
+	IPTR lister = 0;
 	BOOL ret;
 
 	// Snapshot?

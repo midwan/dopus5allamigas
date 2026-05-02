@@ -31,6 +31,100 @@ static ULONG default_palette[] = {0xefffffff, 0xafffffff, 0x4fffffff, 0x7fffffff
 								  0xffffffff, 0x8fffffff, 0x00000000, 0xffffffff, 0x00000000, 0xffffffff,
 								  0x9fffffff, 0x6fffffff, 0x3fffffff, 0x00000000, 0xffffffff, 0x9fffffff};
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
+
+#ifdef __AROS__
+static void set_default_list_display(ListFormat *format)
+{
+	short a;
+	static const BYTE default_display[] = {DISPLAY_NAME, DISPLAY_SIZE, DISPLAY_DATE, DISPLAY_PROTECT, DISPLAY_COMMENT};
+
+	for (a = 0; a < ARRAY_SIZE(format->display_pos); a++)
+		format->display_pos[a] = (a < ARRAY_SIZE(default_display)) ? default_display[a] : -1;
+	for (a = 0; a < ARRAY_SIZE(format->display_len); a++)
+		format->display_len[a] = -1;
+
+	if (format->sort.sort < 0 || format->sort.sort >= DISPLAY_LAST)
+		format->sort.sort = DISPLAY_NAME;
+}
+#endif
+
+static void fix_list_format_display(ListFormat *format)
+{
+#ifdef __AROS__
+	short a;
+	short valid = 0;
+	BOOL seen[DISPLAY_LAST];
+
+	for (a = 0; a < ARRAY_SIZE(seen); a++)
+		seen[a] = FALSE;
+
+	for (a = 0; a < ARRAY_SIZE(format->display_pos); a++)
+	{
+		UBYTE display = (UBYTE)format->display_pos[a];
+
+		if (display == 0xff)
+			break;
+		if (display >= DISPLAY_LAST || seen[display])
+		{
+			set_default_list_display(format);
+			return;
+		}
+
+		seen[display] = TRUE;
+		++valid;
+	}
+
+	if (valid == 0 || a == ARRAY_SIZE(format->display_pos))
+		set_default_list_display(format);
+#else
+	(void)format;
+#endif
+}
+
+#ifdef __AROS__
+static void fix_list_pen_pair(UBYTE *pair, UBYTE foreground, UBYTE background)
+{
+	if (pair[0] == pair[1])
+	{
+		pair[0] = foreground;
+		pair[1] = background;
+
+		if (pair[0] == pair[1])
+			pair[1] = (pair[0] == 0) ? 1 : 0;
+	}
+}
+#endif
+
+static void fix_list_format_colours(ListFormat *format, short old_environment)
+{
+#ifdef __AROS__
+	BOOL bad_default_colours;
+
+	if (old_environment && format->files_unsel[0] == 1 && format->files_unsel[1] == 2 &&
+		format->dirs_unsel[0] == 3 && format->dirs_unsel[1] == 2)
+	{
+		format->files_unsel[1] = 0;
+		format->dirs_unsel[1] = 0;
+	}
+
+	bad_default_colours = old_environment ||
+		(format->files_unsel[0] == format->files_unsel[1] && format->files_sel[0] == format->files_sel[1] &&
+		 format->dirs_unsel[0] == format->dirs_unsel[1] && format->dirs_sel[0] == format->dirs_sel[1]);
+
+	if (bad_default_colours)
+	{
+		fix_list_pen_pair(format->files_unsel, 1, 0);
+		fix_list_pen_pair(format->files_sel, 2, 1);
+		fix_list_pen_pair(format->dirs_unsel, 3, 0);
+		fix_list_pen_pair(format->dirs_sel, 2, 3);
+	}
+#else
+	(void)format;
+	(void)old_environment;
+#endif
+}
+
 void LIBFUNC L_DefaultSettings(REG(a0, CFG_SETS *settings))
 {
 	// Set some default values
@@ -123,7 +217,8 @@ void LIBFUNC L_DefaultEnvironment(REG(a0, CFG_ENVR *env))
 	env->window_pos.Width = (WORD)-1;
 	env->window_pos.Height = (WORD)-1;
 
-	env->display_options = DISPOPTF_NO_BACKDROP | DISPOPTF_SHOW_APPICONS | DISPOPTF_SHOW_TOOLS | DISPOPTF_USE_WBPATTERN;
+	env->display_options = DISPOPTF_SHOW_APPICONS | DISPOPTF_SHOW_TOOLS | DISPOPTF_ICON_POS |
+						   DISPOPTF_USE_WBPATTERN | DISPOPTF_REALTIME_SCROLL | DISPOPTF_THIN_BORDERS;
 	env->main_window_type = MAINWINDOW_ICONS;
 	env->backdrop_prefs[0] = 0;
 	for (a = 0; a < 4; a++)
@@ -152,18 +247,20 @@ void LIBFUNC L_DefaultEnvironment(REG(a0, CFG_ENVR *env))
 	env->list_format.display_pos[4] = ITEM_COMMENT;
 	for (a = 5; a < 16; a++)
 		env->list_format.display_pos[a] = -1;
-	for (a = 0; a < 16; a++)
-		env->list_format.display_len[0] = -1;
+	for (a = 0; a < ARRAY_SIZE(env->list_format.display_len); a++)
+		env->list_format.display_len[a] = -1;
 	env->list_format.show_free = SHOWFREE_KILO;
+	fix_list_format_display(&env->list_format);
+	fix_list_format_colours(&env->list_format, 0);
 
-	env->source_col[0] = 2;
-	env->source_col[1] = 3;
-	env->dest_col[0] = 1;
-	env->dest_col[1] = 0;
+	env->source_col[0] = 1;
+	env->source_col[1] = 253;
+	env->dest_col[0] = 2;
+	env->dest_col[1] = 252;
 	env->devices_col[0] = 1;
-	env->devices_col[1] = 0;
+	env->devices_col[1] = 2;
 	env->volumes_col[0] = 3;
-	env->volumes_col[1] = 0;
+	env->volumes_col[1] = 2;
 	env->palette_count = 0;
 
 	strcpy(env->output_window, "20/10/600/180/Directory Opus Output");
@@ -189,7 +286,7 @@ void LIBFUNC L_DefaultEnvironment(REG(a0, CFG_ENVR *env))
 	env->lister_popup_code = 0xffff;
 	env->lister_popup_qual = 0;
 
-	env->lister_options = 0;
+	env->lister_options = LISTEROPTF_2XCLICK | LISTEROPTF_TITLES | LISTEROPTF_POPUP | LISTEROPTF_EDIT_BOTH;
 	env->lister_width = 320;
 	env->lister_height = 200;
 
@@ -217,6 +314,8 @@ void LIBFUNC L_DefaultEnvironment(REG(a0, CFG_ENVR *env))
 	// Desktop folder location
 	strcpy(env->desktop_location, "DOpus5:Desktop/");
 	env->desktop_popup_default = DESKTOP_POPUP_NONE;
+	env->desktop_flags = DESKTOPF_NO_BORDERS;
+	env->env_flags = ENVF_BACKDROP;
 
 	// NewIcons stuff
 	env->env_NewIconsFlags = ENVNIF_ENABLE;
@@ -242,8 +341,6 @@ Cfg_ButtonBank *LIBFUNC L_DefaultButtonBank(void)
 
 	return bank;
 }
-
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
 void LIBFUNC L_UpdateEnvironment(REG(a0, CFG_ENVR *env))
 {
@@ -429,6 +526,9 @@ void LIBFUNC L_UpdateEnvironment(REG(a0, CFG_ENVR *env))
 	{
 		env->settings.max_filename = 30;
 	}
+
+	fix_list_format_display(&env->list_format);
+	fix_list_format_colours(&env->list_format, env->version < CONFIG_VERSION_12);
 
 	// Fix version
 	env->version = CONFIG_VERSION_12;

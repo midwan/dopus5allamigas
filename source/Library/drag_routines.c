@@ -48,7 +48,7 @@ DragInfo *LIBFUNC L_GetDragInfo(REG(a0, struct Window *window),
 	BOOL real = 1;
 	short word_width;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -1427,7 +1427,7 @@ BOOL LIBFUNC L_DragCustomOk(REG(a0, struct BitMap *bm), REG(a6, struct MyLibrary
 
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 

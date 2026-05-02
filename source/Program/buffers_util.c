@@ -241,6 +241,9 @@ int check_special_buffer(Lister *lister, BOOL active)
 // Called from LISTER PROCESS
 void buffer_show_special(Lister *lister, char *title)
 {
+	if (!title)
+		title = "";
+
 	// Free special dir contents
 	buffer_freedir(lister->special_buffer, 1);
 	lister->special_buffer->buf_FreeDiskSpace = 0;
@@ -283,7 +286,11 @@ void buffer_show_special(Lister *lister, char *title)
 	}
 
 	// Store title
-	strcpy(lister->special_buffer->buf_VolumeLabel, title);
+	stccpy(lister->special_buffer->buf_VolumeLabel, title, sizeof(lister->special_buffer->buf_VolumeLabel));
+	lister->special_buffer->buf_Path[0] = 0;
+	lister->special_buffer->buf_ExpandedPath[0] = 0;
+	if (lister->special_buffer->buf_ObjectName)
+		lister->special_buffer->buf_ObjectName[0] = 0;
 
 	// Clear path field
 	lister_update_pathfield(lister);

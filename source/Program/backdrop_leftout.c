@@ -362,7 +362,7 @@ void backdrop_save_leftouts(BackdropInfo *info)
 					left->node.ln_Type = PTYPE_LEFTOUT;
 
 					// Set pointer in object
-					object->misc_data = (ULONG)left;
+					object->misc_data = (IPTR)left;
 
 					// Add to list
 					AddTail((struct List *)&GUI->positions, (struct Node *)left);
@@ -502,7 +502,7 @@ void backdrop_add_leftouts(BackdropInfo *info)
 				if (object->type == BDO_LEFT_OUT)
 				{
 					// Match entry pointer
-					if (object->misc_data == (ULONG)left)
+					if (object->misc_data == (IPTR)left)
 						break;
 				}
 
@@ -526,7 +526,7 @@ void backdrop_add_leftouts(BackdropInfo *info)
 
 					// Copy label, store entry pointer
 					stccpy(object->device_name, left->icon_label, GUI->def_filename_length + 1);
-					object->misc_data = (ULONG)left;
+					object->misc_data = (IPTR)left;
 
 					// Fix size and position
 					backdrop_get_icon(info, object, GETICON_CD);
@@ -622,7 +622,7 @@ BackdropObject *backdrop_create_shortcut(BackdropInfo *info, char *name, short x
 	backdrop_unique_name(info->buffer);
 
 	// Make the link
-	if (MakeLink(info->buffer, name, TRUE))
+	if (MakeLink(info->buffer, (SIPTR)name, TRUE))
 	{
 		struct DiskObject *icon;
 

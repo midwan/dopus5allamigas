@@ -190,15 +190,15 @@ void lister_add(struct ftp_node *node, char *name, int size, int type, ULONG sec
 	fib->fib_Protection = prot;
 
 	if ((entry =
-			 DC_CALL3(infoptr, dc_CreateFileEntry, DC_REGA0, (ULONG)node->fn_handle, DC_REGA1, fib, DC_REGD0, NULL)))
+			 DC_CALL3(infoptr, dc_CreateFileEntry, DC_REGA0, (APTR)node->fn_handle, DC_REGA1, fib, DC_REGD0, NULL)))
 	// if	((entry = node->fn_og->og_hooks.dc_CreateFileEntry( (ULONG)node->fn_handle, fib, NULL )))
 	{
-		DC_CALL3(infoptr, dc_AddFileEntry, DC_REGA0, (ULONG)node->fn_handle, DC_REGA1, entry, DC_REGD0, TRUE);
+		DC_CALL3(infoptr, dc_AddFileEntry, DC_REGA0, (APTR)node->fn_handle, DC_REGA1, entry, DC_REGD0, TRUE);
 		// node->fn_og->og_hooks.dc_AddFileEntry( (ULONG)node->fn_handle, entry, TRUE );
 
-		tags[0].ti_Data = (ULONG)name;
+		tags[0].ti_Data = (IPTR)name;
 
-		DC_CALL3(infoptr, dc_FileSet, DC_REGA0, (ULONG)node->fn_handle, DC_REGA1, entry, DC_REGA2, tags);
+		DC_CALL3(infoptr, dc_FileSet, DC_REGA0, (APTR)node->fn_handle, DC_REGA1, entry, DC_REGA2, tags);
 		// node->fn_og->og_hooks.dc_FileSet( (ULONG)node->fn_handle, entry, tags );
 	}
 
@@ -1444,7 +1444,7 @@ static void lister_makedir(struct ftp_node *ftpnode, IPCMessage *msg)
 //
 static void lister_rename(struct ftp_node *ftpnode, IPCMessage *msg)
 {
-	ULONG handle = ftpnode->fn_handle;
+	IPTR handle = ftpnode->fn_handle;
 	struct ftp_msg *fm;
 	char newname[FILENAMELEN + 1] = {0};
 	char **namearray = 0;
@@ -2192,7 +2192,7 @@ static int lister_favour(struct ftp_node *ftpnode, IPCMessage *msg)
 	switch (fm->fm_ftp_command)
 	{
 	case FAVOUR_LIST:
-		msg->command = (ULONG)fm->fm_endpoint->ep_list(fm->fm_endpoint, fm->fm_arg1);
+		msg->command = (IPTR)fm->fm_endpoint->ep_list(fm->fm_endpoint, fm->fm_arg1);
 		break;
 	case FAVOUR_CWD:
 		msg->command = fm->fm_endpoint->ep_cwd(fm->fm_endpoint, fm->fm_arg1);
@@ -2211,13 +2211,13 @@ static int lister_favour(struct ftp_node *ftpnode, IPCMessage *msg)
 		break;
 
 	case FAVOUR_PORT:
-		msg->command = fm->fm_endpoint->ep_port(fm->fm_endpoint, fm->fm_arg1, (ULONG)fm->fm_arg2);
+		msg->command = fm->fm_endpoint->ep_port(fm->fm_endpoint, fm->fm_arg1, (IPTR)fm->fm_arg2);
 		break;
 	case FAVOUR_PASV:
-		msg->command = (ULONG)fm->fm_endpoint->ep_pasv(fm->fm_endpoint);
+		msg->command = (IPTR)fm->fm_endpoint->ep_pasv(fm->fm_endpoint);
 		break;
 	case FAVOUR_REST:
-		msg->command = fm->fm_endpoint->ep_rest(fm->fm_endpoint, (unsigned int)fm->fm_arg1);
+		msg->command = fm->fm_endpoint->ep_rest(fm->fm_endpoint, (unsigned int)(IPTR)fm->fm_arg1);
 		break;
 	case FAVOUR_RETR:
 		msg->command = fm->fm_endpoint->ep_retr(fm->fm_endpoint, fm->fm_arg1);
@@ -2229,19 +2229,19 @@ static int lister_favour(struct ftp_node *ftpnode, IPCMessage *msg)
 		msg->command = fm->fm_endpoint->ep_abor(fm->fm_endpoint);
 		break;
 	case FAVOUR_CHMOD:
-		msg->command = fm->fm_endpoint->ep_chmod(fm->fm_endpoint, fm->fm_arg1, (ULONG)fm->fm_arg2);
+		msg->command = fm->fm_endpoint->ep_chmod(fm->fm_endpoint, fm->fm_arg1, (IPTR)fm->fm_arg2);
 		break;
 	case FAVOUR_SELECT:
 		msg->command = fm->fm_endpoint->ep_select(fm->fm_endpoint);
 		break;
 	case FAVOUR_GETREPLY:
-		msg->command = fm->fm_endpoint->ep_getreply(fm->fm_endpoint, (ULONG)fm->fm_arg1);
+		msg->command = fm->fm_endpoint->ep_getreply(fm->fm_endpoint, (IPTR)fm->fm_arg1);
 		break;
 	case FAVOUR_GETENTRY:
-		msg->command = (ULONG)fm->fm_endpoint->ep_getentry(fm->fm_endpoint, fm->fm_arg1);
+		msg->command = (IPTR)fm->fm_endpoint->ep_getentry(fm->fm_endpoint, fm->fm_arg1);
 		break;
 	case FAVOUR_ERRORREQ:
-		msg->command = fm->fm_endpoint->ep_errorreq(fm->fm_endpoint, fm->fm_arg1, (ULONG)fm->fm_arg2);
+		msg->command = fm->fm_endpoint->ep_errorreq(fm->fm_endpoint, fm->fm_arg1, (IPTR)fm->fm_arg2);
 		break;
 		case FAVOUR_GET_FILE: {
 			struct rec_favour_xfer *xfer = fm->fm_arg1;
@@ -3613,7 +3613,7 @@ void lister(void)
 		#endif*/
 
 	// This returns true if 'data' is filled in correctly
-	if (IPC_ProcStartup((ULONG *)&data, (APTR)&ftplister_init))
+	if (IPC_ProcStartup((IPTR *)&data, (APTR)&ftplister_init))
 	{
 		og = data->spd_ogp;
 		mld.mld_ipc = data->spd_ipc;
@@ -3691,7 +3691,7 @@ static void lister_get_prog_stuff(struct ftp_node *node, ULONG *handle, int *typ
 
 void lister_prog_bar(struct ftp_node *node, int total, int count)
 {
-	ULONG handle;
+	IPTR handle;
 	int type;
 
 	lister_get_prog_stuff(node, &handle, &type);
@@ -3703,7 +3703,7 @@ void lister_prog_bar(struct ftp_node *node, int total, int count)
 
 void lister_prog_bytes(struct ftp_node *node, int total, int count)
 {
-	ULONG handle;
+	IPTR handle;
 	int type;
 
 	lister_get_prog_stuff(node, &handle, &type);
@@ -3715,7 +3715,7 @@ void lister_prog_bytes(struct ftp_node *node, int total, int count)
 
 void lister_prog_clear(struct ftp_node *node)
 {
-	ULONG handle;
+	IPTR handle;
 	int type;
 
 	D(bug("Clear progress\n"));
@@ -3732,7 +3732,7 @@ void lister_prog_clear(struct ftp_node *node)
 
 void lister_prog_info(struct ftp_node *node, char *info)
 {
-	ULONG handle;
+	IPTR handle;
 	int type;
 
 	lister_get_prog_stuff(node, &handle, &type);
@@ -3742,7 +3742,7 @@ void lister_prog_info(struct ftp_node *node, char *info)
 
 void lister_prog_info2(struct ftp_node *node, char *info2)
 {
-	ULONG handle;
+	IPTR handle;
 	int type;
 
 	lister_get_prog_stuff(node, &handle, &type);
@@ -3752,7 +3752,7 @@ void lister_prog_info2(struct ftp_node *node, char *info2)
 
 void lister_prog_info3(struct ftp_node *node, char *info3)
 {
-	ULONG handle;
+	IPTR handle;
 	int type;
 
 	lister_get_prog_stuff(node, &handle, &type);
@@ -3764,7 +3764,7 @@ void lister_prog_info3(struct ftp_node *node, char *info3)
 
 void lister_prog_init(struct ftp_node *node, char *title, char *info, char *name, int file, int bar)
 {
-	ULONG handle;
+	IPTR handle;
 	int type;
 
 	lister_get_prog_stuff(node, &handle, &type);
@@ -3785,7 +3785,7 @@ void lister_prog_init(struct ftp_node *node, char *title, char *info, char *name
 
 void lister_prog_init_multi(struct ftp_node *node, char *title, BOOL short_display, char *name, int file, int bar)
 {
-	ULONG handle;
+	IPTR handle;
 	int type;
 
 	lister_get_prog_stuff(node, &handle, &type);
@@ -3811,7 +3811,7 @@ void lister_prog_init_multi(struct ftp_node *node, char *title, BOOL short_displ
 
 void lister_prog_name(struct ftp_node *node, char *name)
 {
-	ULONG handle;
+	IPTR handle;
 	int type;
 
 	lister_get_prog_stuff(node, &handle, &type);
@@ -3848,7 +3848,7 @@ int lister_get_path(struct ftp_node *node, char *buffer)
 //	Returns 1 if lister has a custom handler
 //	Returns 0 otherwise
 //
-int handle_has_handler(const char *opus, ULONG handle)
+int handle_has_handler(const char *opus, IPTR handle)
 {
 	char *str;
 	int retval = 0;
@@ -3894,7 +3894,7 @@ int lister_request(struct ftp_node *node, struct TagItem *tags)
 		return 1;
 
 	// Get correct IPC pointer
-	ipc = (IPCData *)GetTagData(FR_IPC, (ULONG)node->fn_ipc, tags);
+	ipc = (IPCData *)GetTagData(FR_IPC, (IPTR)node->fn_ipc, tags);
 
 	if ((struct Task *)ipc->proc != FindTask(0))
 	{
@@ -4009,7 +4009,7 @@ int ftplister_write_listformat(struct ftp_node *node, int ok)
 	}
 
 	// Tell Opus lister to update its format
-	IPC_Command(((Lister *)node->fn_handle)->ipc, LISTER_CONFIGURE, 0, (APTR)ok, lf, 0);
+	IPC_Command(((Lister *)node->fn_handle)->ipc, LISTER_CONFIGURE, 0, (APTR)(IPTR)ok, lf, 0);
 
 	return retval;
 }

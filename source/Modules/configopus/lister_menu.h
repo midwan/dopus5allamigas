@@ -36,7 +36,7 @@ typedef struct
 
 	unsigned long seconds, micros;
 
-	ULONG command_list;
+	IPTR command_list;
 
 	struct AppWindow *app_window;
 	struct MsgPort *app_port;

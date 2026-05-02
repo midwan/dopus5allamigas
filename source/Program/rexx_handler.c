@@ -68,7 +68,7 @@ short STDARGS rexx_handler_msg_args(char *handler, DirBuffer *buffer, short flag
 		if (args[arg].ha_Type == HA_Value)
 		{
 			// Set message slot and conversion key bit
-			msg->rm_Args[args[arg].ha_Arg] = (STRPTR)args[arg].ha_Data;
+			msg->rm_Args[args[arg].ha_Arg] = args[arg].ha_Data;
 			type |= 1 << args[arg].ha_Arg;
 		}
 
@@ -87,12 +87,12 @@ short STDARGS rexx_handler_msg_args(char *handler, DirBuffer *buffer, short flag
 				strcat(qualbuf, "subdrop");
 
 			// Set message slot
-			msg->rm_Args[args[arg].ha_Arg] = qualbuf;
+			msg->rm_Args[args[arg].ha_Arg] = (IPTR)qualbuf;
 		}
 
 		// String
 		else
-			msg->rm_Args[args[arg].ha_Arg] = (STRPTR)args[arg].ha_Data;
+			msg->rm_Args[args[arg].ha_Arg] = args[arg].ha_Data;
 
 		// Fix count
 		if (args[arg].ha_Arg > count)

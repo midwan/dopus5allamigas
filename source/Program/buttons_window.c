@@ -510,7 +510,7 @@ BOOL buttons_iconify(Buttons *buttons)
 	tags[0].ti_Tag = DAE_Local;
 	tags[0].ti_Data = 1;
 	tags[1].ti_Tag = DAE_Menu;
-	tags[1].ti_Data = (ULONG)GetString(&locale, MSG_CLOSE);
+	tags[1].ti_Data = (IPTR)GetString(&locale, MSG_CLOSE);
 	tags[2].ti_Tag = DAE_Special;
 	tags[2].ti_Data = 1;
 	tags[3].ti_Tag = TAG_END;

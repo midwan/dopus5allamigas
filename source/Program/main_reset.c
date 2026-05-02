@@ -145,7 +145,7 @@ void main_handle_reset(ULONG *flags, APTR data)
 				GUI->toolbar = new_bar;
 
 				// Give to listers
-				IPC_ListCommand(&GUI->lister_list, LISTER_TOOLBAR, 0, (ULONG)new_bar, TRUE);
+				IPC_ListCommand(&GUI->lister_list, LISTER_TOOLBAR, 0, (IPTR)new_bar, TRUE);
 
 				// Unlock lister list
 				unlock_listlock(&GUI->lister_list);

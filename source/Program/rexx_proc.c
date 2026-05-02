@@ -765,7 +765,7 @@ BOOL rexx_send_msg(struct MinList *list, IPCMessage **imsg, struct MsgPort *port
 		return 0;
 
 	// Build message
-	msg->rm_Args[0] = (char *)(*imsg)->data_free;
+					msg->rm_Args[0] = (IPTR)(*imsg)->data_free;
 	FillRexxMsg(msg, 1, 0);
 
 	// Set flags

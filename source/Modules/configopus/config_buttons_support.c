@@ -61,7 +61,7 @@ short _config_buttons_get_colrow(config_buttons_data *data, short *col, short *r
 Cfg_Button *_config_buttons_get_button(config_buttons_data *data, short col, short row)
 {
 	return (Cfg_Button *)IPC_Command(
-		data->bank_node->button_ipc, BUTTONEDIT_GET_BUTTON, col, (APTR)row, 0, REPLY_NO_PORT);
+		data->bank_node->button_ipc, BUTTONEDIT_GET_BUTTON, col, (APTR)(IPTR)row, 0, REPLY_NO_PORT);
 }
 
 void _config_buttons_flash(config_buttons_data *data, long state)
@@ -143,9 +143,9 @@ void _config_buttons_edit_button(config_buttons_data *data, short col, short row
 			if ((IPC_Launch(&data->bank_node->proc_list,
 							&ipc,
 							"dopus_button_editor",
-							(ULONG)IPC_NATIVE(ButtonEditor),
+							IPC_NATIVE(ButtonEditor),
 							STACK_DEFAULT,
-							(ULONG)startup,
+							(IPTR)startup,
 							(struct Library *)DOSBase)) &&
 				ipc)
 			{
@@ -704,7 +704,7 @@ void button_draw(Cfg_Button *button,
 
 			// Image tags
 			draw_tags[0].ti_Tag = IM_Rectangle;
-			draw_tags[0].ti_Data = (ULONG)dest_rect;
+			draw_tags[0].ti_Data = (IPTR)dest_rect;
 			if (flags & DRAW_MASK)
 			{
 				draw_tags[1].ti_Tag = IM_Mask;
@@ -921,7 +921,7 @@ void _button_to_bank(config_buttons_data *data, Cfg_Button *button, short x, sho
 
 	// Get replacement button
 	if ((replace = (Cfg_Button *)IPC_Command(
-			 data->bank_node->button_ipc, BUTTONEDIT_GET_BUTTON_POINT, (ULONG)&x, (APTR)&y, 0, REPLY_NO_PORT)))
+			 data->bank_node->button_ipc, BUTTONEDIT_GET_BUTTON_POINT, (IPTR)&x, (APTR)(IPTR)&y, 0, REPLY_NO_PORT)))
 	{
 		// Fake button return
 		_config_buttons_fake_return(data, replace, button);
@@ -961,7 +961,7 @@ void palette_editor_init(PaletteBoxData *data)
 	data->stuff.stuff1.palette_tags[0].ti_Data =
 		data->screen_data.pen_count + ((((struct Library *)GfxBase)->lib_Version >= 39) ? 8 : 4);
 	data->stuff.stuff1.palette_tags[1].ti_Tag = GTPA_ColorTable;
-	data->stuff.stuff1.palette_tags[1].ti_Data = (ULONG)data->pen_array;
+	data->stuff.stuff1.palette_tags[1].ti_Data = (IPTR)data->pen_array;
 	data->stuff.stuff1.palette_tags[2].ti_Tag = GTCustom_LayoutRel;
 	data->stuff.stuff1.palette_tags[2].ti_Data = GAD_PALETTE_LAYOUT;
 	data->stuff.stuff1.palette_tags[3].ti_Tag = TAG_END;
@@ -989,7 +989,7 @@ void palette_editor_init(PaletteBoxData *data)
 }
 
 // Initialise function editor startup
-void function_editor_init(FunctionStartup *startup, ULONG command_list)
+void function_editor_init(FunctionStartup *startup, IPTR command_list)
 {
 	// Supply libraries
 	/*startup->dopus_base=DOpusBase;

@@ -167,7 +167,7 @@ DOPUS_FUNC(function_select)
 	// Do wildcard selection
 	if (ret)
 	{
-		IPC_Command(lister->ipc, LISTER_SELECT_WILD, (ULONG)&handle->dest_paths, data, 0, REPLY_NO_PORT);
+		IPC_Command(lister->ipc, LISTER_SELECT_WILD, (IPTR)&handle->dest_paths, data, 0, REPLY_NO_PORT);
 
 		// Refresh window
 		IPC_Command(lister->ipc, LISTER_REFRESH_WINDOW, 0, 0, 0, REPLY_NO_PORT);
@@ -257,7 +257,7 @@ int function_select_complex(IPCData *ipc, SelectData *data, struct Window *paren
 		prot_objects[a].fine_dims.Top = 20;
 		prot_objects[a].fine_dims.Width = 8;
 		prot_objects[a].fine_dims.Height = 6;
-		prot_objects[a].gadget_text = (ULONG)&prot_bits[b * 2];
+		prot_objects[a].gadget_text = (IPTR)&prot_bits[b * 2];
 		prot_objects[a].flags = TEXTFLAG_TEXT_STRING | BUTTONFLAG_TOGGLE_SELECT;
 		prot_objects[a].gadgetid = GAD_SELECT_PROTECTION + a;
 		prot_objects[a].taglist = _select_layout_tags;
@@ -281,10 +281,10 @@ int function_select_complex(IPCData *ipc, SelectData *data, struct Window *paren
 	FreeVec(prot_objects);
 
 	// Initialise gadgets
-	SetGadgetValue(objlist, GAD_SELECT_NAME_STRING, (ULONG)data->name);
+	SetGadgetValue(objlist, GAD_SELECT_NAME_STRING, (IPTR)data->name);
 	SetGadgetValue(objlist, GAD_SELECT_NAME_CYCLE, (ULONG)data->name_match);
-	SetGadgetValue(objlist, GAD_SELECT_DATE_FROM, (ULONG)data->date_from);
-	SetGadgetValue(objlist, GAD_SELECT_DATE_TO, (ULONG)data->date_to);
+	SetGadgetValue(objlist, GAD_SELECT_DATE_FROM, (IPTR)data->date_from);
+	SetGadgetValue(objlist, GAD_SELECT_DATE_TO, (IPTR)data->date_to);
 	SetGadgetValue(objlist, GAD_SELECT_DATE_CYCLE, (ULONG)data->date_match);
 	SetGadgetValue(objlist, GAD_SELECT_PROT_CYCLE, (ULONG)data->bits_match);
 	SetGadgetValue(objlist, GAD_SELECT_COMPARE_TYPE_CYCLE, (ULONG)data->compare);
@@ -531,5 +531,5 @@ void function_select_file(FunctionHandle *handle, Lister *lister, char *filename
 	data.include = SELECT_INCLUDE;
 
 	// Select file
-	IPC_Command(lister->ipc, LISTER_SELECT_WILD, (ULONG)&handle->dest_paths, &data, 0, (struct MsgPort *)-1);
+	IPC_Command(lister->ipc, LISTER_SELECT_WILD, (IPTR)&handle->dest_paths, &data, 0, (struct MsgPort *)-1);
 }

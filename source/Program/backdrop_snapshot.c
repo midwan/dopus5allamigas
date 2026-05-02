@@ -235,7 +235,7 @@ void backdrop_snapshot(BackdropInfo *info, BOOL unsnapshot, BOOL all, BackdropOb
 					if (left->node.ln_Type == PTYPE_LEFTOUT)
 					{
 						// Match this icon?
-						if (object->misc_data == (ULONG)left)
+						if (object->misc_data == (IPTR)left)
 							break;
 					}
 				}

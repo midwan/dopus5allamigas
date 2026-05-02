@@ -95,7 +95,7 @@ int get_path_root(char *path, char *root_name, struct DateStamp *date)
 	}
 	else
 #endif
-		DoPkt(proc->dvp_Port, ACTION_DISK_INFO, MKBADDR(info), 0, 0, 0, 0);
+		DoPkt(proc->dvp_Port, ACTION_DISK_INFO, (SIPTR)MKBADDR(info), 0, 0, 0, 0);
 
 	// Get DOS list pointer
 	if (!(dos = (struct DosList *)BADDR(info->id_VolumeNode)))

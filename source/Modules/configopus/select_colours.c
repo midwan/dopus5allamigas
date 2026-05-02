@@ -13,7 +13,7 @@ void SAVEDS PaletteBox(void)
 	IPCData *ipc;
 
 	// Do startup
-	if (!(ipc = Local_IPC_ProcStartup((ULONG *)&data, 0)))
+	if (!(ipc = Local_IPC_ProcStartup((IPTR *)&data, 0)))
 	{
 		Forbid();
 		return;
@@ -107,7 +107,7 @@ void SAVEDS PaletteBox(void)
 						data->bgpen = bg;
 
 						// Send new colours
-						IPC_Command(data->owner_ipc, BUTTONEDIT_NEW_COLOURS, data->fgpen, (APTR)data->bgpen, 0, 0);
+						IPC_Command(data->owner_ipc, BUTTONEDIT_NEW_COLOURS, data->fgpen, (APTR)(IPTR)data->bgpen, 0, 0);
 					}
 
 					// Key
@@ -165,7 +165,7 @@ struct Window *palette_box_open(PaletteBoxData *data, ObjectDef *objects, short 
 			tags[0].ti_Tag = GTPA_NumColors;
 			tags[0].ti_Data = data->pen_count + ((((struct Library *)IntuitionBase)->lib_Version >= 39) ? 8 : 4);
 			tags[1].ti_Tag = GTPA_ColorTable;
-			tags[1].ti_Data = (ULONG)((a == 0) ? pen_array1 : pen_array2);
+			tags[1].ti_Data = (IPTR)((a == 0) ? pen_array1 : pen_array2);
 			tags[2].ti_Tag = TAG_END;
 
 			// Check number of pens
@@ -241,7 +241,7 @@ long LIBFUNC L_ShowPaletteBox(REG(a0, struct Window *parent),
 		extra = 1;
 
 	// Get dimensions, set to mouse centering
-	CopyMem((char *)(extra) ? &_palette_box_cust_window : &_palette_box_window, (char *)&dims, sizeof(ConfigWindow));
+	CopyMem((char *)(extra ? &_palette_box_cust_window : &_palette_box_window), (char *)&dims, sizeof(ConfigWindow));
 	dims.char_dim.Left = POS_MOUSE_CENTER;
 	dims.char_dim.Top = POS_MOUSE_CENTER;
 
@@ -335,7 +335,7 @@ long LIBFUNC L_ShowPaletteBox(REG(a0, struct Window *parent),
 					max = (1 << data->stuff.stuff2.gun_bits[a]) - 1;
 
 					// Set limit
-					SetGadgetChoices(data->list, GAD_PALETTE_RED_FORE + (b * 3) + a, (APTR)((ULONG)max << 16));
+					SetGadgetChoices(data->list, GAD_PALETTE_RED_FORE + (b * 3) + a, (APTR)(IPTR)((IPTR)max << 16));
 
 					// Initialise value
 					SetGadgetValue(data->list,

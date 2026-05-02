@@ -109,7 +109,7 @@ struct ftp_node
 {
 	struct Node fn_node;			// For linking
 	struct opusftp_globals *fn_og;	// Points back to global info
-	ULONG fn_handle;				// Lister handle
+	IPTR fn_handle;					// Lister handle
 	IPCData *fn_ipc;				// IPC of this lister process
 	struct ftp_info fn_ftp;			// Socket & site details + FTP reply code
 	struct ftp_sftp_session fn_sftp;	// SSH/SFTP session details
@@ -180,7 +180,7 @@ struct update_info
 	struct SignalSemaphore ui_sem;
 	ULONG ui_flags;	 // See below...
 	struct ftp_node *ui_ftpnode;
-	ULONG ui_handle;  // Lister
+	IPTR ui_handle;  // Lister
 	char *ui_opus;	  // Opus Arexx port name
 	BOOL *ui_abort;	  // TRUE when transfer is aborted - This is the only part the FTP code needs
 	char *ui_filename;
@@ -276,7 +276,7 @@ void STDARGS logprintf(char *fmt, ...);
 void lister_add(struct ftp_node *, char *name, int size, int type, ULONG seconds, LONG prot, char *comment);
 void ftplister_refresh(struct ftp_node *, int date);
 
-struct ftp_node *find_ftpnode(struct opusftp_globals *, ULONG handle);
+struct ftp_node *find_ftpnode(struct opusftp_globals *, IPTR handle);
 
 int lister_synch_path(struct ftp_info *, char *result);
 BOOL entry_info_from_lister(struct ftp_node *, char *name, struct entry_info *, ULONG flags);
@@ -338,10 +338,10 @@ void lister_prog_name(struct ftp_node *, char *name);
 int lister_request(struct ftp_node *, struct TagItem *tags);
 #define lister_request_tags(node, ...)                  \
 	({                                                  \
-		IPTR _tags[] = {__VA_ARGS__};                   \
+		IPTR _tags[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)}; \
 		lister_request(node, (struct TagItem *)&_tags); \
 	})
-int handle_has_handler(const char *opus, ULONG handle);
+int handle_has_handler(const char *opus, IPTR handle);
 int lister_get_path(struct ftp_node *, char *buffer);
 int lister_long_message(struct ftp_node *, Att_List *msg, ULONG flags);
 

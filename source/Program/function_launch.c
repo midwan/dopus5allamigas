@@ -173,9 +173,9 @@ BOOL function_launch(ULONG command,
 	if (!(IPC_Launch(&GUI->function_list,
 					 &ipc,
 					 "dopus_function",
-					 (ULONG)&function_launch_code,
+					 (IPTR)&function_launch_code,
 					 STACK_DEFAULT,
-					 (ULONG)handle,
+					 (IPTR)handle,
 					 (struct Library *)DOSBase)))
 	{
 		if (!ipc)
@@ -340,7 +340,7 @@ IPC_EntryCode(function_launch_code, static)
 	IPCData *ipc;
 
 	// Get startup message
-	if (!(ipc = IPC_ProcStartup((ULONG *)&handle, &function_init)))
+	if (!(ipc = IPC_ProcStartup((IPTR *)&handle, &function_init)))
 	{
 		function_free(handle);
 		return;

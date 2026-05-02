@@ -31,9 +31,9 @@ void ipc_remove_list(IPCData *ipc);
 int LIBFUNC L_IPC_Launch(REG(a0, struct ListLock *list),
 						 REG(a1, IPCData **storage),
 						 REG(a2, char *name),
-						 REG(d0, ULONG entry),
+						 REG(d0, IPTR entry),
 						 REG(d1, ULONG stack),
-						 REG(d2, ULONG data),
+						 REG(d2, IPTR data),
 						 REG(a3, struct Library *dos_base),
 						 REG(a6, struct MyLibrary *libbase))
 {
@@ -43,7 +43,7 @@ int LIBFUNC L_IPC_Launch(REG(a0, struct ListLock *list),
 	struct TagItem *tags;
 	BPTR pathlist = 0;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -73,9 +73,9 @@ int LIBFUNC L_IPC_Launch(REG(a0, struct ListLock *list),
 	tags[0].ti_Tag = NP_Entry;
 	tags[0].ti_Data = IPC_GET_ENTRY(entry);
 	tags[1].ti_Tag = NP_Name;
-	tags[1].ti_Data = (ULONG)name;
+	tags[1].ti_Data = (IPTR)name;
 	tags[2].ti_Tag = NP_WindowPtr;
-	tags[2].ti_Data = (ULONG)-1;
+	tags[2].ti_Data = (IPTR)-1;
 	tags[3].ti_Tag = NP_StackSize;
 	tags[3].ti_Data = IPCM_STACK(stack);
 	tags[4].ti_Tag = NP_Priority;
@@ -108,7 +108,7 @@ int LIBFUNC L_IPC_Launch(REG(a0, struct ListLock *list),
 		tags[5].ti_Tag = NP_Cli;
 		tags[5].ti_Data = TRUE;
 		tags[6].ti_Tag = NP_Path;
-		tags[6].ti_Data = (ULONG)pathlist;
+		tags[6].ti_Data = (IPTR)pathlist;
 		tags[7].ti_Tag = TAG_END;
 	}
 	else
@@ -152,7 +152,7 @@ int LIBFUNC L_IPC_Startup(REG(a0, IPCData *ipc), REG(a1, APTR data), REG(a2, str
 	// Fill out startup message
 	startup.msg.mn_ReplyPort = reply;
 	startup.command = IPC_STARTUP;
-	startup.flags = (ULONG)ipc;
+	startup.flags = (IPTR)ipc;
 	startup.data = data;
 
 	// Send the startup message
@@ -190,7 +190,7 @@ STATIC ULONG CallStartupCode(ULONG (*ASM code)(REG(a0, IPCData *), REG(a1, APTR)
 }
 
 // Generic IPC startup code
-IPCData *LIBFUNC L_IPC_ProcStartup(REG(a0, ULONG *data), REG(a1, ULONG (*ASM code)(REG(a0, IPCData *), REG(a1, APTR))))
+IPCData *LIBFUNC L_IPC_ProcStartup(REG(a0, IPTR *data), REG(a1, ULONG (*ASM code)(REG(a0, IPCData *), REG(a1, APTR))))
 {
 	IPCData *ipc;
 	IPCMessage *msg;
@@ -214,7 +214,7 @@ IPCData *LIBFUNC L_IPC_ProcStartup(REG(a0, ULONG *data), REG(a1, ULONG (*ASM cod
 
 	// Save data pointer
 	if (data)
-		*data = (ULONG)msg->data;
+		*data = (IPTR)msg->data;
 
 	// Run startup code, create command and reply ports
 	if (!CallStartupCode(code, ipc, msg->data) || !(ipc->command_port = CreateMsgPort()) ||
@@ -294,17 +294,17 @@ void LIBFUNC L_IPC_Flush(REG(a0, IPCData *ipc))
 }
 
 // Send an IPC command
-ULONG LIBFUNC L_IPC_Command(REG(a0, IPCData *ipc),
-							REG(d0, ULONG command),
-							REG(d1, ULONG flags),
-							REG(a1, APTR data),
-							REG(a2, APTR data_free),
-							REG(a3, struct MsgPort *reply))
+IPTR LIBFUNC L_IPC_Command(REG(a0, IPCData *ipc),
+						   REG(d0, ULONG command),
+						   REG(d1, IPTR flags),
+						   REG(a1, APTR data),
+						   REG(a2, APTR data_free),
+						   REG(a3, struct MsgPort *reply))
 {
 	struct MsgPort *port = 0;
 	IPCData *sender_ipc = 0;
 	IPCMessage *msg;
-	ULONG result = 1;
+	IPTR result = 1;
 	struct Task *task;
 	APTR memory = 0;
 
@@ -442,16 +442,16 @@ ULONG LIBFUNC L_IPC_Command(REG(a0, IPCData *ipc),
 }
 
 // Send a safe command
-ULONG LIBFUNC L_IPC_SafeCommand(REG(a0, IPCData *ipc),
-								REG(d0, ULONG command),
-								REG(d1, ULONG flags),
-								REG(a1, APTR data),
-								REG(a2, APTR data_free),
-								REG(a3, struct MsgPort *reply),
-								REG(a4, struct ListLock *list))
+IPTR LIBFUNC L_IPC_SafeCommand(REG(a0, IPCData *ipc),
+							   REG(d0, ULONG command),
+							   REG(d1, IPTR flags),
+							   REG(a1, APTR data),
+							   REG(a2, APTR data_free),
+							   REG(a3, struct MsgPort *reply),
+							   REG(a4, struct ListLock *list))
 {
 	IPCData *look;
-	ULONG res = (ULONG)-1;
+	IPTR res = -1;
 
 	// Lock list
 	L_GetSemaphore(&list->lock, SEMF_SHARED, 0);
@@ -496,7 +496,7 @@ void LIBFUNC L_IPC_Reply(REG(a0, IPCMessage *msg))
 IPCData *LIBFUNC L_IPC_FindProc(REG(a0, struct ListLock *list),
 								REG(a1, char *name),
 								REG(d0, BOOL activate),
-								REG(d1, ULONG data))
+								REG(d1, IPTR data))
 {
 	IPCData *ipc;
 
@@ -601,7 +601,7 @@ void LIBFUNC L_IPC_Goodbye(REG(a0, IPCData *ipc), REG(a1, IPCData *owner), REG(d
 }
 
 // Get a goodbye message from an IPC process
-ULONG LIBFUNC L_IPC_GetGoodbye(REG(a0, IPCMessage *msg))
+IPTR LIBFUNC L_IPC_GetGoodbye(REG(a0, IPCMessage *msg))
 {
 	return msg->flags;
 }
@@ -686,8 +686,8 @@ ULONG LIBFUNC L_IPC_ListQuit(REG(a0, struct ListLock *list),
 // Send a command to list of processes
 void LIBFUNC L_IPC_ListCommand(REG(a0, struct ListLock *list),
 							   REG(d0, ULONG command),
-							   REG(d1, ULONG flags),
-							   REG(d2, ULONG data),
+							   REG(d1, IPTR flags),
+							   REG(d2, IPTR data),
 							   REG(d3, BOOL wait))
 {
 	IPCData *ipc;

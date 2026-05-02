@@ -54,7 +54,7 @@ BOOL buttons_button_popup(Buttons *buttons, UWORD code)
 		return 0;
 
 	// Get menu handle
-	if (!(menu = PopUpNewHandle((ULONG)buttons, GET_CALLBACK(buttons_refresh_callback), &locale)))
+	if (!(menu = PopUpNewHandle((IPTR)buttons, GET_CALLBACK(buttons_refresh_callback), &locale)))
 		return 0;
 
 	// Backfill hook?
@@ -76,7 +76,7 @@ BOOL buttons_button_popup(Buttons *buttons, UWORD code)
 		{
 			// Get menu item
 			if ((item = PopUpNewItem(menu,
-									 (ULONG)((func->node.ln_Name) ? func->node.ln_Name : func->label),
+									 (IPTR)((func->node.ln_Name) ? func->node.ln_Name : func->label),
 									 0,
 									 checkit | POPUPF_STRING)))
 			{
@@ -147,7 +147,7 @@ UWORD button_border_popup(Buttons *buttons)
 	UWORD res;
 
 	// Create menu
-	if (!(menu = PopUpNewHandle((ULONG)buttons, GET_CALLBACK(buttons_refresh_callback), &locale)))
+	if (!(menu = PopUpNewHandle((IPTR)buttons, GET_CALLBACK(buttons_refresh_callback), &locale)))
 		return 0;
 
 	// Backfill hook?

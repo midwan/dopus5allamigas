@@ -22,6 +22,7 @@ For more information on Directory Opus for Windows please see:
 */
 
 #include "dopus.h"
+#include <stdio.h>
 #include <proto/module.h>
 
 // version_num is actually revision number & used elsewhere in the program
@@ -52,7 +53,7 @@ void show_about(struct Screen *screen, IPCData *ipc)
 		return;
 
 	// Build lines
-	lsprintf(buf, "%s %ld.%ld %s", (IPTR)dopus_name, PROG_VERSION, PROG_REVISION, (IPTR)version_string);
+	snprintf(buf, sizeof(buf), "%s %ld.%ld %s", dopus_name, (long)PROG_VERSION, (long)PROG_REVISION, version_string);
 	Att_NewNode(list, buf, 2, 0);
 	Att_NewNode(list, about_1, 2, 0);
 	Att_NewNode(list, about_2, 2, 0);

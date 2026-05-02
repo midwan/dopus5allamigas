@@ -54,14 +54,14 @@ struct super_request_data
 // Prototypes
 #define super_request_args(parent, message, ...)                       \
 	({                                                                 \
-		IPTR __args[] = {__VA_ARGS__};                                 \
-		(short)super_request(parent, message, NULL, (ULONG *)&__args); \
+		IPTR __args[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)};            \
+		(short)super_request(parent, message, NULL, __args);           \
 	})
-short super_request(APTR, char *, IPCData *, ULONG *);
+short super_request(APTR, char *, IPCData *, IPTR *);
 
 #define error_request(window, flags, ...)                        \
 	({                                                           \
-		IPTR __text[] = {__VA_ARGS__};                           \
+		IPTR __text[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)};      \
 		(short)error_request_a(window, flags, (char **)&__text); \
 	})
 short error_request_a(struct Window *window, short, char **text);

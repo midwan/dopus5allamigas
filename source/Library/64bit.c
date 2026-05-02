@@ -124,7 +124,16 @@ void LIBFUNC L_DivideToString64(REG(a0, char *string),
 		if (atoi(rem_buf) != 0)
 		{
 			char *ptr = string + strlen(string);
-			lsprintf(ptr, "%lc%s", decimal_point, (IPTR)&rem_buf);
+
+			if (ptr < string + str_size - 1)
+			{
+				int remaining;
+
+				*ptr++ = decimal_point;
+				remaining = (int)(string + str_size - ptr);
+				if (remaining > 0)
+					stccpy(ptr, rem_buf, remaining);
+			}
 		}
 	}
 }
@@ -207,6 +216,8 @@ BOOL LIBFUNC L_ExamineLock64(REG(d0, BPTR lock), REG(a0, FileInfoBlock64 *fib))
 
 #ifdef __MORPHOS__
 	success = Examine64(lock, fib, TAG_DONE);
+#elif defined(__AROS__)
+	success = Examine(lock, (struct FileInfoBlock *)fib);
 #else
 	success = Examine(lock, (struct FileInfoBlock *)fib);
 	fib->fib_Size64 = (UQUAD)((struct FileInfoBlock *)fib)->fib_Size;
@@ -245,6 +256,8 @@ BOOL LIBFUNC L_ExamineNext64(REG(d0, BPTR lock), REG(a0, FileInfoBlock64 *fib))
 
 #ifdef __MORPHOS__
 	success = ExNext64(lock, fib, TAG_DONE);
+#elif defined(__AROS__)
+	success = ExNext(lock, (struct FileInfoBlock *)fib);
 #else
 	success = ExNext(lock, (struct FileInfoBlock *)fib);
 	fib->fib_Size64 = (UQUAD)((struct FileInfoBlock *)fib)->fib_Size;
@@ -292,6 +305,8 @@ BOOL LIBFUNC L_ExamineHandle64(REG(d0, BPTR fh), REG(a0, FileInfoBlock64 *fib))
 
 #ifdef __MORPHOS__
 	success = ExamineFH64(fh, fib, TAG_DONE);
+#elif defined(__AROS__)
+	success = ExamineFH(fh, (struct FileInfoBlock *)fib);
 #else
 	success = ExamineFH(fh, (struct FileInfoBlock *)fib);
 	fib->fib_Size64 = (UQUAD)((struct FileInfoBlock *)fib)->fib_Size;
@@ -330,7 +345,7 @@ LONG LIBFUNC L_MatchFirst64(REG(a0, STRPTR pat), REG(a1, struct AnchorPath *panc
 	LONG error = 0;
 
 	error = MatchFirst(pat, panchor);
-#ifndef __MORPHOS__
+#if !defined(__MORPHOS__) && !defined(__AROS__)
 	((FileInfoBlock64 *)&panchor->ap_Info)->fib_Size64 = (UQUAD)panchor->ap_Info.fib_Size;
 #endif
 
@@ -367,7 +382,7 @@ LONG LIBFUNC L_MatchNext64(REG(a0, struct AnchorPath *panchor))
 	LONG error = 0;
 
 	error = MatchNext(panchor);
-#ifndef __MORPHOS__
+#if !defined(__MORPHOS__) && !defined(__AROS__)
 	((FileInfoBlock64 *)&panchor->ap_Info)->fib_Size64 = (UQUAD)panchor->ap_Info.fib_Size;
 #endif
 

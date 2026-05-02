@@ -124,7 +124,7 @@ BPTR LIBFUNC L_OriginalCreateDir(REG(d1, char *name), REG(a6, struct MyLibrary *
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -227,7 +227,7 @@ long LIBFUNC L_OriginalDeleteFile(REG(d1, char *name), REG(a6, struct MyLibrary 
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -326,7 +326,7 @@ BOOL LIBFUNC L_OriginalSetFileDate(REG(d1, char *name),
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -423,7 +423,7 @@ BOOL LIBFUNC L_OriginalSetComment(REG(d1, char *name), REG(d2, char *comment), R
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -520,7 +520,7 @@ BOOL LIBFUNC L_OriginalSetProtection(REG(d1, char *name), REG(d2, ULONG mask), R
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -656,7 +656,7 @@ BOOL LIBFUNC L_OriginalRename(REG(d1, char *oldname), REG(d2, char *newname), RE
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -720,7 +720,7 @@ BOOL LIBFUNC L_OriginalRelabel(REG(d1, char *volumename), REG(d2, char *name), R
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -892,7 +892,7 @@ BPTR LIBFUNC L_OriginalOpen(REG(d1, char *name), REG(d2, LONG accessMode), REG(a
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -1022,7 +1022,7 @@ BOOL LIBFUNC L_OriginalClose(REG(d1, BPTR file), REG(a6, struct MyLibrary *libba
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -1094,7 +1094,7 @@ LONG LIBFUNC L_OriginalWrite(REG(d1, BPTR file),
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 

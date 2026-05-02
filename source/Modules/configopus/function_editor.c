@@ -57,7 +57,7 @@ void FunctionEditor(void)
 	ConfigWindow windims;
 
 	// Do startup
-	if (!(ipc = Local_IPC_ProcStartup((ULONG *)&startup, (APTR)&funced_init)))
+	if (!(ipc = Local_IPC_ProcStartup((IPTR *)&startup, (APTR)&funced_init)))
 	{
 		funced_cleanup(startup->data);
 		return;
@@ -162,7 +162,7 @@ void FunctionEditor(void)
 			else if (submsg->command == CFG_NEW_ID)
 			{
 				data->function->function.func_type = submsg->flags;
-				startup->object_flags = (ULONG)submsg->data;
+				startup->object_flags = (IPTR)submsg->data;
 			}
 
 			// Copy a function
@@ -560,15 +560,15 @@ void FunctionEditor(void)
 
 							// File requester tags
 							tags[0].ti_Tag = ASLFR_Window;
-							tags[0].ti_Data = (ULONG)data->window;
+							tags[0].ti_Data = (IPTR)data->window;
 							tags[1].ti_Tag = ASLFR_TitleText;
-							tags[1].ti_Data = (ULONG)GetString(startup->locale, MSG_FUNCED_SELECT_FILE);
+							tags[1].ti_Data = (IPTR)GetString(startup->locale, MSG_FUNCED_SELECT_FILE);
 							tags[2].ti_Tag = ASLFR_Flags1;
 							tags[2].ti_Data = FRF_DOSAVEMODE | FRF_PRIVATEIDCMP;
 							tags[3].ti_Tag = ASLFR_Flags2;
 							tags[3].ti_Data = FRF_REJECTICONS;
 							tags[4].ti_Tag = (gadgetid == MENU_FUNCED_EXPORT_CMD) ? ASLFR_InitialDrawer : TAG_DONE;
-							tags[4].ti_Data = (ULONG) "DOpus5:Commands";
+							tags[4].ti_Data = (IPTR) "DOpus5:Commands";
 							tags[5].ti_Tag = TAG_DONE;
 
 							// Show filerequester
@@ -939,7 +939,7 @@ void funced_decompile(FuncEdData *data)
 				strcpy(entry->buffer, ins->string);
 
 			// Add entry to list
-			if (!(entry->node = Att_NewNode(data->function_list, 0, (ULONG)entry, 0)))
+			if (!(entry->node = Att_NewNode(data->function_list, 0, (IPTR)entry, 0)))
 				FreeVec(entry);
 		}
 	}
@@ -1007,7 +1007,7 @@ void funced_build_entrydisplay(FuncEdData *data, Att_Node *node, FunctionEntry *
 {
 	// If node is 0, create a new one
 	if (!node)
-		node = Att_NewNode(data->func_display_list, 0, (ULONG)entry, 0);
+		node = Att_NewNode(data->func_display_list, 0, (IPTR)entry, 0);
 
 	// Check valid node and data
 	if (!node || !node->node.ln_Succ || !entry)
@@ -1037,7 +1037,7 @@ void funced_start_edit(FuncEdData *data)
 		data->objlist, GAD_FUNCED_LISTER, Att_NodeDataNumber(data->func_display_list, data->edit_node->data));
 
 	// Copy string
-	SetGadgetValue(data->objlist, GAD_FUNCED_EDIT, (ULONG)((FunctionEntry *)data->edit_node->data)->buffer);
+	SetGadgetValue(data->objlist, GAD_FUNCED_EDIT, (IPTR)((FunctionEntry *)data->edit_node->data)->buffer);
 	DisableObject(data->objlist, GAD_FUNCED_EDIT, FALSE);
 
 	// Set function type
@@ -1203,13 +1203,13 @@ Att_Node *funced_new_entry(FuncEdData *data, Att_Node *insert, FunctionEntry *co
 		}
 
 		// Create new function node
-		entry->node = Att_NewNode(data->function_list, 0, (ULONG)entry, 0);
+		entry->node = Att_NewNode(data->function_list, 0, (IPTR)entry, 0);
 
 		// Detach existing list
 		SetGadgetChoices(data->objlist, GAD_FUNCED_LISTER, (APTR)~0);
 
 		// Create new display node
-		node = Att_NewNode(data->func_display_list, 0, (ULONG)entry, 0);
+		node = Att_NewNode(data->func_display_list, 0, (IPTR)entry, 0);
 
 		// If insert, position nodes
 		if (insert)
@@ -1381,7 +1381,7 @@ void funced_init_gads(FuncEdData *data)
 
 	// Want a label?
 	if (data->startup->flags & FUNCEDF_LABEL)
-		SetGadgetValue(data->p_objlist, GAD_FUNCED_LABEL, (ULONG)data->label);
+		SetGadgetValue(data->p_objlist, GAD_FUNCED_LABEL, (IPTR)data->label);
 }
 
 // Show key
@@ -1404,7 +1404,7 @@ void funced_show_key(FuncEdData *data)
 					   buffer);
 
 		// Fill out gadget
-		SetGadgetValue(data->objlist, GAD_FUNCED_KEY, (ULONG)buffer);
+		SetGadgetValue(data->objlist, GAD_FUNCED_KEY, (IPTR)buffer);
 	}
 }
 
@@ -1449,7 +1449,7 @@ BOOL funced_command_req(FuncEdData *data, char *buffer, short type)
 						lsprintf(buf, "%s\t%s", command->name, command->desc);
 
 						// Add to requester list (sorted)
-						Att_NewNode(command_list, buf, (ULONG)command, ADDNODE_SORT);
+						Att_NewNode(command_list, buf, (IPTR)command, ADDNODE_SORT);
 					}
 				}
 			}
@@ -1613,13 +1613,13 @@ BOOL funced_command_req(FuncEdData *data, char *buffer, short type)
 
 		// Fill out requester tags
 		tags[0].ti_Tag = ASLFR_Window;
-		tags[0].ti_Data = (ULONG)data->window;
+		tags[0].ti_Data = (IPTR)data->window;
 		tags[1].ti_Tag = ASLFR_TitleText;
-		tags[1].ti_Data = (ULONG)GetString(data->locale, MSG_SELECT_FILE);
+		tags[1].ti_Data = (IPTR)GetString(data->locale, MSG_SELECT_FILE);
 		tags[2].ti_Tag = ASLFR_InitialFile;
-		tags[2].ti_Data = (ULONG) "";
+		tags[2].ti_Data = (IPTR) "";
 		tags[3].ti_Tag = (data->last_type != type) ? ASLFR_InitialDrawer : TAG_IGNORE;
-		tags[3].ti_Data = (ULONG)((type == INST_SCRIPT) ? "s:" : ((type == INST_AREXX) ? "DOpus5:ARexx/" : ""));
+		tags[3].ti_Data = (IPTR)((type == INST_SCRIPT) ? "s:" : ((type == INST_AREXX) ? "DOpus5:ARexx/" : ""));
 		tags[4].ti_Tag = ASLFR_Flags1;
 		tags[4].ti_Data = FRF_PRIVATEIDCMP;
 		tags[5].ti_Tag = TAG_END;
@@ -1678,7 +1678,7 @@ void funced_appmsg(FuncEdData *data, struct AppMessage *msg)
 			}
 
 			// Fill out field
-			SetGadgetValue(data->p_objlist, GAD_FUNCED_LABEL, (ULONG)buf);
+			SetGadgetValue(data->p_objlist, GAD_FUNCED_LABEL, (IPTR)buf);
 			return;
 		}
 	}
@@ -1709,14 +1709,14 @@ void funced_appmsg(FuncEdData *data, struct AppMessage *msg)
 			if ((entry = AllocVec(sizeof(FunctionEntry), MEMF_CLEAR)))
 			{
 				// Create new function node
-				entry->node = Att_NewNode(data->function_list, 0, (ULONG)entry, 0);
+				entry->node = Att_NewNode(data->function_list, 0, (IPTR)entry, 0);
 
 				// Fill out entry
 				strcpy(entry->buffer, ins->string);
 				entry->type = ins->type;
 
 				// Create display node
-				node = Att_NewNode(data->func_display_list, 0, (ULONG)entry, 0);
+				node = Att_NewNode(data->func_display_list, 0, (IPTR)entry, 0);
 
 				// Build display node
 				funced_build_entrydisplay(data, node, entry);
@@ -2106,7 +2106,7 @@ void funced_edit_insertstring(ObjectList *list,
 	StrConcat(buffer, tempbuf, 255);
 
 	// Set new string in gadget
-	SetGadgetValue(list, id, (ULONG)buffer);
+	SetGadgetValue(list, id, (IPTR)buffer);
 
 	// Bump buffer position
 	((struct StringInfo *)gadget->SpecialInfo)->BufferPos += addlen + strlen(string);

@@ -74,7 +74,7 @@ int buttons_process_msg(Buttons *buttons, struct IntuiMessage *msg)
 			}
 
 			// See if we can handle it
-			if ((a = buttons_do_function(buttons, (ULONG)(IPTR)GTMENUITEM_USERDATA(item))) == -1)
+			if ((a = buttons_do_function(buttons, (IPTR)GTMENUITEM_USERDATA(item))) == -1)
 			{
 				MenuEvent *event;
 
@@ -543,7 +543,7 @@ int buttons_process_msg(Buttons *buttons, struct IntuiMessage *msg)
 						IPC_Command(buttons->editor,
 									BUTTONEDIT_SELECT_BUTTON,
 									buttons->editor_sel_col,
-									(APTR)buttons->editor_sel_row,
+									(APTR)(IPTR)buttons->editor_sel_row,
 									0,
 									0);
 
@@ -555,7 +555,7 @@ int buttons_process_msg(Buttons *buttons, struct IntuiMessage *msg)
 							IPC_Command(buttons->editor,
 										BUTTONEDIT_EDIT_BUTTON,
 										buttons->editor_sel_col,
-										(APTR)buttons->editor_sel_row,
+										(APTR)(IPTR)buttons->editor_sel_row,
 										0,
 										0);
 
