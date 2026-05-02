@@ -584,7 +584,7 @@ static APTR open_button_image(char *name)
 		return 0;
 
 	len = strlen(name);
-	if (len + 6 > sizeof(image_name))
+	if (len + 6 >= sizeof(image_name))
 		return 0;
 
 	strcpy(image_name, name);
