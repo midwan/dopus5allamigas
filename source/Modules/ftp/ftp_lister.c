@@ -109,12 +109,6 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_addrsupp_protos.h"
 #include "ftp_protect.h"
 
-#if defined(__AROS__) && defined(__x86_64__)
-	#define FTP_LISTER_ADD_VIA_REXX 1
-#else
-	#define FTP_LISTER_ADD_VIA_REXX 0
-#endif
-
 /********************************/
 
 //
@@ -148,12 +142,10 @@ void STDARGS logprintf(char *fmt, ...)
 //
 void lister_add(struct ftp_node *node, char *name, int size, int type, ULONG seconds, LONG prot, char *comment)
 {
-#if !FTP_LISTER_ADD_VIA_REXX
 	static D_S(struct FileInfoBlock, fib) APTR entry;
 	LONG etype;
 	struct TagItem tags[2] = {{HFFS_NAME, 0}, {TAG_DONE}};
 	DOpusCallbackInfo *infoptr;
-#endif
 	unsigned int entry_size;
 	int entry_type = type;
 
@@ -161,51 +153,31 @@ void lister_add(struct ftp_node *node, char *name, int size, int type, ULONG sec
 	if (!node || !name)
 		return;
 
-#if !FTP_LISTER_ADD_VIA_REXX
 	infoptr = &node->fn_og->og_hooks;
-#endif
 
 	switch (type)
 	{
 	case 1:
-#if !FTP_LISTER_ADD_VIA_REXX
 		etype = ST_USERDIR;
-#endif
 		break;
 	case -1:
-#if !FTP_LISTER_ADD_VIA_REXX
 		etype = ST_FILE;
-#endif
 		break;
 	case 3:
-#if !FTP_LISTER_ADD_VIA_REXX
 		etype = ST_LINKDIR;
-#endif
 		break;
 	case -3:
-#if !FTP_LISTER_ADD_VIA_REXX
 		etype = ST_LINKFILE;
-#endif
 		break;
 	default:
 		D(bug("** lst_add() bad type %d\n", type));
 		entry_type = -1;
-#if !FTP_LISTER_ADD_VIA_REXX
 		etype = ST_FILE;
-#endif
 		break;
 	}
 
 	entry_size = (entry_type > 0) ? 0 : (unsigned int)size;
 
-#if FTP_LISTER_ADD_VIA_REXX
-	{
-		IPTR rc = rexx_lst_add(node->fn_opus, node->fn_handle, name, entry_size, entry_type, seconds, prot, comment);
-
-		if (rc && node->fn_og && node->fn_og->og_oc.oc_log_debug)
-			logprintf("-- Lister add failed: rc %ld, name '%s', type %ld\n", (long)rc, name, (long)entry_type);
-	}
-#else
 	fib->fib_DirEntryType = etype;
 
 	stccpy(fib->fib_FileName, name, sizeof(fib->fib_FileName));
@@ -233,7 +205,6 @@ void lister_add(struct ftp_node *node, char *name, int size, int type, ULONG sec
 		DC_CALL3(infoptr, dc_FileSet, DC_REGA0, (APTR)node->fn_handle, DC_REGA1, entry, DC_REGA2, tags);
 		// node->fn_og->og_hooks.dc_FileSet( (ULONG)node->fn_handle, entry, tags );
 	}
-#endif
 
 	if (node->fn_site.se_env->e_index_enable)
 	{
