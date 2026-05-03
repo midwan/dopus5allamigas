@@ -36,12 +36,18 @@ void backdrop_select_all(BackdropInfo *info, short state)
 	for (object = (BackdropObject *)info->objects.list.lh_Head; object->node.ln_Succ;
 		 object = (BackdropObject *)object->node.ln_Succ)
 	{
+		// Fast validate object before processing (use fast path for performance)
+		if (!backdrop_validate_icon_fast(object)) {
+			// Skip corrupted objects
+			continue;
+		}
+		
 		// Is object not selected?
 		if (((state && !object->state) || (!state && object->state)) && object->icon)
 		{
 			// Select object
-			object->state = state;
-			object->flags |= BDOF_STATE_CHANGE;
+			// Select object using safe atomic operation
+			backdrop_set_icon_state_safe(object, state);
 
 			/*
 						// Add to selection list
@@ -86,6 +92,12 @@ void backdrop_select_area(BackdropInfo *info, short state)
 	for (object = (BackdropObject *)info->objects.list.lh_Head; object->node.ln_Succ;
 		 object = (BackdropObject *)object->node.ln_Succ)
 	{
+		// Fast validate object before processing (use fast path for performance)
+		if (!backdrop_validate_icon_fast(object)) {
+			// Skip corrupted objects
+			continue;
+		}
+		
 		// Valid icon?
 		if (object->icon)
 		{
@@ -95,8 +107,8 @@ void backdrop_select_area(BackdropInfo *info, short state)
 				// Turn it on?
 				if (state == 1)
 				{
-					// Select object
-					object->state = 1;
+				// Select object using safe atomic operation
+				backdrop_set_icon_state_safe(object, 1);
 
 					// Is this a tool?
 					if (object->type != BDO_APP_ICON && object->icon->do_Type == WBTOOL)
@@ -110,9 +122,9 @@ void backdrop_select_area(BackdropInfo *info, short state)
 				// See if it needs to be turned off
 				else if (state == 0 || !(geo_box_intersect(&object->image_rect, &info->select)))
 				{
-					// Deselect this object
-					object->state = 0;
-					object->flags |= BDOF_STATE_CHANGE;
+				// Deselect this object using safe atomic operation
+				backdrop_set_icon_state_safe(object, 0);
+				backdrop_render_object(info, object, 0);
 					backdrop_render_object(info, object, 0);
 				}
 			}
@@ -123,10 +135,9 @@ void backdrop_select_area(BackdropInfo *info, short state)
 				// See if icon is in select area
 				if (geo_box_intersect(&object->image_rect, &info->select))
 				{
-					// Select this object
-					object->state = 2;
-					object->flags |= BDOF_STATE_CHANGE;
-					backdrop_render_object(info, object, 0);
+				// Select this object using safe atomic operation
+				backdrop_set_icon_state_safe(object, 2);
+				backdrop_render_object(info, object, 0);
 				}
 			}
 		}

@@ -34,6 +34,7 @@ COMMON_OBJS =	data.o \
 	backdrop_popup.o \
 	backdrop_format.o \
 	backdrop_select.o \
+	backdrop_safety.o \
 	backdrop_info.o \
 	backdrop_leftout.o \
 	backdrop_replace.o \

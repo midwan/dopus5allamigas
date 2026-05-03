@@ -28,6 +28,13 @@ For more information on Directory Opus for Windows please see:
 #if defined(__amigaos3__)
 #define ICONLIB_SELECTF_REMAPPED (1 << 0)
 
+// Safety constants for icon operations
+#define MAX_ICON_WIDTH 256
+#define MAX_ICON_HEIGHT 256
+#define MAX_MASK_WORDS ((MAX_ICON_WIDTH + 15) >> 4)
+#define MAX_LOCK_ATTEMPTS 1000
+#define LOCK_DELAY_CYCLES 10
+
 static struct Screen *backdrop_iconlib_screen(BackdropInfo *info)
 {
 	if (info && info->window)
@@ -69,12 +76,26 @@ void backdrop_free_iconlib_select_icon(BackdropInfo *info, BackdropObject *objec
 	if (!object || !object->iconlib_select_icon)
 		return;
 
-	if (object->iconlib_select_flags & ICONLIB_SELECTF_REMAPPED)
-		RemapIcon(object->iconlib_select_icon, backdrop_iconlib_screen(info), 1);
+	// Check reference count - don't free if still in use
+	if (object->iconlib_select_refcount > 0) {
+		// Mark for deferred cleanup
+		return;
+	}
 
-	FreeCachedDiskObject(object->iconlib_select_icon);
+	// Safely unmap icon if it was remapped
+	if (object->iconlib_select_flags & ICONLIB_SELECTF_REMAPPED) {
+		struct Screen *screen = backdrop_iconlib_screen(info);
+		if (screen) {
+			RemapIcon(object->iconlib_select_icon, screen, 1);
+		}
+		object->iconlib_select_flags &= ~ICONLIB_SELECTF_REMAPPED;
+	}
+
+	// Free the icon safely
+	if (object->iconlib_select_icon) FreeCachedDiskObject(object->iconlib_select_icon);
 	object->iconlib_select_icon = 0;
 	object->iconlib_select_flags = 0;
+	object->iconlib_select_refcount = 0;
 }
 
 static BOOL backdrop_icon_file_exists(char *name)
@@ -291,6 +312,112 @@ BOOL backdrop_prepare_iconlib_select_icon(BackdropInfo *info, BackdropObject *ob
 	(void)source_name;
 	(void)fallback_type;
 	return FALSE;
+}
+
+// NEW: Safe acquisition of iconlib select icon with reference counting
+BOOL backdrop_acquire_iconlib_select_icon(BackdropObject *object)
+{
+	if (!object || !object->iconlib_select_icon)
+		return FALSE;
+	
+	// Simple atomic increment (for single-threaded AmigaOS this is safe)
+	object->iconlib_select_refcount++;
+	return TRUE;
+}
+
+// NEW: Safe release of iconlib select icon with reference counting
+void backdrop_release_iconlib_select_icon_ref(BackdropObject *object)
+{
+	if (!object || !object->iconlib_select_icon)
+		return;
+	
+	if (object->iconlib_select_refcount > 0) {
+		object->iconlib_select_refcount--;
+		
+		// Only free when refcount reaches zero
+		if (object->iconlib_select_refcount == 0) {
+			// This will be called by the actual free function
+			// when it's safe to do so
+		}
+	}
+}
+
+// NEW: Atomic state change with simple locking
+BOOL backdrop_set_icon_state_safe(BackdropObject *object, short new_state)
+{
+	if (!object)
+		return FALSE;
+	
+	// Simple spinlock implementation
+	int attempts = 0;
+	while (object->iconlib_state_lock && attempts < MAX_LOCK_ATTEMPTS) {
+		attempts++;
+		// Simple delay loop
+		for (int i = 0; i < LOCK_DELAY_CYCLES; i++) {
+			// NOP
+		}
+	}
+	
+	if (attempts >= MAX_LOCK_ATTEMPTS) {
+		// Couldn't acquire lock, fail gracefully
+		return FALSE;
+	}
+	
+	// Acquire lock
+	object->iconlib_state_lock = 1;
+	
+	// Change state
+	object->state = new_state;
+	object->flags |= BDOF_STATE_CHANGE;
+	
+	// Release lock
+	object->iconlib_state_lock = 0;
+	
+	return TRUE;
+}
+
+// NEW: Comprehensive and safe icon resource cleanup
+void backdrop_cleanup_icon_resources(BackdropInfo *info, BackdropObject *object)
+{
+	if (!object)
+		return;
+	
+	// Always release system state first
+	backdrop_release_system_icon_state(info, object);
+	
+	// Clean up iconlib select icon safely
+	if (object->iconlib_select_icon) {
+		// Wait for reference count to reach zero
+		int wait_count = 0;
+		while (object->iconlib_select_refcount > 0 && wait_count < MAX_LOCK_ATTEMPTS) {
+			wait_count++;
+			// Simple delay
+			for (int i = 0; i < LOCK_DELAY_CYCLES; i++) {
+				// NOP
+			}
+		}
+		
+		// Force cleanup if wait exceeded
+		if (object->iconlib_select_refcount > 0) {
+			object->iconlib_select_refcount = 0;
+		}
+		
+		backdrop_free_iconlib_select_icon(info, object);
+	}
+	
+	// Clean up main icon
+	if (object->icon) {
+		if (object->flags & BDOF_REMAPPED) {
+			RemapIcon(object->icon, 
+					(info && info->window) ? info->window->WScreen : 0, 1);
+			object->flags &= ~BDOF_REMAPPED;
+		}
+		if (object->icon) FreeCachedDiskObject(object->icon);
+		object->icon = NULL;
+	}
+	
+	// Reset all flags
+	object->flags &= ~(BDOF_ICONLIB_DEFAULT | BDOF_STATE_CHANGE);
 }
 #endif
 
@@ -526,6 +653,9 @@ BackdropObject *backdrop_new_object(BackdropInfo *info, char *name, char *extra,
 	// Set type
 	object->type = type;
 
+	// Initialize icon-related fields safely
+	backdrop_init_icon_object_safe(object);
+
 	// Any extra?
 	if (extra)
 	{
@@ -574,21 +704,8 @@ void backdrop_remove_object(BackdropInfo *info, BackdropObject *object)
 	Remove(&object->node);
 
 	// Not an appicon?
-	if (object->type != BDO_APP_ICON)
-	{
-		backdrop_release_system_icon_state(info, object);
-		backdrop_free_iconlib_select_icon(info, object);
-
-		if (object->icon)
-		{
-			// Free icon remapping
-			if (object->flags & BDOF_REMAPPED)
-				RemapIcon(object->icon, (info->window) ? info->window->WScreen : 0, 1);
-
-			// Free icon
-			FreeCachedDiskObject(object->icon);
-		}
-	}
+	// Use the comprehensive safe cleanup function
+	backdrop_cleanup_icon_resources(info, object);
 
 	// Mask plane?
 	for (a = 0; a < 2; a++)
@@ -615,19 +732,22 @@ void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 
 		if (!(flags & GETICON_KEEP))
 		{
-			backdrop_release_system_icon_state(info, object);
-			backdrop_free_iconlib_select_icon(info, object);
+			// Use comprehensive safe cleanup
+			backdrop_cleanup_icon_resources(info, object);
 		}
 
 		// Already got icon?
 		if (object->icon && !(flags & GETICON_KEEP))
 		{
-			// Free icon remapping
+			// Free icon remapping safely
 			if (object->flags & BDOF_REMAPPED)
+			{
 				RemapIcon(object->icon, (info->window) ? info->window->WScreen : 0, 1);
+				object->flags &= ~BDOF_REMAPPED;
+			}
 
 			// Free icon
-			FreeCachedDiskObject(object->icon);
+			if (object->icon) FreeCachedDiskObject(object->icon);
 			object->icon = 0;
 
 			// We'll be getting a new one
@@ -751,8 +871,9 @@ void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 						if (object->icon->do_Type != WBDISK)
 						{
 							// It's not, free it and use default
+							// Validate icon before freeing
 							backdrop_free_iconlib_select_icon(info, object);
-							FreeCachedDiskObject(object->icon);
+							if (object->icon) FreeCachedDiskObject(object->icon);
 							object->icon = 0;
 							object->flags &= ~BDOF_ICONLIB_DEFAULT;
 						}

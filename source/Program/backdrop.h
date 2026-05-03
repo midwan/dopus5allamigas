@@ -36,6 +36,12 @@ typedef struct _BackdropObject
 	short state;  // Object state
 
 	struct DiskObject *icon;  // Object icon
+#if defined(__amigaos3__)
+	struct DiskObject *iconlib_select_icon;  // Companion icon for IconLib default selected state
+	ULONG iconlib_select_flags;
+	ULONG iconlib_select_refcount;  // Reference counter for safe access
+	ULONG iconlib_state_lock;       // Simple lock for state synchronization
+#endif
 	char *name;				  // Object name
 	char *path;				  // Path name
 	struct DateStamp date;	  // Object date
@@ -155,6 +161,7 @@ enum {
 #define BDOF_AUTO_POSITION (1 << 2)	 // Position icon automatically
 #define BDOF_ICON_VIEW (1 << 3)		 // Object is in an iconview lister
 #define BDOF_FAKE_ICON (1 << 4)		 // Not a real icon
+#define BDOF_ICONLIB_DEFAULT (1 << 5)	 // icon.library generated default icon
 
 #define BDOF_STATE_CHANGE (1 << 6)	   // State changed
 #define BDOF_CUSTOM_POS (1 << 7)	   // Custom position
@@ -326,6 +333,56 @@ struct _DOpusAppMessage *backdrop_appmessage(BackdropInfo *info, BOOL);
 void backdrop_drop_appwindow(BackdropInfo *info, struct AppWindow *appwindow, short, short);
 void backdrop_sort_objects(BackdropInfo *info, short, BOOL);
 void backdrop_image_bitmap(BackdropInfo *, struct Image *, UWORD *, struct BitMap *);
+BOOL backdrop_icon_uses_system_draw(BackdropObject *);
+BOOL backdrop_get_system_icon_rect(struct RastPort *, BackdropObject *, struct Rectangle *);
+void backdrop_release_system_icon_state(BackdropInfo *, BackdropObject *);
+struct DiskObject *backdrop_get_iconlib_select_icon(BackdropObject *);
+void backdrop_remap_iconlib_select_icon(BackdropInfo *, BackdropObject *, struct Window *, BOOL);
+void backdrop_free_iconlib_select_icon(BackdropInfo *, BackdropObject *);
+BOOL backdrop_prepare_iconlib_select_icon(BackdropInfo *, BackdropObject *, char *, LONG);
+BOOL backdrop_apply_iconlib_drag_mask_safe(DragInfo *, BackdropObject *);
+// Error handling types and functions
+typedef enum {
+	ICON_ERROR_NONE = 0,
+	ICON_ERROR_INVALID_POINTER,
+	ICON_ERROR_CORRUPTED_DATA,
+	ICON_ERROR_OUT_OF_MEMORY,
+	ICON_ERROR_INVALID_DIMENSIONS,
+	ICON_ERROR_LOCK_TIMEOUT,
+	ICON_ERROR_REFERENCE_COUNT,
+	ICON_ERROR_VALIDATION_FAILED,
+	ICON_ERROR_EMERGENCY_RESET
+} IconErrorCode;
+
+BOOL backdrop_acquire_iconlib_select_icon(BackdropObject *);      // NEW: Safe acquisition
+BOOL backdrop_release_iconlib_select_icon_ref(BackdropObject *);  // NEW: Safe release
+IconErrorCode backdrop_get_last_icon_error(void);                 // NEW: Get last error
+const char *backdrop_get_icon_error_string(IconErrorCode);        // NEW: Error string
+BOOL backdrop_set_icon_state_safe(BackdropObject *, short);       // NEW: Atomic state change
+void backdrop_cleanup_icon_resources(BackdropInfo *, BackdropObject *); // NEW: Comprehensive cleanup
+BOOL backdrop_init_icon_object_safe(BackdropObject *);            // NEW: Safe initialization
+BOOL backdrop_validate_icon_object_safe(BackdropObject *);        // NEW: State validation
+BOOL backdrop_validate_icon_fast(BackdropObject *);                // NEW: Fast validation for common cases
+PLANEPTR backdrop_alloc_icon_mask_safe(short, short);             // NEW: Safe mask allocation
+BOOL backdrop_validate_icon_dimensions_safe(struct DiskObject *); // NEW: Dimension validation
+void backdrop_emergency_reset_icon_object(BackdropObject *);      // NEW: Emergency reset
+BOOL backdrop_validate_and_recover_icon_object(BackdropObject *); // NEW: Validation with recovery
+struct DiskObject *backdrop_alloc_icon_safe(const char *);        // NEW: Safe icon allocation
+BOOL backdrop_validate_info_safe(BackdropInfo *);                 // NEW: Info validation
+
+// Debug logging functions
+typedef enum {
+	ICON_DEBUG_NONE = 0,
+	ICON_DEBUG_ERROR = 1,
+	ICON_DEBUG_WARN = 2,
+	ICON_DEBUG_INFO = 3,
+	ICON_DEBUG_TRACE = 4
+} IconDebugLevel;
+
+void backdrop_set_icon_debug_level(IconDebugLevel);               // NEW: Set debug level
+void backdrop_icon_debug_log(IconDebugLevel, const char *, const char *, ...); // NEW: Debug log
+void backdrop_get_icon_statistics(unsigned long *, unsigned long *, unsigned long *, unsigned long *, unsigned long *); // NEW: Get stats
+void backdrop_reset_icon_statistics(void);                        // NEW: Reset stats
 
 BPTR backdrop_icon_lock(BackdropObject *object);
 

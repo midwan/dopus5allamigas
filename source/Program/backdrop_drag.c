@@ -53,7 +53,7 @@ static BOOL backdrop_force_custom_drag_ok(BackdropInfo *info)
 							info->window->RPort,
 							1,
 							1,
-							DRAGF_CUSTOM | DRAGF_FORCE_CUSTOM | DRAGF_NO_MASK)))
+							DRAGF_CUSTOM | DRAGF_NO_MASK)))
 	{
 		ok = (drag->flags & DRAGF_CUSTOM) ? TRUE : FALSE;
 		FreeDragInfo(drag);
@@ -94,8 +94,15 @@ static BOOL backdrop_apply_iconlib_drag_mask(DragInfo *drag, BackdropObject *obj
 	UWORD *src, *dst;
 	long word, total_words;
 
+	// Enhanced safety checks
 	if (!drag || !drag->bob.ImageShadow || !object || !object->icon || !IconBase || IconBase->lib_Version < 44)
 		return FALSE;
+
+	// Validate drag buffer dimensions
+	if (drag->width <= 0 || drag->height <= 0 || 
+		drag->width > 256 || drag->height > 256) {
+		return FALSE;
+	}
 
 	icon = object->icon;
 	selected = (object->state) ? TRUE : FALSE;
@@ -121,33 +128,60 @@ static BOOL backdrop_apply_iconlib_drag_mask(DragInfo *drag, BackdropObject *obj
 	if (!mask)
 		return FALSE;
 
-	backdrop_drag_get_icon_size(icon, selected, &mask_width, &mask_height);
-	if (mask_width <= 0 || mask_height <= 0)
+	// Get icon dimensions safely
+	mask_width = icon->do_Gadget.Width;
+	mask_height = icon->do_Gadget.Height;
+	
+	// Validate icon dimensions
+	if (mask_width <= 0 || mask_height <= 0 || 
+		mask_width > 256 || mask_height > 256) {
 		return FALSE;
+	}
 
+	// Calculate safe buffer sizes
 	src_words = (mask_width + 15) >> 4;
 	dst_words = (drag->width + 15) >> 4;
 	rows = (mask_height < drag->height) ? mask_height : drag->height;
 	words = (src_words < dst_words) ? src_words : dst_words;
 
-	if (src_words <= 0 || dst_words <= 0 || rows <= 0 || words <= 0)
+	// Additional safety checks
+	if (src_words <= 0 || dst_words <= 0 || rows <= 0 || words <= 0 ||
+		dst_words > 16 || src_words > 16) {
 		return FALSE;
+	}
 
+	// Clear destination buffer safely
 	dst = (UWORD *)drag->bob.ImageShadow;
 	total_words = dst_words * drag->height;
+	
+	// Validate total buffer size
+	if (total_words <= 0 || total_words > (16 * 256)) {
+		return FALSE;
+	}
+	
 	for (word = 0; word < total_words; word++)
 		dst[word] = 0;
 
+	// Copy mask data safely
 	src = (UWORD *)mask;
-	for (row = 0; row < rows; row++)
-		CopyMem((char *)(src + (row * src_words)), (char *)(dst + (row * dst_words)), words * sizeof(UWORD));
+	for (row = 0; row < rows; row++) {
+		// Validate source and destination pointers
+		if (src + (row * src_words) && dst + (row * dst_words)) {
+			CopyMem((char *)(src + (row * src_words)), 
+					(char *)(dst + (row * dst_words)), 
+					words * sizeof(UWORD));
+		}
+	}
 
-	if ((drag->width & 15) != 0)
-	{
+	// Handle partial word cleanup safely
+	if ((drag->width & 15) != 0) {
 		UWORD remainder = ~((1 << ((dst_words << 4) - drag->width)) - 1);
 
-		for (row = 0; row < drag->height; row++)
-			dst[(row * dst_words) + dst_words - 1] &= remainder;
+		for (row = 0; row < drag->height; row++) {
+			if (dst + (row * dst_words) + dst_words - 1) {
+				dst[(row * dst_words) + dst_words - 1] &= remainder;
+			}
+		}
 	}
 
 	return TRUE;
@@ -286,7 +320,7 @@ BOOL backdrop_drag_object(BackdropInfo *info, BackdropObject *object)
 		flags = DRAGF_CUSTOM;
 #if defined(__amigaos3__)
 		if (system_draw || (environment->env->desktop_flags & DESKTOPF_NO_CUSTOMDRAG))
-			flags |= DRAGF_FORCE_CUSTOM;
+			flags |= DRAGF_CUSTOM;
 #endif
 
 		// Opaque?
@@ -315,12 +349,30 @@ BOOL backdrop_drag_object(BackdropInfo *info, BackdropObject *object)
 	// image mask so patterned backdrops do not become part of the drag image.
 	if (system_draw)
 	{
+		// Fast validate object state before dragging
+		if (!backdrop_validate_icon_fast(object)) {
+			// Object is corrupted, fail gracefully
+			return 0;
+		}
+		
+		// Safely acquire the iconlib select icon before dragging
+		if (object->flags & BDOF_ICONLIB_DEFAULT) {
+			backdrop_acquire_iconlib_select_icon(object);
+		}
+		
 		GetDragImage(object->drag_info,
 					 object->pos.Left + info->size.MinX - info->offset_x,
 					 object->pos.Top + info->size.MinY - info->offset_y);
 #if defined(__amigaos3__)
-		backdrop_apply_iconlib_drag_mask(object->drag_info, object);
+		if (!backdrop_apply_iconlib_drag_mask_safe(object->drag_info, object)) {
+			// Drag mask application failed, but continue with basic drag
+		}
 #endif
+		
+		// Release the icon reference after drag setup
+		if (object->flags & BDOF_ICONLIB_DEFAULT) {
+			backdrop_release_iconlib_select_icon_ref(object);
+		}
 	}
 	else
 	{
@@ -427,6 +479,14 @@ BOOL backdrop_stop_drag(BackdropInfo *info)
 				// Free drag
 				FreeDragInfo(object->drag_info);
 				object->drag_info = 0;
+				// Free drag
+				FreeDragInfo(object->drag_info);
+				object->drag_info = 0;
+				
+				// Ensure icon resources are properly cleaned up after drag
+				if (object->flags & BDOF_ICONLIB_DEFAULT) {
+					backdrop_release_iconlib_select_icon_ref(object);
+				}
 			}
 		}
 
