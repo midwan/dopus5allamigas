@@ -397,6 +397,9 @@ BOOL quit_notify(void)
 {
 	APTR trap;
 	char port[40];
+	BOOL ftp_quit = FALSE;
+	short retry;
+	BOOL port_open;
 
 	// Lock trap list
 	trap = LockTrapList();
@@ -404,18 +407,31 @@ BOOL quit_notify(void)
 	// Look for quit traps
 	while ((trap = FindTrapEntry(trap, "quit", port)))
 	{
-		ULONG flags = 0;
-
-		// FTP owns windows on the Opus screen, but is not in the normal process lists.
 		if (stricmp(port, "_OPUSFTP_") == 0)
-			flags |= RXMF_SYNC;
+			ftp_quit = TRUE;
 
 		// Send quit message
-		rexx_handler_msg(port, 0, flags, HA_String, 0, (IPTR)"quit", TAG_END);
+		rexx_handler_msg(port, 0, 0, HA_String, 0, (IPTR)"quit", TAG_END);
 	}
 
 	// Unlock trap list
 	UnlockTrapList();
+
+	// FTP owns windows on the Opus screen, but is not in the normal process lists.
+	if (ftp_quit)
+	{
+		for (retry = 0; retry < 100; retry++)
+		{
+			Forbid();
+			port_open = (FindPort("_OPUSFTP_") != 0);
+			Permit();
+
+			if (!port_open)
+				break;
+
+			Delay(5);
+		}
+	}
 
 	// Broadcast notify message
 	SendNotifyMsg(DN_OPUS_QUIT, GUI->dopus_copy, 0, 0, GUI->rexx_port_name, 0);
