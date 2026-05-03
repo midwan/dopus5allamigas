@@ -48,30 +48,6 @@ static struct Library *main_open_library(char *lib, short ver);
 
 #define PROG(x) main_bump_progress(main_status, (x), TRUE)
 
-#ifdef __AROS__
-void aros_debug_log(char *text)
-{
-	BPTR file;
-	static BOOL first = TRUE;
-	char *paths[] = {"PROGDIR:DOpus5-startup.log", "T:DOpus5-startup.log", 0};
-	short a;
-
-	for (a = 0; paths[a]; a++)
-	{
-		if ((file = Open(paths[a], first ? MODE_NEWFILE : MODE_READWRITE)) ||
-			(!first && (file = Open(paths[a], MODE_NEWFILE))))
-		{
-			if (!first)
-				Seek(file, 0, OFFSET_END);
-			FPuts(file, text);
-			Close(file);
-		}
-	}
-
-	first = FALSE;
-}
-#endif
-
 // Main entry point
 int main(int argc, char **argv)
 {
@@ -80,9 +56,6 @@ int main(int argc, char **argv)
 	/******** Startup Stuff that happens before the progress bar is displayed ********/
 
 	startup_misc_init();						 // Miscellaneous startup stuff
-#ifdef __AROS__
-	aros_debug_log("DOpus5 AROS startup trace x64_boopsi_iptr " __DATE__ " " __TIME__ "\n");
-#endif
 	startup_check_assign();						 // Check for DOPUS5: assignment
 	startup_open_dopuslib();					 // Open dopus5.library
 	init_locale_data(&locale);					 // Initialise locale info
@@ -298,17 +271,6 @@ void startup_open_dopuslib()
 		}
 		exit(0);
 	}
-#ifdef __AROS__
-	{
-		char buf[120];
-
-		lsprintf(buf,
-				 "startup_open_dopuslib ok version=%ld revision=%ld\n",
-				 (ULONG)DOpusBase->lib_Version,
-				 (ULONG)DOpusBase->lib_Revision);
-		aros_debug_log(buf);
-	}
-#endif
 }
 
 // See if DOpus is already running
@@ -325,9 +287,6 @@ void startup_check_duplicate()
 		struct MsgPort *port;
 
 		// Ask if we want to run another copy
-#ifdef __AROS__
-		aros_debug_log("startup_check_duplicate found existing Directory Opus port\n");
-#endif
 		if (SimpleRequest(0,
 						  dopus_name,
 						  GetString(&locale, MSG_ALREADY_RUNNING_BUTTONS),
@@ -350,10 +309,6 @@ void startup_check_duplicate()
 			quit(0);
 		}
 	}
-#ifdef __AROS__
-	else
-		aros_debug_log("startup_check_duplicate no existing Directory Opus port\n");
-#endif
 }
 
 // Run the update module
@@ -1238,9 +1193,6 @@ void startup_init_environment()
 	if (!(environment = environment_new()))
 		quit(0);
 	strcpy(environment->path, "PROGDIR:Environment/default");
-#ifdef __AROS__
-	aros_debug_log("startup_init_environment path=PROGDIR:Environment/default\n");
-#endif
 }
 
 // Initialise commands

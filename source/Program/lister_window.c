@@ -441,7 +441,7 @@ struct Window *lister_open_window(Lister *lister, struct Screen *screen)
 		char buf[32];
 
 		// Build handle string
-		lsprintf(buf, "%ld", (IPTR)lister);
+		lsprintf(buf, "%lu", (unsigned long)(IPTR)lister);
 
 		// Launch script
 		RunScript(SCRIPT_OPEN_LISTER, buf);
@@ -509,7 +509,7 @@ void lister_close_window(Lister *lister, BOOL run_script)
 			char buf[32];
 
 			// Build handle string
-			lsprintf(buf, "%ld", (IPTR)lister);
+			lsprintf(buf, "%lu", (unsigned long)(IPTR)lister);
 
 			// Run script
 			RunScript(SCRIPT_CLOSE_LISTER, buf);

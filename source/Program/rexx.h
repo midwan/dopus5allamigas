@@ -359,6 +359,8 @@ short rexx_get_command(char **commandptr);
 void rexx_skip_space(char **command);
 void rexx_skip_space_reverse(char **command, char *);
 long rexx_parse_number(char **ptr, BOOL, long);
+IPTR rexx_parse_iptr(char **ptr, BOOL, IPTR);
+void rexx_format_iptr(char *, IPTR);
 BOOL rexx_parse_number_byte(char **, UBYTE *);
 short rexx_parse_word(char **ptr, char *buffer, short bufferlen);
 short rexx_match_keyword(char **ptr, char **keys, long *);
@@ -373,12 +375,12 @@ APTR LockTrapList(void);
 void UnlockTrapList(void);
 APTR FindTrapEntry(APTR, char *, char *);
 
-long rexx_add_appicon(char *, struct RexxMsg *);
+IPTR rexx_add_appicon(char *, struct RexxMsg *);
 void rexx_rem_appthing(char *, short);
 void rexx_handle_appmsg(struct AppMessage *msg);
 BOOL rexx_send_appmsg(RexxAppThing *, short, struct AppMessage *);
 
-long rexx_lister_newprogress(Lister *lister, char *args, long *);
+long rexx_lister_newprogress(Lister *lister, char *args, IPTR *);
 
 void rexx_set_lister_mode(Lister *lister, char *args);
 void rexx_send_command(char *command, BOOL);

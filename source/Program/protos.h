@@ -36,9 +36,6 @@ int main(int, char **);
 Cfg_Function *new_default_function(char *func, APTR);
 void process_args(int argc, char **argv);
 void env_update_settings(BOOL save);
-#ifdef __AROS__
-void aros_debug_log(char *);
-#endif
 IPCData *show_startup_picture(void);
 BOOL main_bump_progress(APTR, short, BOOL);
 void startup_misc_init(void);

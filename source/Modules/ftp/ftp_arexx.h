@@ -44,7 +44,7 @@ enum {
 
 void rexx_doubleclick(const char *opus, const char *path);
 char *rexx_getstring(const char *opus, IPTR handle, char *text, BOOL secure, int length, char *deflt, char *buttons);
-void rexx_lst_add(const char *opus,
+IPTR rexx_lst_add(const char *opus,
 				  IPTR handle,
 				  char *name,
 				  unsigned int size,
@@ -61,16 +61,17 @@ void rexx_lst_close(const char *opus, IPTR handle);
 void rexx_lst_label(const char *opus, IPTR handle, char *pref, char *label, char *suff);
 void rexx_lst_lock(const char *opus, IPTR handle);
 IPTR rexx_lst_new(const char *opus, IPTR handle, char *host, const char *toolbar);
-ULONG rexx_lst_query_dest1(const char *opus);
+IPTR rexx_lst_query_dest1(const char *opus);
 char *rexx_lst_query_entry(const char *opus, IPTR handle, char *entry);
 BOOL rexx_lst_query_handler(const char *opus, IPTR handle);
 int rexx_lst_query_numentries(const char *opus, IPTR handle);
+int rexx_lst_query_numdirs(const char *opus, IPTR handle);
 int rexx_lst_query_numfiles(const char *opus, IPTR handle);
 int rexx_lst_query_numseldirs(const char *opus, IPTR handle);
 int rexx_lst_query_numselentries(const char *opus, IPTR handle);
 int rexx_lst_query_numselfiles(const char *opus, IPTR handle);
 char *rexx_lst_query_path(const char *opus, IPTR handle);
-ULONG rexx_lst_query_src1(const char *opus);
+IPTR rexx_lst_query_src1(const char *opus);
 int rexx_lst_query_visible(const char *opus, IPTR handle);
 void rexx_lst_remove(const char *opus, IPTR handle, char *name);
 void rexx_lst_select(const char *opus, IPTR handle, char *name, int state);
@@ -103,7 +104,7 @@ IPTR send_rexx(const char *port, int reply, const char *cmd);
 STDARGS IPTR send_rexxa(const char *port, int reply, const char *fmt, ...);
 
 // Reply to an ARexx message we received
-void reply_rexx(struct RexxMsg *msg, LONG r1, LONG r2);
+void reply_rexx(struct RexxMsg *msg, LONG r1, IPTR r2);
 
 // Reply to all messages in an ARexx port
 void flush_arexxport(struct MsgPort *port);

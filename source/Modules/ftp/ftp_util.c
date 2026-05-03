@@ -44,6 +44,38 @@ For more information on Directory Opus for Windows please see:
 
 extern struct opusftp_globals og;
 
+IPTR ftp_parse_handle(const char *text)
+{
+	UQUAD value = 0;
+
+	if (!text)
+		return 0;
+
+	while (*text >= '0' && *text <= '9')
+	{
+		value = (value * 10) + (*text - '0');
+		++text;
+	}
+
+	return (IPTR)value;
+}
+
+void ftp_format_handle(char *buf, IPTR handle)
+{
+	char tmp[FTP_HANDLE_BUFSIZE];
+	int pos = sizeof(tmp) - 1;
+	UQUAD value = (UQUAD)handle;
+
+	tmp[pos] = 0;
+	do
+	{
+		tmp[--pos] = '0' + (value % 10);
+		value /= 10;
+	} while (value && pos > 0);
+
+	strcpy(buf, tmp + pos);
+}
+
 // Months of the year for converting FTP LIST output
 const char *months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 

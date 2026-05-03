@@ -270,7 +270,7 @@ static int mod_connect(IPCData *function_ipc, char *args, int arglen)
 				flags |= CONN_OPT_PATH;
 			}
 			if (fa->FA_Arguments[D_OPT_HANDLE])
-				cm->cm_handle = *(int *)fa->FA_Arguments[D_OPT_HANDLE];
+				cm->cm_handle = ftp_parse_handle((char *)fa->FA_Arguments[D_OPT_HANDLE]);
 
 			if (fa->FA_Arguments[D_OPT_SITE])
 			{

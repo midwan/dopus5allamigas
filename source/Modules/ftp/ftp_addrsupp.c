@@ -1179,7 +1179,7 @@ void set_config_to_default(struct ftp_config *oc)
 BOOL get_global_options(struct opusftp_globals *og)
 {
 	struct ftp_config *conf;
-	LONG err;
+	LONG err = 0;
 
 	if ((conf = do_read_options_iff(FTP_OPTIONS_NAME, WT_DEFOPT, &err)))
 	{

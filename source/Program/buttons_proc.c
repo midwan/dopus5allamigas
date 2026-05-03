@@ -57,17 +57,9 @@ IPC_StartupCode(buttons_init, Buttons *, buttons, static)
 	// Load button bank information
 	if (buttons->buttons_file[0] && !buttons->bank)
 	{
-#ifdef __AROS__
-		aros_debug_log("buttons_init OpenButtonBank path=");
-		aros_debug_log(buttons->buttons_file);
-		aros_debug_log("\n");
-#endif
 		// Open bank
 		if (!(buttons->bank = OpenButtonBank(buttons->buttons_file)))
 		{
-#ifdef __AROS__
-			aros_debug_log("buttons_init OpenButtonBank failed\n");
-#endif
 			// Failed, try to create a new one if we're allowed to
 			if (buttons->flags & BUTTONF_FAIL || !(buttons->bank = NewButtonBank(1, 0)))
 				return 0;
@@ -77,21 +69,6 @@ IPC_StartupCode(buttons_init, Buttons *, buttons, static)
 	// Valid bank?
 	if (buttons->bank)
 	{
-#ifdef __AROS__
-		{
-			Cfg_Button *button;
-			ULONG count = 0;
-			char buf[120];
-
-			for (button = (Cfg_Button *)buttons->bank->buttons.lh_Head; button->node.ln_Succ;
-				 button = (Cfg_Button *)button->node.ln_Succ)
-				++count;
-			lsprintf(buf, "buttons_init bank ok buttons=%ld path=", count);
-			aros_debug_log(buf);
-			aros_debug_log(buttons->bank->path);
-			aros_debug_log("\n");
-		}
-#endif
 		// Coordinates not supplied?
 		if (!(buttons->flags & BUTTONF_COORDS_SUPPLIED))
 			buttons->pos = buttons->bank->window.pos;

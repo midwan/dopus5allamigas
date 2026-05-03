@@ -48,6 +48,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp.h"
 #include "ftp_arexx.h"
 #include "ftp_opusftp.h"
+#include "ftp_util.h"
 
 /*
 	#define	DEBUG
@@ -57,6 +58,14 @@ For more information on Directory Opus for Windows please see:
 // Debugging info from this file can be annoying
 #undef DEBUG
 #define LOUD 0
+
+static char *rexx_result_string(IPTR result)
+{
+	if (!result || result == (IPTR)-1)
+		return NULL;
+
+	return (char *)result;
+}
 
 /*
 
@@ -96,7 +105,7 @@ return result;
 
 // Add an entry to a lister which is NOT under our control
 
-void rexx_lst_add(const char *opus,
+IPTR rexx_lst_add(const char *opus,
 				  IPTR handle,
 				  char *name,
 				  unsigned int size,
@@ -118,17 +127,17 @@ void rexx_lst_add(const char *opus,
 	protbuf[7] = prot & FIBF_DELETE ? '-' : 'd';
 	protbuf[8] = 0;
 
-	send_rexxa(opus,
-			   FALSE,
-			   "lister add %lu \"%s\" %lu %ld %lu %s%s%s",
-			   handle,
-			   name,
-			   size,
-			   type,
-			   seconds,
-			   protbuf,
-			   comment ? " " : "",
-			   comment ? comment : "");
+	return send_rexxa(opus,
+					  REXX_REPLY_RC,
+					  "lister add " FTP_HANDLE_PRINTF " \"%s\" %lu %ld %lu %s%s%s",
+					  FTP_HANDLE_VALUE(handle),
+					  name,
+					  (unsigned long)size,
+					  (long)type,
+					  (unsigned long)seconds,
+					  protbuf,
+					  comment ? " " : "",
+					  comment ? comment : "");
 }
 
 /********************************/
@@ -147,9 +156,9 @@ void rexx_lst_refresh(const char *opus, IPTR handle, int date)
 {
 	D(bug("Refresh lister - start - "));
 
-	send_rexxa(opus, FALSE, "lister refresh %lu", handle);
+	send_rexxa(opus, FALSE, "lister refresh " FTP_HANDLE_PRINTF, FTP_HANDLE_VALUE(handle));
 	if (date == REFRESH_DATE)
-		send_rexxa(opus, FALSE, "lister refresh %lu date", handle);
+		send_rexxa(opus, FALSE, "lister refresh " FTP_HANDLE_PRINTF " date", FTP_HANDLE_VALUE(handle));
 
 	D(bug("end\n"));
 }
@@ -169,7 +178,7 @@ void rexx_lst_busy(const char *opus, IPTR handle, int val)
 		D(bug( "rexx_lst_unlock()\n" ));
 	*/
 
-	send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu busy %d wait", handle, val);
+	send_rexxa(opus, REXX_REPLY_NONE, "lister set " FTP_HANDLE_PRINTF " busy %d wait", FTP_HANDLE_VALUE(handle), val);
 }
 
 /********************************/
@@ -185,9 +194,9 @@ void rexx_lst_empty(const char *opus, IPTR handle)
 {
 	D(bug("rexx_lst_empty(%ld)\n", handle));
 
-	send_rexxa(opus, REXX_REPLY_NONE, "lister empty %lu", handle);
-	send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu namelength 256", handle);
-	send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu case on", handle);
+	send_rexxa(opus, REXX_REPLY_NONE, "lister empty " FTP_HANDLE_PRINTF, FTP_HANDLE_VALUE(handle));
+	send_rexxa(opus, REXX_REPLY_NONE, "lister set " FTP_HANDLE_PRINTF " namelength 256", FTP_HANDLE_VALUE(handle));
+	send_rexxa(opus, REXX_REPLY_NONE, "lister set " FTP_HANDLE_PRINTF " case on", FTP_HANDLE_VALUE(handle));
 }
 
 /********************************/
@@ -200,7 +209,7 @@ void rexx_lst_clear(const char *opus, IPTR handle)
 {
 	D(bug("rexx_lst_clear(%ld)\n", handle));
 
-	send_rexxa(opus, REXX_REPLY_NONE, "lister clear %lu", handle);
+	send_rexxa(opus, REXX_REPLY_NONE, "lister clear " FTP_HANDLE_PRINTF, FTP_HANDLE_VALUE(handle));
 }
 
 /********************************/
@@ -213,13 +222,13 @@ void rexx_lst_close(const char *opus, IPTR handle)
 {
 	// new command : lister freecaches <handle> <handler>
 	// eg, lister freecaches 129384849 _OPUS_FTP_
-	send_rexxa(opus, REXX_REPLY_NONE, "lister freecaches %lu " PORTNAME "", handle);
+	send_rexxa(opus, REXX_REPLY_NONE, "lister freecaches " FTP_HANDLE_PRINTF " " PORTNAME "", FTP_HANDLE_VALUE(handle));
 
 	// Remove handler so we don't get 'inactive' msg
-	send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu handler ''", handle);
+	send_rexxa(opus, REXX_REPLY_NONE, "lister set " FTP_HANDLE_PRINTF " handler ''", FTP_HANDLE_VALUE(handle));
 
 	// Close lister
-	send_rexxa(opus, REXX_REPLY_NONE, "lister close %lu", handle);
+	send_rexxa(opus, REXX_REPLY_NONE, "lister close " FTP_HANDLE_PRINTF, FTP_HANDLE_VALUE(handle));
 }
 
 /*
@@ -232,7 +241,8 @@ int rexx_lst_findcache(const char *opus, IPTR handle, char *path)
 	char *string;
 	int value = 0;
 
-	if ((string = (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister findcache %lu %s", handle, path)))
+	if ((string = rexx_result_string(
+			 send_rexxa(opus, REXX_REPLY_RESULT, "lister findcache " FTP_HANDLE_PRINTF " %s", FTP_HANDLE_VALUE(handle), path))))
 	{
 		value = atoi(string);
 		DeleteArgstring(string);
@@ -245,18 +255,20 @@ int rexx_lst_findcache(const char *opus, IPTR handle, char *path)
 void rexx_lst_title(const char *opus, IPTR handle, char *title)
 {
 	if (strncmp(title, "FTP:", 4) && strncmp(title, "SFTP:", 5))
-		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu title FTP:%s", handle, title);
+		send_rexxa(opus, REXX_REPLY_NONE, "lister set " FTP_HANDLE_PRINTF " title FTP:%s", FTP_HANDLE_VALUE(handle), title);
 	else
-		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu title %s", handle, title);
+		send_rexxa(opus, REXX_REPLY_NONE, "lister set " FTP_HANDLE_PRINTF " title %s", FTP_HANDLE_VALUE(handle), title);
 }
 
 // Remember to do a refresh after this
 char *rexx_lst_title_swap(const char *opus, IPTR handle, char *title)
 {
 	if (strncmp(title, "FTP:", 4) && strncmp(title, "SFTP:", 5))
-		return (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister set %lu title FTP:%s", handle, title);
+		return rexx_result_string(send_rexxa(
+			opus, REXX_REPLY_RESULT, "lister set " FTP_HANDLE_PRINTF " title FTP:%s", FTP_HANDLE_VALUE(handle), title));
 	else
-		return (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister set %lu title %s", handle, title);
+		return rexx_result_string(
+			send_rexxa(opus, REXX_REPLY_RESULT, "lister set " FTP_HANDLE_PRINTF " title %s", FTP_HANDLE_VALUE(handle), title));
 }
 
 /********************************/
@@ -272,9 +284,15 @@ void rexx_lst_label(const char *opus, IPTR handle, char *pref, char *label, char
 		suff = "";
 
 	if (label)
-		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu label (%s%s%s)", handle, pref, label, suff);
+		send_rexxa(opus,
+				   REXX_REPLY_NONE,
+				   "lister set " FTP_HANDLE_PRINTF " label (%s%s%s)",
+				   FTP_HANDLE_VALUE(handle),
+				   pref,
+				   label,
+				   suff);
 	else
-		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu label", handle);
+		send_rexxa(opus, REXX_REPLY_NONE, "lister set " FTP_HANDLE_PRINTF " label", FTP_HANDLE_VALUE(handle));
 }
 
 /********************************/
@@ -284,24 +302,36 @@ void rexx_lst_label(const char *opus, IPTR handle, char *pref, char *label, char
 //
 void rexx_lst_lock(const char *opus, IPTR handle)
 {
-	int notdone = 1;
+	int tries = 20;
 	char *r;
 
 	D(bug("rexx_lst_lock()\n"));
 
-	while (notdone)
+	if (!opus || !*opus || !handle)
+		return;
+
+	while (tries--)
 	{
+		IPTR result;
+
 		rexx_lst_busy(opus, handle, 1);
 
-		if ((r = (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister query %lu busy", handle)))
+		result = send_rexxa(opus, REXX_REPLY_RESULT, "lister query " FTP_HANDLE_PRINTF " busy", FTP_HANDLE_VALUE(handle));
+		if (result == (IPTR)-1)
+			return;
+
+		if ((r = rexx_result_string(result)))
 		{
 			if (*r == '1')
-				notdone = 0;
+			{
+				DeleteArgstring(r);
+				return;
+			}
 
 			DeleteArgstring(r);
 		}
 
-		if (notdone)
+		if (tries)
 			Delay(5);
 	}
 }
@@ -314,7 +344,7 @@ void rexx_lst_lock(const char *opus, IPTR handle)
 IPTR rexx_lst_new(const char *opus, IPTR handle, char *host, const char *toolbar)
 {
 	char *asciihandle;
-	ULONG new_handle;
+	IPTR new_handle = 0;
 	BPTR dir_lock = 0, cd = 0, toolbar_lock = 0;
 
 	if (toolbar && *toolbar && (dir_lock = Lock("DOpus5:Buttons/", ACCESS_READ)))
@@ -332,22 +362,32 @@ IPTR rexx_lst_new(const char *opus, IPTR handle, char *host, const char *toolbar
 
 		// if there is special toolbar then set it.
 		if (toolbar_lock)
-			send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu toolbar %s", new_handle, toolbar);
+			send_rexxa(opus,
+					   REXX_REPLY_NONE,
+					   "lister set " FTP_HANDLE_PRINTF " toolbar %s",
+					   FTP_HANDLE_VALUE(new_handle),
+					   toolbar);
 	}
 	else
 	{
 		if (toolbar_lock)
-			asciihandle = (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister new toolbar %s", toolbar);
+			asciihandle = rexx_result_string(send_rexxa(opus, REXX_REPLY_RESULT, "lister new toolbar %s", toolbar));
 		else
-			asciihandle = (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister new");
-		new_handle = atoi(asciihandle);
-		DeleteArgstring(asciihandle);
+			asciihandle = rexx_result_string(send_rexxa(opus, REXX_REPLY_RESULT, "lister new"));
+		if (asciihandle)
+		{
+			new_handle = ftp_parse_handle(asciihandle);
+			DeleteArgstring(asciihandle);
+		}
 	}
 
 	if (new_handle)
 	{
-		send_rexxa(
-			opus, REXX_REPLY_NONE, "lister set %lu handler " PORTNAME " quotes editing subdrop synctraps", new_handle);
+		send_rexxa(opus,
+				   REXX_REPLY_NONE,
+				   "lister set " FTP_HANDLE_PRINTF " handler " PORTNAME " quotes editing subdrop synctraps",
+				   FTP_HANDLE_VALUE(new_handle));
+		send_rexxa(opus, REXX_REPLY_NONE, "lister set " FTP_HANDLE_PRINTF " mode name", FTP_HANDLE_VALUE(new_handle));
 
 #if 0
 	send_rexxa( opus, REXX_REPLY_NONE, "lister set %lu title FTP:%s", new_handle, host );
@@ -357,7 +397,7 @@ IPTR rexx_lst_new(const char *opus, IPTR handle, char *host, const char *toolbar
 	rexx_lst_label( opus, new_handle, "FTP:", host, NULL );
 #endif
 
-		send_rexxa(opus, REXX_REPLY_NONE, "lister wait %lu quick", new_handle);
+		send_rexxa(opus, REXX_REPLY_NONE, "lister wait " FTP_HANDLE_PRINTF " quick", FTP_HANDLE_VALUE(new_handle));
 	}
 
 	if (toolbar_lock)
@@ -379,7 +419,8 @@ BOOL rexx_lst_query_handler(const char *opus, IPTR handle)
 	char *handler;
 	BOOL result = FALSE;
 
-	if ((handler = (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister query %lu handler", handle)))
+	if ((handler = rexx_result_string(
+			 send_rexxa(opus, REXX_REPLY_RESULT, "lister query " FTP_HANDLE_PRINTF " handler", FTP_HANDLE_VALUE(handle)))))
 	{
 		if (*handler)
 			result = TRUE;
@@ -401,7 +442,8 @@ int rexx_lst_query_visible(const char *opus, IPTR handle)
 	char *string;
 	int value = 0;
 
-	if ((string = (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister query %lu visible", handle)))
+	if ((string = rexx_result_string(
+			 send_rexxa(opus, REXX_REPLY_RESULT, "lister query " FTP_HANDLE_PRINTF " visible", FTP_HANDLE_VALUE(handle)))))
 	{
 		D(bug("** query visible '%s'\n", string));
 		value = atoi(string);
@@ -417,14 +459,14 @@ int rexx_lst_query_visible(const char *opus, IPTR handle)
  *	Returns 1st dest handle
  */
 
-ULONG rexx_lst_query_dest1(const char *opus)
+IPTR rexx_lst_query_dest1(const char *opus)
 {
 	char *dst;
-	ULONG result = 0;
+	IPTR result = 0;
 
-	if ((dst = (char *)send_rexx(opus, REXX_REPLY_RESULT, "lister query dest")))
+	if ((dst = rexx_result_string(send_rexx(opus, REXX_REPLY_RESULT, "lister query dest"))))
 	{
-		result = atoi(dst);
+		result = ftp_parse_handle(dst);
 		DeleteArgstring(dst);
 	}
 
@@ -439,7 +481,8 @@ ULONG rexx_lst_query_dest1(const char *opus)
 
 char *rexx_lst_query_entry(const char *opus, IPTR handle, char *entry)
 {
-	return (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister query %lu entry \"%s\"", handle, entry);
+	return rexx_result_string(send_rexxa(
+		opus, REXX_REPLY_RESULT, "lister query " FTP_HANDLE_PRINTF " entry \"%s\"", FTP_HANDLE_VALUE(handle), entry));
 }
 
 /********************************/
@@ -449,7 +492,8 @@ static int rexx_lst_query_numblah(const char *opus, IPTR handle, const char *bla
 	char *s;
 	int n = 0;
 
-	if ((s = (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister query %lu num%s", handle, blah)))
+	if ((s = rexx_result_string(send_rexxa(
+			 opus, REXX_REPLY_RESULT, "lister query " FTP_HANDLE_PRINTF " num%s", FTP_HANDLE_VALUE(handle), blah))))
 	{
 		n = atoi(s);
 		DeleteArgstring(s);
@@ -463,6 +507,13 @@ static int rexx_lst_query_numblah(const char *opus, IPTR handle, const char *bla
 int rexx_lst_query_numentries(const char *opus, IPTR handle)
 {
 	return rexx_lst_query_numblah(opus, handle, "entries");
+}
+
+/********************************/
+
+int rexx_lst_query_numdirs(const char *opus, IPTR handle)
+{
+	return rexx_lst_query_numblah(opus, handle, "dirs");
 }
 
 /********************************/
@@ -501,7 +552,8 @@ char *rexx_lst_query_path(const char *opus, IPTR handle)
 
 	D(bug("rexx_lst_query_path(%ld)\n", handle));
 
-	path = (char *)send_rexxa(opus, REXX_REPLY_RESULT, "lister query %lu path", handle);
+	path = rexx_result_string(
+		send_rexxa(opus, REXX_REPLY_RESULT, "lister query " FTP_HANDLE_PRINTF " path", FTP_HANDLE_VALUE(handle)));
 
 	D(bug("-> '%s'\n", path));
 
@@ -513,14 +565,14 @@ char *rexx_lst_query_path(const char *opus, IPTR handle)
 //
 //	Returns 1st source handle
 //
-ULONG rexx_lst_query_src1(const char *opus)
+IPTR rexx_lst_query_src1(const char *opus)
 {
 	char *src;
-	ULONG result = 0;
+	IPTR result = 0;
 
-	if ((src = (char *)send_rexx(opus, REXX_REPLY_RESULT, "lister query source")))
+	if ((src = rexx_result_string(send_rexx(opus, REXX_REPLY_RESULT, "lister query source"))))
 	{
-		result = atoi(src);
+		result = ftp_parse_handle(src);
 		DeleteArgstring(src);
 	}
 
@@ -531,7 +583,7 @@ ULONG rexx_lst_query_src1(const char *opus)
 
 void rexx_lst_remove(const char *opus, IPTR handle, char *name)
 {
-	send_rexxa(opus, REXX_REPLY_NONE, "lister remove %lu \"%s\"", handle, name);
+	send_rexxa(opus, REXX_REPLY_NONE, "lister remove " FTP_HANDLE_PRINTF " \"%s\"", FTP_HANDLE_VALUE(handle), name);
 }
 
 /********************************/
@@ -542,7 +594,8 @@ void rexx_lst_remove(const char *opus, IPTR handle, char *name)
 
 void rexx_lst_select(const char *opus, IPTR handle, char *name, int state)
 {
-	send_rexxa(opus, REXX_REPLY_NONE, "lister select %lu \"%s\" %d", handle, name, state);
+	send_rexxa(
+		opus, REXX_REPLY_NONE, "lister select " FTP_HANDLE_PRINTF " \"%s\" %d", FTP_HANDLE_VALUE(handle), name, state);
 }
 
 /********************************/
@@ -552,7 +605,7 @@ void rexx_lst_set_path(const char *opus, IPTR handle, char *path)
 	D(bug("rexx_lst_set_path(%ld)\n", handle));
 	D(bug("-> '%s'\n", path));
 
-	send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu path %s", handle, path);
+	send_rexxa(opus, REXX_REPLY_NONE, "lister set " FTP_HANDLE_PRINTF " path %s", FTP_HANDLE_VALUE(handle), path);
 
 	// DeleteArgstring( rexx_lst_query_path( opus, handle ) );
 }
@@ -562,9 +615,15 @@ void rexx_lst_set_path(const char *opus, IPTR handle, char *path)
 void rexx_prog_bar(const char *opus, IPTR handle, int type, int total, int count)
 {
 	if (type == PROGRESS_FREE)
-		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu bar %ld %ld", handle, total, count);
+		send_rexxa(
+			opus, REXX_REPLY_NONE, "dopus progress " FTP_HANDLE_PRINTF " bar %ld %ld", FTP_HANDLE_VALUE(handle), total, count);
 	else
-		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu newprogress bar %ld %ld", handle, total, count);
+		send_rexxa(opus,
+				   REXX_REPLY_NONE,
+				   "lister set " FTP_HANDLE_PRINTF " newprogress bar %ld %ld",
+				   FTP_HANDLE_VALUE(handle),
+				   total,
+				   count);
 }
 
 /********************************/
@@ -572,9 +631,19 @@ void rexx_prog_bar(const char *opus, IPTR handle, int type, int total, int count
 void rexx_prog_bytes(const char *opus, IPTR handle, int type, int total, int count)
 {
 	if (type == PROGRESS_FREE)
-		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu file %ld %ld", handle, total, count);
+		send_rexxa(opus,
+				   REXX_REPLY_NONE,
+				   "dopus progress " FTP_HANDLE_PRINTF " file %ld %ld",
+				   FTP_HANDLE_VALUE(handle),
+				   total,
+				   count);
 	else
-		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu newprogress file %ld %ld", handle, total, count);
+		send_rexxa(opus,
+				   REXX_REPLY_NONE,
+				   "lister set " FTP_HANDLE_PRINTF " newprogress file %ld %ld",
+				   FTP_HANDLE_VALUE(handle),
+				   total,
+				   count);
 }
 
 /********************************/
@@ -582,9 +651,9 @@ void rexx_prog_bytes(const char *opus, IPTR handle, int type, int total, int cou
 void rexx_prog_clear(const char *opus, IPTR handle, int type)
 {
 	if (type == PROGRESS_FREE)
-		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu off", handle);
+		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress " FTP_HANDLE_PRINTF " off", FTP_HANDLE_VALUE(handle));
 	else
-		send_rexxa(opus, REXX_REPLY_NONE, "lister clear %lu progress", handle);
+		send_rexxa(opus, REXX_REPLY_NONE, "lister clear " FTP_HANDLE_PRINTF " progress", FTP_HANDLE_VALUE(handle));
 }
 
 /********************************/
@@ -600,9 +669,9 @@ IPTR rexx_prog_init(const char *opus, IPTR handle, int type, char *title, char *
 	char *str;
 
 	if (type == PROGRESS_FREE)
-		sprintf(buf, "dopus progress abort", handle);
+		sprintf(buf, "dopus progress abort");
 	else
-		sprintf(buf, "lister set %lu newprogress abort", handle);
+		sprintf(buf, "lister set " FTP_HANDLE_PRINTF " newprogress abort", FTP_HANDLE_VALUE(handle));
 
 	if (info)
 		strcat(buf, " info");
@@ -616,9 +685,9 @@ IPTR rexx_prog_init(const char *opus, IPTR handle, int type, char *title, char *
 
 	if (type == PROGRESS_FREE)
 	{
-		if ((str = (char *)send_rexx(opus, REXX_REPLY_RESULT, buf)))
+		if ((str = rexx_result_string(send_rexx(opus, REXX_REPLY_RESULT, buf))))
 		{
-			handle = atoi(str);
+			handle = ftp_parse_handle(str);
 			DeleteArgstring(str);
 		}
 	}
@@ -630,23 +699,41 @@ IPTR rexx_prog_init(const char *opus, IPTR handle, int type, char *title, char *
 		if (title && *title)
 		{
 			if (type == PROGRESS_FREE)
-				send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu title %s", handle, title);
+				send_rexxa(opus,
+						   REXX_REPLY_NONE,
+						   "dopus progress " FTP_HANDLE_PRINTF " title %s",
+						   FTP_HANDLE_VALUE(handle),
+						   title);
 			else
-				send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu newprogress title %s", handle, title);
+				send_rexxa(opus,
+						   REXX_REPLY_NONE,
+						   "lister set " FTP_HANDLE_PRINTF " newprogress title %s",
+						   FTP_HANDLE_VALUE(handle),
+						   title);
 		}
 		if (info && *info)
 		{
 			if (type == PROGRESS_FREE)
-				send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu info %s", handle, info);
+				send_rexxa(
+					opus, REXX_REPLY_NONE, "dopus progress " FTP_HANDLE_PRINTF " info %s", FTP_HANDLE_VALUE(handle), info);
 			else
-				send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu newprogress info %s", handle, info);
+				send_rexxa(opus,
+						   REXX_REPLY_NONE,
+						   "lister set " FTP_HANDLE_PRINTF " newprogress info %s",
+						   FTP_HANDLE_VALUE(handle),
+						   info);
 		}
 		if (name && *name)
 		{
 			if (type == PROGRESS_FREE)
-				send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu name %s", handle, name);
+				send_rexxa(
+					opus, REXX_REPLY_NONE, "dopus progress " FTP_HANDLE_PRINTF " name %s", FTP_HANDLE_VALUE(handle), name);
 			else
-				send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu newprogress name %s", handle, name);
+				send_rexxa(opus,
+						   REXX_REPLY_NONE,
+						   "lister set " FTP_HANDLE_PRINTF " newprogress name %s",
+						   FTP_HANDLE_VALUE(handle),
+						   name);
 		}
 	}
 
@@ -677,9 +764,9 @@ IPTR rexx_prog_init3(const char *opus,
 	char *str;
 
 	if (type == PROGRESS_FREE)
-		sprintf(buf, "dopus progress abort", handle);
+		sprintf(buf, "dopus progress abort");
 	else
-		sprintf(buf, "lister set %lu newprogress abort", handle);
+		sprintf(buf, "lister set " FTP_HANDLE_PRINTF " newprogress abort", FTP_HANDLE_VALUE(handle));
 
 	if (info)
 		strcat(buf, " info");
@@ -696,9 +783,9 @@ IPTR rexx_prog_init3(const char *opus,
 
 	if (type == PROGRESS_FREE)
 	{
-		if ((str = (char *)send_rexx(opus, REXX_REPLY_RESULT, buf)))
+		if ((str = rexx_result_string(send_rexx(opus, REXX_REPLY_RESULT, buf))))
 		{
-			handle = atoi(str);
+			handle = ftp_parse_handle(str);
 			DeleteArgstring(str);
 		}
 	}
@@ -710,20 +797,34 @@ IPTR rexx_prog_init3(const char *opus,
 		if (title && *title)
 		{
 			if (type == PROGRESS_FREE)
-				send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu title %s", handle, title);
+				send_rexxa(opus,
+						   REXX_REPLY_NONE,
+						   "dopus progress " FTP_HANDLE_PRINTF " title %s",
+						   FTP_HANDLE_VALUE(handle),
+						   title);
 			else
-				send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu newprogress title %s", handle, title);
+				send_rexxa(opus,
+						   REXX_REPLY_NONE,
+						   "lister set " FTP_HANDLE_PRINTF " newprogress title %s",
+						   FTP_HANDLE_VALUE(handle),
+						   title);
 		}
 		if (info && *info)
 		{
 			if (type == PROGRESS_FREE)
 				send_rexxa(
-					opus, REXX_REPLY_NONE, "dopus progress %lu info %s info2 %s info3 %s ", handle, info, info2, info3);
+					opus,
+					REXX_REPLY_NONE,
+					"dopus progress " FTP_HANDLE_PRINTF " info %s info2 %s info3 %s ",
+					FTP_HANDLE_VALUE(handle),
+					info,
+					info2,
+					info3);
 			else
 				send_rexxa(opus,
 						   REXX_REPLY_NONE,
-						   "lister set %lu newprogress info %s info2 %s info3 %s ",
-						   handle,
+						   "lister set " FTP_HANDLE_PRINTF " newprogress info %s info2 %s info3 %s ",
+						   FTP_HANDLE_VALUE(handle),
 						   info,
 						   info2,
 						   info3);
@@ -731,9 +832,14 @@ IPTR rexx_prog_init3(const char *opus,
 		if (name && *name)
 		{
 			if (type == PROGRESS_FREE)
-				send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu name %s", handle, name);
+				send_rexxa(
+					opus, REXX_REPLY_NONE, "dopus progress " FTP_HANDLE_PRINTF " name %s", FTP_HANDLE_VALUE(handle), name);
 			else
-				send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu newprogress name %s", handle, name);
+				send_rexxa(opus,
+						   REXX_REPLY_NONE,
+						   "lister set " FTP_HANDLE_PRINTF " newprogress name %s",
+						   FTP_HANDLE_VALUE(handle),
+						   name);
 		}
 	}
 
@@ -745,9 +851,10 @@ IPTR rexx_prog_init3(const char *opus,
 void rexx_prog_name(const char *opus, IPTR handle, int type, char *name)
 {
 	if (type == PROGRESS_FREE)
-		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu name %s", handle, name);
+		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress " FTP_HANDLE_PRINTF " name %s", FTP_HANDLE_VALUE(handle), name);
 	else
-		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu newprogress name %s", handle, name);
+		send_rexxa(
+			opus, REXX_REPLY_NONE, "lister set " FTP_HANDLE_PRINTF " newprogress name %s", FTP_HANDLE_VALUE(handle), name);
 }
 
 /********************************/
@@ -755,25 +862,28 @@ void rexx_prog_name(const char *opus, IPTR handle, int type, char *name)
 void rexx_prog_info(const char *opus, IPTR handle, int type, char *info)
 {
 	if (type == PROGRESS_FREE)
-		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu info %s", handle, info);
+		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress " FTP_HANDLE_PRINTF " info %s", FTP_HANDLE_VALUE(handle), info);
 	else
-		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu newprogress info %s", handle, info);
+		send_rexxa(
+			opus, REXX_REPLY_NONE, "lister set " FTP_HANDLE_PRINTF " newprogress info %s", FTP_HANDLE_VALUE(handle), info);
 }
 
 void rexx_prog_info2(const char *opus, IPTR handle, int type, char *info)
 {
 	if (type == PROGRESS_FREE)
-		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu info2 %s", handle, info);
+		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress " FTP_HANDLE_PRINTF " info2 %s", FTP_HANDLE_VALUE(handle), info);
 	else
-		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu newprogress info2 %s", handle, info);
+		send_rexxa(
+			opus, REXX_REPLY_NONE, "lister set " FTP_HANDLE_PRINTF " newprogress info2 %s", FTP_HANDLE_VALUE(handle), info);
 }
 
 void rexx_prog_info3(const char *opus, IPTR handle, int type, char *info)
 {
 	if (type == PROGRESS_FREE)
-		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress %lu info %s", handle, info);
+		send_rexxa(opus, REXX_REPLY_NONE, "dopus progress " FTP_HANDLE_PRINTF " info %s", FTP_HANDLE_VALUE(handle), info);
 	else
-		send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu newprogress info3 %s", handle, info);
+		send_rexxa(
+			opus, REXX_REPLY_NONE, "lister set " FTP_HANDLE_PRINTF " newprogress info3 %s", FTP_HANDLE_VALUE(handle), info);
 }
 
 /********************************/
@@ -814,7 +924,7 @@ IPTR STDARGS send_rexxa(const char *dest_portname, int reply_type, const char *f
 //
 IPTR send_rexx(const char *dest_portname, int reply_type, const char *cmd)
 {
-	IPTR *retptr, retval = -1;		// The result and a pointer to it
+	IPTR retval = -1;				// The result
 	struct MsgPort *destport, *rp;	// The destination and reply ports
 	UBYTE *argstr;					// The arexx argument string
 	struct RexxMsg *rxmsg;			// The arexx message
@@ -828,11 +938,6 @@ IPTR send_rexx(const char *dest_portname, int reply_type, const char *cmd)
 	{
 		if ((rxmsg = CreateRexxMsg(rp, NULL, NULL)))
 		{
-			if (reply_type == REXX_REPLY_RC)
-				retptr = &rxmsg->rm_Result1;
-			else
-				retptr = &rxmsg->rm_Result2;
-
 #ifdef DEBUG
 			quiet = !(strnicmp(cmd, "lister add", 10) && strnicmp(cmd, "lister refresh", 13) &&
 					  (!strstr(cmd, "progress count")) && (!strstr(cmd, "newprogress file")) &&
@@ -845,18 +950,22 @@ IPTR send_rexx(const char *dest_portname, int reply_type, const char *cmd)
 				D(bug("%s: '%s'\n", dest_portname, cmd));
 			}
 #endif
-			if ((argstr = CreateArgstring((char *)cmd, strlen(cmd))))
+			if ((argstr = (UBYTE *)CreateArgstring((char *)cmd, strlen(cmd))))
 			{
 				// We only send commands
 				rxmsg->rm_Action = RXCOMM;
 
-				if (reply_type != REXX_REPLY_NONE)
+				if (reply_type == REXX_REPLY_RESULT)
 				{
 					// Do we need a reply?
 					rxmsg->rm_Action |= RXFF_RESULT;
 				}
 
+#ifdef __AROS__
 				rxmsg->rm_Args[0] = (IPTR)argstr;
+#else
+				rxmsg->rm_Args[0] = (char *)argstr;
+#endif
 
 				Forbid();
 				if ((destport = FindPort((char *)dest_portname)))
@@ -866,19 +975,19 @@ IPTR send_rexx(const char *dest_portname, int reply_type, const char *cmd)
 				{
 					WaitPort(rp);
 					GetMsg(rp);
-					retval = *retptr;
+					retval = reply_type == REXX_REPLY_RC ? rxmsg->rm_Result1 : rxmsg->rm_Result2;
 #ifdef DEBUG
 					if (reply_type != REXX_REPLY_NONE && show_debug)
 					{
 						D(bug("RC==> 1: %ld  ", rxmsg->rm_Result1));
-						if (retptr == &rxmsg->rm_Result2)
+						if (reply_type == REXX_REPLY_RESULT)
 							D(bug("RES==> 2: '%s'\n", retval));
 						D(bug("\n"));
 					}
 #endif
 				}
 
-				DeleteArgstring(argstr);
+				DeleteArgstring((char *)argstr);
 			}
 			DeleteRexxMsg(rxmsg);
 		}
@@ -893,7 +1002,7 @@ IPTR send_rexx(const char *dest_portname, int reply_type, const char *cmd)
 //
 //	Reply to an arexx message
 //
-void reply_rexx(struct RexxMsg *msg, LONG r1, LONG r2)
+void reply_rexx(struct RexxMsg *msg, LONG r1, IPTR r2)
 {
 	if (msg)
 	{

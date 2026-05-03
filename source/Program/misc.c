@@ -804,6 +804,26 @@ struct Library *OpenModule(char *name)
 		}
 	}
 
+#ifdef __AROS__
+	if (!lib && known_module && ver && stricmp(name, "ftp.module") == 0)
+	{
+		// AROS can fail the versioned open for ftp.module even though the module is usable.
+		// The FTP worker keeps itself resident with an unversioned open, so mirror that here.
+		if (!(lib = OpenLibrary(name, 0)))
+		{
+			strcpy(buf, "PROGDIR:Modules/");
+			strcat(buf, name);
+
+			if (!(lib = OpenLibrary(buf, 0)))
+			{
+				strcpy(buf, "dopus5:modules/");
+				strcat(buf, name);
+				lib = OpenLibrary(buf, 0);
+			}
+		}
+	}
+#endif
+
 	if (!lib)
 	{
 		// Show error

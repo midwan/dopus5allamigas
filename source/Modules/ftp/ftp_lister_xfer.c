@@ -115,7 +115,10 @@ static struct ftp_node *add_abort_trap(struct opusftp_globals *ogp, char *opus, 
 		}
 
 		if (ok)
-			send_rexxa(opus, REXX_REPLY_RESULT, "lister set %lu handler '" PORTNAME "' leavegauge", lclhandle);
+			send_rexxa(opus,
+					   REXX_REPLY_NONE,
+					   "lister set " FTP_HANDLE_PRINTF " handler '" PORTNAME "' leavegauge",
+					   FTP_HANDLE_VALUE(lclhandle));
 	}
 
 	if (!ok)
@@ -136,7 +139,10 @@ static void rem_abort_trap(struct opusftp_globals *ogp, char *opus, struct ftp_n
 {
 	if (tmpnode)
 	{
-		send_rexxa(opus, REXX_REPLY_RESULT, "lister set %lu handler ''", lclhandle);
+		send_rexxa(opus,
+				   REXX_REPLY_NONE,
+				   "lister set " FTP_HANDLE_PRINTF " handler ''",
+				   FTP_HANDLE_VALUE(lclhandle));
 
 		ListLockRemove(&ogp->og_listerlist, (struct Node *)tmpnode, &ogp->og_listercount);
 		//	if	(tmpnode->fn_ipc)
@@ -1458,9 +1464,9 @@ void lister_xfer(struct ftp_node *remotenode, IPCMessage *msg)
 	// Trigger script
 	if (remotenode->fn_og->og_hooks.dc_Script && !(remotenode->fn_flags & LST_ABORT) && timer && CheckTimer(timer))
 	{
-		char handle[13];
+		char handle[FTP_HANDLE_BUFSIZE];
 
-		sprintf(handle, "%lu", srchandle);
+		ftp_format_handle(handle, srchandle);
 
 		if (rexx_result && remotenode->fn_site.se_env->e_script_copy_ok)
 		{
@@ -2376,9 +2382,9 @@ void lister_getput(struct ftp_node *thisnode, IPCMessage *msg)
 	// Trigger script
 	if (thisnode->fn_og->og_hooks.dc_Script && !(prognode->fn_flags & LST_ABORT) && timer && CheckTimer(timer))
 	{
-		char handle[13];
+		char handle[FTP_HANDLE_BUFSIZE];
 
-		sprintf(handle, "%lu", srchandle);
+		ftp_format_handle(handle, srchandle);
 
 		if (rexx_result && (srcnode->fn_site.se_env->e_script_copy_ok || destnode->fn_site.se_env->e_script_copy_ok))
 		{

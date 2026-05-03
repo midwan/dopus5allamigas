@@ -228,13 +228,13 @@ BOOL rexx_dopus_cmd(struct RexxMsg *msg, short command, char *args)
 	case RXCMD_HEXREAD:
 	case RXCMD_SMARTREAD:
 	case RXCMD_ANSIREAD: {
-		unsigned long res;
+		IPTR res;
 
 		// Start reader
-		res = (unsigned long)rexx_read_file(command, args, msg);
+		res = (IPTR)rexx_read_file(command, args, msg);
 
 		// Return reader IPC
-		lsprintf(result, "%ld", res);
+		rexx_format_iptr(result, res);
 	}
 	break;
 
@@ -259,7 +259,7 @@ BOOL rexx_dopus_cmd(struct RexxMsg *msg, short command, char *args)
 	case RXCMD_ADDAPPICON:
 
 		// Add AppIcon
-		lsprintf(result, "%ld", rexx_add_appicon(args, msg));
+		rexx_format_iptr(result, rexx_add_appicon(args, msg));
 		break;
 
 	// Remove icon
@@ -278,7 +278,7 @@ BOOL rexx_dopus_cmd(struct RexxMsg *msg, short command, char *args)
 
 	// Progress indicator
 	case RXCMD_PROGRESS: {
-		long value = 0;
+		IPTR value = 0;
 
 		// Handle it
 		if (rexx_lister_newprogress(0, args, &value))
@@ -287,7 +287,7 @@ BOOL rexx_dopus_cmd(struct RexxMsg *msg, short command, char *args)
 			if (value)
 			{
 				// Build return string
-				lsprintf(result, "%ld", (value == -1) ? 0 : value);
+				rexx_format_iptr(result, (value == (IPTR)-1) ? 0 : value);
 			}
 		}
 

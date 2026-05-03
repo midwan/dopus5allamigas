@@ -91,6 +91,44 @@ long rexx_parse_number(char **ptr, BOOL next, long def)
 	return def;
 }
 
+IPTR rexx_parse_iptr(char **ptr, BOOL next, IPTR def)
+{
+	if (is_digit(*(*ptr)))
+	{
+		UQUAD value = 0;
+
+		while (*(*ptr) && is_digit(*(*ptr)))
+		{
+			value = (value * 10) + (*(*ptr) - '0');
+			++*ptr;
+		}
+
+		def = (IPTR)value;
+		if (next)
+		{
+			while (*(*ptr) && !is_digit(*(*ptr)))
+				++*ptr;
+		}
+	}
+	return def;
+}
+
+void rexx_format_iptr(char *buf, IPTR value)
+{
+	char tmp[32];
+	int pos = sizeof(tmp) - 1;
+	UQUAD number = (UQUAD)value;
+
+	tmp[pos] = 0;
+	do
+	{
+		tmp[--pos] = '0' + (number % 10);
+		number /= 10;
+	} while (number && pos > 0);
+
+	strcpy(buf, tmp + pos);
+}
+
 // Parse number out of string (2nd version)
 BOOL rexx_parse_number_byte(char **ptr, UBYTE *val)
 {

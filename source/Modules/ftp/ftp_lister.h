@@ -123,10 +123,10 @@ struct ftp_node
 	char fn_lscmd[LSCMDLEN + 1];  // The command sent to get the list of files
 	int (*fn_ls_to_entryinfo)(struct entry_info *, const char *line, ULONG flags);
 	struct Task *fn_signaltask;	 // Task to signal on abort
-	ULONG fn_proghandle;
+	IPTR fn_proghandle;
 	struct site_entry fn_site;	// As used in Address book etc
 	int fn_protocol;			// FTP_PROTOCOL_*
-	ULONG fn_read_handle;		// Handle of our Opus text viewer
+	IPTR fn_read_handle;		// Handle of our Opus text viewer
 };
 
 #ifndef __amigaos3__
@@ -179,6 +179,8 @@ struct update_info
 	struct opusftp_globals *ui_og;
 	struct SignalSemaphore ui_sem;
 	ULONG ui_flags;	 // See below...
+	ULONG ui_raw_lines;
+	ULONG ui_entries;
 	struct ftp_node *ui_ftpnode;
 	IPTR ui_handle;  // Lister
 	char *ui_opus;	  // Opus Arexx port name

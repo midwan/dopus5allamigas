@@ -64,6 +64,9 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_recursive.h"
 #include "ftp_util.h"
 
+#define FTP_ADDRBOOK_MIN_SAVED_WIDTH 320
+#define FTP_ADDRBOOK_MIN_SAVED_HEIGHT 140
+
 #define SetFlag(v, f) ((v) |= (f))
 #define ClearFlag(v, f) ((v) &= ~(f))
 #define ToggleFlag(v, f) ((v) ^= (f))
@@ -398,6 +401,9 @@ static VOID store_window_pos(struct Window *window)
 	pos.Top = window->TopEdge;
 	pos.Width = window->Width - window->BorderLeft - window->BorderRight;
 	pos.Height = window->Height - window->BorderTop - window->BorderBottom;
+
+	if (pos.Width < FTP_ADDRBOOK_MIN_SAVED_WIDTH || pos.Height < FTP_ADDRBOOK_MIN_SAVED_HEIGHT)
+		return;
 
 	SavePos("dopus/windows/ftp", (struct IBox *)&pos, window->RPort->TxHeight);
 }
@@ -3381,6 +3387,9 @@ static struct window_params *show_addrbook(struct display_globals *dg, struct su
 		// Try to load size
 		if (LoadPos("dopus/windows/ftp", &pos, &old_font_size))
 		{
+			if (pos.Width < FTP_ADDRBOOK_MIN_SAVED_WIDTH || pos.Height < FTP_ADDRBOOK_MIN_SAVED_HEIGHT)
+				old_font_size = 0;
+
 			D(bug("font size %ld , old_font_size %ld\n", dg->dg_og->og_screen->RastPort.TxHeight, old_font_size));
 
 			// Is font size the same?

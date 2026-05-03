@@ -224,7 +224,7 @@ struct protect_msg
 struct xfer_msg
 {
 	struct RexxMsg *xm_rxmsg;
-	ULONG xm_otherhandle;  // The handle of the other lister
+	IPTR xm_otherhandle;  // The handle of the other lister
 	ULONG xm_flags;		   // See below
 	char *xm_names;		   // The files to transfer (may be NULL)
 	char *xm_srcpath;	   // Whether or not one is specified with the 'TO' switch

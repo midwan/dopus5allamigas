@@ -26,11 +26,27 @@ For more information on Directory Opus for Windows please see:
 #ifndef _OF_UTIL_H
 #define _OF_UTIL_H
 
+struct entry_info;
+struct rec_entry_list;
+
 // Flags for display_msg
 #define DSPMSG_RETRYABORT (1 << 0)
 
 // Display a string, with optional Retry/Abort buttons
 long display_msg(struct opusftp_globals *, IPCData *, struct Window *, ULONG flags, char *);
+
+// Decimal string room for a pointer-sized lister handle.
+#define FTP_HANDLE_BUFSIZE 32
+#if defined(__AROS__) && defined(__x86_64__)
+	#define FTP_HANDLE_PRINTF "%llu"
+	#define FTP_HANDLE_VALUE(handle) ((unsigned long long)(UQUAD)(handle))
+#else
+	#define FTP_HANDLE_PRINTF "%lu"
+	#define FTP_HANDLE_VALUE(handle) ((unsigned long)(IPTR)(handle))
+#endif
+
+IPTR ftp_parse_handle(const char *);
+void ftp_format_handle(char *, IPTR);
 
 // Get the name of the logged-in user on the Amiga
 char *getlogname(char *);

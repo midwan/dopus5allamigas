@@ -45,7 +45,7 @@ void rexx_lister_new(struct RexxMsg *msg, char *args)
 	Cfg_Lister *cfg;
 	Lister *new_lister = 0, *parent = 0;
 	char toolbar_path[256];
-	char buf[12];
+	char buf[32];
 	short key, fromicon = 0, nomode = 0;
 	ULONG flags = 0;
 	position_rec *pos = 0;
@@ -74,7 +74,7 @@ void rexx_lister_new(struct RexxMsg *msg, char *args)
 		else if (key == NL_PARENT)
 		{
 			// Get parent lister
-			parent = (Lister *)rexx_parse_number(&args, 0, 0);
+			parent = (Lister *)rexx_parse_iptr(&args, 0, 0);
 		}
 
 		// Invisible
@@ -231,7 +231,7 @@ void rexx_lister_new(struct RexxMsg *msg, char *args)
 		// Build return codes
 		if (new_lister)
 		{
-			lsprintf(buf, "%ld", new_lister);
+			rexx_format_iptr(buf, (IPTR)new_lister);
 			rexx_set_return(msg, 0, buf);
 		}
 		else
@@ -266,7 +266,7 @@ BOOL rexx_lister_cmd(struct RexxMsg *msg, short command, char *args)
 
 	// Get handle
 	else
-		lister = (Lister *)rexx_parse_number(&args, 0, 0);
+		lister = (Lister *)rexx_parse_iptr(&args, 0, 0);
 
 	// See if variable or stem is specified
 	for (id = strlen(args), val = 0; id > 0 && val < 2; id--)
@@ -691,12 +691,12 @@ BOOL rexx_lister_cmd(struct RexxMsg *msg, short command, char *args)
 
 			// Window pointer
 			case RXCMD_WINDOW:
-				lsprintf(result, "%ld", lister->window);
+				rexx_format_iptr(result, (IPTR)lister->window);
 				break;
 
 			// Process pointer
 			case RXCMD_PROC:
-				lsprintf(result, "%ld", lister->ipc->proc);
+				rexx_format_iptr(result, (IPTR)lister->ipc->proc);
 				break;
 
 			// Custom title/header
@@ -1471,7 +1471,7 @@ BOOL rexx_lister_cmd(struct RexxMsg *msg, short command, char *args)
 
 			// Get destination lister handle
 			rexx_skip_space(&args);
-			dest_lister = (Lister *)rexx_parse_number(&args, 0, 0);
+			dest_lister = (Lister *)rexx_parse_iptr(&args, 0, 0);
 
 			// Check it's valid
 			if (rexx_lister_valid(dest_lister))
@@ -1624,7 +1624,7 @@ void rexx_lister_file_return(struct RexxMsg *msg, DirBuffer *buffer, short id, c
 
 			else
 				// Result string
-				if (!(msg->rm_Result2 = (long)CreateArgstring(0, 0)))
+				if (!(msg->rm_Result2 = (IPTR)CreateArgstring(0, 0)))
 				msg->rm_Result1 = RXERR_NO_MEMORY;
 			return;
 		}
@@ -1687,7 +1687,7 @@ void rexx_lister_file_return(struct RexxMsg *msg, DirBuffer *buffer, short id, c
 
 	else
 		// Result string
-		if (!(msg->rm_Result2 = (long)CreateArgstring(string, strlen(string))))
+		if (!(msg->rm_Result2 = (IPTR)CreateArgstring(string, strlen(string))))
 		msg->rm_Result1 = RXERR_NO_MEMORY;
 
 	// Free temporary string
@@ -1894,7 +1894,7 @@ void rexx_lister_entry_info(struct RexxMsg *msg, DirBuffer *buffer, char *args, 
 
 	else
 		// Result string
-		if (!(msg->rm_Result2 = (long)CreateArgstring(string, strlen(string))))
+		if (!(msg->rm_Result2 = (IPTR)CreateArgstring(string, strlen(string))))
 		msg->rm_Result1 = RXERR_NO_MEMORY;
 
 	// Free temp string
@@ -1907,7 +1907,7 @@ void rexx_lister_get_current(struct RexxMsg *msg, short type, short var_flag, ch
 	Lister *lister;
 	IPCData *ipc;
 	short num, count = 0;
-	char *string = 0, buf[12];
+	char *string = 0, buf[32];
 
 	// If setting stem, set count to 0 initially
 	if (var_flag == RETURN_STEM)
@@ -1961,7 +1961,7 @@ void rexx_lister_get_current(struct RexxMsg *msg, short type, short var_flag, ch
 	}
 
 	// Allocate result string
-	if (var_flag != RETURN_STEM && !(string = AllocVec(num * 11 + 1, MEMF_CLEAR)))
+	if (var_flag != RETURN_STEM && !(string = AllocVec(num * (sizeof(buf) - 1) + 1, MEMF_CLEAR)))
 	{
 		msg->rm_Result1 = RXERR_NO_MEMORY;
 	}
@@ -1980,18 +1980,21 @@ void rexx_lister_get_current(struct RexxMsg *msg, short type, short var_flag, ch
 				if (var_flag == RETURN_STEM)
 				{
 					char name[12];
+					char handle[32];
 
 					// Build variable
 					lsprintf(name, "%ld", count++);
+					rexx_format_iptr(handle, (IPTR)lister);
 
 					// Set rexx variable
-					rexx_set_var(msg, varname, name, (IPTR)lister, RX_LONG);
+					rexx_set_var(msg, varname, name, (IPTR)handle, RX_STRING);
 				}
 
 				// Otherwise, add handle to string
 				else
 				{
-					lsprintf(buf, "%ld ", lister);
+					rexx_format_iptr(buf, (IPTR)lister);
+					strcat(buf, " ");
 					strcat(string, buf);
 				}
 
@@ -2014,7 +2017,7 @@ void rexx_lister_get_current(struct RexxMsg *msg, short type, short var_flag, ch
 			msg->rm_Result2 = 0;
 
 		// Result string
-		else if (!(msg->rm_Result2 = (long)CreateArgstring(string, strlen(string))))
+		else if (!(msg->rm_Result2 = (IPTR)CreateArgstring(string, strlen(string))))
 			msg->rm_Result1 = RXERR_NO_MEMORY;
 
 		// Free temporary string
@@ -2223,7 +2226,7 @@ long rexx_set_format(short command, short id, ListFormat *format, char *args)
 }
 
 // New progress indicator
-long rexx_lister_newprogress(Lister *lister, char *args, long *retval)
+long rexx_lister_newprogress(Lister *lister, char *args, IPTR *retval)
 {
 	short key;
 	APTR handle = 0;
@@ -2238,13 +2241,13 @@ long rexx_lister_newprogress(Lister *lister, char *args, long *retval)
 	// No lister?
 	if (!lister)
 	{
-		long value;
+		IPTR value;
 
 		// Skip spaces
 		rexx_skip_space(&args);
 
 		// See if number is given
-		if ((value = rexx_parse_number(&args, 0, -1)) != -1)
+		if ((value = rexx_parse_iptr(&args, 0, (IPTR)-1)) != (IPTR)-1)
 		{
 			RexxProgress *look;
 
@@ -2341,7 +2344,7 @@ long rexx_lister_newprogress(Lister *lister, char *args, long *retval)
 
 					// Send back handle
 					if (retval)
-						*retval = (long)prog;
+						*retval = (IPTR)prog;
 					return 1;
 				}
 
@@ -2486,7 +2489,7 @@ long rexx_lister_newprogress(Lister *lister, char *args, long *retval)
 
 				// Return -1 for no abort
 				if (!abort)
-					*retval = -1;
+					*retval = (IPTR)-1;
 				else
 					*retval = 1;
 			}
@@ -2499,7 +2502,7 @@ long rexx_lister_newprogress(Lister *lister, char *args, long *retval)
 
 		// Return value
 		if (retval)
-			*retval = (long)handle;
+			*retval = (IPTR)handle;
 		return 0;
 	}
 

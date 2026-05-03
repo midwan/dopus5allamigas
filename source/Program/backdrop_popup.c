@@ -650,7 +650,12 @@ BOOL backdrop_popup(BackdropInfo *info, short x, short y, UWORD qual, long bpfla
 					if (desktop_icon_path(object, ipath, 256, 0))
 					{
 						// Get rexx function to run
-						lsprintf(rexxcmd, "%s \"%s\" %s %ld", path, ipath, GUI->rexx_port_name, info->lister);
+						lsprintf(rexxcmd,
+								 "%s \"%s\" %s %lu",
+								 path,
+								 ipath,
+								 GUI->rexx_port_name,
+								 (unsigned long)(IPTR)info->lister);
 
 						// Run rexx thing
 						rexx_send_command(rexxcmd, FALSE);

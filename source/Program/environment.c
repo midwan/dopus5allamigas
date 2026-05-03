@@ -276,7 +276,6 @@ static void environment_harmonise_default_look(Cfg_Environment *env, char *name,
 		 (LISTEROPTF_2XCLICK | LISTEROPTF_TITLES | LISTEROPTF_POPUP | LISTEROPTF_EDIT_BOTH)))
 		return;
 
-	aros_debug_log("environment_harmonise_default_look applied\n");
 	cfg->display_options &= ~DISPOPTF_NO_BACKDROP;
 	cfg->display_options |= DISPOPTF_SHOW_APPICONS | DISPOPTF_SHOW_TOOLS | DISPOPTF_ICON_POS |
 							DISPOPTF_USE_WBPATTERN | DISPOPTF_REALTIME_SCROLL | DISPOPTF_THIN_BORDERS;
@@ -294,36 +293,6 @@ static void environment_harmonise_default_look(Cfg_Environment *env, char *name,
 	cfg->volumes_col[1] = 2;
 }
 
-static void environment_debug_log_state(char *tag, Cfg_Environment *env, BOOL success, BOOL first)
-{
-	char buf[160];
-
-	lsprintf(buf, "%s success=%ld first=%ld\n", tag, (ULONG)success, (ULONG)first);
-	aros_debug_log(buf);
-	aros_debug_log(" path=");
-	aros_debug_log(env->path);
-	aros_debug_log("\n toolbar=");
-	aros_debug_log(env->toolbar_path);
-	aros_debug_log("\n");
-	lsprintf(buf,
-			 " display=%ld env_flags=%ld desktop_flags=%ld lister_options=%ld\n",
-			 (ULONG)env->env->display_options,
-			 env->env->env_flags,
-			 env->env->desktop_flags,
-			 (ULONG)env->env->lister_options);
-	aros_debug_log(buf);
-	lsprintf(buf,
-			 " colours src=%ld/%ld dst=%ld/%ld devices=%ld/%ld volumes=%ld/%ld\n",
-			 (ULONG)env->env->source_col[0],
-			 (ULONG)env->env->source_col[1],
-			 (ULONG)env->env->dest_col[0],
-			 (ULONG)env->env->dest_col[1],
-			 (ULONG)env->env->devices_col[0],
-			 (ULONG)env->env->devices_col[1],
-			 (ULONG)env->env->volumes_col[0],
-			 (ULONG)env->env->volumes_col[1]);
-	aros_debug_log(buf);
-}
 #endif
 
 // Read an environment
@@ -363,7 +332,6 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 
 #ifdef __AROS__
 		environment_harmonise_default_look(env, name, first);
-		environment_debug_log_state("environment_open loaded", env, success, first);
 #endif
 
 		// Get maximum filename length
@@ -374,11 +342,6 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 	else if (GUI->def_filename_length > MAX_FILENAME_LEN)
 		GUI->def_filename_length = MAX_FILENAME_LEN;
 	}
-#ifdef __AROS__
-	else
-		environment_debug_log_state("environment_open failed using current", env, success, first);
-#endif
-
 	// Successful?
 	if (success || first)
 	{
@@ -394,9 +357,6 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 
 		// Use installed defaults if an environment has stale or missing button paths
 		environment_fix_button_paths(env);
-#ifdef __AROS__
-		environment_debug_log_state("environment_open after path fix", env, success, first);
-#endif
 
 		// Bump progress
 		main_bump_progress(prog, progress++, 0);
@@ -404,22 +364,6 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 		// Get new toolbar
 		FreeToolBar(GUI->toolbar);
 		GUI->toolbar = environment_open_toolbar(env);
-#ifdef __AROS__
-		{
-			char buf[120];
-
-			lsprintf(buf,
-					 "environment_open toolbar %s count=%ld height=%ld button_height=%ld\n",
-					 (GUI->toolbar) ? "ok" : "failed",
-					 (GUI->toolbar) ? (ULONG)GUI->toolbar->count : 0,
-					 (GUI->toolbar) ? (ULONG)GUI->toolbar->height : 0,
-					 (GUI->toolbar) ? (ULONG)GUI->toolbar->button_height : 0);
-			aros_debug_log(buf);
-			aros_debug_log(" toolbar_final=");
-			aros_debug_log(env->toolbar_path);
-			aros_debug_log("\n");
-		}
-#endif
 
 		// Bump progress
 		main_bump_progress(prog, progress++, 0);
@@ -466,11 +410,6 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 
 			stccpy(button_path, button->node.ln_Name, sizeof(button_path));
 			environment_fix_open_button_path(button_path);
-#ifdef __AROS__
-			aros_debug_log("environment_open button path=");
-			aros_debug_log(button_path);
-			aros_debug_log("\n");
-#endif
 
 			// Create button bank from this node
 			if ((but = buttons_new(button_path, 0, &button->pos, 0, button->flags | BUTTONF_FAIL)))

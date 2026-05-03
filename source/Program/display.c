@@ -244,20 +244,6 @@ BOOL display_open(long flags)
 			GUI->backdrop_window = 1;
 		else
 			GUI->backdrop_window = 0;
-#ifdef __AROS__
-		{
-			char buf[160];
-
-			lsprintf(buf,
-					 "open_display backdrop_window=%ld display=%ld env_flags=%ld desktop_flags=%ld toolbar=%ld\n",
-					 (ULONG)GUI->backdrop_window,
-					 (ULONG)environment->env->display_options,
-					 environment->env->env_flags,
-					 environment->env->desktop_flags,
-					 (ULONG)(GUI->toolbar != 0));
-			aros_debug_log(buf);
-		}
-#endif
 
 		// Get window dimensions
 		if (GUI->backdrop_window || (environment->env->window_pos.Width < 1 || environment->env->window_pos.Height < 1))
@@ -735,8 +721,6 @@ void close_display(int close_flags, BOOL quit_all)
 					Delay(5);
 				}
 
-				if (tries == 20)
-					aros_debug_log("close_display pending quit continuing after CloseScreen failure\n");
 			}
 			else
 #endif

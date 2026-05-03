@@ -202,9 +202,6 @@ struct ftp_node *find_ftpnode(struct opusftp_globals *og, IPTR handle)
 	return n->fn_node.ln_Succ ? n : 0;
 }
 
-/********************************/
-
-//
 //	Launch a sub process (with global data pointer)
 //
 static IPCData *launch(struct opusftp_globals *og,
@@ -579,6 +576,7 @@ static int ipc_connect(struct opusftp_globals *og, IPCData *ipc, struct ListLock
 	struct connect_msg *cm = msg->data_free;
 	struct ftp_node *node;
 	char buffer[1024 + 1];
+	char handlebuf[FTP_HANDLE_BUFSIZE];
 	struct quit_msg *qm;
 	IPCData *listerproc;
 	int sent = 0;
@@ -589,13 +587,14 @@ static int ipc_connect(struct opusftp_globals *og, IPCData *ipc, struct ListLock
 		// Handle of ftp lister?
 		if ((node = find_ftpnode(og, cm->cm_handle)))
 		{
+			ftp_format_handle(handlebuf, cm->cm_handle);
 			if (*cm->cm_site.se_name)
 			{
-				sprintf(buffer, "FTPConnect LISTER=%lu SITE=\"%s\"", cm->cm_handle, cm->cm_site.se_name);
+				sprintf(buffer, "FTPConnect LISTER=%s SITE=\"%s\"", handlebuf, cm->cm_site.se_name);
 			}
 			else
 			{
-				sprintf(buffer, "FTPConnect LISTER=%lu %s", cm->cm_handle, cm->cm_site.se_host);
+				sprintf(buffer, "FTPConnect LISTER=%s %s", handlebuf, cm->cm_site.se_host);
 			}
 
 			if (!*cm->cm_site.se_name && cm->cm_site.se_env)
@@ -659,6 +658,31 @@ static int ipc_connect(struct opusftp_globals *og, IPCData *ipc, struct ListLock
 
 /********************************/
 
+#if defined(__AROS__) && defined(__x86_64__)
+static BPTR open_aros_debug_log(void)
+{
+	BPTR file;
+
+	if ((file = Open("PROGDIR:DOpus5-ftp-debug.log", MODE_NEWFILE)))
+		return file;
+
+	return Open("T:DOpus5-ftp-debug.log", MODE_NEWFILE);
+}
+#endif
+
+static void ensure_debug_log(struct opusftp_globals *og, struct main_event_data *med)
+{
+#if defined(__AROS__) && defined(__x86_64__)
+	if (og && med && og->og_oc.oc_log_debug && !med->med_log_fp)
+	{
+		if ((med->med_log_fp = open_aros_debug_log()))
+			og->og_log_open = TRUE;
+	}
+#endif
+}
+
+/********************************/
+
 static int handle_ipc_msg(struct opusftp_globals *og, struct main_event_data *med)
 {
 	IPCMessage *msg;
@@ -686,10 +710,18 @@ static int handle_ipc_msg(struct opusftp_globals *og, struct main_event_data *me
 		// Print to log file
 		// We want to print the listers' goodbye messages even if we are quitting
 		case IPC_PRINT:
-			D(bug("LOG: %s", msg->data_free));
+			if (!msg->data_free)
+				break;
+
+			D(bug("LOG: %s", (char *)msg->data_free));
+
+			ensure_debug_log(og, med);
 
 			if (med->med_log_fp)
-				FWrite(med->med_log_fp, msg->data_free, strlen(msg->data_free), 1);
+			{
+				FWrite(med->med_log_fp, msg->data_free, strlen((char *)msg->data_free), 1);
+				Flush(med->med_log_fp);
+			}
 			break;
 
 		case IPC_ADDRBOOK:
@@ -834,7 +866,7 @@ static void opus_dnd_remote(struct opusftp_globals *og, int argc, char **argv)
 
 	D(bug("opus_dnd_remote()\n"));
 
-	if (argc >= 4 && (srcnode = find_ftpnode(og, atoi(argv[1]))) && (dstnode = find_ftpnode(og, atoi(argv[3]))))
+	if (argc >= 4 && (srcnode = find_ftpnode(og, ftp_parse_handle(argv[1]))) && (dstnode = find_ftpnode(og, ftp_parse_handle(argv[3]))))
 	{
 		// We are usually called from the "dropfrom" command
 		// In case this changes, swap the source and destination for the "drop" command
@@ -930,7 +962,7 @@ static int opus_active(struct opusftp_globals *og, struct RexxMsg *rxmsg, int ar
 
 	D(bug("opus_active(%s)\n", argv[3]));
 
-	if (argc < 5 || !(node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc < 5 || !(node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 		return 0;
 
 	// Redisplay the list if not same path
@@ -965,7 +997,7 @@ static int opus_doubleclick(struct opusftp_globals *og, struct RexxMsg *rxmsg, i
 	struct ftp_msg *fm;
 	int retval = 0;
 
-	if (argc >= 7 && (node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc >= 7 && (node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 	{
 		if ((fm = AllocVec(sizeof(struct ftp_msg) + FILENAMELEN + 1, MEMF_CLEAR)))
 		{
@@ -1018,11 +1050,11 @@ static int opus_drop(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 	int retval = 0;
 
 	// Valid?
-	if (argc < 4 || !(node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc < 4 || !(node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 		return 0;
 
 	// Source is a lister?
-	if ((srchandle = atoi(argv[3])))
+	if ((srchandle = ftp_parse_handle(argv[3])))
 	{
 		// Ignore Drop if both are FTP listers
 		if (find_ftpnode(og, srchandle))
@@ -1259,11 +1291,11 @@ static int opus_dropfrom(struct opusftp_globals *og, struct RexxMsg *rxmsg, int 
 	D(bug("opus_dropfrom()\n"));
 
 	// Valid?
-	if (argc < 4 || !(node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc < 4 || !(node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 		return 0;
 
 	// Destination is a lister?
-	if ((desthandle = atoi(argv[3])))
+	if ((desthandle = ftp_parse_handle(argv[3])))
 	{
 		// Drag to subdir?
 		if (strstr(argv[6], "subdrop"))
@@ -1473,7 +1505,7 @@ static int opus_edit(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 
 	D(bug("opus_edit()\n"));
 
-	if (argc < 5 || !(node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc < 5 || !(node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 		return 0;
 
 	if (!(em = AllocVec(sizeof(struct edit_msg) + strlen(argv[3]) + 1 + strlen(argv[2]) + 1 + strlen(argv[4]) + 1,
@@ -1514,10 +1546,10 @@ static int opus_inactive(struct opusftp_globals *og, struct RexxMsg *rxmsg, int 
 
 	D(bug("opus_inactive(%s)\n", argv[3]));
 
-	if (argc >= 3 && (node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc >= 3 && (node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 	{
 		// Has lister disappeared?  Ignore if lister is supposed to be invisible
-		if (atoi(argv[3]))
+		if (ftp_parse_handle(argv[3]))
 		{
 			if ((qm = AllocVec(sizeof(struct quit_msg), MEMF_CLEAR)))
 			{
@@ -1549,7 +1581,7 @@ static int opus_parent(struct opusftp_globals *og, struct RexxMsg *rxmsg, int ar
 	struct ftp_node *node;
 	int retval = 0;
 
-	if ((node = find_ftpnode(og, atoi(argv[1]))))
+	if ((node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 	{
 		IPC_Command(node->fn_ipc, IPC_PARENT, 0, rxmsg, 0, 0);
 		retval = 1;
@@ -1571,7 +1603,7 @@ static int opus_path(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 	int len;
 	int retval = 0;
 
-	if ((node = find_ftpnode(og, atoi(argv[1]))))
+	if ((node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 	{
 		const char *url_body;
 		int url_protocol;
@@ -1628,7 +1660,7 @@ static int opus_reread(struct opusftp_globals *og, struct RexxMsg *rxmsg, int ar
 	struct ftp_node *node;
 	int retval = 0;
 
-	if ((node = find_ftpnode(og, atoi(argv[1]))))
+	if ((node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 	{
 		IPC_Command(node->fn_ipc, IPC_REREAD, 0, rxmsg, 0, 0);
 		retval = 1;
@@ -1647,7 +1679,7 @@ static int opus_root(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 	struct ftp_node *node;
 	int retval = 0;
 
-	if ((node = find_ftpnode(og, atoi(argv[1]))))
+	if ((node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 	{
 		IPC_Command(node->fn_ipc, IPC_ROOT, 0, rxmsg, 0, 0);
 		retval = 1;
@@ -1666,7 +1698,7 @@ static int opus_snapshot(struct opusftp_globals *og, struct RexxMsg *rxmsg, int 
 	struct ftp_node *node;
 	int retval = 0;
 
-	if ((node = find_ftpnode(og, atoi(argv[1]))))
+	if ((node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 	{
 		IPC_Command(node->fn_ipc, IPC_SNAPSHOT, 0, rxmsg, 0, 0);
 		retval = 1;
@@ -1685,7 +1717,7 @@ static int opus_unsnapshot(struct opusftp_globals *og, struct RexxMsg *rxmsg, in
 	struct ftp_node *node;
 	int retval = 0;
 
-	if ((node = find_ftpnode(og, atoi(argv[1]))))
+	if ((node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 	{
 		IPC_Command(node->fn_ipc, IPC_UNSNAPSHOT, 0, rxmsg, 0, 0);
 		retval = 1;
@@ -1704,7 +1736,7 @@ static int popup_add(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 	struct ftp_node *node;
 	int retval = 0;
 
-	if ((node = find_ftpnode(og, atoi(argv[1]))))
+	if ((node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 	{
 		IPC_Command(node->fn_ipc, IPC_ADD, 0, 0, 0, 0);
 		retval = 1;
@@ -1723,7 +1755,7 @@ static int popup_options(struct opusftp_globals *og, struct RexxMsg *rxmsg, int 
 	struct ftp_node *node;
 	int retval = 0;
 
-	if ((node = find_ftpnode(og, atoi(argv[1]))))
+	if ((node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 	{
 		IPC_Command(node->fn_ipc, IPC_OPTIONS, 0, 0, 0, 0);
 		retval = 1;
@@ -1746,7 +1778,7 @@ static int trap_abort(struct opusftp_globals *og, struct RexxMsg *rxmsg, int arg
 	struct ftp_node *node;
 	int retval = 0;
 
-	if ((node = find_ftpnode(og, atoi(argv[1]))))
+	if ((node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 	{
 		// Stop high level stuff
 		node->fn_flags |= LST_ABORT;
@@ -1793,7 +1825,7 @@ static int trap_configure(struct opusftp_globals *og, struct RexxMsg *rxmsg, int
 	D(bug("trap_configure()\n"));
 
 	// Valid?
-	if (argc < 5 || !argv[1] || !(node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc < 5 || !argv[1] || !(node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 		return 0;
 
 	if ((fm = AllocVec(sizeof(*fm), MEMF_CLEAR)))
@@ -1933,8 +1965,8 @@ static int trap_copy(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 			flags |= XFER_OPT_NEWNAME;
 
 		// Which listers are FTP sites?
-		srcnode = find_ftpnode(og, atoi(argv[1]));
-		dstnode = find_ftpnode(og, atoi(argv[3]));
+		srcnode = find_ftpnode(og, ftp_parse_handle(argv[1]));
+		dstnode = find_ftpnode(og, ftp_parse_handle(argv[3]));
 
 		// One end local and one end FTP?
 		if ((srcnode || dstnode) && !(srcnode && dstnode))
@@ -1948,7 +1980,7 @@ static int trap_copy(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 			dstpath = dstnode ? (char *)fa->FA_Arguments[opt_name] : 0;
 
 			// If no dest lister, check for dest path from requester
-			if (srcnode && !atoi(argv[3]) && !dstpath && argv[7] && *argv[7])
+			if (srcnode && !ftp_parse_handle(argv[3]) && !dstpath && argv[7] && *argv[7])
 				dstpath = argv[7];
 
 			// If filename only supplied, don't pass path
@@ -1976,9 +2008,9 @@ static int trap_copy(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 
 				if (srcnode)
 				{
-					if (atoi(argv[3]))
+					if (ftp_parse_handle(argv[3]))
 					{
-						xm->xm_otherhandle = atoi(argv[3]);
+						xm->xm_otherhandle = ftp_parse_handle(argv[3]);
 					}
 					else
 					{
@@ -1987,7 +2019,7 @@ static int trap_copy(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 				}
 				else
 				{
-					xm->xm_otherhandle = atoi(argv[1]);
+					xm->xm_otherhandle = ftp_parse_handle(argv[1]);
 				}
 
 				xm->xm_flags = flags;
@@ -2106,7 +2138,7 @@ static int trap_delete(struct opusftp_globals *og, struct RexxMsg *rxmsg, int ar
 		args = " ";
 
 	// Valid?
-	if (argc < 8 || !argv[1] || !argv[2] || !(node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc < 8 || !argv[1] || !argv[2] || !(node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 		return 0;
 
 	// This template MUST be identical to the current internal command template!
@@ -2129,7 +2161,7 @@ static int trap_delete(struct opusftp_globals *og, struct RexxMsg *rxmsg, int ar
 		tags[3].ti_Data = (IPTR)&ei.ei_prot;
 		tags[4].ti_Data = (IPTR)ei.ei_comment;
 
-		function_handle = (APTR)(IPTR)atoi(argv[8]);
+		function_handle = (APTR)ftp_parse_handle(argv[8]);
 
 		if (DC_CALL2(h, dc_GetSource, DC_REGA0, function_handle, DC_REGA1, 0))
 		// if	(h->dc_GetSource( function_handle, 0 ))
@@ -2232,7 +2264,7 @@ static int trap_findfile(struct opusftp_globals *og, struct RexxMsg *rxmsg, int 
 	int retval = 0;
 
 	// Valid?
-	if (argc < 5 || !argv[1] || !(node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc < 5 || !argv[1] || !(node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 		return retval;
 
 	if ((fm = AllocVec(sizeof(struct findfile_msg) + strlen(argv[2]) + 1, MEMF_CLEAR)))
@@ -2279,7 +2311,7 @@ static int trap_getsizes(struct opusftp_globals *og, struct RexxMsg *rxmsg, int 
 		args = " ";
 
 	// Valid?
-	if (argc < 5 || !argv[1] || !(node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc < 5 || !argv[1] || !(node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 		return 0;
 
 	// This template MUST be identical to the current internal command template!
@@ -2336,7 +2368,7 @@ static int trap_makedir(struct opusftp_globals *og, struct RexxMsg *rxmsg, int a
 		args = " ";
 
 	// Valid?
-	if (argc < 5 || !argv[1] || !(node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc < 5 || !argv[1] || !(node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 		return 0;
 
 	// This template MUST be identical to the current internal command template!
@@ -2409,7 +2441,7 @@ static int trap_protect(struct opusftp_globals *og, struct RexxMsg *rxmsg, int a
 		args = " ";
 
 	// Valid?
-	if (argc < 5 || !argv[1] || !(node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc < 5 || !argv[1] || !(node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 		return retval;
 
 	// This template MUST be identical to the current internal command template!
@@ -2475,7 +2507,7 @@ static int trap_rename(struct opusftp_globals *og, struct RexxMsg *rxmsg, int ar
 	struct ftp_msg *fm;
 	int retval = 0;
 
-	if (argc >= 3 && argv[1] && argv[2] && (node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc >= 3 && argv[1] && argv[2] && (node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 	{
 		if ((fm = AllocVec(sizeof(struct ftp_msg) + strlen(argv[2]) + 1, MEMF_CLEAR)))
 		{
@@ -2516,7 +2548,7 @@ static int opus_traptemp(struct opusftp_globals *og, struct RexxMsg *rxmsg, int 
 	int retval = 0;
 
 	// Valid?
-	if (argc < 2 || !argv[0] || !argv[1] || !argv[2] || !(node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc < 2 || !argv[0] || !argv[1] || !argv[2] || !(node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 		return 0;
 
 	if ((tm = AllocVec(sizeof(*tm) + strlen(argv[2]) + 1, MEMF_CLEAR)))
@@ -2551,7 +2583,7 @@ static int opus_devicelist(struct opusftp_globals *og, struct RexxMsg *rxmsg, in
 	int len;
 	struct quit_msg *qm;
 
-	if (argc < 2 || !(node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc < 2 || !(node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 		return 0;
 
 	if (argc >= 6 && argv[5] && *argv[5])
@@ -2601,7 +2633,7 @@ static int opus_scandir(struct opusftp_globals *og, struct RexxMsg *rxmsg, int a
 		args = " ";
 
 	// Valid?
-	if (argc < 2 || !(node = find_ftpnode(og, atoi(argv[1]))))
+	if (argc < 2 || !(node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 		return 0;
 
 	// This template MUST be identical to the current internal command template...
@@ -2772,11 +2804,17 @@ static void handle_rexx(struct opusftp_globals *og, struct main_event_data *med,
 			if ((rxmsg->rm_Action & 0xffffff00) == RXFUNC)
 			{
 				argc = (rxmsg->rm_Action & 0xff);
-				argv = rxmsg->rm_Args;
+				argv = (char **)rxmsg->rm_Args;
 
 				// Limit args to 16
 				if (argc > 16)
 					argc = 16;
+
+				if (argc < 1 || !argv || !argv[0])
+				{
+					reply_rexx(rxmsg, 10, 0);
+					continue;
+				}
 
 				// Find function in array
 				for (rfi = rexx_func_table; rfi->rfi_name; ++rfi)
@@ -2800,11 +2838,11 @@ static void handle_rexx(struct opusftp_globals *og, struct main_event_data *med,
 					}
 
 					// Warn about unsupported command
-					else if (!og->og_noreq)
+					else if (!og->og_noreq && argc > 1 && argv[1])
 					{
 						struct ftp_node *node;
 
-						if ((node = find_ftpnode(og, atoi(argv[1]))))
+						if ((node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 						{
 							lister_request_tags(node,
 												FR_IPC,
@@ -3145,10 +3183,8 @@ void dopus_ftp(void)
 			og->og_main_ipc = mldata->mld_ftp_ipc;
 			med.med_ipc = mldata->mld_ftp_ipc;
 
-			// Get Opus ARexx port name via callbacks
-
-			REFCALL(mldata->mld_func_callback, EXTCMD_GET_PORT, IPCDATA(mldata->mld_ftp_ipc), med.med_opus);
-			//			mldata->mld_func_callback( EXTCMD_GET_PORT, IPCDATA(mldata->mld_ftp_ipc), med.med_opus );
+			// Module_Entry already queried the launcher for the Opus ARexx port.
+			stccpy(med.med_opus, og->og_opusname, PORTNAMELEN + 1);
 
 			// Scan configuration file
 			med.med_log_fp = setup_config(og);

@@ -241,7 +241,18 @@ void init_commands_scan(short type)
 #ifdef __amigaos4__
 				if (OpenLibIFace(anchor->ap_Buf, (APTR)&ModuleBase, (APTR)&IModule, ver))
 #else
+	#ifdef __AROS__
+				if (!(ModuleBase = OpenLibrary(anchor->ap_Buf, ver)) && ver &&
+					stricmp(anchor->ap_Info.fib_FileName, "ftp.module") == 0)
+				{
+					// AROS can fail the versioned open for ftp.module during command discovery.
+					// Runtime command dispatch applies the same fallback in OpenModule().
+					ModuleBase = OpenLibrary(anchor->ap_Buf, 0);
+				}
+				if (ModuleBase)
+	#else
 				if ((ModuleBase = OpenLibrary(anchor->ap_Buf, ver)))
+	#endif
 #endif
 				{
 					ModuleInfo *info;
@@ -325,7 +336,6 @@ void init_commands_scan(short type)
 								ModuleBase = 0;
 						}
 					}
-
 // Close module
 #ifdef __amigaos4__
 					DropInterface((struct Interface *)IModule);
