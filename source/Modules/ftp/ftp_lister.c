@@ -3542,7 +3542,7 @@ static void lister_msg_loop(struct opusftp_globals *og, struct msg_loop_data *ml
 					D(bug("*** lister received IPC_QUIT ***\n"));
 
 					// Has lister already been closed?
-					if (mld->mld_node && imsg->flags == -1)
+					if (mld->mld_node && imsg->flags == (IPTR)-1)
 						mld->mld_node->fn_flags &= ~LST_OPENED;
 
 					// Leave lister open?
@@ -3654,13 +3654,13 @@ void lister(void)
 		if (mld.mld_quitmsg)
 		{
 			// Our quit message structure attached?
-			if (mld.mld_quitmsg->flags)
+			if (mld.mld_quitmsg->data)
 			{
 				// ARexx message?
-				if (((struct quit_msg *)mld.mld_quitmsg->flags)->qm_rxmsg)
-					reply_rexx(((struct quit_msg *)mld.mld_quitmsg->flags)->qm_rxmsg, 1, 0);
+				if (((struct quit_msg *)mld.mld_quitmsg->data)->qm_rxmsg)
+					reply_rexx(((struct quit_msg *)mld.mld_quitmsg->data)->qm_rxmsg, 1, 0);
 
-				FreeVec((APTR)mld.mld_quitmsg->flags);
+				FreeVec(mld.mld_quitmsg->data);
 			}
 
 			mld.mld_quitmsg->command = TRUE;

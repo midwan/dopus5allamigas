@@ -571,6 +571,20 @@ static void ipc_append_connect_arg(char *command, int command_size, const char *
 		strcpy(command + len, arg);
 }
 
+static void ftp_lister_quit(IPCData *ipc, IPTR flags, struct quit_msg *qm)
+{
+	if (!ipc || !ipc->proc)
+	{
+		FreeVec(qm);
+		return;
+	}
+
+	Signal((struct Task *)ipc->proc, IPCSIG_QUIT);
+
+	if (!IPC_Command(ipc, IPC_QUIT, flags, qm, 0, 0))
+		FreeVec(qm);
+}
+
 static int ipc_connect(struct opusftp_globals *og, IPCData *ipc, struct ListLock *tasklist, IPCMessage *msg)
 {
 	struct connect_msg *cm = msg->data_free;
@@ -616,7 +630,7 @@ static int ipc_connect(struct opusftp_globals *og, IPCData *ipc, struct ListLock
 				qm->qm_command = (char *)(qm + 1);
 				strcpy(qm->qm_command, buffer);
 
-				IPC_Quit(node->fn_ipc, (IPTR)qm, 0);
+				ftp_lister_quit(node->fn_ipc, 1, qm);
 			}
 			else
 				DisplayBeep(og->og_screen);
@@ -1101,7 +1115,7 @@ static int opus_drop(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 					// Build and send quit message
 					strcpy(qm->qm_command, "ScanDir ");
 					strcat(qm->qm_command, firstname);
-					IPC_Quit(node->fn_ipc, (IPTR)qm, 0);
+					ftp_lister_quit(node->fn_ipc, 1, qm);
 					retval = 1;
 				}
 
@@ -1541,23 +1555,22 @@ static int opus_edit(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 static int opus_inactive(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc, char **argv)
 {
 	struct ftp_node *node;
-	struct quit_msg *qm;
 	int retval = 0;
 
 	D(bug("opus_inactive(%s)\n", argv[3]));
 
-	if (argc >= 3 && (node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
+	if (argc >= 4 && (node = find_ftpnode(og, ftp_parse_handle(argv[1]))))
 	{
 		// Has lister disappeared?  Ignore if lister is supposed to be invisible
 		if (ftp_parse_handle(argv[3]))
 		{
-			if ((qm = AllocVec(sizeof(struct quit_msg), MEMF_CLEAR)))
+			ftp_lister_quit(node->fn_ipc, (IPTR)-1, NULL);
+
+			if (rxmsg)
 			{
-				qm->qm_rxmsg = rxmsg;
+				reply_rexx(rxmsg, 0, 0);
 				retval = 1;
 			}
-
-			IPC_Quit(node->fn_ipc, (IPTR)qm, 0);
 		}
 	}
 
@@ -1632,7 +1645,7 @@ static int opus_path(struct opusftp_globals *og, struct RexxMsg *rxmsg, int argc
 				qm->qm_command = (char *)(qm + 1);
 				sprintf(qm->qm_command, "FTPConnect LISTER=%s %s%s%s", argv[1], url_body, tls_arg, protocol_arg);
 
-				IPC_Quit(node->fn_ipc, (IPTR)qm, 0);
+				ftp_lister_quit(node->fn_ipc, 1, qm);
 				retval = 1;
 			}
 		}
@@ -2598,11 +2611,13 @@ static int opus_devicelist(struct opusftp_globals *og, struct RexxMsg *rxmsg, in
 		qm->qm_rxmsg = rxmsg;
 		qm->qm_command = (char *)(qm + 1);
 		sprintf(qm->qm_command, "%s%s%s", argv[0], args ? " " : "", args ? argv[5] : "");
+
+		ftp_lister_quit(node->fn_ipc, 1, qm);
+		return 1;
 	}
 
-	IPC_Quit(node->fn_ipc, (IPTR)qm, 0);
-
-	return 1;
+	ftp_lister_quit(node->fn_ipc, 0, NULL);
+	return 0;
 }
 
 /********************************/
@@ -2676,7 +2691,7 @@ static int opus_scandir(struct opusftp_globals *og, struct RexxMsg *rxmsg, int a
 				qm->qm_rxmsg = rxmsg;
 				qm->qm_command = (char *)(qm + 1);
 				sprintf(qm->qm_command, "%s%s%s", argv[0], args ? " " : "", args ? argv[5] : "");
-				IPC_Quit(node->fn_ipc, (IPTR)qm, 0);
+				ftp_lister_quit(node->fn_ipc, 1, qm);
 				retval = 1;
 			}
 		}

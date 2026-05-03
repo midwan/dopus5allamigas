@@ -1504,7 +1504,7 @@ void lister_disconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 					   FTP_HANDLE_VALUE(ftpnode->fn_handle));
 
 			// No command to issue after quitting?
-			if (!mld->mld_quitmsg || !mld->mld_quitmsg->flags)
+			if (!mld->mld_quitmsg || !mld->mld_quitmsg->data)
 				rexx_lst_refresh(opus, ftpnode->fn_handle, REFRESH_NODATE);
 		}
 
@@ -1520,7 +1520,7 @@ void lister_disconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 	lister_remove_node(og, ftpnode);
 
 	// Command to issue after quitting?
-	if (mld->mld_quitmsg && (qm = (struct quit_msg *)mld->mld_quitmsg->flags))
+	if (mld->mld_quitmsg && (qm = (struct quit_msg *)mld->mld_quitmsg->data))
 	{
 		// Command to send? (DeviceList, ScanDir, FTPConnect...)
 		if (qm->qm_command)
