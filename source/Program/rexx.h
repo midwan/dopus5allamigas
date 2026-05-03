@@ -389,27 +389,12 @@ void rexx_send_command(char *command, BOOL);
 #define HA_Value 0x02
 #define HA_Qualifier 0x03
 
-#ifndef __amigaos3__
-	#pragma pack(2)
-#endif
-
-typedef struct
-{
-	ULONG ha_Type;
-	ULONG ha_Arg;
-	IPTR ha_Data;
-} HandlerArg;
-
-#ifndef __amigaos3__
-	#pragma pack()
-#endif
-
 #define rexx_handler_msg(handler, buffer, flags, ...)                                \
 	({                                                                               \
 		IPTR __args[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)};                         \
-		(short)rexx_handler_msg_args(handler, buffer, flags, (HandlerArg *)&__args); \
+		(short)rexx_handler_msg_args(handler, buffer, flags, __args);               \
 	})
-short STDARGS rexx_handler_msg_args(char *handler, DirBuffer *buffer, short flags, HandlerArg *args);
+short STDARGS rexx_handler_msg_args(char *handler, DirBuffer *buffer, short flags, IPTR *args);
 
 long rexx_set_appicon(char *str, struct RexxMsg *msg);
 
