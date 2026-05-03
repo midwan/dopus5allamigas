@@ -22,6 +22,7 @@ For more information on Directory Opus for Windows please see:
 */
 
 #include "read.h"
+#include <stdio.h>
 #include <proto/module.h>
 #include <proto/diskfont.h>
 #include <proto/input.h>
@@ -58,7 +59,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *ipc),
 						   REG(a3, IPCData *main_ipc),
-						   REG(d0, ULONG mod_id),
+						   REG(d0, IPTR mod_id),
 						   REG(d1, ULONG mod_data))
 {
 	read_data *data;
@@ -224,7 +225,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 			data->file = node->ln_Name;
 
 			// Show title
-			lsprintf(data->title, GetString(locale, MSG_READING_FILE), (IPTR)FilePart(data->file));
+			snprintf(data->title, sizeof(data->title), GetString(locale, MSG_READING_FILE), FilePart(data->file));
 			SetWindowTitles(data->window, data->title, (char *)-1);
 
 			// Set busy pointer
@@ -367,7 +368,7 @@ struct Window *read_open_window(read_data *data)
 			modeid = GetVPModeID(&screen->ViewPort);
 
 		// Public screen name
-		lsprintf(data->screen_name, "dopus text viewer - %lx", (IPTR)data);
+		snprintf(data->screen_name, sizeof(data->screen_name), "dopus text viewer - %lx", (unsigned long)(IPTR)data);
 
 		// Open screen
 		pens[0] = (UWORD)~0;
@@ -1318,7 +1319,7 @@ BOOL read_view(read_data *data)
 						tags[0].ti_Tag = DAE_SnapShot;
 						tags[0].ti_Data = 0;
 						tags[1].ti_Tag = DAE_Menu;
-						tags[1].ti_Data = (ULONG)GetString(locale, MSG_CLOSE);
+						tags[1].ti_Data = (IPTR)GetString(locale, MSG_CLOSE);
 						tags[2].ti_Tag = TAG_END;
 
 						// Try to add AppIcon
@@ -1351,7 +1352,7 @@ BOOL read_view(read_data *data)
 					while ((item = ItemAddress(data->window->MenuStrip, (UWORD)msg_copy.Code)))
 					{
 						// Get real ID
-						itemid = (UWORD)(ULONG)(GTMENUITEM_USERDATA(item));
+						itemid = (UWORD)(IPTR)(GTMENUITEM_USERDATA(item));
 
 						switch (itemid)
 						{
@@ -1419,22 +1420,23 @@ BOOL read_view(read_data *data)
 							SetBusyPointer(data->window);
 
 							// Build variable string
-							lsprintf(data->line_buffer,
+							snprintf(data->line_buffer,
+									 sizeof(data->line_buffer),
 									 "%ld/%ld/%ld/%ld/%ld/%ld/%ld/%ld/%ld/%ld/%s/%s|%s|%s\n",
-									 data->window->LeftEdge,
-									 data->window->TopEdge,
-									 data->window->Width,
-									 data->window->Height,
-									 data->tab_size,
-									 data->search_flags,
-									 use_screen,
-									 (modeid >> 16) & 0xffff,
-									 modeid & 0xffff,
-									 fontsize,
-									 (IPTR)fontname,
-									 (IPTR)editor[0],
-									 (IPTR)editor[1],
-									 (IPTR)editor[2]);
+									 (long)data->window->LeftEdge,
+									 (long)data->window->TopEdge,
+									 (long)data->window->Width,
+									 (long)data->window->Height,
+									 (long)data->tab_size,
+									 (long)data->search_flags,
+									 (long)use_screen,
+									 (long)((modeid >> 16) & 0xffff),
+									 (long)(modeid & 0xffff),
+									 (long)fontsize,
+									 fontname,
+									 editor[0],
+									 editor[1],
+									 editor[2]);
 
 							// Set variable
 							SetEnv("dopus/Text Viewer", data->line_buffer, TRUE);
@@ -1518,8 +1520,7 @@ BOOL read_view(read_data *data)
 							if (editor[data->mode][0])
 							{
 								// Build command string
-								lsprintf(
-									data->line_buffer, editor[data->mode], (IPTR)data->file, 0, 0, 0, 0, 0, 0, 0, 0);
+								snprintf(data->line_buffer, sizeof(data->line_buffer), editor[data->mode], data->file);
 
 								// Launch editor
 								CLI_Launch(
@@ -2294,14 +2295,15 @@ void read_build_title(read_data *data)
 	if (!(IsListEmpty((struct List *)&data->text_data)))
 	{
 		// Display title
-		lsprintf(data->title,
+		snprintf(data->title,
+				 sizeof(data->title),
 				 GetString(locale, MSG_FILE_TITLE),
-				 (IPTR)FilePart(data->file),
-				 (IPTR)data->date,
-				 data->lines,
-				 data->size,
-				 (IPTR)mode_string[data->mode],
-				 data->tab_size);
+				 FilePart(data->file),
+				 data->date,
+				 (long)data->lines,
+				 (long)data->size,
+				 mode_string[data->mode],
+				 (long)data->tab_size);
 		SetWindowTitles(data->window, data->title, (char *)-1);
 	}
 
@@ -2716,7 +2718,7 @@ void read_display_text(read_data *data, read_line *text, long line, text_chunk *
 			length = HEX_DISPLAY_WIDTH;
 
 		// Start hex display
-		lsprintf(data->hex_display, "%08lx:", (data->top + line) * HEX_DISPLAY_WIDTH);
+		snprintf(data->hex_display, sizeof(data->hex_display), "%08lx:", (unsigned long)(data->top + line) * HEX_DISPLAY_WIDTH);
 
 		// Hex values
 		ptr = data->hex_display + 9;
@@ -2725,7 +2727,7 @@ void read_display_text(read_data *data, read_line *text, long line, text_chunk *
 			// Space every four
 			if (cp % 4 == 0)
 				*ptr++ = ' ';
-			lsprintf(ptr, "%02lx", ((unsigned char *)textptr)[cp]);
+			snprintf(ptr, sizeof(data->hex_display) - (ptr - data->hex_display), "%02lx", (unsigned long)((unsigned char *)textptr)[cp]);
 			ptr += 2;
 		}
 
@@ -3198,7 +3200,7 @@ void read_search(read_data *data, BOOL prompt)
 		}
 
 		// Initial settings
-		SetGadgetValue(objlist, GAD_SEARCH_TEXT, (ULONG)data->search_text);
+		SetGadgetValue(objlist, GAD_SEARCH_TEXT, (IPTR)data->search_text);
 		SetGadgetValue(objlist, GAD_SEARCH_CASE, data->search_flags & SEARCHF_NOCASE);
 		SetGadgetValue(objlist, GAD_SEARCH_WILD, data->search_flags & SEARCHF_WILDCARD);
 		SetGadgetValue(objlist, GAD_SEARCH_ONLYWORD, data->search_flags & SEARCHF_ONLYWORDS);
@@ -4117,11 +4119,11 @@ void read_save(read_data *data)
 
 	// Fill out tags
 	tags[0].ti_Tag = ASLFR_Window;
-	tags[0].ti_Data = (ULONG)data->window;
+	tags[0].ti_Data = (IPTR)data->window;
 	tags[1].ti_Tag = ASLFR_InitialDrawer;
-	tags[1].ti_Data = (ULONG)data->line_buffer;
+	tags[1].ti_Data = (IPTR)data->line_buffer;
 	tags[2].ti_Tag = ASLFR_InitialFile;
-	tags[2].ti_Data = (ULONG)FilePart(data->file);
+	tags[2].ti_Data = (IPTR)FilePart(data->file);
 	tags[3].ti_Tag = TAG_DONE;
 
 	// Get initial drawer

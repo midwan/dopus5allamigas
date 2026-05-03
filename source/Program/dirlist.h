@@ -80,7 +80,7 @@ typedef struct DirectoryEntry
 	char de_DateBuf[23];		   // Date/time string
 	unsigned char de_NameLen;	   // Length of name field
 	unsigned char de_Colour;	   // Display pens
-	unsigned long de_UserData;	   // User data
+	IPTR de_UserData;			   // User data
 	struct TagItem *de_Tags;	   // Extension tags
 #ifdef USE_64BIT
 	UQUAD de_Size;	// Entry size

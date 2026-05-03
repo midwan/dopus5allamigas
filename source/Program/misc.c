@@ -324,7 +324,7 @@ LONG GetDiskInfo(char *device, struct InfoData *info)
 	}
 	else
 #endif
-		res = DoPkt(proc->dvp_Port, ACTION_DISK_INFO, MKBADDR(info), 0, 0, 0, 0);
+		res = DoPkt(proc->dvp_Port, ACTION_DISK_INFO, (SIPTR)MKBADDR(info), 0, 0, 0, 0);
 
 	// Clear "in use" flag to indicate formatting by default
 	info->id_InUse = 0;
@@ -470,7 +470,7 @@ BOOL check_closescreen(struct Screen *screen)
 					if (task && task->tc_Node.ln_Name)
 					{
 						// Owned by IPrefs?
-						if (strcmp(task->tc_Node.ln_Name, "« IPrefs »") == 0)
+						if (strcmp(task->tc_Node.ln_Name, "ï¿½ IPrefs ï¿½") == 0)
 							ok = 1;
 					}
 
@@ -775,7 +775,7 @@ struct Library *OpenModule(char *name)
 {
 	struct Library *lib = NULL;
 	char buf[256];
-	short a, ver = 0;
+	short a, ver = 0, known_module = 0;
 
 	// See if this is one of our modules
 	for (a = 0; dopus_modules[a]; a++)
@@ -783,19 +783,48 @@ struct Library *OpenModule(char *name)
 		{
 			// Need newest version
 			ver = LIB_VERSION;
+			known_module = 1;
 			break;
 		}
-	/* We can't check for valid modules in a LIBS: multiassign etc.
-		// See if it's in RAM
-		if ((lib=OpenLibrary(name,ver)))
-			return lib;
-	*/
-	// Build name in modules directory
-	strcpy(buf, "dopus5:modules/");
-	strcat(buf, name);
+	// Prefer an already-resident module instance, so modules with global
+	// state do not silently split between path aliases.
+	if (!known_module || !(lib = OpenLibrary(name, ver)))
+	{
+		// Build name in program modules directory
+		strcpy(buf, "PROGDIR:Modules/");
+		strcat(buf, name);
 
-	// Open library
-	if (!(lib = OpenLibrary(buf, ver)))
+		// Open library
+		if (!(lib = OpenLibrary(buf, ver)))
+		{
+			// Fall back to the DOpus5: assign
+			strcpy(buf, "dopus5:modules/");
+			strcat(buf, name);
+			lib = OpenLibrary(buf, ver);
+		}
+	}
+
+#ifdef __AROS__
+	if (!lib && known_module && ver && stricmp(name, "ftp.module") == 0)
+	{
+		// AROS can fail the versioned open for ftp.module even though the module is usable.
+		// The FTP worker keeps itself resident with an unversioned open, so mirror that here.
+		if (!(lib = OpenLibrary(name, 0)))
+		{
+			strcpy(buf, "PROGDIR:Modules/");
+			strcat(buf, name);
+
+			if (!(lib = OpenLibrary(buf, 0)))
+			{
+				strcpy(buf, "dopus5:modules/");
+				strcat(buf, name);
+				lib = OpenLibrary(buf, 0);
+			}
+		}
+	}
+#endif
+
+	if (!lib)
 	{
 		// Show error
 		error_request(GUI->window, 1, GetString(&locale, MSG_OPENING), -1, name, 0);
@@ -838,7 +867,7 @@ void ChainTagItems(struct TagItem **list_ptr, struct TagItem *tags)
 
 	// Change to TAG_MORE
 	list->ti_Tag = TAG_MORE;
-	list->ti_Data = (ULONG)tags;
+	list->ti_Data = (IPTR)tags;
 }
 
 // Handle a diskchange message
@@ -883,7 +912,7 @@ void handle_diskchange(DOpusNotify *notify)
 					if (proc=GetDeviceProc(buf,0))
 					{
 						// Send packet to get info
-						res=DoPkt(proc->dvp_Port,ACTION_DISK_INFO,MKBADDR(info),0,0,0,0);
+						res=DoPkt(proc->dvp_Port,ACTION_DISK_INFO,(SIPTR)MKBADDR(info),0,0,0,0);
 						FreeDeviceProc(proc);
 					}
 

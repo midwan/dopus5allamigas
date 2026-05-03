@@ -31,7 +31,7 @@ typedef struct
 	ULONG seconds;	// Seconds for double-click
 	ULONG micros;	// Micros for double-click
 
-	ULONG command_list;
+	IPTR command_list;
 	IPCData *owner_ipc;
 
 	short change;

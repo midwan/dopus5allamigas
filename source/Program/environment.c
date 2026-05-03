@@ -51,11 +51,11 @@ Cfg_Environment *environment_new(void)
 	NewList((struct List *)&env->path_formats);
 	NewList((struct List *)&env->path_list);
 	NewList((struct List *)&env->sound_list);
-	strcpy(env->toolbar_path, "dopus5:buttons/toolbar");
-	strcpy(env->menu_path, "dopus5:buttons/lister menu");
-	strcpy(env->user_menu_path, "dopus5:buttons/user menu");
-	strcpy(env->hotkeys_path, "dopus5:buttons/hotkeys");
-	strcpy(env->scripts_path, "dopus5:buttons/scripts");
+	strcpy(env->toolbar_path, "PROGDIR:Buttons/toolbar");
+	strcpy(env->menu_path, "PROGDIR:Buttons/lister_menu");
+	strcpy(env->user_menu_path, "PROGDIR:Buttons/user_menu");
+	strcpy(env->hotkeys_path, "PROGDIR:Buttons/hotkeys");
+	strcpy(env->scripts_path, "PROGDIR:Buttons/scripts");
 	NewList((struct List *)&env->desktop);
 	InitSemaphore(&env->desktop_lock);
 	InitSemaphore(&env->sound_lock);
@@ -89,6 +89,211 @@ void environment_free(Cfg_Environment *env)
 
 #define CONFIG_MAGIC 0xFACE
 #define NEW_CONFIG_VERSION 10016
+
+static BOOL environment_path_exists(char *path)
+{
+	BPTR lock;
+
+	if (!path || !path[0])
+		return 0;
+
+	if ((lock = Lock(path, ACCESS_READ)))
+	{
+		UnLock(lock);
+		return 1;
+	}
+
+	return 0;
+}
+
+static char *environment_file_part(char *path)
+{
+	char *ptr, *part;
+
+	if (!path)
+		return 0;
+
+	part = path;
+	for (ptr = path; *ptr; ptr++)
+	{
+		if (*ptr == ':' || *ptr == '/' || *ptr == '\\')
+			part = ptr + 1;
+	}
+
+	return part;
+}
+
+static BOOL environment_try_button_path(char *path, char *drawer, char *name)
+{
+	char buf[256];
+
+	if (!name || !name[0])
+		return FALSE;
+
+	strcpy(buf, drawer);
+	if (strlen(buf) + strlen(name) >= sizeof(buf))
+		return FALSE;
+
+	strcat(buf, name);
+	if (!environment_path_exists(buf))
+		return FALSE;
+
+	strcpy(path, buf);
+	return TRUE;
+}
+
+static void environment_fix_button_path(char *path, char *default_name)
+{
+	char *name;
+
+	if (path && strnicmp(path, "dopus5:buttons/", 15) == 0)
+		environment_try_button_path(path, "PROGDIR:Buttons/", FilePart(path));
+
+	if (environment_path_exists(path))
+		return;
+
+	name = (path && path[0]) ? environment_file_part(path) : default_name;
+	if (!name || !name[0])
+		name = default_name;
+
+	if (environment_try_button_path(path, "PROGDIR:Buttons/", name) ||
+		environment_try_button_path(path, "dopus5:buttons/", name) ||
+		environment_try_button_path(path, "dopus5:Buttons/", name))
+		return;
+
+	if (stricmp(name, default_name) != 0)
+	{
+		if (environment_try_button_path(path, "PROGDIR:Buttons/", default_name) ||
+			environment_try_button_path(path, "dopus5:buttons/", default_name) ||
+			environment_try_button_path(path, "dopus5:Buttons/", default_name))
+			return;
+	}
+}
+
+static void environment_fix_button_paths(Cfg_Environment *env)
+{
+	environment_fix_button_path(env->toolbar_path, "toolbar");
+	environment_fix_button_path(env->menu_path, "lister_menu");
+	environment_fix_button_path(env->user_menu_path, "user_menu");
+	environment_fix_button_path(env->scripts_path, "scripts");
+	environment_fix_button_path(env->hotkeys_path, "hotkeys");
+}
+
+static void environment_fix_open_button_path(char *path)
+{
+	if (!path || !path[0])
+		return;
+
+	if (strnicmp(path, "dopus5:buttons/", 15) == 0)
+	{
+		char *name = FilePart(path);
+
+		if (name && name[0])
+			environment_try_button_path(path, "PROGDIR:Buttons/", name);
+	}
+}
+
+static BOOL environment_minlist_empty(struct MinList *list)
+{
+	return (BOOL)(list->mlh_Head == (struct MinNode *)&list->mlh_Tail);
+}
+
+static ToolBarInfo *environment_open_toolbar(Cfg_Environment *env)
+{
+	ToolBarInfo *toolbar;
+	char *fallbacks[] = {"PROGDIR:Buttons/toolbar",
+						 "PROGDIR:Buttons/toolbar_default",
+						 "dopus5:buttons/toolbar",
+						 "dopus5:Buttons/toolbar",
+						 "dopus5:buttons/toolbar_default",
+						 "dopus5:Buttons/toolbar_default",
+						 0};
+	short a;
+
+	if (env->toolbar_path[0] && (toolbar = OpenToolBar(0, env->toolbar_path)))
+		return toolbar;
+
+	for (a = 0; fallbacks[a]; a++)
+	{
+		if (env->toolbar_path[0] && stricmp(env->toolbar_path, fallbacks[a]) == 0)
+			continue;
+
+		if ((toolbar = OpenToolBar(0, fallbacks[a])))
+		{
+			strcpy(env->toolbar_path, fallbacks[a]);
+			return toolbar;
+		}
+	}
+
+	return 0;
+}
+
+#ifdef __AROS__
+static BOOL environment_is_factory_path(Cfg_Environment *env, char *name, BOOL first)
+{
+	char *path, *part;
+
+	path = (name && name[0]) ? name : env->path;
+	if (!path || !path[0])
+		return TRUE;
+
+	part = environment_file_part(path);
+	return (BOOL)(stricmp(part, "default") == 0 || stricmp(part, "workbench") == 0);
+}
+
+static BOOL environment_has_old_aros_default_look(CFG_ENVR *cfg)
+{
+	if (!(cfg->display_options & DISPOPTF_NO_BACKDROP) || (cfg->display_options & DISPOPTF_ICON_POS) ||
+		(cfg->display_options & DISPOPTF_REALTIME_SCROLL) || (cfg->display_options & DISPOPTF_THIN_BORDERS) ||
+		(cfg->env_flags & ENVF_BACKDROP) || (cfg->desktop_flags & DESKTOPF_NO_BORDERS) ||
+		(cfg->lister_options & (LISTEROPTF_2XCLICK | LISTEROPTF_TITLES | LISTEROPTF_POPUP | LISTEROPTF_EDIT_BOTH)))
+		return FALSE;
+
+	return (BOOL)(cfg->source_col[0] == 2 && cfg->source_col[1] == 3 && cfg->dest_col[0] == 1 &&
+				  cfg->dest_col[1] == 0 && cfg->devices_col[0] == 1 && cfg->devices_col[1] == 0 &&
+				  cfg->volumes_col[0] == 3 && cfg->volumes_col[1] == 0);
+}
+
+static BOOL environment_has_old_aros_workbench_look(CFG_ENVR *cfg)
+{
+	return (BOOL)((cfg->display_options == 0 || cfg->display_options == DISPOPTF_USE_WBPATTERN) &&
+				  cfg->env_flags == 0 && cfg->desktop_flags == 0 && cfg->lister_options == 0);
+}
+
+static void environment_harmonise_default_look(Cfg_Environment *env, char *name, BOOL first)
+{
+	CFG_ENVR *cfg;
+
+	if (!environment_is_factory_path(env, name, first))
+		return;
+
+	cfg = env->env;
+	if (!environment_has_old_aros_default_look(cfg) && !environment_has_old_aros_workbench_look(cfg) &&
+		(cfg->display_options & DISPOPTF_ICON_POS) && (cfg->display_options & DISPOPTF_REALTIME_SCROLL) &&
+		(cfg->display_options & DISPOPTF_THIN_BORDERS) && (cfg->env_flags & ENVF_BACKDROP) &&
+		(cfg->desktop_flags & DESKTOPF_NO_BORDERS) &&
+		((cfg->lister_options & (LISTEROPTF_2XCLICK | LISTEROPTF_TITLES | LISTEROPTF_POPUP | LISTEROPTF_EDIT_BOTH)) ==
+		 (LISTEROPTF_2XCLICK | LISTEROPTF_TITLES | LISTEROPTF_POPUP | LISTEROPTF_EDIT_BOTH)))
+		return;
+
+	cfg->display_options &= ~DISPOPTF_NO_BACKDROP;
+	cfg->display_options |= DISPOPTF_SHOW_APPICONS | DISPOPTF_SHOW_TOOLS | DISPOPTF_ICON_POS |
+							DISPOPTF_USE_WBPATTERN | DISPOPTF_REALTIME_SCROLL | DISPOPTF_THIN_BORDERS;
+	cfg->env_flags |= ENVF_BACKDROP;
+	cfg->desktop_flags |= DESKTOPF_NO_BORDERS;
+	cfg->lister_options |= LISTEROPTF_2XCLICK | LISTEROPTF_TITLES | LISTEROPTF_POPUP | LISTEROPTF_EDIT_BOTH;
+
+	cfg->source_col[0] = 1;
+	cfg->source_col[1] = 253;
+	cfg->dest_col[0] = 2;
+	cfg->dest_col[1] = 252;
+	cfg->devices_col[0] = 1;
+	cfg->devices_col[1] = 2;
+	cfg->volumes_col[0] = 3;
+	cfg->volumes_col[1] = 2;
+}
+
+#endif
 
 // Read an environment
 BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
@@ -125,6 +330,10 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 		strcpy(env->scripts_path, opendata->scripts_path);
 		strcpy(env->hotkeys_path, opendata->hotkeys_path);
 
+#ifdef __AROS__
+		environment_harmonise_default_look(env, name, first);
+#endif
+
 		// Get maximum filename length
 		// we have to do this before the listers are opened
 		GUI->def_filename_length = environment->env->settings.max_filename;
@@ -133,7 +342,6 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 	else if (GUI->def_filename_length > MAX_FILENAME_LEN)
 		GUI->def_filename_length = MAX_FILENAME_LEN;
 	}
-
 	// Successful?
 	if (success || first)
 	{
@@ -147,12 +355,15 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 		if (name)
 			strcpy(env->path, name);
 
+		// Use installed defaults if an environment has stale or missing button paths
+		environment_fix_button_paths(env);
+
 		// Bump progress
 		main_bump_progress(prog, progress++, 0);
 
 		// Get new toolbar
 		FreeToolBar(GUI->toolbar);
-		GUI->toolbar = OpenToolBar(0, env->toolbar_path);
+		GUI->toolbar = environment_open_toolbar(env);
 
 		// Bump progress
 		main_bump_progress(prog, progress++, 0);
@@ -195,9 +406,13 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 		{
 			ButtonBankNode *next = (ButtonBankNode *)button->node.ln_Succ;
 			Buttons *but;
+			char button_path[256];
+
+			stccpy(button_path, button->node.ln_Name, sizeof(button_path));
+			environment_fix_open_button_path(button_path);
 
 			// Create button bank from this node
-			if ((but = buttons_new(button->node.ln_Name, 0, &button->pos, 0, button->flags | BUTTONF_FAIL)))
+			if ((but = buttons_new(button_path, 0, &button->pos, 0, button->flags | BUTTONF_FAIL)))
 			{
 				// Set icon position
 				but->icon_pos_x = button->icon_pos_x;
@@ -218,9 +433,13 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 		for (button = (ButtonBankNode *)opendata->startmenus.mlh_Head; button->node.ln_Succ;)
 		{
 			ButtonBankNode *next = (ButtonBankNode *)button->node.ln_Succ;
+			char button_path[256];
+
+			stccpy(button_path, button->node.ln_Name, sizeof(button_path));
+			environment_fix_open_button_path(button_path);
 
 			// Create new start menu
-			start_new(button->node.ln_Name, 0, 0, button->pos.Left, button->pos.Top);
+			start_new(button_path, 0, 0, button->pos.Left, button->pos.Top);
 
 			// Free this node, get next
 			Remove((struct Node *)button);
@@ -254,7 +473,7 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 		env_free_desktop(&env->desktop);
 
 		// Copy new desktop into list
-		if (!(IsListEmpty((struct List *)&opendata->desktop)))
+		if (!environment_minlist_empty(&opendata->desktop))
 		{
 			env->desktop = opendata->desktop;
 			env->desktop.mlh_TailPred->mln_Succ = (struct MinNode *)&env->desktop.mlh_Tail;
@@ -265,7 +484,7 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 		env_free_desktop(&env->path_list);
 
 		// Copy new pathlist into list
-		if (!(IsListEmpty((struct List *)&opendata->pathlist)))
+		if (!environment_minlist_empty(&opendata->pathlist))
 		{
 			env->path_list = opendata->pathlist;
 			env->path_list.mlh_TailPred->mln_Succ = (struct MinNode *)&env->path_list.mlh_Tail;
@@ -276,7 +495,7 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 		env_free_desktop(&env->sound_list);
 
 		// Copy new sound list into list
-		if (!(IsListEmpty((struct List *)&opendata->soundlist)))
+		if (!environment_minlist_empty(&opendata->soundlist))
 		{
 			env->sound_list = opendata->soundlist;
 			env->sound_list.mlh_TailPred->mln_Succ = (struct MinNode *)&env->sound_list.mlh_Tail;
@@ -288,7 +507,7 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 
 		// Update priority
 		IPC_Command(
-			&main_ipc, IPC_PRIORITY, env->env->settings.pri_main[1], (APTR)env->env->settings.pri_main[0], 0, 0);
+			&main_ipc, IPC_PRIORITY, env->env->settings.pri_main[1], (APTR)(IPTR)env->env->settings.pri_main[0], 0, 0);
 
 		// Fix lister priorities
 		lister_fix_priority(0);
@@ -364,6 +583,7 @@ int environment_save(Cfg_Environment *env, char *name, short snapshot, CFG_ENVR 
 	APTR iff;
 	long success = 0;
 	struct OpenEnvironmentData *opendata = 0;
+	BOOL old_env_valid = FALSE;
 #ifdef __AROS__
 	CFG_ENVR *env_be;
 #endif
@@ -396,8 +616,8 @@ int environment_save(Cfg_Environment *env, char *name, short snapshot, CFG_ENVR 
 		{
 			opendata->memory = env->desktop_memory;
 			opendata->volatile_memory = env->volatile_memory;
-			opendata->flags = OEDF_BANK | OEDF_LSTR;
-			OpenEnvironment(name, opendata);
+			opendata->flags = OEDF_ENVR | OEDF_SETS | OEDF_BANK | OEDF_LSTR;
+			old_env_valid = OpenEnvironment(name, opendata);
 		}
 	}
 
@@ -448,7 +668,7 @@ int environment_save(Cfg_Environment *env, char *name, short snapshot, CFG_ENVR 
 			env_be->env_NewIconsFlags = AROS_LONG2BE(env_be->env_NewIconsFlags);
 			env_be->display_options = AROS_WORD2BE(env_be->display_options);
 			env_be->main_window_type = AROS_WORD2BE(env_be->main_window_type);
-			env_be->hotkey_flags = AROS_WORD2BE(env_be->hotkey_flags);
+			env_be->hotkey_flags = AROS_LONG2BE(env_be->hotkey_flags);
 			env_be->hotkey_code = AROS_WORD2BE(env_be->hotkey_code);
 			env_be->hotkey_qual = AROS_WORD2BE(env_be->hotkey_qual);
 			env_be->default_stack = AROS_LONG2BE(env_be->default_stack);
@@ -521,9 +741,13 @@ int environment_save(Cfg_Environment *env, char *name, short snapshot, CFG_ENVR 
 			for (lister = (OpenListerNode *)opendata->listers.mlh_Head; lister->node.ln_Succ;)
 			{
 				OpenListerNode *next = (OpenListerNode *)lister->node.ln_Succ;
+				Cfg_Lister *cfg_lister = (Cfg_Lister *)lister->lister;
+
+				if (old_env_valid && CompareListFormat(&cfg_lister->lister.format, &opendata->env.list_format) == 0)
+					cfg_lister->lister.format = data->list_format;
 
 				// Write lister data
-				if (!(SaveListerDef(iff, (Cfg_Lister *)lister->lister)))
+				if (!(SaveListerDef(iff, cfg_lister)))
 					break;
 
 				// Free lister data
@@ -852,7 +1076,7 @@ int environment_save(Cfg_Environment *env, char *name, short snapshot, CFG_ENVR 
 #ifdef __AROS__
 			Cfg_SoundEntry sound_be;
 
-			CopyMem(&sound, &sound_be, sizeof(Cfg_SoundEntry));
+			CopyMem(sound, &sound_be, sizeof(Cfg_SoundEntry));
 
 			sound_be.dse_Volume = AROS_WORD2BE(sound_be.dse_Volume);
 			sound_be.dse_Flags = AROS_WORD2BE(sound_be.dse_Flags);
@@ -913,14 +1137,14 @@ IPC_EntryCode(environment_proc)
 	env_packet *packet = 0;
 	char *path;
 	struct Window *status = 0;
-	unsigned long change, change_flags[2] = {0, 0};
+	ULONG change, change_flags[2] = {0, 0};
 	BOOL reopen = 0, old = 0, need_reset = 0;
 	short save_layout = 0;
 	BPTR file;
 	APTR progress = 0;
 
 	// Do startup
-	if ((ipc = IPC_ProcStartup((ULONG *)&packet, 0)) && (path = AllocVec(256, 0)))
+	if ((ipc = IPC_ProcStartup((IPTR *)&packet, 0)) && (path = AllocVec(256, 0)))
 	{
 		// Get name, either from packet or current env name
 		strcpy(path, (packet->type == -1) ? packet->name : environment->path);
@@ -973,7 +1197,7 @@ IPC_EntryCode(environment_proc)
 				if ((ConfigOpusBase = OpenModule(config_name)))
 				{
 #ifdef __amigaos4__
-					if (IConfigOpus = (struct ConfigOpusIFace *)GetInterface(ConfigOpusBase, "main", 1, NULL))
+					if ((IConfigOpus = (struct ConfigOpusIFace *)GetInterface(ConfigOpusBase, "main", 1, NULL)))
 #endif
 						ok = ConvertConfig(path, GUI->screen_pointer, &main_ipc);
 
@@ -991,9 +1215,9 @@ IPC_EntryCode(environment_proc)
 
 			// Open progress indicator
 			progress = OpenProgressWindowTags(PW_Title,
-											  dopus_name,
+											  (IPTR)dopus_name,
 											  PW_Info,
-											  GetString(&locale, MSG_ENVIRONMENT_LOADING),
+											  (IPTR)GetString(&locale, MSG_ENVIRONMENT_LOADING),
 											  PW_Flags,
 											  PWF_INFO | PWF_GRAPH,
 											  TAG_END);
@@ -1015,10 +1239,10 @@ IPC_EntryCode(environment_proc)
 #endif
 			)
 			{
-				char path[256];
+				char edit_path[256];
 
 				// Configure environment
-				strcpy(path, environment->path);
+				strcpy(edit_path, environment->path);
 				if ((change = Config_Environment(environment,
 												 GUI->screen_pointer,
 												 GUI->pens,
@@ -1026,17 +1250,18 @@ IPC_EntryCode(environment_proc)
 												 &main_ipc,
 												 (UWORD)(GUI->pen_alloc & 0xff),
 												 change_flags,
-												 path,
+												 edit_path,
 												 script_list)))
 				{
 					// Save path
-					strcpy(environment->path, path);
+					strcpy(environment->path, edit_path);
+					strcpy(path, edit_path);
 
 					// Update priority
 					IPC_Command(&main_ipc,
 								IPC_PRIORITY,
 								environment->env->settings.pri_main[1],
-								(APTR)environment->env->settings.pri_main[0],
+								(APTR)(IPTR)environment->env->settings.pri_main[0],
 								0,
 								0);
 
@@ -1145,13 +1370,13 @@ IPC_EntryCode(environment_proc)
 						 0,
 						 0,
 						 AR_Screen,
-						 GUI->screen_pointer,
+						 (IPTR)GUI->screen_pointer,
 						 AR_Title,
-						 dopus_name,
+						 (IPTR)dopus_name,
 						 AR_Message,
-						 GetString(&locale, MSG_CHANGE_NEEDS_RESET),
+						 (IPTR)GetString(&locale, MSG_CHANGE_NEEDS_RESET),
 						 AR_Button,
-						 GetString(&locale, MSG_OKAY),
+						 (IPTR)GetString(&locale, MSG_OKAY),
 						 TAG_END);
 	}
 
@@ -1207,7 +1432,7 @@ void env_update_pathlist()
 			if ((file = OpenBuf(path, MODE_NEWFILE, 4096)))
 			{
 				struct MinNode *node;
-				if (IsListEmpty((struct List *)&environment->path_list.mlh_Head))
+				if (environment_minlist_empty(&environment->path_list))
 					WriteBuf(file, "c:\n", 3);
 				else
 					for (node = environment->path_list.mlh_Head; node->mln_Succ; node = node->mln_Succ)

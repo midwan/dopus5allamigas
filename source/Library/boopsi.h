@@ -105,7 +105,7 @@ typedef struct
 	short scroller_width;
 } ListViewData;
 
-Class *init_class(struct LibData *, char *, char *, unsigned long (*)(), long);
+Class *init_class(struct LibData *, char *, char *, IPTR (*)(), long);
 void class_free(Class *);
 
 #define LVF_SHOW_SELECTED (1 << 0)	 // Show selected
@@ -227,10 +227,10 @@ typedef struct
 	struct TagItem notify_tags[3];	// Tags for OM_NOTIFY
 } PaletteData;
 
-ULONG ASM image_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg));
-ULONG ASM button_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg));
-ULONG ASM listview_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg));
-ULONG ASM palette_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg));
+IPTR ASM image_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg));
+IPTR ASM button_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg));
+IPTR ASM listview_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg));
+IPTR ASM palette_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg));
 
 void image_draw(Class *, struct Image *, BoopsiImageData *, struct impDraw *);
 void button_render(Class *, struct Gadget *, ButtonData *, struct gpRender *);

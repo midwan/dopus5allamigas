@@ -139,7 +139,7 @@ void _config_env_build_drive_list(config_env_data *data, short which)
 			if ((volume = (struct DosList *)BADDR(fl->fl_Volume)))
 			{
 				// Get name
-				lsprintf(volumename, "%b", volume->dol_Name);
+				BtoCStr(volume->dol_Name, volumename, sizeof(volumename));
 			}
 
 			// Unlock it
@@ -157,8 +157,18 @@ void _config_env_build_drive_list(config_env_data *data, short which)
 		// Otherwise
 		else
 		{
+			size_t len;
+
 			// Build full entry name
-			lsprintf(entry, "%s\a\xa%s", node->node.ln_Name, volumename);
+			stccpy(entry, node->node.ln_Name, sizeof(entry));
+			len = strlen(entry);
+			if (len < sizeof(entry) - 2)
+			{
+				entry[len++] = '\a';
+				entry[len++] = '\xa';
+				entry[len] = 0;
+				stccpy(entry + len, volumename, sizeof(entry) - len);
+			}
 
 			// Change name
 			Att_ChangeNodeName(node, entry);

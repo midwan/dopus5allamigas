@@ -756,6 +756,11 @@ static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 
 	info->fi_data_mode = FTP_DATAMODE_NONE;
 
+#if defined(__AROS__) && defined(__x86_64__)
+	if (!(info->fi_flags & FTP_NO_PASV))
+		info->fi_flags |= FTP_PASSIVE;
+#endif
+
 	// PASV known not to work on this site?
 	if (info->fi_flags & FTP_NO_PASV)
 		bad_pasv = TRUE;
@@ -1709,7 +1714,7 @@ int list(struct ftp_info *info,
 	errno = 0;
 
 	ftp_tls_session_init(&data_tls);
-	allow_complete_reply = ftp_listcmd_is_mlsd(cmd);
+	allow_complete_reply = FALSE;
 
 // Establish data connection
 #ifdef QUOTE_HACK

@@ -80,12 +80,12 @@ struct ConfigOpusIFace
 								 char *def,
 								 short hotkeys,
 								 Att_List *scripts);
-	ULONG APICALL (*Config_Menus)(struct ConfigOpusIFace *Self,
+	IPTR APICALL (*Config_Menus)(struct ConfigOpusIFace *Self,
 								  IPCData *ipc,
 								  IPCData *owner,
 								  struct Screen *screen,
 								  Cfg_ButtonBank *menu,
-								  ULONG cmdlist,
+								  IPTR cmdlist,
 								  ULONG type,
 								  char *name);
 	Cfg_Filetype *APICALL (*EditFiletype)(struct ConfigOpusIFace *Self,

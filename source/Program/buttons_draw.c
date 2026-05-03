@@ -364,7 +364,7 @@ short buttons_draw_button(Buttons *buttons,
 
 			// Fill out draw tags
 			draw_tags[0].ti_Tag = IM_Rectangle;
-			draw_tags[0].ti_Data = (ULONG)&rect;
+			draw_tags[0].ti_Data = (IPTR)&rect;
 
 			// Space to clip inside border
 			draw_tags[1].ti_Tag = IM_ClipBoundary;

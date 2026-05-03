@@ -18,8 +18,8 @@ LIBPROTO(L_Module_Entry,
 		 REG(a1, struct Screen *screen),
 		 REG(a2, IPCData *ipc),
 		 REG(a3, IPCData *main_ipc),
-		 REG(d0, ULONG mod_id),
-		 REG(d1, ULONG mod_data));
+		 REG(d0, IPTR mod_id),
+		 REG(d1, IPTR mod_data));
 
 LIBPROTO(L_Module_Identify, ModuleInfo *, REG(d0, int num));
 

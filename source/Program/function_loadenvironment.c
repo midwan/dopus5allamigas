@@ -59,9 +59,9 @@ DOPUS_FUNC(function_loadenvironment)
 				IPC_Launch(&GUI->process_list,
 						   0,
 						   "dopus_environment",
-						   (ULONG)&environment_proc,
+						   (IPTR)&environment_proc,
 						   STACK_LARGE,
-						   (ULONG)packet,
+						   (IPTR)packet,
 						   (struct Library *)DOSBase);
 			}
 		}

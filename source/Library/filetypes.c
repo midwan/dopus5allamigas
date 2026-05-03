@@ -31,7 +31,7 @@ APTR LIBFUNC L_GetMatchHandle(REG(a0, char *name), REG(a6, struct MyLibrary *lib
 {
 	MatchHandle *handle;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	lib = dopuslibbase_global;
 #endif
 
@@ -218,7 +218,7 @@ BOOL LIBFUNC L_MatchFiletype(REG(a0, MatchHandle *handle), REG(a1, Cfg_Filetype 
 	long last_position;
 	ULONG res;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	lib = dopuslibbase_global;
 #endif
 
@@ -1277,7 +1277,7 @@ void LIBFUNC L_ClearFiletypeCache(REG(a6, struct MyLibrary *lib))
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	lib = dopuslibbase_global;
 #endif
 

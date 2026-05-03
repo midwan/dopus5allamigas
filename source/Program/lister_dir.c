@@ -258,13 +258,13 @@ int resort_test(ListFormat *old, ListFormat *new)
 }
 
 // Default lister parent popup
-static PopUpItem parent_popup[] = {{{0}, (char *)MSG_PARENT, PP_PARENT, POPUPF_LOCALE, 0},
-								   {{0}, (char *)MSG_ROOT, PP_ROOT, POPUPF_LOCALE, 0},
+static PopUpItem parent_popup[] = {{{0}, (IPTR)MSG_PARENT, PP_PARENT, POPUPF_LOCALE, 0},
+								   {{0}, (IPTR)MSG_ROOT, PP_ROOT, POPUPF_LOCALE, 0},
 								   {{0}, POPUP_BARLABEL, 0, 0, 0},
-								   {{0}, (char *)MSG_DEVICE_LIST, PP_DEVICE_LIST, POPUPF_LOCALE, 0},
-								   {{0}, (char *)MSG_BUFFER_LIST, PP_BUFFER_LIST, POPUPF_LOCALE, 0},
+								   {{0}, (IPTR)MSG_DEVICE_LIST, PP_DEVICE_LIST, POPUPF_LOCALE, 0},
+								   {{0}, (IPTR)MSG_BUFFER_LIST, PP_BUFFER_LIST, POPUPF_LOCALE, 0},
 								   {{0}, POPUP_BARLABEL, 0, 0, 0},
-								   {{0}, (char *)MSG_REREAD_DIR, PP_REREAD_DIR, POPUPF_LOCALE, 0}};
+								   {{0}, (IPTR)MSG_REREAD_DIR, PP_REREAD_DIR, POPUPF_LOCALE, 0}};
 
 // Do lister parent popup
 void lister_parent_popup(Lister *lister, unsigned short code)
@@ -339,7 +339,7 @@ void lister_parent_popup(Lister *lister, unsigned short code)
 			if ((item = AllocMemH(memory, sizeof(PopUpItem))))
 			{
 				// Initialise item
-				item->item_name = node->ln_Name;
+				item->item_name = (IPTR)node->ln_Name;
 				item->id = PP_BASE + a;
 				item->data = (APTR)item->item_name;
 

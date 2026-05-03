@@ -94,10 +94,10 @@ static APTR old_findtask_function;
 PATCHED_5(struct AppWindow *,
 		  LIBFUNC L_WB_AddAppWindow,
 		  d0,
-		  ULONG,
+		  IPTR,
 		  id,
 		  d1,
-		  ULONG,
+		  IPTR,
 		  userdata,
 		  a0,
 		  struct Window *,
@@ -162,7 +162,7 @@ PATCHED_5(struct AppWindow *,
 			}
 
 			// Send notification
-			L_SendNotifyMsg(DN_APP_WINDOW_LIST, (ULONG)app_entry, 0, FALSE, 0, 0, libbase);
+			L_SendNotifyMsg(DN_APP_WINDOW_LIST, (IPTR)app_entry, 0, FALSE, 0, 0, libbase);
 		}
 
 		// Return object
@@ -176,10 +176,10 @@ PATCH_END
 PATCHED_5(struct AppMenuItem *,
 		  LIBFUNC L_WB_AddAppMenuItem,
 		  d0,
-		  ULONG,
+		  IPTR,
 		  id,
 		  d1,
-		  ULONG,
+		  IPTR,
 		  userdata,
 		  a0,
 		  char *,
@@ -266,7 +266,7 @@ PATCHED_5(struct AppMenuItem *,
 					toolmanger = 1;
 
 				// Send notify message
-				L_SendNotifyMsg(DN_APP_MENU_LIST, (ULONG)app_entry, toolmanger, FALSE, 0, 0, libbase);
+				L_SendNotifyMsg(DN_APP_MENU_LIST, (IPTR)app_entry, toolmanger, FALSE, 0, 0, libbase);
 			}
 		}
 
@@ -281,10 +281,10 @@ PATCH_END
 PATCHED_7(struct AppIcon *,
 		  LIBFUNC L_WB_AddAppIcon,
 		  d0,
-		  ULONG,
+		  IPTR,
 		  id,
 		  d1,
-		  ULONG,
+		  IPTR,
 		  userdata,
 		  a0,
 		  char *,
@@ -504,7 +504,7 @@ PATCHED_7(struct AppIcon *,
 
 			// Send notification
 			if (app_entry)
-				L_SendNotifyMsg(DN_APP_ICON_LIST, (ULONG)app_entry, 0, FALSE, 0, 0, libbase);
+				L_SendNotifyMsg(DN_APP_ICON_LIST, (IPTR)app_entry, 0, FALSE, 0, 0, libbase);
 		}
 
 		// Return object
@@ -552,7 +552,7 @@ PATCHED_1(BOOL, LIBFUNC L_WB_RemoveAppWindow, a0, struct AppWindow *, window)
 		}
 
 		// Send notification
-		L_SendNotifyMsg(DN_APP_WINDOW_LIST, (ULONG)window, DNF_WINDOW_REMOVED, FALSE, 0, 0, libbase);
+		L_SendNotifyMsg(DN_APP_WINDOW_LIST, (IPTR)window, DNF_WINDOW_REMOVED, FALSE, 0, 0, libbase);
 
 		atomic_dec(&usecount[WB_PATCH_REMAPPWINDOW]);
 		return TRUE;
@@ -600,7 +600,7 @@ PATCHED_1(BOOL, LIBFUNC L_WB_RemoveAppMenuItem, a0, struct AppMenuItem *, item)
 
 		// Send notification
 		if (os_object != (APTR)entry)
-			L_SendNotifyMsg(DN_APP_MENU_LIST, (ULONG)entry, 1, !local, 0, 0, libbase);
+			L_SendNotifyMsg(DN_APP_MENU_LIST, (IPTR)entry, 1, !local, 0, 0, libbase);
 
 		atomic_dec(&usecount[WB_PATCH_REMAPPMENU]);
 		return TRUE;
@@ -659,7 +659,7 @@ PATCHED_1(BOOL, LIBFUNC L_WB_RemoveAppIcon, a0, struct AppIcon *, icon)
 			}
 
 			// Send notification
-			L_SendNotifyMsg(DN_APP_ICON_LIST, (ULONG)entry, DNF_ICON_REMOVED, FALSE, 0, 0, libbase);
+			L_SendNotifyMsg(DN_APP_ICON_LIST, (IPTR)entry, DNF_ICON_REMOVED, FALSE, 0, 0, libbase);
 
 			//*********************************************************************TRUE ???
 
@@ -686,7 +686,7 @@ struct AppWindow *LIBFUNC L_WB_FindAppWindow(REG(a0, struct Window *window), REG
 	AppEntry *app_entry, *app_window = NULL;
 	WB_Data *wb_data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -719,8 +719,8 @@ struct AppWindow *LIBFUNC L_WB_FindAppWindow(REG(a0, struct Window *window), REG
 
 // Get AppWindow data
 struct MsgPort *LIBFUNC L_WB_AppWindowData(REG(a0, struct AppWindow *window),
-										   REG(a1, ULONG *id),
-										   REG(a2, ULONG *userdata))
+										   REG(a1, IPTR *id),
+										   REG(a2, IPTR *userdata))
 {
 	AppEntry *entry;
 
@@ -756,7 +756,7 @@ unsigned long LIBFUNC L_WB_AppIconFlags(REG(a0, struct AppIcon *icon))
 
 // Add a new AppEntry
 AppEntry *
-new_app_entry(ULONG type, ULONG id, ULONG userdata, APTR object, char *text, struct MsgPort *port, WB_Data *wb_data)
+new_app_entry(ULONG type, IPTR id, IPTR userdata, APTR object, char *text, struct MsgPort *port, WB_Data *wb_data)
 {
 	AppEntry *entry;
 
@@ -927,7 +927,7 @@ APTR LIBFUNC L_LockAppList(REG(a6, struct MyLibrary *libbase))
 {
 	WB_Data *wb_data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -950,7 +950,7 @@ APTR LIBFUNC L_NextAppEntry(REG(a0, APTR last), REG(d0, ULONG type), REG(a6, str
 	WB_Data *wb_data;
 	AppEntry *entry;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -989,7 +989,7 @@ void LIBFUNC L_UnlockAppList(REG(a6, struct MyLibrary *libbase))
 {
 	WB_Data *wb_data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -1444,7 +1444,7 @@ void LIBFUNC L_ChangeAppIcon(REG(a0, APTR appicon),
 	AppEntry *app_entry;
 	WB_Data *wb_data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -1515,7 +1515,7 @@ void LIBFUNC L_ChangeAppIcon(REG(a0, APTR appicon),
 				app_entry->flags &= ~APPENTF_BUSY;
 
 			// Send notification
-			L_SendNotifyMsg(DN_APP_ICON_LIST, (ULONG)app_entry, notify_flags, FALSE, 0, 0, libbase);
+			L_SendNotifyMsg(DN_APP_ICON_LIST, (IPTR)app_entry, notify_flags, FALSE, 0, 0, libbase);
 		}
 	}
 
@@ -1561,7 +1561,7 @@ struct DiskObject *LIBFUNC L_CopyDiskObject(REG(a0, struct DiskObject *icon),
 	struct LibData *data;
 	WB_Data *wb_data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -1721,7 +1721,7 @@ void LIBFUNC L_FreeDiskObjectCopy(REG(a0, struct DiskObject *icon), REG(a6, stru
 	struct LibData *data;
 	short type;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -2218,7 +2218,7 @@ PATCHED_2(struct Window *, LIBFUNC L_PatchedOpenWindowTags, a0, struct NewWindow
 			h = GetTagData(WA_Height, (newwin) ? newwin->Height : 0, tags);
 
 			// Get screen
-			if (!(scr = (struct Screen *)GetTagData(WA_CustomScreen, (newwin) ? (ULONG)newwin->Screen : 0, tags)))
+			if (!(scr = (struct Screen *)GetTagData(WA_CustomScreen, (newwin) ? (IPTR)newwin->Screen : 0, tags)))
 			{
 				scr = LockPubScreen(0);
 				lock = TRUE;
@@ -2512,7 +2512,7 @@ void LIBFUNC L_WB_Install_Patch(REG(a6, struct MyLibrary *libbase))
 {
 	WB_Data *wb_data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -2584,7 +2584,7 @@ BOOL LIBFUNC L_WB_Remove_Patch(REG(a6, struct MyLibrary *libbase))
 	APTR old_patch_val[WB_PATCH_COUNT];
 	WB_Data *wb_data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 

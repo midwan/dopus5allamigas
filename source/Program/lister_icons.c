@@ -123,7 +123,7 @@ void lister_get_icons(FunctionHandle *handle, Lister *lister, char *add_name, sh
 				if (isicon(ptr))
 				{
 					// Add to icon list for later
-					Att_NewNode(icon_list, 0, (ULONG)entry, 0);
+					Att_NewNode(icon_list, 0, (IPTR)entry, 0);
 					ok = 0;
 				}
 

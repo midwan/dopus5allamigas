@@ -27,7 +27,7 @@ For more information on Directory Opus for Windows please see:
 void STDARGS v_loc_printf(char *, char *, APTR);
 #define loc_printf(buf, str, dat, ...)         \
 	({                                         \
-		IPTR __args[] = {__VA_ARGS__};         \
+		IPTR __args[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)}; \
 		v_loc_printf(buf, str, (APTR)&__args); \
 	})
 

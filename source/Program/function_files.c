@@ -31,7 +31,7 @@ LONG MatchNext64Plus(struct AnchorPath *panchor, ULONG blocksize)
 	LONG error = 0;
 
 	error = MatchNext(panchor);
-#ifndef __MORPHOS__
+#if !defined(__MORPHOS__) && !defined(__AROS__)
 	((FileInfoBlock64 *)&panchor->ap_Info)->fib_Size64 = (UQUAD)panchor->ap_Info.fib_Size;
 #endif
 

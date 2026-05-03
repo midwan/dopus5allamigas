@@ -42,7 +42,7 @@ struct Window *LIBFUNC L_OpenConfigWindow(REG(a0, NewConfigWindow *newwindow), R
 	APTR memory;
 	struct Gadget *gadget = 0;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -208,7 +208,7 @@ struct Window *LIBFUNC L_OpenConfigWindow(REG(a0, NewConfigWindow *newwindow), R
 								  (flags & WINDOW_SIMPLE) ? WA_SimpleRefresh : WA_SmartRefresh,
 								  TRUE,
 								  (flags & WINDOW_VISITOR) ? WA_PubScreen : WA_CustomScreen,
-								  (ULONG)screen,
+								  (IPTR)screen,
 								  (flags & WINDOW_VISITOR) ? WA_PubScreenFallBack : TAG_IGNORE,
 								  TRUE,
 								  (flags & (WINDOW_SIZE_RIGHT | WINDOW_SIZE_BOTTOM)) ? WA_SizeGadget : TAG_IGNORE,
@@ -319,7 +319,7 @@ struct Window *LIBFUNC L_OpenConfigWindow(REG(a0, NewConfigWindow *newwindow), R
 
 void LIBFUNC L_CloseConfigWindow(REG(a0, struct Window *window), REG(a6, struct MyLibrary *libbase))
 {
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -814,7 +814,7 @@ ObjectList *LIBFUNC L_AddObjectList(REG(a0, struct Window *window),
 	short num;
 	struct LibData *ldata;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -1032,7 +1032,7 @@ ObjectList *LIBFUNC L_AddObjectList(REG(a0, struct Window *window),
 						tag->ti_Tag = GTCY_Labels;
 					else
 						tag->ti_Tag = GTMX_Labels;
-					tag->ti_Data = (ULONG)labels;
+					tag->ti_Data = (IPTR)labels;
 
 					// Store label count
 					new_object->gl_info.gl_gadget.choice_max = count;
@@ -1189,7 +1189,7 @@ ObjectList *LIBFUNC L_AddObjectList(REG(a0, struct Window *window),
 																				  ICA_TARGET,
 																				  ICTARGET_IDCMP,
 																				  TAG_MORE,
-																				  (ULONG)taglist);
+																				  (IPTR)taglist);
 			}
 			break;
 
@@ -1235,7 +1235,7 @@ ObjectList *LIBFUNC L_AddObjectList(REG(a0, struct Window *window),
 					ICA_TARGET,
 					ICTARGET_IDCMP,
 					TAG_MORE,
-					(ULONG)taglist);
+					(IPTR)taglist);
 			}
 			break;
 
@@ -1279,7 +1279,7 @@ ObjectList *LIBFUNC L_AddObjectList(REG(a0, struct Window *window),
 											   ICA_TARGET,
 											   ICTARGET_IDCMP,
 											   TAG_MORE,
-											   (ULONG)taglist);
+											   (IPTR)taglist);
 			}
 			break;
 
@@ -1319,7 +1319,7 @@ ObjectList *LIBFUNC L_AddObjectList(REG(a0, struct Window *window),
 																				  ICA_TARGET,
 																				  ICTARGET_IDCMP,
 																				  TAG_MORE,
-																				  (ULONG)taglist);
+																				  (IPTR)taglist);
 			}
 			break;
 
@@ -1359,7 +1359,7 @@ ObjectList *LIBFUNC L_AddObjectList(REG(a0, struct Window *window),
 																				  ICA_TARGET,
 																				  ICTARGET_IDCMP,
 																				  TAG_MORE,
-																				  (ULONG)taglist);
+																				  (IPTR)taglist);
 			}
 			break;
 
@@ -1399,7 +1399,7 @@ ObjectList *LIBFUNC L_AddObjectList(REG(a0, struct Window *window),
 																				  ICA_TARGET,
 																				  ICTARGET_IDCMP,
 																				  TAG_MORE,
-																				  (ULONG)taglist);
+																				  (IPTR)taglist);
 			}
 			break;
 
@@ -1453,7 +1453,7 @@ ObjectList *LIBFUNC L_AddObjectList(REG(a0, struct Window *window),
 																				  GTCustom_TextAttr,
 																				  &list->attr,
 																				  TAG_MORE,
-																				  (ULONG)taglist);
+																				  (IPTR)taglist);
 
 				// Default path?
 				if ((tag = FindTagItem(DFB_DefPath, taglist)))
@@ -1480,7 +1480,7 @@ ObjectList *LIBFUNC L_AddObjectList(REG(a0, struct Window *window),
 																		(hook) ? STRINGA_EditHook : TAG_IGNORE,
 																		hook,
 																		TAG_MORE,
-																		(ULONG)taglist);
+																		(IPTR)taglist);
 				}
 			}
 			break;
@@ -1539,7 +1539,7 @@ ObjectList *LIBFUNC L_AddObjectList(REG(a0, struct Window *window),
 			// String gadgets get their data pointer set to point at the buffer
 			if (new_object->object_kind == STRING_KIND)
 				new_object->gl_info.gl_gadget.data =
-					(ULONG)((struct StringInfo *)GADGET(new_object)->SpecialInfo)->Buffer;
+					(IPTR)((struct StringInfo *)GADGET(new_object)->SpecialInfo)->Buffer;
 
 			// Add gadget to window
 			AddGList(window, firstgad, -1, new_object->gl_info.gl_gadget.components, 0);
@@ -2070,7 +2070,7 @@ void LIBFUNC L_DisplayObject(REG(a0, struct Window *window),
 				box_tags[1].ti_Tag = GTBB_FrameType;
 				box_tags[1].ti_Data = object->gl_info.gl_area.frametype;
 				box_tags[2].ti_Tag = GT_VisualInfo;
-				box_tags[2].ti_Data = (ULONG)VISINFO(window);
+				box_tags[2].ti_Data = (IPTR)VISINFO(window);
 				box_tags[3].ti_Tag = TAG_END;
 
 				// Draw frame

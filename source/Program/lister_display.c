@@ -85,6 +85,8 @@ void lister_init_display(Lister *lister)
 
 			// Get length of this string, see if it's the longest
 			ptr = GetString(&locale, a);
+			if (!ptr)
+				ptr = "";
 			if ((size = TextLength(&lister->window->WScreen->RastPort, ptr, strlen(ptr))) > status_size)
 				status_size = size;
 		}
@@ -455,7 +457,12 @@ void lister_update_pathfield(Lister *lister)
 	{
 		// Update path field
 		SetGadgetAttrs(
-			lister->path_field, lister->window, 0, STRINGA_TextVal, lister->cur_buffer->buf_ExpandedPath, TAG_END);
+			lister->path_field,
+			lister->window,
+			0,
+			STRINGA_TextVal,
+			(IPTR)lister->cur_buffer->buf_ExpandedPath,
+			TAG_END);
 	}
 
 	// Is lister iconified?
@@ -465,7 +472,7 @@ void lister_update_pathfield(Lister *lister)
 		lister_build_icon_name(lister);
 
 		// Update app icon
-		SendNotifyMsg(DN_APP_ICON_LIST, (ULONG)lister->appicon, DNF_ICON_CHANGED, FALSE, 0, 0);
+		SendNotifyMsg(DN_APP_ICON_LIST, (IPTR)lister->appicon, DNF_ICON_CHANGED, FALSE, 0, 0);
 	}
 }
 

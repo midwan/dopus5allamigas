@@ -460,7 +460,7 @@ short function_check_single(FunctionHandle *handle, long type, long usetype, sho
 			if (ok)
 			{
 				// Add to list
-				Att_NewNode(list, lister->cur_buffer->buf_Path, (ULONG)lister, ADDNODE_SORT | ADDNODE_EXCLUSIVE);
+				Att_NewNode(list, lister->cur_buffer->buf_Path, (IPTR)lister, ADDNODE_SORT | ADDNODE_EXCLUSIVE);
 			}
 		}
 
@@ -475,7 +475,7 @@ short function_check_single(FunctionHandle *handle, long type, long usetype, sho
 		if (!(IsListEmpty((struct List *)list)) && current)
 		{
 			// Add the path we do have to lister
-			if ((node = Att_NewNode(list, current->lister->cur_buffer->buf_Path, (ULONG)current, ADDNODE_SORT)))
+			if ((node = Att_NewNode(list, current->lister->cur_buffer->buf_Path, (IPTR)current, ADDNODE_SORT)))
 				sel = Att_FindNodeNumber(list, node);
 		}
 
@@ -554,7 +554,7 @@ short function_check_single(FunctionHandle *handle, long type, long usetype, sho
 
 		// New path?
 		else if (handle->work_buffer[0] ||
-				 ((node = Att_FindNode(list, sel)) && (!current || node->data != (ULONG)current)))
+				 ((node = Att_FindNode(list, sel)) && (!current || node->data != (IPTR)current)))
 		{
 			// Already got a path?
 			if (current)

@@ -68,7 +68,7 @@ static unsigned int recursive_getput_via_temp(struct hook_rec_data *hc,
 											  BOOL resume);
 static void recursive_getput_clear_errors(endpoint *source, endpoint *dest);
 // static int callback_func( void *, char *str );
-static int rec_ask_lister_favour(int favour, endpoint *, void *arg1, void *arg2);
+static IPTR rec_ask_lister_favour(int favour, endpoint *, void *arg1, void *arg2);
 
 /**
  *{	Endpoint functions
@@ -3039,7 +3039,7 @@ int rec_ftp_port(endpoint *ep, struct sockaddr_in *addr, ULONG flags)
 	if (ep->ep_ftpnode->fn_ftp.fi_task != FindTask(0))
 
 		// Ask the appropriate lister to do it for us
-		return rec_ask_lister_favour(FAVOUR_PORT, ep, addr, (void *)flags);
+		return rec_ask_lister_favour(FAVOUR_PORT, ep, addr, (void *)(IPTR)flags);
 
 	D(bug("FTP PORT\n"));
 
@@ -3122,7 +3122,7 @@ int rec_ftp_rest(endpoint *ep, unsigned int offset)
 	if (ep->ep_ftpnode->fn_ftp.fi_task != FindTask(0))
 
 		// Ask the appropriate lister to do it for us
-		return rec_ask_lister_favour(FAVOUR_REST, ep, (void *)offset, 0);
+		return rec_ask_lister_favour(FAVOUR_REST, ep, (void *)(IPTR)offset, 0);
 
 	D(bug("FTP REST %s\n", offset));
 
@@ -3248,7 +3248,7 @@ int rec_ftp_chmod(endpoint *ep, char *name, ULONG mode)
 	if (ep->ep_ftpnode->fn_ftp.fi_task != FindTask(0))
 
 		// Ask the appropriate lister to do it for us
-		return rec_ask_lister_favour(FAVOUR_CHMOD, ep, name, (void *)mode);
+		return rec_ask_lister_favour(FAVOUR_CHMOD, ep, name, (void *)(IPTR)mode);
 
 	if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
 		return ftp_sftp_chmod(&ep->ep_ftpnode->fn_sftp, name, mode);
@@ -3328,7 +3328,7 @@ int rec_ftp_getreply(endpoint *ep, ULONG flags)
 	if (ep->ep_ftpnode->fn_ftp.fi_task != FindTask(0))
 
 		// Ask the appropriate lister to do it for us
-		return rec_ask_lister_favour(FAVOUR_GETREPLY, ep, (void *)flags, 0);
+		return rec_ask_lister_favour(FAVOUR_GETREPLY, ep, (void *)(IPTR)flags, 0);
 
 	return _getreply(&ep->ep_ftpnode->fn_ftp, flags, 0, 0);
 }
@@ -3432,7 +3432,7 @@ int rec_ftp_errorreq(endpoint *ep, struct ftp_node *prognode, ULONG flags)
 	if (ep->ep_ftpnode->fn_ftp.fi_task != FindTask(0))
 
 		// Ask the appropriate lister to do it for us
-		return rec_ask_lister_favour(FAVOUR_ERRORREQ, ep, prognode, (void *)flags);
+		return rec_ask_lister_favour(FAVOUR_ERRORREQ, ep, prognode, (void *)(IPTR)flags);
 
 	return lst_server_err(ep->ep_ftpnode->fn_og, prognode, ep->ep_ftpnode, flags, 0);
 }
@@ -3547,10 +3547,10 @@ int rec_filesys_dummy(endpoint *ep, struct entry_info *entry)
 //	Ask another lister to do an FTP command for us
 //	(This is because each process can only access its own sockets)
 //
-static int rec_ask_lister_favour(int favour, endpoint *ep, void *arg1, void *arg2)
+static IPTR rec_ask_lister_favour(int favour, endpoint *ep, void *arg1, void *arg2)
 {
 	struct favour_msg *fm;
-	int retval = 0;
+	IPTR retval = 0;
 
 	if (favour < FAVOUR_LIST || favour >= FAVOUR_ENDLIST)
 		return 0;

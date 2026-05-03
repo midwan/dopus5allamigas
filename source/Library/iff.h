@@ -34,13 +34,13 @@ typedef struct _IFFHandle
 	short iff_Error;  // Any error
 	APTR iff_Memory;  // Any memory used for the handle
 
-	unsigned long iff_Form;	 // IFF Form
-	long iff_Size;			 // Total size
+	ULONG iff_Form;	 // IFF Form
+	LONG iff_Size;	 // Total size
 
-	unsigned long iff_Chunk;  // Current chunk
-	long iff_ChunkSize;		  // Current chunk size
-	long iff_ChunkPos;		  // Position of chunk in file
-	long iff_ChunkOK;		  // Current chunk is OK?
+	ULONG iff_Chunk;	 // Current chunk
+	LONG iff_ChunkSize;	 // Current chunk size
+	LONG iff_ChunkPos;	 // Position of chunk in file
+	LONG iff_ChunkOK;	 // Current chunk is OK?
 
 	struct MinList iff_ChunkData;  // Current chunk data
 
@@ -49,7 +49,7 @@ typedef struct _IFFHandle
 
 	BPTR iff_SafeFile;		// Safe file
 	char iff_TempName[20];	// Temporary name
-	long iff_Success;		// Indicates success
+	LONG iff_Success;		// Indicates success
 	BOOL iff_Async;			// Using AsyncIO
 
 	char iff_Name[1];  // Filename
@@ -58,7 +58,7 @@ typedef struct _IFFHandle
 typedef struct
 {
 	struct MinNode chk_Node;
-	long chk_Size;
+	LONG chk_Size;
 	char chk_Data[1];
 } IFFChunkData;
 

@@ -43,7 +43,7 @@ IPCData *filetype_get_sniffer(void)
 		if (!(IPC_Launch(&GUI->process_list,
 						 &ipc,
 						 "dopus_filetype_sniffer",
-						 (ULONG)&filetype_sniffer_proc,
+						 (IPTR)&filetype_sniffer_proc,
 						 STACK_DEFAULT,
 						 0,
 						 (struct Library *)DOSBase)))

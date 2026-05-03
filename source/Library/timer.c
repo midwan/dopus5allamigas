@@ -151,7 +151,7 @@ BOOL LIBFUNC L_TimerActive(REG(a0, TimerHandle *handle))
 // Get timer base
 struct Library *LIBFUNC L_GetTimerBase(REG(a6, struct MyLibrary *lib))
 {
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	lib = dopuslibbase_global;
 #endif
 

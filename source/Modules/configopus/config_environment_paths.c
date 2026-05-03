@@ -113,7 +113,7 @@ void config_env_path_sel(config_env_data *data)
 	DisableObject(data->option_list, GAD_SETTINGS_PATHLIST_DELETE, (node) ? FALSE : TRUE);
 
 	// Copy string to path gadget
-	SetGadgetValue(data->option_list, GAD_SETTINGS_PATHLIST_PATH, (ULONG)((node) ? node->node.ln_Name : 0));
+	SetGadgetValue(data->option_list, GAD_SETTINGS_PATHLIST_PATH, (IPTR)((node) ? node->node.ln_Name : 0));
 }
 
 // Delete path

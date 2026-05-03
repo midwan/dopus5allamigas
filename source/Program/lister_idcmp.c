@@ -92,7 +92,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 			}
 
 			// See if we can handle it
-			if ((a = lister_do_function(lister, (ULONG)(IPTR)GTMENUITEM_USERDATA(item))) == -1)
+			if ((a = lister_do_function(lister, (IPTR)GTMENUITEM_USERDATA(item))) == -1)
 			{
 				MenuEvent *event;
 				APTR menuitem;

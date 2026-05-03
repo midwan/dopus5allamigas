@@ -39,7 +39,7 @@ void _config_env_update_output(config_env_data *data)
 	if (data->config->output_window[a])
 	{
 		// Set name
-		SetGadgetValue(data->objlist, GAD_ENVIRONMENT_OUTPUT_NAME, (ULONG)data->config->output_window + a);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_OUTPUT_NAME, (IPTR)data->config->output_window + a);
 	}
 
 	// Update dimensions
@@ -60,7 +60,7 @@ void _config_env_update_output_dims(config_env_data *data)
 			 data->output_dims[1] + data->output_dims[3] - 1);
 
 	// Update display
-	SetGadgetValue(data->objlist, GAD_ENVIRONMENT_OUTPUT_DIMENSIONS, (ULONG)buf);
+	SetGadgetValue(data->option_list, GAD_ENVIRONMENT_OUTPUT_DIMENSIONS, (IPTR)buf);
 }
 
 // Set output dimensions
@@ -97,7 +97,7 @@ IPCMessage *_config_env_output_window_set(config_env_data *data, UWORD id)
 			  WA_Height,
 			  dims.Height,
 			  WA_Title,
-			  (id == GAD_ENVIRONMENT_OUTPUT_SET) ? (char *)GetGadgetValue(data->objlist, GAD_ENVIRONMENT_OUTPUT_NAME)
+			  (id == GAD_ENVIRONMENT_OUTPUT_SET) ? (char *)GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OUTPUT_NAME)
 												 : (char *)GetString(locale, MSG_ENVIRONMENT_DEFLISTER_SIZE),
 			  WA_CloseGadget,
 			  TRUE,
@@ -288,5 +288,5 @@ void _config_env_update_listersize(config_env_data *data)
 	lsprintf(buf, "%ld x %ld", width, height);
 
 	// Update display
-	SetGadgetValue(data->objlist, GAD_ENVIRONMENT_DEFAULT_SIZE, (ULONG)buf);
+	SetGadgetValue(data->option_list, GAD_ENVIRONMENT_DEFAULT_SIZE, (IPTR)buf);
 }

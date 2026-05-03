@@ -49,7 +49,7 @@ typedef struct
 	ULONG type;					  // Type of memory
 	ULONG flags;				  // Flags
 	ULONG total;				  // Total memory allocated under this handle
-	ULONG check_val;			  // Header check value
+	IPTR check_val;			  // Header check value
 } MemHandle;
 
 #ifndef __amigaos3__

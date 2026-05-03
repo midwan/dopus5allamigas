@@ -39,7 +39,7 @@ IPCData *misc_startup(char *name, ULONG command, struct Window *window, APTR dat
 	IPCData *ipc;
 
 	// If exclusive, see if process is already up
-	if (exclusive && (ipc = IPC_FindProc(&GUI->process_list, name, TRUE, (ULONG)data)))
+	if (exclusive && (ipc = IPC_FindProc(&GUI->process_list, name, TRUE, (IPTR)data)))
 		return ipc;
 
 	// Allocate startup
@@ -54,9 +54,9 @@ IPCData *misc_startup(char *name, ULONG command, struct Window *window, APTR dat
 		if (IPC_Launch(&GUI->process_list,
 					   &ipc,
 					   name,
-					   (ULONG)&misc_proc,
+					   (IPTR)&misc_proc,
 					   STACK_DEFAULT,
-					   (ULONG)startup,
+					   (IPTR)startup,
 					   (struct Library *)DOSBase))
 			return ipc;
 
@@ -83,7 +83,7 @@ IPC_EntryCode(misc_proc)
 #endif
 
 	// Do startup
-	if ((ipc = IPC_ProcStartup((ULONG *)&startup, 0)))
+	if ((ipc = IPC_ProcStartup((IPTR *)&startup, 0)))
 	{
 		// Quit program?
 		if (startup->command == MENU_QUIT)
@@ -226,7 +226,7 @@ IPC_EntryCode(misc_proc)
 				buttons->flags |= BUTTONF_NEW_BANK;
 
 				// Open bank
-				IPC_Command(buttons->ipc, BUTTONS_OPEN, (ULONG)startup->data, startup->window->WScreen, 0, 0);
+				IPC_Command(buttons->ipc, BUTTONS_OPEN, (IPTR)startup->data, startup->window->WScreen, 0, 0);
 
 				// Fill out packet
 				packet.buttons = buttons;
@@ -259,7 +259,7 @@ IPC_EntryCode(misc_proc)
 				if (Config_Filetypes(startup->window->WScreen,
 									 ipc,
 									 &main_ipc,
-									 (ULONG)&GUI->command_list.list,
+									 (IPTR)&GUI->command_list.list,
 									 (char *)startup->data))
 					change = CONFIG_CHANGE_FILETYPES;
 #ifdef __amigaos4__
@@ -290,7 +290,7 @@ IPC_EntryCode(misc_proc)
 										&main_ipc,
 										startup->window->WScreen,
 										GUI->lister_menu,
-										(ULONG)&GUI->command_list.list,
+										(IPTR)&GUI->command_list.list,
 										1,
 										environment->menu_path)))
 				{
@@ -338,7 +338,7 @@ IPC_EntryCode(misc_proc)
 										&main_ipc,
 										startup->window->WScreen,
 										GUI->user_menu,
-										(ULONG)&GUI->command_list.list,
+										(IPTR)&GUI->command_list.list,
 										0,
 										environment->user_menu_path)))
 				{
@@ -376,7 +376,7 @@ IPC_EntryCode(misc_proc)
 									   startup->window->WScreen,
 									   GUI->scripts,
 									   GetString(&locale, MSG_SCRIPTS_TITLE),
-									   (ULONG)&GUI->command_list.list,
+									   (IPTR)&GUI->command_list.list,
 									   "scripts",
 									   TYPE_SCRIPTS,
 									   script_list)))
@@ -414,7 +414,7 @@ IPC_EntryCode(misc_proc)
 									   startup->window->WScreen,
 									   GUI->hotkeys,
 									   GetString(&locale, MSG_HOTKEYS_TITLE),
-									   (ULONG)&GUI->command_list.list,
+									   (IPTR)&GUI->command_list.list,
 									   "hotkeys",
 									   TYPE_HOTKEYS,
 									   0)))
@@ -449,7 +449,7 @@ IPC_EntryCode(misc_proc)
 									&main_ipc,
 									startup->window->WScreen,
 									GUI->user_menu,
-									(ULONG)&GUI->command_list.list,
+									(IPTR)&GUI->command_list.list,
 									2,
 									environment->user_menu_path))
 								{
@@ -695,7 +695,7 @@ IPC_EntryCode(misc_proc)
 			{
 				// Read files
 				Module_Entry(
-					read->files, GUI->screen_pointer, ipc, &main_ipc, (ULONG)read, startup->command - FUNC_READ);
+					read->files, GUI->screen_pointer, ipc, &main_ipc, (IPTR)read, startup->command - FUNC_READ);
 
 // Close module
 #ifdef __amigaos4__
@@ -954,7 +954,7 @@ IPC_EntryCode(misc_proc)
 
 				// Do the thing
 				Module_Entry(
-					(struct List *)startup->data, GUI->screen_pointer, ipc, &main_ipc, (ULONG)startup->window, flags);
+					(struct List *)startup->data, GUI->screen_pointer, ipc, &main_ipc, (IPTR)startup->window, flags);
 
 // Close module
 #ifdef __amigaos4__
@@ -991,7 +991,7 @@ IPC_EntryCode(misc_proc)
 								 ipc,
 								 &main_ipc,
 								 FUNCID_STARTUP,
-								 (ULONG)GET_CALLBACK(function_external_hook));
+								 (IPTR)GET_CALLBACK(function_external_hook));
 
 // Close library
 #ifdef __amigaos4__
@@ -1035,7 +1035,7 @@ IPC_EntryCode(misc_proc)
 		case MAIN_SNIFF_MODULES:
 
 			// Scan for modules
-			update_commands((ULONG)startup->data);
+			update_commands((IPTR)startup->data);
 			break;
 
 		// Handle Workbench close

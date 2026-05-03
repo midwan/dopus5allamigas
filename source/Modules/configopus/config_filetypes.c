@@ -4,7 +4,7 @@
 short LIBFUNC L_Config_Filetypes(REG(a0, struct Screen *screen),
 								 REG(a1, IPCData *ipc),
 								 REG(a2, IPCData *owner_ipc),
-								 REG(d0, ULONG command_list),
+								 REG(d0, IPTR command_list),
 								 REG(a3, char *name))
 {
 	config_filetypes_data *data;
@@ -503,7 +503,7 @@ Att_Node *filetype_add_entry(config_filetypes_data *data, Cfg_Filetype *type)
 		lsprintf(buf, "%s\t%s", type->type.name, type->type.id);
 
 		// Add entry to list for this filetype
-		if ((new_node = Att_NewNode(data->filetype_list, buf, (ULONG)node, ADDNODE_SORT)))
+		if ((new_node = Att_NewNode(data->filetype_list, buf, (IPTR)node, ADDNODE_SORT)))
 			return new_node;
 		FreeVec(node);
 	}
@@ -584,9 +584,9 @@ void filetype_edit(config_filetypes_data *data, FiletypeNode *node, short edit_f
 	if (!(IPC_Launch(&data->proc_list,
 					 &node->editor,
 					 "dopus_filetype_editor",
-					 (ULONG)IPC_NATIVE(FiletypeEditor),
+					 IPC_NATIVE(FiletypeEditor),
 					 STACK_DEFAULT,
-					 (ULONG)eddata,
+					 (IPTR)eddata,
 					 (struct Library *)DOSBase)) ||
 		!node->editor)
 	{
@@ -620,7 +620,7 @@ BOOL filetype_receive_edit(config_filetypes_data *data, Cfg_Filetype *type, File
 		SetGadgetChoices(data->objlist, GAD_FILETYPES_LIST, (APTR)~0);
 
 		// Free display node
-		if ((display_node = Att_FindNodeData(data->filetype_list, (ULONG)node)))
+		if ((display_node = Att_FindNodeData(data->filetype_list, (IPTR)node)))
 			Att_RemNode(display_node);
 		FreeVec(node);
 

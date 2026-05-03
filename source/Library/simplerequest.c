@@ -37,7 +37,7 @@ short LIBFUNC L_DoSimpleRequest(REG(a0, struct Window *parent),
 	simplereq_data *data;
 	UWORD gadgetid = 0;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = (struct Library *)dopuslibbase_global;
 #endif
 
@@ -93,7 +93,7 @@ short LIBFUNC L_DoSimpleRequest(REG(a0, struct Window *parent),
 	// Signal supplied?
 	else if (simple->flags & SRF_SIGNAL)
 	{
-		data->signal = (short)simple->ipc;
+		data->signal = (short)(IPTR)simple->ipc;
 		data->waitbits = 1 << data->signal;
 	}
 
@@ -194,11 +194,11 @@ short LIBFUNC L_DoSimpleRequest(REG(a0, struct Window *parent),
 
 							// Initialise tags
 							tags[0].ti_Tag = ASLFR_Window;
-							tags[0].ti_Data = (ULONG)data->window;
+							tags[0].ti_Data = (IPTR)data->window;
 							tags[1].ti_Tag = ASLFR_InitialFile;
-							tags[1].ti_Data = (ULONG)file;
+							tags[1].ti_Data = (IPTR)file;
 							tags[2].ti_Tag = ASLFR_InitialDrawer;
-							tags[2].ti_Data = (ULONG)buf;
+							tags[2].ti_Data = (IPTR)buf;
 							tags[3].ti_Tag = TAG_END;
 
 							// Show requester
@@ -209,7 +209,7 @@ short LIBFUNC L_DoSimpleRequest(REG(a0, struct Window *parent),
 								AddPart(buf, ((struct FileRequester *)simple->filereq)->fr_File, 400);
 
 								// Show in string gadget
-								L_SetGadgetValue(data->objlist, GAD_STRING_ID, (long)buf);
+								L_SetGadgetValue(data->objlist, GAD_STRING_ID, (IPTR)buf);
 								L_ActivateStrGad(GADGET(L_GetObject(data->objlist, GAD_STRING_ID)), data->window);
 							}
 							continue;
@@ -407,11 +407,11 @@ BOOL _simplereq_open(simplereq_data *data, void *parent)
 			if (!(data->simple->flags & SRF_LONGINT))
 			{
 				// Initialise first gadget
-				L_SetGadgetValue(data->objlist, GAD_STRING_ID, (long)data->simple->string_buffer);
+				L_SetGadgetValue(data->objlist, GAD_STRING_ID, (IPTR)data->simple->string_buffer);
 
 				// Initialise second string gadget
 				if (data->string_buffer_2)
-					L_SetGadgetValue(data->objlist, GAD_STRING2_ID, (long)data->string_buffer_2);
+					L_SetGadgetValue(data->objlist, GAD_STRING2_ID, (IPTR)data->string_buffer_2);
 			}
 
 			// Activate it
@@ -460,7 +460,7 @@ short LIBFUNC L_SimpleRequest(REG(a0, struct Window *parent),
 	struct DOpusSimpleRequest *simple;
 	short gadget_count, a;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = (struct Library *)dopuslibbase_global;
 #endif
 
@@ -771,7 +771,7 @@ BOOL simple_build(simplereq_data *data)
 			data->objects[object].fine_dims.Top = 10 + ((object - 1) * 3);
 
 			// Get copy of text
-			if ((data->objects[object].gadget_text = (ULONG)L_AllocMemH(data->memory, (pos - data->start_pos) + 1)))
+			if ((data->objects[object].gadget_text = (IPTR)L_AllocMemH(data->memory, (pos - data->start_pos) + 1)))
 			{
 				CopyMem(simple->message + data->start_pos,
 						(char *)data->objects[object].gadget_text,
@@ -878,7 +878,7 @@ BOOL simple_build(simplereq_data *data)
 		data->tags[3].ti_Tag = GTCustom_NoSelectNext;
 		data->tags[3].ti_Data = TRUE;
 		data->tags[4].ti_Tag = GTCustom_History;
-		data->tags[4].ti_Data = (simple->flags & SRF_HISTORY) ? (ULONG)simple->history : 0;
+		data->tags[4].ti_Data = (simple->flags & SRF_HISTORY) ? (IPTR)simple->history : 0;
 		data->tags[5].ti_Tag = GTCustom_PathFilter;
 		data->tags[5].ti_Data = (simple->flags & SRF_PATH_FILTER) ? 1 : 0;
 		data->tags[6].ti_Tag = GTCustom_Secure;
@@ -904,7 +904,7 @@ BOOL simple_build(simplereq_data *data)
 		data->objects[object].fine_dims.Top = -4;
 		data->objects[object].fine_dims.Width = 28;
 		data->objects[object].fine_dims.Height = 6;
-		data->objects[object].gadget_text = (ULONG)simple->check_text;
+		data->objects[object].gadget_text = (IPTR)simple->check_text;
 		data->objects[object].flags = TEXTFLAG_TEXT_STRING | PLACETEXT_RIGHT;
 		data->objects[object].gadgetid = GAD_CHECK_ID;
 		data->objects[object].taglist = data->rel_tags;
@@ -955,7 +955,7 @@ BOOL simple_build(simplereq_data *data)
 		}
 
 		// Get name (with underscore)
-		if ((data->objects[object].gadget_text = (ULONG)L_AllocMemH(data->memory, strlen(simple->gadgets[pos]) + 2)))
+		if ((data->objects[object].gadget_text = (IPTR)L_AllocMemH(data->memory, strlen(simple->gadgets[pos]) + 2)))
 		{
 			short ch, cp, got_us = 0;
 			unsigned char gc;
@@ -978,7 +978,7 @@ BOOL simple_build(simplereq_data *data)
 			}
 		}
 		else
-			data->objects[object].gadget_text = (ULONG)simple->gadgets[pos];
+			data->objects[object].gadget_text = (IPTR)simple->gadgets[pos];
 	}
 
 	return 1;

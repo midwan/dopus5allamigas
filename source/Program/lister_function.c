@@ -26,7 +26,7 @@ For more information on Directory Opus for Windows please see:
 #include "dopus.h"
 
 // Do a lister-specific function
-int lister_do_function(Lister *lister, ULONG func)
+int lister_do_function(Lister *lister, IPTR func)
 {
 	int result = 1;
 	BOOL show_status = 0;

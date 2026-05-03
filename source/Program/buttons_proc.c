@@ -87,7 +87,7 @@ IPC_EntryCode(buttons_code)
 	IPCData *ipc;
 
 	// Do startup
-	if (!(IPC_ProcStartup((ULONG *)&buttons, &buttons_init)))
+	if (!(IPC_ProcStartup((IPTR *)&buttons, &buttons_init)))
 	{
 		buttons_cleanup(buttons, 0);
 		return;
@@ -447,7 +447,7 @@ IPC_EntryCode(buttons_code)
 
 			// Asked to supply bank pointer
 			case BUTTONEDIT_GIMME_BANK:
-				lmsg->command = (ULONG)buttons->bank;
+				lmsg->command = (IPTR)buttons->bank;
 				if (lmsg->data && buttons->window)
 				{
 					((Point *)lmsg->data)->x = buttons->window->LeftEdge;
@@ -482,18 +482,18 @@ IPC_EntryCode(buttons_code)
 			// Set selection
 			case BUTTONEDIT_SET_SELECTION:
 				buttons->editor_sel_col = (short)lmsg->flags;
-				buttons->editor_sel_row = (short)lmsg->data;
+				buttons->editor_sel_row = (short)(IPTR)lmsg->data;
 				lmsg->command = buttons_visible_select(buttons);
 				break;
 
 			// Get button
 			case BUTTONEDIT_GET_BUTTON:
-				lmsg->command = (ULONG)button_from_pos(buttons, (short)lmsg->flags, (short)lmsg->data);
+				lmsg->command = (IPTR)button_from_pos(buttons, (short)lmsg->flags, (short)(IPTR)lmsg->data);
 				break;
 
 			// Get button from a point
 			case BUTTONEDIT_GET_BUTTON_POINT:
-				lmsg->command = (ULONG)button_from_point(buttons, (short *)lmsg->flags, (short *)lmsg->data);
+				lmsg->command = (IPTR)button_from_point(buttons, (short *)lmsg->flags, (short *)lmsg->data);
 				break;
 
 			// Control flash
@@ -559,8 +559,8 @@ IPC_EntryCode(buttons_code)
 				Cfg_Button *button;
 
 				// Get coordinates
-				x = ((ULONG)lmsg->data) >> 16;
-				y = ((ULONG)lmsg->data) & 0xffff;
+				x = ((IPTR)lmsg->data) >> 16;
+				y = ((IPTR)lmsg->data) & 0xffff;
 
 				// Check point is within button area
 				if (x < buttons->internal.Left || y < buttons->internal.Top ||

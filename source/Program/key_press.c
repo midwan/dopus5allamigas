@@ -337,14 +337,14 @@ void key_finder(IPCData *ipc)
 				// Get code and qualifier
 				code = imsg->flags >> 16;
 				qual = imsg->flags & 0xffff;
-				qual_mask = ((ULONG)imsg->data) >> 16;
-				qual_same = ((ULONG)imsg->data) & 0xffff;
+				qual_mask = ((IPTR)imsg->data) >> 16;
+				qual_same = ((IPTR)imsg->data) & 0xffff;
 
 				// Build key string
 				BuildKeyString(code, qual, qual_mask, qual_same, buf);
 
 				// Set string value
-				SetGadgetValue(objlist, GAD_KEYFINDER_KEY, (ULONG)buf);
+				SetGadgetValue(objlist, GAD_KEYFINDER_KEY, (IPTR)buf);
 
 				// Set flag to activate key field
 				activate = 1;
@@ -384,7 +384,7 @@ void key_finder(IPCData *ipc)
 			ptr = GetString(&locale, MSG_KEYFINDER_TYPE_INVALID + match_type);
 
 			// Set type string
-			SetGadgetValue(objlist, GAD_KEYFINDER_FOUND, (ULONG)ptr);
+			SetGadgetValue(objlist, GAD_KEYFINDER_FOUND, (IPTR)ptr);
 
 			// Remove function list
 			SetGadgetChoices(objlist, GAD_KEYFINDER_FUNCTION, (APTR)-1);

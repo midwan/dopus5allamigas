@@ -430,12 +430,12 @@ LIBSTUB(L_UpdateGadgetValue,
 	return L_UpdateGadgetValue(list, msg, id, libbase);
 }
 
-LIBSTUB(L_SetGadgetValue, void, REG(a0, ObjectList *list), REG(d0, UWORD id), REG(d1, ULONG value))
+LIBSTUB(L_SetGadgetValue, void, REG(a0, ObjectList *list), REG(d0, UWORD id), REG(d1, IPTR value))
 {
 	return L_SetGadgetValue(list, id, value);
 }
 
-LIBSTUB(L_GetGadgetValue, long, REG(a0, ObjectList *list), REG(a1, UWORD id), REG(a6, struct MyLibrary *libbase))
+LIBSTUB(L_GetGadgetValue, IPTR, REG(a0, ObjectList *list), REG(a1, UWORD id), REG(a6, struct MyLibrary *libbase))
 {
 	return L_GetGadgetValue(list, id, libbase);
 }
@@ -1708,7 +1708,7 @@ LIBSTUB(L_RemoveNotifyRequest, void, REG(a0, NotifyNode *node), REG(a6, struct M
 LIBSTUB(L_SendNotifyMsg,
 		void,
 		REG(d0, ULONG type),
-		REG(d1, ULONG data),
+		REG(d1, IPTR data),
 		REG(d2, ULONG flags),
 		REG(d3, short wait),
 		REG(a0, char *name),
@@ -2214,8 +2214,8 @@ LIBSTUB(L_WB_Remove_Patch, BOOL, REG(a6, struct MyLibrary *libbase))
 
 LIBSTUB(L_WB_AddAppWindow,
 		struct AppWindow *,
-		REG(d0, ULONG id),
-		REG(d1, ULONG userdata),
+		REG(d0, IPTR id),
+		REG(d1, IPTR userdata),
 		REG(a0, struct Window *window),
 		REG(a1, struct MsgPort *port),
 		REG(a2, struct TagItem *tags))
@@ -2230,8 +2230,8 @@ LIBSTUB(L_WB_RemoveAppWindow, BOOL, REG(a0, struct AppWindow *window))
 
 LIBSTUB(L_WB_AddAppIcon,
 		struct AppIcon *,
-		REG(d0, ULONG id),
-		REG(d1, ULONG userdata),
+		REG(d0, IPTR id),
+		REG(d1, IPTR userdata),
 		REG(a0, char *text),
 		REG(a1, struct MsgPort *port),
 		REG(a2, BPTR lock),
@@ -2248,8 +2248,8 @@ LIBSTUB(L_WB_RemoveAppIcon, BOOL, REG(a0, struct AppIcon *icon))
 
 LIBSTUB(L_WB_AddAppMenuItem,
 		struct AppMenuItem *,
-		REG(d0, ULONG id),
-		REG(d1, ULONG userdata),
+		REG(d0, IPTR id),
+		REG(d1, IPTR userdata),
 		REG(a0, char *text),
 		REG(a1, struct MsgPort *port),
 		REG(a2, struct TagItem *tags))
@@ -2270,8 +2270,8 @@ LIBSTUB(L_WB_FindAppWindow, struct AppWindow *, REG(a0, struct Window *window), 
 LIBSTUB(L_WB_AppWindowData,
 		struct MsgPort *,
 		REG(a0, struct AppWindow *window),
-		REG(a1, ULONG *id),
-		REG(a2, ULONG *userdata))
+		REG(a1, IPTR *id),
+		REG(a2, IPTR *userdata))
 {
 	return L_WB_AppWindowData(window, id, userdata);
 }

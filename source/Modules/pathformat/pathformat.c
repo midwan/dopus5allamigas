@@ -33,8 +33,8 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *ipc),
 						   REG(a3, IPCData *main_ipc),
-						   REG(d0, ULONG mod_id),
-						   REG(d1, ULONG mod_data))
+						   REG(d0, IPTR mod_id),
+						   REG(d1, IPTR mod_data))
 {
 	config_path_data *data;
 	short success = 1;
@@ -50,8 +50,8 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 	data->paths = files;
 	data->ipc = ipc;
 	data->main_ipc = main_ipc;
-	data->memory = (APTR)mod_id;
-	data->def_format = (ListFormat *)mod_data;
+	data->memory = (APTR)(IPTR)mod_id;
+	data->def_format = (ListFormat *)(IPTR)mod_data;
 
 	// AppPort
 	data->appport = CreateMsgPort();
@@ -310,7 +310,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 								config_paths_add(data, FALSE);
 
 								// Copy path to path field
-								SetGadgetValue(data->objlist, GAD_PATHFORMAT_PATH, (ULONG)buf);
+								SetGadgetValue(data->objlist, GAD_PATHFORMAT_PATH, (IPTR)buf);
 
 								// Accept the new path
 								config_paths_change(data);
@@ -420,7 +420,7 @@ void config_paths_build_list(config_path_data *data)
 		if (pos->node.ln_Type == PTYPE_POSITION && pos->flags & POSITIONF_USER)
 		{
 			// Add to our list
-			Att_NewNode(data->path_list, pos->node.ln_Name, (ULONG)pos, ADDNODE_SORT);
+			Att_NewNode(data->path_list, pos->node.ln_Name, (IPTR)pos, ADDNODE_SORT);
 		}
 	}
 }
@@ -466,7 +466,7 @@ void config_paths_add(config_path_data *data, BOOL activate)
 		SetGadgetChoices(data->objlist, GAD_PATHFORMAT_PATHS, (APTR)~0);
 
 		// Add to lister
-		node = Att_NewNode(data->path_list, 0, (ULONG)pos, ADDNODE_SORT);
+		node = Att_NewNode(data->path_list, 0, (IPTR)pos, ADDNODE_SORT);
 
 		// Attach list to gadget
 		SetGadgetChoices(data->objlist, GAD_PATHFORMAT_PATHS, data->path_list);
@@ -554,7 +554,7 @@ void config_paths_change(config_path_data *data)
 
 			// Free current data
 			FreeMemH((void *)data->path_sel->data);
-			data->path_sel->data = (ULONG)pos;
+			data->path_sel->data = (IPTR)pos;
 		}
 
 		// If path exists, clear "new" flag
@@ -579,7 +579,7 @@ void config_paths_change(config_path_data *data)
 	Att_RemNode(data->path_sel);
 
 	// Add to list
-	data->path_sel = Att_NewNode(data->path_list, pos->node.ln_Name, (ULONG)pos, ADDNODE_SORT);
+	data->path_sel = Att_NewNode(data->path_list, pos->node.ln_Name, (IPTR)pos, ADDNODE_SORT);
 
 	// Attach list to gadget
 	SetGadgetChoices(data->objlist, GAD_PATHFORMAT_PATHS, data->path_list);
@@ -622,8 +622,8 @@ void config_paths_select(config_path_data *data, Att_Node *node, BOOL new)
 		BuildKeyString(pos->code, pos->qual, pos->qual_mask, pos->qual_same, buf);
 
 		// Fill out gadgets
-		SetGadgetValue(data->objlist, GAD_PATHFORMAT_PATH, (ULONG)node->node.ln_Name);
-		SetGadgetValue(data->objlist, GAD_PATHFORMAT_KEY, (ULONG)buf);
+		SetGadgetValue(data->objlist, GAD_PATHFORMAT_PATH, (IPTR)node->node.ln_Name);
+		SetGadgetValue(data->objlist, GAD_PATHFORMAT_KEY, (IPTR)buf);
 
 		// Get mode
 		if (!(pos->flags & POSITIONF_OPEN_NEW))

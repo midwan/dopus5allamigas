@@ -56,7 +56,7 @@ Att_List *LIBFUNC L_Att_NewList(REG(d0, ULONG flags))
 						  Add a node to an Att_List
  ****************************************************************************/
 
-Att_Node *LIBFUNC L_Att_NewNode(REG(a0, Att_List *list), REG(a1, char *name), REG(d0, ULONG data), REG(d1, ULONG flags))
+Att_Node *LIBFUNC L_Att_NewNode(REG(a0, Att_List *list), REG(a1, char *name), REG(d0, IPTR data), REG(d1, ULONG flags))
 {
 	Att_Node *node;
 	BOOL added = 0;
@@ -358,7 +358,7 @@ long LIBFUNC L_Att_NodeNumber(REG(a0, Att_List *list), REG(a1, char *name))
 						   Find a node by its data
  ****************************************************************************/
 
-Att_Node *LIBFUNC L_Att_FindNodeData(REG(a0, Att_List *list), REG(d0, ULONG data))
+Att_Node *LIBFUNC L_Att_FindNodeData(REG(a0, Att_List *list), REG(d0, IPTR data))
 {
 	Att_Node *node;
 
@@ -379,7 +379,7 @@ Att_Node *LIBFUNC L_Att_FindNodeData(REG(a0, Att_List *list), REG(d0, ULONG data
 				   Find a node's ordinal number by its data
  ****************************************************************************/
 
-long LIBFUNC L_Att_NodeDataNumber(REG(a0, Att_List *list), REG(d0, ULONG data))
+long LIBFUNC L_Att_NodeDataNumber(REG(a0, Att_List *list), REG(d0, IPTR data))
 {
 	Att_Node *node;
 	long a;

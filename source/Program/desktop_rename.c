@@ -74,7 +74,7 @@ void icon_rename(IPCData *ipc, BackdropInfo *info, BackdropObject *icon)
 			{
 				// Add object to list
 				Att_NewNode(
-					list, (object->flags & BDOF_CUSTOM_LABEL) ? object->device_name : object->name, (ULONG)object, 0);
+					list, (object->flags & BDOF_CUSTOM_LABEL) ? object->device_name : object->name, (IPTR)object, 0);
 				if (icon)
 					break;
 			}
@@ -305,7 +305,7 @@ void icon_rename(IPCData *ipc, BackdropInfo *info, BackdropObject *icon)
 							if (left->node.ln_Type == PTYPE_LEFTOUT)
 							{
 								// Match this icon?
-								if (object->misc_data == (ULONG)left)
+								if (object->misc_data == (IPTR)left)
 								{
 									// Store new label
 									stccpy(left->icon_label, name, sizeof(left->icon_label));

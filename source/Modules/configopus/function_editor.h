@@ -29,11 +29,11 @@ typedef struct
 
 	UWORD *func_labels;
 	long *flag_list;
-	ULONG func_list;
+	IPTR func_list;
 	UWORD *arg_list;
 
 	APTR object;
-	ULONG object_flags;
+	IPTR object_flags;
 
 	char title[80];
 
@@ -58,7 +58,7 @@ typedef struct
 typedef struct
 {
 	APTR object;
-	ULONG object_flags;
+	IPTR object_flags;
 	Cfg_Function *function;
 } FunctionReturn;
 

@@ -123,8 +123,8 @@ void RefreshObjectList(struct Window *, ObjectList *);
 GL_Object *GetObject(ObjectList *, int);
 //-----
 void StoreGadgetValue(ObjectList *, struct IntuiMessage *);
-void SetGadgetValue(ObjectList *, UWORD, ULONG);
-long GetGadgetValue(ObjectList *, UWORD);
+void SetGadgetValue(ObjectList *, UWORD, IPTR);
+IPTR GetGadgetValue(ObjectList *, UWORD);
 void SetObjectKind(ObjectList *, ULONG, UWORD);
 void SetGadgetChoices(ObjectList *list, ULONG id, APTR choices);
 //-----
@@ -150,14 +150,14 @@ ULONG GetWindowID(struct Window *);
 struct MsgPort *GetWindowAppPort(struct Window *);
 //-----
 Att_List *Att_NewList(ULONG);
-Att_Node *Att_NewNode(Att_List *list, char *name, ULONG data, ULONG flags);
+Att_Node *Att_NewNode(Att_List *list, char *name, IPTR data, ULONG flags);
 void Att_RemNode(Att_Node *node);
 void Att_PosNode(Att_List *, Att_Node *, Att_Node *);
 void Att_RemList(Att_List *list, long);
 Att_Node *Att_FindNode(Att_List *list, long number);
 long Att_NodeNumber(Att_List *list, char *name);
-Att_Node *Att_FindNodeData(Att_List *list, ULONG data);
-long Att_NodeDataNumber(Att_List *list, ULONG data);
+Att_Node *Att_FindNodeData(Att_List *list, IPTR data);
+long Att_NodeDataNumber(Att_List *list, IPTR data);
 char *Att_NodeName(Att_List *list, long number);
 long Att_NodeCount(Att_List *list);
 void Att_ChangeNodeName(Att_Node *node, char *name);
@@ -170,19 +170,19 @@ UWORD DoPopUpMenu(struct Window *, PopUpMenu *, PopUpItem **, UWORD);
 PopUpItem *GetPopUpItem(PopUpMenu *, UWORD);
 //-----
 int IPC_Startup(IPCData *, APTR, struct MsgPort *);
-ULONG IPC_Command(IPCData *, ULONG, ULONG, APTR, APTR, struct MsgPort *);
+IPTR IPC_Command(IPCData *, ULONG, IPTR, APTR, APTR, struct MsgPort *);
 void IPC_Reply(IPCMessage *);
 void IPC_Free(IPCData *);
-IPCData *IPC_FindProc(struct ListLock *, char *, BOOL, ULONG);
+IPCData *IPC_FindProc(struct ListLock *, char *, BOOL, IPTR);
 void IPC_Quit(IPCData *, ULONG, BOOL);
 void IPC_Hello(IPCData *, IPCData *);
 void IPC_Goodbye(IPCData *, IPCData *, ULONG);
-ULONG IPC_GetGoodbye(IPCMessage *);
+IPTR IPC_GetGoodbye(IPCMessage *);
 ULONG IPC_ListQuit(struct ListLock *list, IPCData *owner, ULONG quit_flags, BOOL wait);
 void IPC_Flush(IPCData *);
-void IPC_ListCommand(struct ListLock *list, ULONG command, ULONG flags, ULONG data, BOOL wait);
-IPCData *IPC_ProcStartup(ULONG *, ULONG (*)(IPCData *, APTR));
-int IPC_Launch(struct ListLock *, IPCData **, char *, ULONG, ULONG, ULONG, struct Library *);
+void IPC_ListCommand(struct ListLock *list, ULONG command, IPTR flags, IPTR data, BOOL wait);
+IPCData *IPC_ProcStartup(IPTR *, ULONG (*)(IPCData *, APTR));
+int IPC_Launch(struct ListLock *, IPCData **, char *, IPTR, ULONG, IPTR, struct Library *);
 //-----
 APTR OpenImage(char *name, OpenImageInfo *);
 void CloseImage(APTR image);
@@ -270,10 +270,10 @@ BOOL SerialValid(serial_data *);
 //-----
 void WB_Install_Patch(void);
 BOOL WB_Remove_Patch(void);
-struct AppWindow *WB_AddAppWindow(ULONG, ULONG, struct Window *, struct MsgPort *, struct TagItem *);
+struct AppWindow *WB_AddAppWindow(IPTR, IPTR, struct Window *, struct MsgPort *, struct TagItem *);
 BOOL WB_RemoveAppWindow(struct AppWindow *);
 struct AppWindow *WB_FindAppWindow(struct Window *);
-struct MsgPort *WB_AppWindowData(struct AppWindow *, ULONG *, ULONG *);
+struct MsgPort *WB_AppWindowData(struct AppWindow *, IPTR *, IPTR *);
 BOOL WB_AppWindowLocal(struct AppWindow *);
 APTR LockAppList(void);
 APTR NextAppEntry(APTR, ULONG);
@@ -281,7 +281,7 @@ void UnlockAppList(void);
 //-----
 APTR AddNotifyRequest(ULONG, ULONG, struct MsgPort *);
 void RemoveNotifyRequest(APTR);
-void SendNotifyMsg(ULONG, ULONG, ULONG, short, char *, struct FileInfoBlock *);
+void SendNotifyMsg(ULONG, IPTR, ULONG, short, char *, struct FileInfoBlock *);
 //-----
 BOOL StrCombine(char *, char *, char *, int);
 BOOL StrConcat(char *, char *, int);
@@ -492,7 +492,7 @@ BOOL OriginalRelabel(char *, char *);
 //-----
 ILBMHandle *FakeILBM(UWORD *, ULONG *, short, short, short, ULONG);
 //-----
-ULONG IPC_SafeCommand(IPCData *, ULONG, ULONG, APTR, APTR, struct MsgPort *, struct ListLock *);
+IPTR IPC_SafeCommand(IPCData *, ULONG, IPTR, APTR, APTR, struct MsgPort *, struct ListLock *);
 //-----
 void ClearFiletypeCache(void);
 //-----
@@ -571,9 +571,9 @@ BOOL OpenEnvironment(char *, struct OpenEnvironmentData *);
 //-----
 //-----
 //-----
-PopUpHandle *PopUpNewHandle(ULONG, REF_CALLBACK, struct DOpusLocale *);
+PopUpHandle *PopUpNewHandle(IPTR, REF_CALLBACK, struct DOpusLocale *);
 void PopUpFreeHandle(PopUpHandle *);
-PopUpItem *PopUpNewItem(PopUpHandle *, ULONG, ULONG, ULONG);
+PopUpItem *PopUpNewItem(PopUpHandle *, IPTR, ULONG, ULONG);
 void PopUpSeparator(PopUpHandle *);
 BOOL PopUpItemSub(PopUpHandle *, PopUpItem *);
 void PopUpEndSub(PopUpHandle *);

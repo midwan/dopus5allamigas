@@ -1244,7 +1244,7 @@ void direntry_add_network(DirBuffer *buffer, DirEntry *entry, NetworkInfo *netwo
 
 	// Allocate tags and NetworkInfo copy
 	if ((tags = AllocMemH(buffer->memory, sizeof(struct TagItem) * 2)) &&
-		(tags[0].ti_Data = (ULONG)AllocMemH(buffer->memory, sizeof(NetworkInfo))))
+		(tags[0].ti_Data = (IPTR)AllocMemH(buffer->memory, sizeof(NetworkInfo))))
 	{
 		// Fill out tags
 		tags[0].ti_Tag = DE_NetworkInfo;
@@ -1295,7 +1295,7 @@ BOOL direntry_add_string(DirBuffer *buffer, DirEntry *entry, ULONG type, char *s
 	}
 
 	// Allocate string copy
-	if ((tags->ti_Data = (ULONG)AllocMemH(buffer->memory, strlen(string) + 1)))
+	if ((tags->ti_Data = (IPTR)AllocMemH(buffer->memory, strlen(string) + 1)))
 	{
 		// Copy string
 		strcpy((char *)tags->ti_Data, string);
@@ -1325,7 +1325,7 @@ void direntry_add_version(DirBuffer *buffer, DirEntry *entry, UWORD ver, UWORD r
 
 		// Fill out tags
 		tags[0].ti_Tag = DE_VersionInfo;
-		tags[0].ti_Data = (ULONG)info;
+		tags[0].ti_Data = (IPTR)info;
 		tags[1].ti_Tag = TAG_END;
 
 		// Chain tags

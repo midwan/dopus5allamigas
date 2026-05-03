@@ -11,7 +11,7 @@ LIBSTUB(L_Module_Entry,
 		REG(a1, struct Screen *screen),
 		REG(a2, IPCData *ipc),
 		REG(a3, IPCData *main_ipc),
-		REG(d0, ULONG mod_id),
+		REG(d0, IPTR mod_id),
 		REG(d1, EXT_FUNC(func_callback)))
 {
 	return L_Module_Entry((char *)REG_A0,

@@ -20,8 +20,19 @@ void _config_env_screenmode_init(config_env_data *data, BOOL refresh)
 		break;
 
 	case MODE_PUBLICSCREEN:
-		lsprintf(data->mode_name, "%s:%s", data->config->pubscreen_name, GetString(locale, MSG_USE));
+	{
+		size_t len;
+
+		stccpy(data->mode_name, data->config->pubscreen_name, sizeof(data->mode_name));
+		len = strlen(data->mode_name);
+		if (len < sizeof(data->mode_name) - 1)
+		{
+			data->mode_name[len++] = ':';
+			data->mode_name[len] = 0;
+			stccpy(data->mode_name + len, GetString(locale, MSG_USE), sizeof(data->mode_name) - len);
+		}
 		break;
+	}
 
 	default:
 		// Get mode name (if available)
@@ -227,7 +238,7 @@ void _config_env_screenmode_fix_gadgets(config_env_data *data)
 
 	// Fix depth slider limits
 	SetGadgetChoices(
-		data->option_list, GAD_ENVIRONMENT_SCREENMODE_COLORS, (APTR)(((ULONG)data->mode_max_colours << 16) | 2));
+		data->option_list, GAD_ENVIRONMENT_SCREENMODE_COLORS, (APTR)(IPTR)(((IPTR)data->mode_max_colours << 16) | 2));
 	SetGadgetValue(data->option_list, GAD_ENVIRONMENT_SCREENMODE_COLORS, data->config->screen_depth);
 
 	// Is mode is a USE mode, disable colours selector and font gadgets
@@ -302,5 +313,5 @@ void _config_env_screenmode_show_depth(config_env_data *data)
 		lsprintf(string, "%ld bit", data->config->screen_depth);
 
 	// Show string
-	SetGadgetValue(data->option_list, GAD_ENVIRONMENT_COLORS_DISPLAY, (ULONG)string);
+	SetGadgetValue(data->option_list, GAD_ENVIRONMENT_COLORS_DISPLAY, (IPTR)string);
 }

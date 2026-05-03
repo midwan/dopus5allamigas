@@ -27,7 +27,7 @@ int LIBFUNC L_Module_Entry(REG(a0, char *argstring),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *ipc),
 						   REG(a3, IPCData *main_ipc),
-						   REG(d0, ULONG mod_id),
+						   REG(d0, IPTR mod_id),
 						   REG(d1, EXT_FUNC(func_callback)))
 {
 	DOpusCallbackInfo info, *infoptr = &info;
@@ -1072,7 +1072,7 @@ short convert_theme(DOpusCallbackInfo *info, char *source, char *dest)
 		{
 			// Save filename for later
 			convert_theme_file(buf);
-			if ((node->data = (ULONG)AllocVec(strlen(buf) + 1, MEMF_CLEAR)))
+			if ((node->data = (IPTR)AllocVec(strlen(buf) + 1, MEMF_CLEAR)))
 				strcpy((char *)node->data, buf);
 			node = 0;
 		}

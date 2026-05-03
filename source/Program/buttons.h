@@ -243,7 +243,7 @@ void buttons_show_button(Buttons *, Cfg_Button *, short, short, short, struct Ra
 void buttons_do_popup(Buttons *, UWORD);
 BOOL buttons_button_popup(Buttons *, UWORD);
 
-int buttons_do_function(Buttons *buttons, ULONG func);
+int buttons_do_function(Buttons *buttons, IPTR func);
 void buttons_new_bank(Buttons *buttons, short func, Cfg_ButtonBank *);
 
 int buttons_request_file(Buttons *, char *, char *, char *, ULONG);

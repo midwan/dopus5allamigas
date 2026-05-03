@@ -45,7 +45,7 @@ void lister_add_hotname(Lister *lister, char key)
 	if (!(hook = GetEditHookTags(0,
 								 OBJECTF_NO_SELECT_NEXT | OBJECTF_PATH_FILTER,
 								 GTCustom_ChangeSigTask,
-								 FindTask(0),
+								 (IPTR)FindTask(0),
 								 GTCustom_ChangeSigBit,
 								 lister->hot_name_bit,
 								 TAG_END)))
@@ -73,11 +73,11 @@ void lister_add_hotname(Lister *lister, char key)
 							 STRINGA_MaxChars,
 							 32,
 							 STRINGA_Buffer,
-							 lister->hot_name,
+							 (IPTR)lister->hot_name,
 							 STRINGA_Font,
-							 FIELD_FONT,
+							 (IPTR)FIELD_FONT,
 							 STRINGA_EditHook,
-							 hook,
+							 (IPTR)hook,
 							 TAG_END)))
 	{
 		// Free stuff

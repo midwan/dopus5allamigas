@@ -154,9 +154,9 @@ void backdrop_open_group(BackdropInfo *info, BackdropObject *object, BOOL activa
 	IPC_Launch(&GUI->group_list,
 			   &ipc,
 			   "dopus_group",
-			   (ULONG)&backdrop_group_handler,
+			   (IPTR)&backdrop_group_handler,
 			   STACK_DEFAULT,
-			   (ULONG)group,
+			   (IPTR)group,
 			   (struct Library *)DOSBase);
 
 	// Failed?
@@ -229,7 +229,7 @@ IPC_EntryCode(backdrop_group_handler, static)
 	GroupData *group = 0;
 
 	// Do group
-	if ((ipc = IPC_ProcStartup((ULONG *)&group, &backdrop_group_init)))
+	if ((ipc = IPC_ProcStartup((IPTR *)&group, &backdrop_group_init)))
 	{
 		// Read objects
 		SetBusyPointer(group->window);
@@ -474,7 +474,7 @@ IPC_EntryCode(backdrop_group_handler, static)
 					if (msg->data >= (APTR)MENU_LISTER_ARRANGE_NAME && msg->data <= (APTR)MENU_LISTER_ARRANGE_SIZE)
 					{
 						// Do cleanup
-						backdrop_cleanup(group->info, BSORT_NAME + (((ULONG)msg->data) - MENU_LISTER_ARRANGE_NAME), 0);
+						backdrop_cleanup(group->info, BSORT_NAME + (((IPTR)msg->data) - MENU_LISTER_ARRANGE_NAME), 0);
 					}
 					break;
 				}
@@ -630,7 +630,7 @@ IPC_EntryCode(backdrop_group_handler, static)
 							}
 
 							// Do the function
-							quit_flag = backdrop_group_do_function(group, (ULONG)(IPTR)GTMENUITEM_USERDATA(item), item);
+							quit_flag = backdrop_group_do_function(group, (IPTR)GTMENUITEM_USERDATA(item), item);
 
 							// Check valid next
 							if (!nextselect || !group->window || oldstrip != group->window->MenuStrip)
@@ -1220,7 +1220,7 @@ void backdrop_snapshot_group(BackdropInfo *info, char *name)
 }
 
 // Do function
-BOOL backdrop_group_do_function(GroupData *group, ULONG id, struct MenuItem *item)
+BOOL backdrop_group_do_function(GroupData *group, IPTR id, struct MenuItem *item)
 {
 	BOOL quit_flag = 0;
 	MenuEvent *event;
@@ -1296,7 +1296,7 @@ BOOL backdrop_group_do_function(GroupData *group, ULONG id, struct MenuItem *ite
 		if ((packet = get_icon_packet(group->info, 0, 0, 0)))
 		{
 			if (!(misc_startup((id == MENU_ICON_RENAME) ? "dopus_group_rename" : "dopus_group_delete",
-							   id,
+							   (ULONG)id,
 							   group->window,
 							   packet,
 							   0)))

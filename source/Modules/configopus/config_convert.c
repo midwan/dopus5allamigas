@@ -66,7 +66,7 @@ BOOL LIBFUNC L_ConvertConfig(REG(a0, char *name), REG(a1, struct Screen *parent)
 			SetGadgetValue(objlist, GAD_CONVERT_MENUS, 1);
 			SetGadgetValue(objlist, GAD_CONVERT_FILETYPES, 1);
 			SetGadgetValue(objlist, GAD_CONVERT_HOTKEYS, 1);
-			SetGadgetValue(objlist, GAD_CONVERT_BASENAME, (ULONG)GetString(locale, MSG_CONVERT_OLD_BASENAME));
+			SetGadgetValue(objlist, GAD_CONVERT_BASENAME, (IPTR)GetString(locale, MSG_CONVERT_OLD_BASENAME));
 
 			// Event loop
 			FOREVER

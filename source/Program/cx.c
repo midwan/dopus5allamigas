@@ -38,7 +38,7 @@ void cx_install(CxData *cx)
 	// Initialise broker
 	cx->nb.nb_Version = NB_VERSION;
 	cx->nb.nb_Name = "Directory Opus 5";
-	cx->nb.nb_Title = "©1998 Jonathan Potter & GPSoftware";
+	cx->nb.nb_Title = "ï¿½1998 Jonathan Potter & GPSoftware";
 	cx->nb.nb_Descr = GetString(&locale, MSG_CX_DESC);
 	cx->nb.nb_Unique = 0;
 	cx->nb.nb_Flags = COF_SHOW_HIDE;
@@ -188,7 +188,7 @@ void cx_hotkey(long id)
 										ipc,
 										KFIPC_KEYCODE,
 										(function->function.code << 16) | function->function.qual,
-										(APTR)((function->function.qual_mask << 16) | function->function.qual_same),
+										(APTR)(IPTR)((function->function.qual_mask << 16) | function->function.qual_same),
 										0,
 										0);
 								}
@@ -246,7 +246,7 @@ STATIC void SAVEDS cx_right_button(register CxMsg *cxm, CxObj *co)
 	ie = (struct InputEvent *)CxMsgData(cxm);
 
 	// Get data pointer
-	data = (CxData *)CxMsgID(cxm);
+	data = (CxData *)(IPTR)CxMsgID(cxm);
 
 	// Trap mouse events when not iconified
 	if (ie->ie_Class == IECLASS_RAWMOUSE && GUI->screen_pointer)

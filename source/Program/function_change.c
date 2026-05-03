@@ -592,12 +592,12 @@ static int function_change_get_protect(FunctionHandle *handle, char *file, ULONG
 
 				// Only has text if bit is set
 				if (old_prot & (1 << (7 - x)))
-					objects[obj].gadget_text = (ULONG)&prot_bits[x * 2];
+					objects[obj].gadget_text = (IPTR)&prot_bits[x * 2];
 			}
 
 			// Gadget text
 			else
-				objects[obj].gadget_text = (ULONG)&prot_bits[x * 2];
+				objects[obj].gadget_text = (IPTR)&prot_bits[x * 2];
 
 			// Flags
 			objects[obj].flags |= TEXTFLAG_TEXT_STRING;

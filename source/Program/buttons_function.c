@@ -24,7 +24,7 @@ For more information on Directory Opus for Windows please see:
 #include "dopus.h"
 
 // Do a bank-specific function
-int buttons_do_function(Buttons *buttons, ULONG func)
+int buttons_do_function(Buttons *buttons, IPTR func)
 {
 	int result = 1;
 
@@ -188,8 +188,25 @@ void buttons_new_bank(Buttons *buttons, short func, Cfg_ButtonBank *use_bank)
 	// Defaults
 	else if (func == MENU_TOOLBAR_RESET_DEFAULTS)
 	{
+		char *paths[] = {
+			environment->toolbar_path,
+			"PROGDIR:Buttons/toolbar",
+			"PROGDIR:Buttons/toolbar_default",
+			"dopus5:buttons/toolbar",
+			"dopus5:Buttons/toolbar",
+			"dopus5:buttons/toolbar_default",
+			"dopus5:Buttons/toolbar_default",
+			0,
+		};
+		short a;
+
 		// Open button bank
-		if (!(buttons_load(buttons, GUI->screen_pointer, "dopus5:buttons/toolbar_default")))
+		for (a = 0; paths[a]; a++)
+		{
+			if (paths[a][0] && buttons_load(buttons, GUI->screen_pointer, paths[a]))
+				break;
+		}
+		if (!paths[a])
 			return;
 	}
 
@@ -226,7 +243,7 @@ void buttons_new_bank(Buttons *buttons, short func, Cfg_ButtonBank *use_bank)
 		buttons->bank->window.flags |= BTNWF_TOOLBAR;
 
 		// Tell editor to change bank pointer
-		IPC_Command(buttons->editor, BUTTONEDIT_CHANGE_BANK, (ULONG)bank, buttons->bank, 0, REPLY_NO_PORT);
+		IPC_Command(buttons->editor, BUTTONEDIT_CHANGE_BANK, (IPTR)bank, buttons->bank, 0, REPLY_NO_PORT);
 	}
 
 	// Unlock the process list

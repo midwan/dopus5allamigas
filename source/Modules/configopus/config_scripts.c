@@ -5,7 +5,7 @@ ULONG LIBFUNC L_Config_Scripts(
 	REG(a1, IPCData *owner_ipc),
 	REG(a2, struct Screen *screen),
 	REG(a3, Cfg_ButtonBank *bank0,
-	REG(d0, ULONG command_list))
+	REG(d0, IPTR command_list))
 {
 	config_scripts_data *data;
 	IPCMessage *quit_msg = 0;
@@ -77,7 +77,7 @@ ULONG LIBFUNC L_Config_Scripts(
 				}
 
 				// Tell children to appear
-				IPC_ListCommand(&data->proc_list, IPC_SHOW, 0, (ULONG)data->window, 0);
+				IPC_ListCommand(&data->proc_list, IPC_SHOW, 0, (IPTR)data->window, 0);
 				break;
 
 			// Activate

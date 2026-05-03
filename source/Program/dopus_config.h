@@ -328,16 +328,16 @@ typedef struct
 // SETS - Settings
 typedef struct
 {
-	unsigned long copy_flags;		// Copy flags
-	unsigned long delete_flags;		// Delete flags
-	unsigned long error_flags;		// Error flags
-	unsigned long general_flags;	// General flags
-	unsigned long icon_flags;		// Icon flags
+	ULONG copy_flags;		// Copy flags
+	ULONG delete_flags;		// Delete flags
+	ULONG error_flags;		// Error flags
+	ULONG general_flags;	// General flags
+	ULONG icon_flags;		// Icon flags
 	unsigned short replace_method;	// Replace method
 	unsigned short replace_flags;	// Replace flags
-	unsigned long update_flags;		// Update flags
-	unsigned long dir_flags;		// Directory flags
-	unsigned long view_flags;		// View flags
+	ULONG update_flags;		// Update flags
+	ULONG dir_flags;		// Directory flags
+	ULONG view_flags;		// View flags
 	unsigned char hide_method;		// Hide method
 	unsigned char pad1;
 	unsigned short pad2;
@@ -346,7 +346,7 @@ typedef struct
 	unsigned short date_flags;		  // Date flags
 	char pri_main[2];				  // Main priority
 	char pri_lister[2];				  // Lister priority
-	unsigned long flags;
+	ULONG flags;
 	UWORD pop_code;
 	UWORD pop_qual;
 	UWORD pop_qual_mask;
@@ -355,7 +355,7 @@ typedef struct
 	short max_openwith;
 	short command_line_length;
 	short max_filename;
-	unsigned long pad[16];
+	ULONG pad[16];
 } CFG_SETS;
 
 #define DIRFLAGS_DISABLE_CACHING (1 << 0)  // Disable caching
@@ -415,7 +415,7 @@ typedef struct
 	char output_window[80];	 // Output window
 	char output_device[80];	 // Output device
 
-	unsigned long default_stack;  // Default stack size
+	ULONG default_stack;  // Default stack size
 
 	/*
 		char		scr_title_text[120];	// Screen title text
@@ -453,7 +453,7 @@ typedef struct
 
 	char env_NewIconsPrecision;
 
-	unsigned long desktop_flags;
+	ULONG desktop_flags;
 
 	unsigned char iconw_fpen;
 	unsigned char iconw_bpen;

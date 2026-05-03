@@ -72,11 +72,11 @@ void quit(BOOL script)
 		// Set quit flag
 		GUI->flags |= GUIF_PENDING_QUIT;
 
+		// Send quit notifications while ARexx and application hooks are still alive
+		quit_notify();
+
 		// Shut the display down
 		close_display(CLOSE_ALL, TRUE);
-
-		// Send quit notifications
-		quit_notify();
 
 		// Stop notifications
 		stop_file_notify(GUI->pattern_notify);
@@ -309,7 +309,7 @@ void quit(BOOL script)
 #ifdef __amigaos4__
 	DropInterface((struct Interface *)IUtility);
 #endif
-	CloseLibrary(UtilityBase);
+	CloseLibrary((struct Library *)UtilityBase);
 
 #ifdef __amigaos4__
 	DropInterface((struct Interface *)IGadTools);
@@ -405,7 +405,7 @@ BOOL quit_notify(void)
 	while ((trap = FindTrapEntry(trap, "quit", port)))
 	{
 		// Send abort message
-		rexx_handler_msg(port, 0, 0, HA_String, 0, "quit", TAG_END);
+		rexx_handler_msg(port, 0, 0, HA_String, 0, (IPTR)"quit", TAG_END);
 	}
 
 	// Unlock trap list

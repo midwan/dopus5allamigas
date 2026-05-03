@@ -101,7 +101,7 @@ void LIBFUNC L_FreeRexxMsgEx(REG(a0, struct RexxMsg *msg))
 		struct List *list;
 
 		// Get list pointer
-		if ((list = (struct List *)msg->rm_avail))
+		if ((list = (struct List *)(IPTR)msg->rm_avail))
 		{
 			struct RexxStem *node, *next;
 
@@ -146,7 +146,7 @@ struct RexxMsg *LIBFUNC L_CreateRexxMsgEx(REG(a0, struct MsgPort *port),
 
 	// Turn message into a special Opus one
 	msg->rm_Node.mn_Node.ln_Name = RexxMsgIdentifier;
-	msg->rm_avail = (ULONG)list;
+	msg->rm_avail = (IPTR)list;
 
 	// Initialise list
 	NewList(list);
@@ -190,7 +190,7 @@ long LIBFUNC L_SetRexxVarEx(REG(a0, struct RexxMsg *msg),
 		return 10;
 
 	// Get list pointer
-	if (!(list = (struct List *)msg->rm_avail))
+	if (!(list = (struct List *)(IPTR)msg->rm_avail))
 		return 10;
 
 	// See if variable already exists
@@ -248,7 +248,7 @@ long LIBFUNC L_GetRexxVarEx(REG(a0, struct RexxMsg *msg), REG(a1, char *varname)
 		return 10;
 
 	// Get list pointer
-	if (!(list = (struct List *)msg->rm_avail))
+	if (!(list = (struct List *)(IPTR)msg->rm_avail))
 		return 10;
 
 	// See if variable exists
@@ -290,7 +290,7 @@ struct RexxMsg *LIBFUNC L_BuildRexxMsgEx(REG(a0, struct MsgPort *port),
 			arg = tag->ti_Tag - RexxTag_Arg0;
 
 			// Create argument string
-			msg->rm_Args[arg] = CreateArgstring((CONST STRPTR)tag->ti_Data, strlen((char *)tag->ti_Data) + 1);
+			msg->rm_Args[arg] = (IPTR)CreateArgstring((CONST_STRPTR)tag->ti_Data, strlen((char *)tag->ti_Data) + 1);
 		}
 
 		// Variable name?

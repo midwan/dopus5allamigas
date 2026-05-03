@@ -68,7 +68,7 @@ void ButtonEditor(void)
 	BOOL open_window = 1;
 
 	// Do startup
-	if (!(ipc = Local_IPC_ProcStartup((ULONG *)&startup, (APTR)&_buttoned_init)))
+	if (!(ipc = Local_IPC_ProcStartup((IPTR *)&startup, (APTR)&_buttoned_init)))
 		return;
 
 	// Get data pointer
@@ -188,7 +188,7 @@ void ButtonEditor(void)
 				break;
 
 			// Store data pointer in window
-			DATA(data->window)->data = (ULONG)data;
+			DATA(data->window)->data = (IPTR)data;
 
 			// Specific objects for graphical buttons
 			if (data->button->button.flags & BUTNF_GRAPHIC)
@@ -229,7 +229,7 @@ void ButtonEditor(void)
 				tags[0].ti_Data = data->startup->palette_data.screen_data.pen_count +
 								  ((((struct Library *)GfxBase)->lib_Version >= 39) ? 8 : 4);
 				tags[1].ti_Tag = GTPA_ColorTable;
-				tags[1].ti_Data = (ULONG)data->startup->palette_data.pen_array;
+				tags[1].ti_Data = (IPTR)data->startup->palette_data.pen_array;
 				tags[2].ti_Tag = TAG_END;
 
 				// Check number of pens
@@ -301,7 +301,7 @@ void ButtonEditor(void)
 			_buttoned_show_button(data);
 
 			// Tell children to appear
-			IPC_ListCommand(&data->proc_list, IPC_SHOW, 0, (ULONG)data->window, 0);
+			IPC_ListCommand(&data->proc_list, IPC_SHOW, 0, (IPTR)data->window, 0);
 			open_window = 0;
 		}
 
@@ -774,8 +774,8 @@ void _buttoned_show_button(ButtonEdData *data)
 				GfxBase);
 
 	// Fill out fields
-	SetGadgetValue(data->objlist, GAD_BUTTONED_NAME, (func) ? (ULONG)func->node.ln_Name : 0);
-	SetGadgetValue(data->objlist, GAD_BUTTONED_LABEL, (func) ? (ULONG)func->label : 0);
+	SetGadgetValue(data->objlist, GAD_BUTTONED_NAME, (func) ? (IPTR)func->node.ln_Name : 0);
+	SetGadgetValue(data->objlist, GAD_BUTTONED_LABEL, (func) ? (IPTR)func->label : 0);
 }
 
 // Edit a button
@@ -825,15 +825,15 @@ void _button_editor_edit_function(ButtonEdData *data)
 		startup->owner_ipc = data->ipc;
 		startup->main_owner = data->startup->main_owner;
 		startup->object = data->button;
-		startup->object_flags = (ULONG)func;
+		startup->object_flags = (IPTR)func;
 
 		// Launch editor
 		if ((IPC_Launch(&data->proc_list,
 						&ipc,
 						"dopus_function_editor",
-						(ULONG)IPC_NATIVE(FunctionEditor),
+						IPC_NATIVE(FunctionEditor),
 						STACK_DEFAULT,
-						(ULONG)startup,
+						(IPTR)startup,
 						DOSBase)) &&
 			ipc)
 		{
@@ -867,7 +867,7 @@ BOOL _button_editor_receive_edit(ButtonEdData *data, FunctionReturn *ret)
 		 func = (Cfg_ButtonFunction *)func->node.ln_Succ)
 	{
 		// Does it match?
-		if (func == (Cfg_ButtonFunction *)ret->object_flags)
+		if (func == (Cfg_ButtonFunction *)(IPTR)ret->object_flags)
 		{
 			// Free existing function
 			FreeInstructionList((Cfg_Function *)func);
@@ -1400,7 +1400,7 @@ void buttoned_delete_function(ButtonEdData *data, Cfg_ButtonFunction *func, BOOL
 		Att_Node *node;
 
 		// Find node in list
-		if ((node = Att_FindNodeData(data->func_list, (ULONG)func)))
+		if ((node = Att_FindNodeData(data->func_list, (IPTR)func)))
 		{
 			// Detach function list
 			if (show)
@@ -1450,7 +1450,7 @@ void buttoned_add_function(ButtonEdData *data)
 	SetGadgetChoices(data->objlist, GAD_BUTTONED_FUNCTIONS, (APTR)~0);
 
 	// Add to function list
-	node = Att_NewNode(data->func_list, name, (ULONG)func, 0);
+	node = Att_NewNode(data->func_list, name, (IPTR)func, 0);
 
 	// Attach function list
 	SetGadgetChoices(data->objlist, GAD_BUTTONED_FUNCTIONS, data->func_list);
@@ -1493,7 +1493,7 @@ void buttoned_build_function_list(ButtonEdData *data)
 		if (func->function.func_type == FTYPE_LIST)
 		{
 			// Add to list
-			Att_NewNode(data->func_list, (func->node.ln_Name) ? func->node.ln_Name : func->label, (ULONG)func, 0);
+			Att_NewNode(data->func_list, (func->node.ln_Name) ? func->node.ln_Name : func->label, (IPTR)func, 0);
 		}
 	}
 }
@@ -1581,7 +1581,7 @@ void _button_editor_change_label(ButtonEdData *data, UWORD id, BOOL refresh)
 		// If name is blank, copy label to name
 		if (refresh && (!(ptr = (char *)GetGadgetValue(data->objlist, GAD_BUTTONED_NAME)) || !*ptr))
 		{
-			SetGadgetValue(data->objlist, GAD_BUTTONED_NAME, (ULONG)str);
+			SetGadgetValue(data->objlist, GAD_BUTTONED_NAME, (IPTR)str);
 			buttoned_copy_string(data, str, &func->node.ln_Name);
 		}
 
@@ -1633,7 +1633,7 @@ void _button_editor_change_label(ButtonEdData *data, UWORD id, BOOL refresh)
 			// If label is blank, copy name to label
 			if (!(ptr = (char *)GetGadgetValue(data->objlist, GAD_BUTTONED_LABEL)) || !*ptr)
 			{
-				SetGadgetValue(data->objlist, GAD_BUTTONED_LABEL, (ULONG)str);
+				SetGadgetValue(data->objlist, GAD_BUTTONED_LABEL, (IPTR)str);
 				buttoned_copy_string(data, str, &func->label);
 				show = 1;
 			}
@@ -1661,8 +1661,8 @@ void _button_editor_change_label(ButtonEdData *data, UWORD id, BOOL refresh)
 		// Fill out fields on a real refresh
 		if (refresh)
 		{
-			SetGadgetValue(data->objlist, GAD_BUTTONED_NAME, (func) ? (ULONG)func->node.ln_Name : 0);
-			SetGadgetValue(data->objlist, GAD_BUTTONED_LABEL, (func) ? (ULONG)func->label : 0);
+			SetGadgetValue(data->objlist, GAD_BUTTONED_NAME, (func) ? (IPTR)func->node.ln_Name : 0);
+			SetGadgetValue(data->objlist, GAD_BUTTONED_LABEL, (func) ? (IPTR)func->label : 0);
 		}
 	}
 

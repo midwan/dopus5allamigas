@@ -34,7 +34,7 @@ int function_open_script(FunctionHandle *handle)
 		return 1;
 
 	// Get temporary key
-	handle->temp_key = (ULONG)handle->ipc;
+	handle->temp_key = (IPTR)handle->ipc;
 	CurrentTime(&secs, &micros);
 	if (micros)
 		handle->temp_key *= micros;

@@ -29,10 +29,10 @@
 		IPCData *,                                           \
 		main_ipc,                                            \
 		a3,                                                  \
-		ULONG,                                               \
+		IPTR,                                                \
 		id,                                                  \
 		d0,                                                  \
-		ULONG,                                               \
+		IPTR,                                                \
 		data,                                                \
 		d1,                                                  \
 		,                                                    \

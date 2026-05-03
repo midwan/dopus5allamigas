@@ -51,8 +51,8 @@ IPC_StartupCode(_fileclassed_init, fileclass_ed_data *, data)
 	SetGadgetChoices(data->objlist, GAD_CLASSED_DEFINITION, data->match_list);
 
 	// Fill out fields
-	SetGadgetValue(data->objlist, GAD_CLASSED_CLASS_NAME, (ULONG)data->type->type.name);
-	SetGadgetValue(data->objlist, GAD_CLASSED_CLASS_ID, (ULONG)data->type->type.id);
+	SetGadgetValue(data->objlist, GAD_CLASSED_CLASS_NAME, (IPTR)data->type->type.name);
+	SetGadgetValue(data->objlist, GAD_CLASSED_CLASS_ID, (IPTR)data->type->type.id);
 	SetGadgetValue(data->objlist, GAD_CLASSED_CLASS_PRI, data->type->type.priority);
 
 	// Disable edit fields
@@ -70,7 +70,7 @@ void SAVEDS FileclassEditor(void)
 	ReaderNode *node;
 
 	// Do startup
-	if (!(ipc = Local_IPC_ProcStartup((ULONG *)&data, (APTR)&_fileclassed_init)))
+	if (!(ipc = Local_IPC_ProcStartup((IPTR *)&data, (APTR)&_fileclassed_init)))
 		return;
 
 	// Open REXX library
@@ -214,7 +214,7 @@ void SAVEDS FileclassEditor(void)
 							// Update command display
 							SetGadgetValue(data->objlist,
 										   GAD_CLASSED_MATCHTYPE_DISPLAY,
-										   (ULONG)GetString(data->new_win.locale, data->strings[selection << 1]));
+										   (IPTR)GetString(data->new_win.locale, data->strings[selection << 1]));
 
 							// Remove list from listview
 							SetGadgetChoices(data->objlist, GAD_CLASSED_DEFINITION, (APTR)~0);
@@ -260,7 +260,7 @@ void SAVEDS FileclassEditor(void)
 						if ((fcnode = AllocVec(sizeof(FileclassNode), MEMF_CLEAR)))
 						{
 							// Add a new node
-							if ((node = Att_NewNode(data->match_list, 0, (ULONG)fcnode, 0)))
+							if ((node = Att_NewNode(data->match_list, 0, (IPTR)fcnode, 0)))
 							{
 								// Inserting?
 								if (((struct Gadget *)msg_copy.IAddress)->GadgetID == GAD_CLASSED_INSERT && old_edit)
@@ -275,7 +275,7 @@ void SAVEDS FileclassEditor(void)
 								SetGadgetValue(
 									data->objlist,
 									GAD_CLASSED_MATCHTYPE_DISPLAY,
-									(ULONG)GetString(data->new_win.locale, data->strings[data->last_selection << 1]));
+									(IPTR)GetString(data->new_win.locale, data->strings[data->last_selection << 1]));
 
 								// Build display string
 								_fileclassed_build_display(data, node);
@@ -556,7 +556,7 @@ Att_Node *_fileclassed_new_entry(fileclass_ed_data *data, short type, char *matc
 		strcpy(classnode->match_data, match);
 
 	// Add a new node to the list
-	if (!(node = Att_NewNode(data->match_list, 0, (ULONG)classnode, 0)))
+	if (!(node = Att_NewNode(data->match_list, 0, (IPTR)classnode, 0)))
 	{
 		FreeVec(classnode);
 		return 0;
@@ -611,9 +611,9 @@ void _fileclassed_start_edit(fileclass_ed_data *data, Att_Node *node)
 
 	// Set match command
 	SetGadgetValue(
-		data->objlist, GAD_CLASSED_MATCHTYPE_DISPLAY, (ULONG)GetString(data->new_win.locale, data->strings[type << 1]));
+		data->objlist, GAD_CLASSED_MATCHTYPE_DISPLAY, (IPTR)GetString(data->new_win.locale, data->strings[type << 1]));
 	data->last_selection = type;
-	SetGadgetValue(data->objlist, GAD_CLASSED_MATCHDATA, (ULONG)fcnode->match_data);
+	SetGadgetValue(data->objlist, GAD_CLASSED_MATCHDATA, (IPTR)fcnode->match_data);
 
 	// Enable edit fields
 	DisableObject(data->objlist, GAD_CLASSED_MATCHTYPE, FALSE);
@@ -710,9 +710,9 @@ void fileclassed_view_file(fileclass_ed_data *data)
 
 	// Requester tags
 	tags[0].ti_Tag = ASLFR_Window;
-	tags[0].ti_Data = (ULONG)data->window;
+	tags[0].ti_Data = (IPTR)data->window;
 	tags[1].ti_Tag = ASLFR_TitleText;
-	tags[1].ti_Data = (ULONG)GetString(data->new_win.locale, MSG_CLASSED_SELECT_VIEW_FILE);
+	tags[1].ti_Data = (IPTR)GetString(data->new_win.locale, MSG_CLASSED_SELECT_VIEW_FILE);
 	tags[2].ti_Tag = ASLFR_Flags1;
 	tags[2].ti_Data = FRF_PRIVATEIDCMP;
 	tags[3].ti_Tag = TAG_DONE;
@@ -761,7 +761,7 @@ void classed_send_rexx(fileclass_ed_data *data, char *command, short open)
 
 	// Fill in message
 	msg->rm_Action |= RXFF_RESULT;
-	msg->rm_Args[0] = command;
+	msg->rm_Args[0] = (IPTR)command;
 	FillRexxMsg(msg, 1, 0);
 
 	// Forbid and look for port

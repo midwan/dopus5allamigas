@@ -39,15 +39,15 @@ void lister_progress_on(Lister *lister, ProgressPacket *packet)
 
 	// Open progress indicator
 	lister->progress_window = OpenProgressWindowTags(PW_Window,
-													 lister->window,
+													 (IPTR)lister->window,
 													 PW_Title,
-													 packet->operation,
+													 (IPTR)packet->operation,
 													 PW_FileCount,
 													 packet->total,
 													 PW_Flags,
 													 packet->flags,
 													 PW_SigTask,
-													 lister->ipc->proc,
+													 (IPTR)lister->ipc->proc,
 													 PW_SigBit,
 													 lister->abort_signal,
 													 TAG_END);
@@ -75,7 +75,7 @@ void lister_progress_filetotal(Lister *lister, long total)
 // Set 64bit file total
 void lister_progress_filetotal64(Lister *lister, QUAD *total)
 {
-	SetProgressWindowTags(lister->progress_window, PW_FileSize64, (ULONG)total, TAG_END);
+	SetProgressWindowTags(lister->progress_window, PW_FileSize64, (IPTR)total, TAG_END);
 }
 
 // Update file progress
@@ -93,11 +93,11 @@ void lister_progress_file(Lister *lister, long total, long count)
 // Update file progress info
 void lister_progress_info(Lister *lister, char *info)
 {
-	SetProgressWindowTags(lister->progress_window, PW_Info, info, TAG_END);
+	SetProgressWindowTags(lister->progress_window, PW_Info, (IPTR)info, TAG_END);
 }
 
 // Update progress title
 void lister_progress_title(Lister *lister, char *info)
 {
-	SetProgressWindowTags(lister->progress_window, PW_Title, info, TAG_END);
+	SetProgressWindowTags(lister->progress_window, PW_Title, (IPTR)info, TAG_END);
 }

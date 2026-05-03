@@ -49,10 +49,19 @@ char *read_config_string(APTR memory, string_handle *handle);
 short read_config_short(string_handle *handle);
 void free_config_string(string_handle *handle);
 char *copy_string(APTR, char *);
+static APTR open_button_image(char *);
+#ifdef __AROS__
+#define AROS_CFG_BUTN_DISK_SIZE 14
+static void aros_config_debug_log(char *);
+static UWORD aros_raw_word(UBYTE *);
+static ULONG aros_raw_long(UBYTE *);
+static Cfg_ButtonBank *aros_open_button_bank_raw(char *, char *);
+#endif
 void dump_button_info(Cfg_ButtonBank *);
 void env_read_open_bank(APTR, struct OpenEnvironmentData *, ULONG);
 void env_read_open_lister(APTR, struct OpenEnvironmentData *, ULONG);
 int convert_env(struct _IFFHandle *iff, CFG_ENVR *env);
+void convert_list_format(OldListFormat *old, ListFormat *format);
 int convert_open_lister(struct _IFFHandle *iff, CFG_LSTR *lister);
 int convert_button_window(struct _IFFHandle *iff, CFG_BTNW *butwin);
 void do_backup(char *name);
@@ -234,35 +243,38 @@ Cfg_ButtonBank *LIBFUNC L_OpenButtonBank(REG(a0, char *name))
 	// It doesn't
 	if (!ok)
 	{
+		char *drawers[] = {"PROGDIR:Buttons", "dopus5:buttons", "dopus5:Buttons", 0};
+		short a;
+
 		// Get filename only
 		name_ptr = FilePart(name);
 
 		// See if it's in the buttons drawer
-		if ((lock = Lock("dopus5:buttons", ACCESS_READ)))
+		for (a = 0; drawers[a]; a++)
 		{
 			BPTR test;
 
-			// Change directory
-			old = CurrentDir(lock);
-
-			// See if file is in there
-			if ((test = Lock(name_ptr, ACCESS_READ)))
+			if ((lock = Lock(drawers[a], ACCESS_READ)))
 			{
-				// It is
-				UnLock(test);
-			}
+				// Change directory
+				old = CurrentDir(lock);
 
-			// It's not in there
-			else
-			{
-				// Restore directory
+				// See if file is in there
+				if ((test = Lock(name_ptr, ACCESS_READ)))
+				{
+					// It is
+					UnLock(test);
+					break;
+				}
+
+				// It's not in there
 				CurrentDir(old);
 				UnLock(lock);
 				lock = 0;
-				name_ptr = 0;
 			}
 		}
-		else
+
+		if (!lock)
 			name_ptr = 0;
 	}
 
@@ -391,6 +403,31 @@ bank_cleanup:
 		L_IFFClose(iff);
 	}
 
+#ifdef __AROS__
+	if (name_ptr && (!current_bank || IsListEmpty(&current_bank->buttons)))
+	{
+		Cfg_ButtonBank *raw_bank;
+
+		aros_config_debug_log("OpenButtonBank raw fallback path=");
+		aros_config_debug_log(name_ptr);
+		aros_config_debug_log(" original=");
+		aros_config_debug_log(name);
+		aros_config_debug_log("\n");
+
+		if ((raw_bank = aros_open_button_bank_raw(name_ptr, name)))
+		{
+			if (!IsListEmpty(&raw_bank->buttons))
+			{
+				aros_config_debug_log("OpenButtonBank raw fallback replaced empty bank\n");
+				L_CloseButtonBank(current_bank);
+				current_bank = raw_bank;
+			}
+			else
+				L_CloseButtonBank(raw_bank);
+		}
+	}
+#endif
+
 	// Directory to unlock?
 	if (lock)
 	{
@@ -423,11 +460,20 @@ Cfg_Button *LIBFUNC L_ReadButton(REG(a0, struct _IFFHandle *iff), REG(a1, APTR m
 		char *name, *label;
 
 		// Read button data
-		L_IFFReadChunkBytes(iff, &button->button, sizeof(CFG_BUTN));
-
 #ifdef __AROS__
-		button->button.flags = AROS_BE2LONG(button->button.flags);
-		button->button.count = AROS_BE2WORD(button->button.count);
+		{
+			UBYTE raw_button[AROS_CFG_BUTN_DISK_SIZE];
+
+			L_IFFReadChunkBytes(iff, raw_button, sizeof(raw_button));
+			button->button.fpen = raw_button[0];
+			button->button.bpen = raw_button[1];
+			button->button.flags = aros_raw_long(raw_button + 2);
+			button->button.count = (short)aros_raw_word(raw_button + 6);
+			button->button.pad_1 = (short)aros_raw_word(raw_button + 8);
+			button->button.pad_2 = aros_raw_long(raw_button + 10);
+		}
+#else
+		L_IFFReadChunkBytes(iff, &button->button, sizeof(CFG_BUTN));
 #endif
 
 		// Old style button?
@@ -500,7 +546,7 @@ Cfg_Button *LIBFUNC L_ReadButton(REG(a0, struct _IFFHandle *iff), REG(a1, APTR m
 
 				// If a graphic button, get image
 				if (button->button.flags & BUTNF_GRAPHIC)
-					func->image = L_OpenImage(name, 0);
+					func->image = open_button_image(name);
 
 				// Add to button list
 				AddTail((struct List *)&button->function_list, &func->node);
@@ -521,6 +567,446 @@ Cfg_Button *LIBFUNC L_ReadButton(REG(a0, struct _IFFHandle *iff), REG(a1, APTR m
 
 	return button;
 }
+
+static APTR open_button_image(char *name)
+{
+	APTR image;
+	char image_name[256];
+	char *file;
+	int len;
+
+	image = L_OpenImage(name, 0);
+	if (image || !name || !name[0])
+		return image;
+
+	file = FilePart(name);
+	if (file && strchr(file, '.'))
+		return 0;
+
+	len = strlen(name);
+	if (len + 6 >= sizeof(image_name))
+		return 0;
+
+	strcpy(image_name, name);
+	strcat(image_name, ".small");
+
+	return L_OpenImage(image_name, 0);
+}
+
+#ifdef __AROS__
+static void aros_config_debug_log(char *text)
+{
+	BPTR file;
+	char *paths[] = {"PROGDIR:DOpus5-startup.log", "T:DOpus5-startup.log", 0};
+	short a;
+
+	if (!text)
+		return;
+
+	for (a = 0; paths[a]; a++)
+	{
+		if ((file = Open(paths[a], MODE_READWRITE)) || (file = Open(paths[a], MODE_NEWFILE)))
+		{
+			Seek(file, 0, OFFSET_END);
+			FPuts(file, text);
+			Close(file);
+		}
+	}
+}
+
+static BOOL aros_raw_id(UBYTE *data, char *id)
+{
+	return (data[0] == id[0] && data[1] == id[1] && data[2] == id[2] && data[3] == id[3]);
+}
+
+static UWORD aros_raw_word(UBYTE *data)
+{
+	return ((UWORD)data[0] << 8) | data[1];
+}
+
+static ULONG aros_raw_long(UBYTE *data)
+{
+	return ((ULONG)data[0] << 24) | ((ULONG)data[1] << 16) | ((ULONG)data[2] << 8) | data[3];
+}
+
+static char *aros_raw_copy_string(APTR memory, UBYTE **data, ULONG *remain)
+{
+	ULONG len;
+	char *string;
+
+	for (len = 0; len < *remain && (*data)[len]; len++)
+		;
+	if (len >= *remain)
+		return 0;
+
+	if ((string = L_AllocMemH(memory, len + 1)))
+	{
+		CopyMem(*data, string, len);
+		string[len] = 0;
+	}
+
+	*data += len + 1;
+	*remain -= len + 1;
+	return string;
+}
+
+static void aros_raw_read_button_window(CFG_BTNW *window, UBYTE *data, ULONG size)
+{
+	memset(window, 0, sizeof(CFG_BTNW));
+
+	if (size >= sizeof(CFG_BTNW))
+	{
+		CopyMem(data, window->name, 32);
+		window->name[31] = 0;
+		window->pos.Left = (WORD)aros_raw_word(data + 32);
+		window->pos.Top = (WORD)aros_raw_word(data + 34);
+		window->pos.Width = (WORD)aros_raw_word(data + 36);
+		window->pos.Height = (WORD)aros_raw_word(data + 38);
+		CopyMem(data + 40, window->font_name, 80);
+		window->font_name[79] = 0;
+		window->font_size = data[123];
+		window->columns = aros_raw_word(data + 124);
+		window->rows = aros_raw_word(data + 126);
+		window->flags = aros_raw_long(data + 128);
+	}
+	else if (size >= sizeof(OLD_CFG_BTNW))
+	{
+		CopyMem(data, window->name, 32);
+		window->name[31] = 0;
+		window->pos.Left = (WORD)aros_raw_word(data + 32);
+		window->pos.Top = (WORD)aros_raw_word(data + 34);
+		window->pos.Width = (WORD)aros_raw_word(data + 36);
+		window->pos.Height = (WORD)aros_raw_word(data + 38);
+		CopyMem(data + 40, window->font_name, 31);
+		window->font_name[31] = 0;
+		window->font_size = data[71];
+		window->columns = aros_raw_word(data + 72);
+		window->rows = aros_raw_word(data + 74);
+		window->flags = aros_raw_long(data + 76);
+	}
+
+	if (window->columns == 0)
+		window->columns = 1;
+	if (window->rows == 0)
+		window->rows = 1;
+	window->flags &= ~BTNWF_TOOLBAR;
+}
+
+static void aros_raw_fix_function_ix(Cfg_Function *func)
+{
+	if (!(func->function.flags2 & FUNCF2_VALID_IX))
+	{
+		func->function.qual_mask = 0xffff;
+		func->function.qual_same = 0;
+
+		if (func->function.qual & (IEQUALIFIER_LALT | IEQUALIFIER_RALT))
+			func->function.qual_same |= IXSYM_ALT;
+		if (func->function.qual & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT))
+			func->function.qual_same |= IXSYM_SHIFT;
+
+		func->function.flags2 |= FUNCF2_VALID_IX;
+	}
+}
+
+static void aros_raw_read_function(Cfg_ButtonFunction *button_func, UBYTE *data, ULONG size, APTR memory)
+{
+	Cfg_Function *func = (Cfg_Function *)button_func;
+	UBYTE *ptr;
+	ULONG remain;
+	char *string;
+
+	if (size < sizeof(CFG_FUNC))
+		return;
+
+	func->function.flags = aros_raw_long(data);
+	func->function.flags2 = aros_raw_long(data + 4);
+	func->function.pad_1 = aros_raw_long(data + 8);
+	func->function.code = aros_raw_word(data + 12);
+	func->function.qual = aros_raw_word(data + 14);
+	func->function.func_type = aros_raw_word(data + 16);
+	func->function.qual_mask = aros_raw_word(data + 18);
+	func->function.qual_same = aros_raw_word(data + 20);
+	aros_raw_fix_function_ix(func);
+
+	ptr = data + sizeof(CFG_FUNC);
+	remain = size - sizeof(CFG_FUNC);
+
+	while ((string = aros_raw_copy_string(memory, &ptr, &remain)))
+	{
+		Cfg_Instruction *ins;
+		short type;
+
+		if (remain < 2)
+		{
+			L_FreeMemH(string);
+			break;
+		}
+
+		type = (short)aros_raw_word(ptr);
+		ptr += 2;
+		remain -= 2;
+
+		if ((ins = L_NewInstruction(memory, type, 0)))
+		{
+			ins->string = string;
+			AddTail((struct List *)&func->instructions, (struct Node *)ins);
+		}
+		else
+		{
+			L_FreeMemH(string);
+			break;
+		}
+	}
+}
+
+static Cfg_Button *aros_raw_read_button(Cfg_ButtonBank *bank, UBYTE *data, ULONG size)
+{
+	Cfg_Button *button;
+	UBYTE *ptr;
+	ULONG remain;
+	short count, a;
+	static short image_log_count = 0;
+
+	if (size < AROS_CFG_BUTN_DISK_SIZE || !(button = L_NewButton(bank->memory)))
+		return 0;
+
+	button->button.fpen = data[0];
+	button->button.bpen = data[1];
+	button->button.flags = aros_raw_long(data + 2);
+	button->button.count = (short)aros_raw_word(data + 6);
+	button->button.pad_1 = (short)aros_raw_word(data + 8);
+	button->button.pad_2 = aros_raw_long(data + 10);
+
+	if (!(button->button.flags & BUTNF_NEW_FORMAT))
+		count = 3;
+	else
+		count = button->button.count;
+
+	if (count < 1 || count > 64)
+		return button;
+
+	ptr = data + AROS_CFG_BUTN_DISK_SIZE;
+	remain = size - AROS_CFG_BUTN_DISK_SIZE;
+
+	for (a = 0; a < count; a++)
+	{
+		Cfg_ButtonFunction *func;
+		char *name, *label = 0;
+
+		if (!(name = aros_raw_copy_string(bank->memory, &ptr, &remain)))
+			break;
+
+		if (button->button.flags & BUTNF_NEW_FORMAT)
+		{
+			label = aros_raw_copy_string(bank->memory, &ptr, &remain);
+			if (label && label[0] == 1 && label[1] == 0)
+			{
+				L_FreeMemH(label);
+				label = copy_string(bank->memory, name);
+			}
+		}
+		else if (button->button.flags & BUTNF_GRAPHIC)
+		{
+			char filename[40];
+			char *dot;
+
+			stccpy(filename, FilePart(name), 39);
+			if ((dot = strchr(filename, '.')))
+				*dot = 0;
+			label = copy_string(bank->memory, filename);
+		}
+		else
+			label = copy_string(bank->memory, name);
+
+		if (!label)
+		{
+			L_FreeMemH(name);
+			break;
+		}
+
+		if ((func = L_NewButtonFunction(bank->memory, 0)))
+		{
+			func->label = name;
+			func->node.ln_Name = label;
+			if (button->button.flags & BUTNF_GRAPHIC)
+			{
+				func->image = open_button_image(name);
+				if (image_log_count < 24)
+				{
+					aros_config_debug_log("OpenButtonBank raw image ");
+					aros_config_debug_log(name);
+					aros_config_debug_log((func->image) ? " ok\n" : " failed\n");
+					++image_log_count;
+				}
+			}
+			AddTail((struct List *)&button->function_list, &func->node);
+		}
+		else
+		{
+			L_FreeMemH(name);
+			L_FreeMemH(label);
+			break;
+		}
+	}
+
+	return button;
+}
+
+static void aros_raw_read_startmenu(Cfg_ButtonBank *bank, UBYTE *data, ULONG size)
+{
+	if (size < sizeof(CFG_STRT))
+		return;
+
+	if ((bank->startmenu = L_AllocMemH(bank->memory, sizeof(CFG_STRT))))
+	{
+		CopyMem(data, bank->startmenu, sizeof(CFG_STRT));
+		bank->startmenu->label[39] = 0;
+		bank->startmenu->image[255] = 0;
+		bank->startmenu->flags = aros_raw_long(data + 296);
+		bank->startmenu->fpen = (short)aros_raw_word(data + 300);
+		bank->startmenu->label_fpen = (short)aros_raw_word(data + 302);
+		bank->startmenu->sel_fpen = (short)aros_raw_word(data + 304);
+		bank->startmenu->label_fontname[79] = 0;
+		bank->startmenu->label_fontsize = (short)aros_raw_word(data + 420);
+	}
+}
+
+static Cfg_ButtonBank *aros_open_button_bank_raw(char *raw_name, char *path_name)
+{
+	Cfg_ButtonBank *bank = 0;
+	BPTR file;
+	UBYTE *buffer = 0;
+	LONG file_size = 0;
+	LONG read_size;
+	ULONG button_chunks = 0, func_chunks = 0, buttons_read = 0;
+	char logbuf[180];
+
+	if (!raw_name)
+		return 0;
+
+	aros_config_debug_log("OpenButtonBank raw parser start path=");
+	aros_config_debug_log(raw_name);
+	aros_config_debug_log("\n");
+
+	if (!(file = Open(raw_name, MODE_OLDFILE)))
+	{
+		aros_config_debug_log("OpenButtonBank raw parser open failed\n");
+		return 0;
+	}
+
+	while (file)
+	{
+		D_S(struct FileInfoBlock, fib)
+		ULONG offset;
+		Cfg_ButtonFunction *current_func = 0;
+
+		if (!ExamineFH(file, fib) || fib->fib_Size < 12)
+		{
+			aros_config_debug_log("OpenButtonBank raw parser examine failed\n");
+			break;
+		}
+		file_size = fib->fib_Size;
+		lsprintf(logbuf, "OpenButtonBank raw parser size=%ld\n", file_size);
+		aros_config_debug_log(logbuf);
+
+		if (!(buffer = AllocVec(file_size, MEMF_CLEAR)))
+		{
+			aros_config_debug_log("OpenButtonBank raw parser alloc failed\n");
+			break;
+		}
+
+		Seek(file, 0, OFFSET_BEGINNING);
+		read_size = Read(file, buffer, file_size);
+		if (read_size != file_size)
+		{
+			lsprintf(logbuf, "OpenButtonBank raw parser read failed got=%ld\n", read_size);
+			aros_config_debug_log(logbuf);
+			break;
+		}
+
+		if (!aros_raw_id(buffer, "FORM") ||
+			(!aros_raw_id(buffer + 8, "OPUS") && !aros_raw_id(buffer + 8, "EPUS")))
+		{
+			aros_config_debug_log("OpenButtonBank raw parser header failed\n");
+			break;
+		}
+
+		for (offset = 12; offset + 8 <= (ULONG)file_size;)
+		{
+			UBYTE *chunk = buffer + offset;
+			ULONG chunk_size = aros_raw_long(chunk + 4);
+			UBYTE *chunk_data = chunk + 8;
+
+			offset += 8;
+			if (offset + chunk_size > (ULONG)file_size)
+				break;
+
+			if (aros_raw_id(chunk, "BTNW"))
+			{
+				current_func = 0;
+				if (!bank && (bank = L_NewButtonBank(0, 0)))
+				{
+					stccpy(bank->path, (path_name && path_name[0]) ? path_name : raw_name, 256);
+					aros_raw_read_button_window(&bank->window, chunk_data, chunk_size);
+				}
+			}
+			else if (bank && aros_raw_id(chunk, "BPIC"))
+			{
+				ULONG copy_size = (chunk_size < sizeof(bank->backpic) - 1) ? chunk_size : sizeof(bank->backpic) - 1;
+
+				CopyMem(chunk_data, bank->backpic, copy_size);
+				bank->backpic[copy_size] = 0;
+			}
+			else if (bank && aros_raw_id(chunk, "BUTN"))
+			{
+				Cfg_Button *button;
+
+				++button_chunks;
+				current_func = 0;
+				if ((button = aros_raw_read_button(bank, chunk_data, chunk_size)))
+				{
+					AddTail(&bank->buttons, &button->node);
+					++buttons_read;
+					current_func = (Cfg_ButtonFunction *)button->function_list.mlh_Head;
+				}
+			}
+			else if (bank && aros_raw_id(chunk, "FUNC"))
+			{
+				++func_chunks;
+				if (current_func && current_func->node.ln_Succ)
+				{
+					aros_raw_read_function(current_func, chunk_data, chunk_size, bank->memory);
+					current_func = (Cfg_ButtonFunction *)current_func->node.ln_Succ;
+				}
+			}
+			else if (bank && aros_raw_id(chunk, "STRT"))
+				aros_raw_read_startmenu(bank, chunk_data, chunk_size);
+
+			offset += chunk_size + (chunk_size & 1);
+		}
+		break;
+	}
+
+	lsprintf(logbuf,
+			 "OpenButtonBank raw parser done buttons=%ld button_chunks=%ld func_chunks=%ld bank=%ld\n",
+			 buttons_read,
+			 button_chunks,
+			 func_chunks,
+			 (bank) ? 1 : 0);
+	aros_config_debug_log(logbuf);
+
+	FreeVec(buffer);
+	Close(file);
+
+	if (bank && IsListEmpty(&bank->buttons))
+	{
+		L_CloseButtonBank(bank);
+		bank = 0;
+	}
+
+	return bank;
+}
+#endif
 
 // Read some filetype definitions
 Cfg_FiletypeList *LIBFUNC L_ReadFiletypes(REG(a0, char *name), REG(a1, APTR memory))
@@ -920,7 +1406,9 @@ BOOL LIBFUNC L_OpenEnvironment(REG(a0, char *name), REG(a1, struct OpenEnvironme
 	// Try to open file to read
 	if ((iff = L_IFFOpen(name, IFF_READ, ID_OPUS)))
 		iff_file_id = ID_OPUS;
-	else if (!(iff = L_IFFOpen(name, IFF_READ, ID_EPUS)))
+	else if ((iff = L_IFFOpen(name, IFF_READ, ID_EPUS)))
+		iff_file_id = ID_EPUS;
+	else
 		return 0;
 
 	// Parse file
@@ -974,7 +1462,7 @@ BOOL LIBFUNC L_OpenEnvironment(REG(a0, char *name), REG(a1, struct OpenEnvironme
 				data->env.env_NewIconsFlags = AROS_BE2LONG(data->env.env_NewIconsFlags);
 				data->env.display_options = AROS_BE2WORD(data->env.display_options);
 				data->env.main_window_type = AROS_BE2WORD(data->env.main_window_type);
-				data->env.hotkey_flags = AROS_BE2WORD(data->env.hotkey_flags);
+				data->env.hotkey_flags = AROS_BE2LONG(data->env.hotkey_flags);
 				data->env.hotkey_code = AROS_BE2WORD(data->env.hotkey_code);
 				data->env.hotkey_qual = AROS_BE2WORD(data->env.hotkey_qual);
 				data->env.default_stack = AROS_BE2LONG(data->env.default_stack);
@@ -1289,35 +1777,7 @@ int convert_env(struct _IFFHandle *iff, CFG_ENVR *env)
 	env->hotkey_flags = oldenv->hotkey_flags;
 	env->hotkey_code = oldenv->hotkey_code;
 	env->hotkey_qual = oldenv->hotkey_qual;
-	// ***** ListFormat
-	env->list_format.files_unsel[0] = oldenv->list_format.files_unsel[0];
-	env->list_format.files_unsel[1] = oldenv->list_format.files_unsel[1];
-	env->list_format.files_sel[0] = oldenv->list_format.files_sel[0];
-	env->list_format.files_sel[1] = oldenv->list_format.files_sel[1];
-	env->list_format.dirs_unsel[0] = oldenv->list_format.dirs_unsel[0];
-	env->list_format.dirs_unsel[1] = oldenv->list_format.dirs_unsel[1];
-	env->list_format.dirs_sel[0] = oldenv->list_format.dirs_sel[0];
-	env->list_format.dirs_sel[1] = oldenv->list_format.dirs_sel[1];
-	// ***** SortFormat
-	env->list_format.sort.sort = oldenv->list_format.sort.sort;
-	env->list_format.sort.sort_flags = oldenv->list_format.sort.sort_flags;
-	env->list_format.sort.separation = oldenv->list_format.sort.separation;
-	// ***** SortFormat end
-	for (i = 0; i < 16; i++)
-		env->list_format.display_pos[i] = oldenv->list_format.display_pos[i];
-	for (i = 0; i < 15; i++)
-		env->list_format.display_len[i] = oldenv->list_format.display_len[i];
-	env->list_format.flags = oldenv->list_format.flags;
-	env->list_format.show_free = oldenv->list_format.show_free;
-	for (i = 0; i < 40; i++)
-		env->list_format.show_pattern[i] = oldenv->list_format.show_pattern[i];
-	for (i = 0; i < 40; i++)
-		env->list_format.hide_pattern[i] = oldenv->list_format.hide_pattern[i];
-	for (i = 0; i < 40; i++)
-		env->list_format.show_pattern_p[i] = oldenv->list_format.show_pattern_p[i];
-	for (i = 0; i < 40; i++)
-		env->list_format.hide_pattern_p[i] = oldenv->list_format.hide_pattern_p[i];
-	// ***** ListFormat end
+	convert_list_format(&oldenv->list_format, &env->list_format);
 	for (i = 0; i < 80; i++)
 		env->backdrop_prefs[i] = oldenv->backdrop_prefs[i];
 	for (i = 0; i < 240; i++)
@@ -1400,6 +1860,47 @@ int convert_env(struct _IFFHandle *iff, CFG_ENVR *env)
 	return 1;
 }
 
+void convert_list_format(OldListFormat *old, ListFormat *format)
+{
+	int i;
+
+	format->files_unsel[0] = old->files_unsel[0];
+	format->files_unsel[1] = old->files_unsel[1];
+	format->files_sel[0] = old->files_sel[0];
+	format->files_sel[1] = old->files_sel[1];
+	format->dirs_unsel[0] = old->dirs_unsel[0];
+	format->dirs_unsel[1] = old->dirs_unsel[1];
+	format->dirs_sel[0] = old->dirs_sel[0];
+	format->dirs_sel[1] = old->dirs_sel[1];
+
+	format->sort.sort = old->sort.sort;
+	format->sort.sort_flags = old->sort.sort_flags;
+	format->sort.separation = old->sort.separation;
+
+	for (i = 0; i < 16; i++)
+		format->display_pos[i] = old->display_pos[i];
+	for (i = 0; i < 15; i++)
+		format->display_len[i] = old->display_len[i];
+
+	format->flags = old->flags;
+	format->show_free = old->show_free;
+	for (i = 0; i < 40; i++)
+	{
+		format->show_pattern[i] = old->show_pattern[i];
+		format->hide_pattern[i] = old->hide_pattern[i];
+	}
+	for (i = 0; i < 82; i++)
+	{
+		format->show_pattern_p[i] = 0;
+		format->hide_pattern_p[i] = 0;
+	}
+	for (i = 0; i < 40; i++)
+	{
+		format->show_pattern_p[i] = old->show_pattern_p[i];
+		format->hide_pattern_p[i] = old->hide_pattern_p[i];
+	}
+}
+
 int convert_open_lister(struct _IFFHandle *iff, CFG_LSTR *lister)
 {
 	OLD_CFG_LSTR *oldlister = NULL;
@@ -1409,19 +1910,23 @@ int convert_open_lister(struct _IFFHandle *iff, CFG_LSTR *lister)
 		return 0;
 
 	L_IFFReadChunkBytes(iff, oldlister, sizeof(OLD_CFG_LSTR));
-	CopyMem(oldlister, lister, sizeof(OLD_CFG_LSTR));
+	lister->pos[0] = oldlister->pos[0];
+	lister->pos[1] = oldlister->pos[1];
+	lister->icon_x = oldlister->icon_x;
+	lister->icon_y = oldlister->icon_y;
+	convert_list_format(&oldlister->format, &lister->format);
+	lister->flags = oldlister->flags;
+	CopyMem(oldlister->pad, lister->pad, sizeof(lister->pad));
 
 	if (lister->format.show_pattern[0] != '\0')
-		ParsePatternNoCase(lister->format.show_pattern, lister->format.show_pattern_p, 80);
+		ParsePatternNoCase(lister->format.show_pattern, (UBYTE *)lister->format.show_pattern_p, 80);
 	else
 		lister->format.show_pattern_p[0] = '\0';
 
 	if (lister->format.hide_pattern[0] != '\0')
-		ParsePatternNoCase(lister->format.hide_pattern, lister->format.hide_pattern_p, 80);
+		ParsePatternNoCase(lister->format.hide_pattern, (UBYTE *)lister->format.hide_pattern_p, 80);
 	else
 		lister->format.hide_pattern_p[0] = '\0';
-
-	lister->flags = oldlister->flags;
 
 	FreeVec(oldlister);
 	return 1;

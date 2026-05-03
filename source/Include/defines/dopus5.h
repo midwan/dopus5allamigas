@@ -201,7 +201,7 @@
 	AROS_LC2(Att_Node *,                          \
 			 Att_FindNodeData,                    \
 			 AROS_LCA(Att_List *, (___list), A0), \
-			 AROS_LCA(ULONG, (___data), D0),      \
+			 AROS_LCA(IPTR, (___data), D0),       \
 			 struct Library *,                    \
 			 DOPUS_BASE_NAME,                     \
 			 80,                                  \
@@ -225,7 +225,7 @@
 			 Att_NewNode,                                \
 			 AROS_LCA(Att_List *, (___list), A0),        \
 			 AROS_LCA(char *, (___name), A1),            \
-			 AROS_LCA(ULONG, (___data), D0),             \
+			 AROS_LCA(IPTR, (___data), D0),              \
 			 AROS_LCA(ULONG, (___flags), D1),            \
 			 struct Library *,                           \
 			 DOPUS_BASE_NAME,                            \
@@ -239,7 +239,7 @@
 	AROS_LC2(long,                                \
 			 Att_NodeDataNumber,                  \
 			 AROS_LCA(Att_List *, (___list), A0), \
-			 AROS_LCA(ULONG, (___data), D0),      \
+			 AROS_LCA(IPTR, (___data), D0),       \
 			 struct Library *,                    \
 			 DOPUS_BASE_NAME,                     \
 			 81,                                  \
@@ -1291,7 +1291,7 @@
 			 /* s */)
 
 #define GetGadgetValue(___list, ___id)              \
-	AROS_LC2(long,                                  \
+	AROS_LC2(IPTR,                                  \
 			 GetGadgetValue,                        \
 			 AROS_LCA(ObjectList *, (___list), A0), \
 			 AROS_LCA(UWORD, (___id), A1),          \
@@ -1602,11 +1602,11 @@
 			 /* s */)
 
 #define IPC_Command(___ipc, ___command, ___flags, ___data, ___data_free, ___reply) \
-	AROS_LC6(ULONG,                                                                \
+	AROS_LC6(IPTR,                                                                 \
 			 IPC_Command,                                                          \
 			 AROS_LCA(IPCData *, (___ipc), A0),                                    \
 			 AROS_LCA(ULONG, (___command), D0),                                    \
-			 AROS_LCA(ULONG, (___flags), D1),                                      \
+			 AROS_LCA(IPTR, (___flags), D1),                                       \
 			 AROS_LCA(APTR, (___data), A1),                                        \
 			 AROS_LCA(APTR, (___data_free), A2),                                   \
 			 AROS_LCA(struct MsgPort *, (___reply), A3),                           \
@@ -1621,7 +1621,7 @@
 			 AROS_LCA(struct ListLock *, (___list), A0), \
 			 AROS_LCA(char *, (___name), A1),            \
 			 AROS_LCA(BOOL, (___act), D0),               \
-			 AROS_LCA(ULONG, (___data), D1),             \
+			 AROS_LCA(IPTR, (___data), D1),              \
 			 struct Library *,                           \
 			 DOPUS_BASE_NAME,                            \
 			 95,                                         \
@@ -1634,7 +1634,7 @@
 	AROS_VOID_LC1( IPC_Free, AROS_LCA(IPCData *, (___ipc), A0), struct Library *, DOPUS_BASE_NAME, 94, /* s */)
 
 #define IPC_GetGoodbye(___msg)                                                                                   \
-	AROS_LC1(ULONG, IPC_GetGoodbye, AROS_LCA(IPCMessage *, (___msg), A0), struct Library *, DOPUS_BASE_NAME, 99, \
+	AROS_LC1(IPTR, IPC_GetGoodbye, AROS_LCA(IPCMessage *, (___msg), A0), struct Library *, DOPUS_BASE_NAME, 99,  \
 			 /* s */)
 
 #define IPC_Goodbye(___ipc, ___owner, ___flags)   \
@@ -1664,9 +1664,9 @@
 			 AROS_LCA(struct ListLock *, (___list), A0),                          \
 			 AROS_LCA(IPCData **, (___ipc), A1),                                  \
 			 AROS_LCA(char *, (___name), A2),                                     \
-			 AROS_LCA(ULONG, (___entry), D0),                                     \
+			 AROS_LCA(IPTR, (___entry), D0),                                     \
 			 AROS_LCA(ULONG, (___stack), D1),                                     \
-			 AROS_LCA(ULONG, (___data), D2),                                      \
+			 AROS_LCA(IPTR, (___data), D2),                                      \
 			 AROS_LCA(struct Library *, (___dos), A3),                            \
 			 struct Library *,                                                    \
 			 DOPUS_BASE_NAME,                                                     \
@@ -1678,8 +1678,8 @@
 			 IPC_ListCommand,                                            \
 			 AROS_LCA(struct ListLock *, (___list), A0),                 \
 			 AROS_LCA(ULONG, (___command), D0),                          \
-			 AROS_LCA(ULONG, (___flags), D1),                            \
-			 AROS_LCA(ULONG, (___data), D2),                             \
+			 AROS_LCA(IPTR, (___flags), D1),                             \
+			 AROS_LCA(IPTR, (___data), D2),                             \
 			 AROS_LCA(BOOL, (___wait), D3),                              \
 			 struct Library *,                                           \
 			 DOPUS_BASE_NAME,                                            \
@@ -1701,7 +1701,7 @@
 #define IPC_ProcStartup(___data, ___code)                         \
 	AROS_LC2(IPCData *,                                           \
 			 IPC_ProcStartup,                                     \
-			 AROS_LCA(ULONG *, (___data), A0),                    \
+			 AROS_LCA(IPTR *, (___data), A0),                    \
 			 AROS_LCA(ULONG (*)(IPCData *, APTR), (___code), A1), \
 			 struct Library *,                                    \
 			 DOPUS_BASE_NAME,                                     \
@@ -1734,11 +1734,11 @@
 	AROS_VOID_LC1( IPC_Reply, AROS_LCA(IPCMessage *, (___msg), A0), struct Library *, DOPUS_BASE_NAME, 93, /* s */)
 
 #define IPC_SafeCommand(___ipc, ___command, ___flags, ___data, ___data_free, ___reply, ___list) \
-	AROS_LC7(ULONG,                                                                             \
+	AROS_LC7(IPTR,                                                                              \
 			 IPC_SafeCommand,                                                                   \
 			 AROS_LCA(IPCData *, (___ipc), A0),                                                 \
 			 AROS_LCA(ULONG, (___command), D0),                                                 \
-			 AROS_LCA(ULONG, (___flags), D1),                                                   \
+			 AROS_LCA(IPTR, (___flags), D1),                                                    \
 			 AROS_LCA(APTR, (___data), A1),                                                     \
 			 AROS_LCA(APTR, (___data_free), A2),                                                \
 			 AROS_LCA(struct MsgPort *, (___reply), A3),                                        \
@@ -2234,7 +2234,7 @@
 #define PopUpNewHandle(___data, ___callback, ___locale)       \
 	AROS_LC3(PopUpHandle *,                                   \
 			 PopUpNewHandle,                                  \
-			 AROS_LCA(ULONG, (___data), D0),                  \
+			 AROS_LCA(IPTR, (___data), D0),                   \
 			 AROS_LCA(REF_CALLBACK, (___callback), A0),       \
 			 AROS_LCA(struct DOpusLocale *, (___locale), A1), \
 			 struct Library *,                                \
@@ -2246,7 +2246,7 @@
 	AROS_LC4(PopUpItem *,                                   \
 			 PopUpNewItem,                                  \
 			 AROS_LCA(PopUpHandle *, (___handle), A0),      \
-			 AROS_LCA(ULONG, (___string), D0),              \
+			 AROS_LCA(IPTR, (___string), D0),               \
 			 AROS_LCA(ULONG, (___id), D1),                  \
 			 AROS_LCA(ULONG, (___flags), D2),               \
 			 struct Library *,                              \
@@ -2610,7 +2610,7 @@
 	AROS_VOID_LC6(                                                          \
 			 SendNotifyMsg,                                                 \
 			 AROS_LCA(ULONG, (___type), D0),                                \
-			 AROS_LCA(ULONG, (___data), D1),                                \
+			 AROS_LCA(IPTR, (___data), D1),                                 \
 			 AROS_LCA(ULONG, (___flags), D2),                               \
 			 AROS_LCA(short, (___wait), D3),                                \
 			 AROS_LCA(char *, (___name), A0),                               \
@@ -2687,7 +2687,7 @@
 			 SetGadgetValue,                        \
 			 AROS_LCA(ObjectList *, (___list), A0), \
 			 AROS_LCA(UWORD, (___id), D0),          \
-			 AROS_LCA(ULONG, (___value), D1),       \
+			 AROS_LCA(IPTR, (___value), D1),        \
 			 struct Library *,                      \
 			 DOPUS_BASE_NAME,                       \
 			 54,                                    \
@@ -3060,8 +3060,8 @@
 #define WB_AddAppWindow(___id, ___data, ___window, ___port, ___tags) \
 	AROS_LC5(struct AppWindow *,                                     \
 			 WB_AddAppWindow,                                        \
-			 AROS_LCA(ULONG, (___id), D0),                           \
-			 AROS_LCA(ULONG, (___data), D1),                         \
+			 AROS_LCA(IPTR, (___id), D0),                            \
+			 AROS_LCA(IPTR, (___data), D1),                          \
 			 AROS_LCA(struct Window *, (___window), A0),             \
 			 AROS_LCA(struct MsgPort *, (___port), A1),              \
 			 AROS_LCA(struct TagItem *, (___tags), A2),              \
@@ -3087,8 +3087,8 @@
 	AROS_LC3(struct MsgPort *,                              \
 			 WB_AppWindowData,                              \
 			 AROS_LCA(struct AppWindow *, (___window), A0), \
-			 AROS_LCA(ULONG *, (___id), A1),                \
-			 AROS_LCA(ULONG *, (___userdata), A2),          \
+			 AROS_LCA(IPTR *, (___id), A1),                 \
+			 AROS_LCA(IPTR *, (___userdata), A2),           \
 			 struct Library *,                              \
 			 DOPUS_BASE_NAME,                               \
 			 182,                                           \

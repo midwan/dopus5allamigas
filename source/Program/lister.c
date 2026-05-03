@@ -105,9 +105,9 @@ Lister *lister_new(Cfg_Lister *cfg_lister)
 	if (!(IPC_Launch(&GUI->lister_list,
 					 &ipc,
 					 "dopus_lister",
-					 (ULONG)&lister_code,
+					 (IPTR)&lister_code,
 					 STACK_DEFAULT,
-					 (ULONG)lister,
+					 (IPTR)lister,
 					 (struct Library *)DOSBase)))
 	{
 		if (!ipc)
@@ -329,7 +329,7 @@ void listers_update(BOOL close, BOOL reopen)
 	// Reopen listers?
 	if (reopen)
 	{
-		IPC_ListCommand(&GUI->lister_list, IPC_SHOW, 0, (ULONG)GUI->screen_pointer, 0);
+		IPC_ListCommand(&GUI->lister_list, IPC_SHOW, 0, (IPTR)GUI->screen_pointer, 0);
 	}
 
 	// Just refresh

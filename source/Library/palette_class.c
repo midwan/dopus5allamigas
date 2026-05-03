@@ -37,11 +37,11 @@ static unsigned char FAR palette_layout[8][3][2] = {
 	/* 256 */ {{16, 16}, {32, 8}, {8, 32}}};
 
 // Palette dispatcher
-ULONG ASM SAVEDS palette_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg))
+IPTR ASM SAVEDS palette_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg))
 {
 	struct Gadget *gadget = 0;
 	PaletteData *data = 0;
-	ULONG retval = 0;
+	IPTR retval = 0;
 
 	// Get gadget and data pointer
 	if (obj)
@@ -60,8 +60,8 @@ ULONG ASM SAVEDS palette_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(
 
 		if (!(retval = DoSuperMethodA(cl, obj, msg)))
 			break;
-		gadget = (struct Gadget *)retval;
-		data = INST_DATA(cl, (Object *)retval);
+		gadget = (struct Gadget *)(IPTR)retval;
+		data = INST_DATA(cl, (Object *)(IPTR)retval);
 		data->last_row = -1;
 		data->last_sel = -1;
 		data->pen_count = 2;

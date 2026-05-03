@@ -349,7 +349,7 @@ void rexx_custom_app_msg(struct _DOpusAppMessage *msg,
 						 Lister *,
 						 char *,
 						 unsigned short);
-char *rexx_build_filestring(struct _DOpusAppMessage *, ULONG *, ULONG);
+char *rexx_build_filestring(struct _DOpusAppMessage *, IPTR *, ULONG);
 short rexx_lister_add_file(Lister *lister, char *args, struct RexxMsg *);
 DirEntry *rexx_lister_get_file(DirBuffer *buffer, char **args);
 short rexx_lister_remove_file(Lister *lister, char *args);
@@ -359,11 +359,13 @@ short rexx_get_command(char **commandptr);
 void rexx_skip_space(char **command);
 void rexx_skip_space_reverse(char **command, char *);
 long rexx_parse_number(char **ptr, BOOL, long);
+IPTR rexx_parse_iptr(char **ptr, BOOL, IPTR);
+void rexx_format_iptr(char *, IPTR);
 BOOL rexx_parse_number_byte(char **, UBYTE *);
 short rexx_parse_word(char **ptr, char *buffer, short bufferlen);
 short rexx_match_keyword(char **ptr, char **keys, long *);
 BOOL rexx_lister_valid(Lister *lister);
-void rexx_set_var(struct RexxMsg *, char *, char *, ULONG, short);
+void rexx_set_var(struct RexxMsg *, char *, char *, IPTR, short);
 BOOL rexx_get_var(struct RexxMsg *, char *, char *, char *, short);
 
 short AddFunctionTrap(char *, char *, char *);
@@ -373,12 +375,12 @@ APTR LockTrapList(void);
 void UnlockTrapList(void);
 APTR FindTrapEntry(APTR, char *, char *);
 
-long rexx_add_appicon(char *, struct RexxMsg *);
+IPTR rexx_add_appicon(char *, struct RexxMsg *);
 void rexx_rem_appthing(char *, short);
 void rexx_handle_appmsg(struct AppMessage *msg);
 BOOL rexx_send_appmsg(RexxAppThing *, short, struct AppMessage *);
 
-long rexx_lister_newprogress(Lister *lister, char *args, long *);
+long rexx_lister_newprogress(Lister *lister, char *args, IPTR *);
 
 void rexx_set_lister_mode(Lister *lister, char *args);
 void rexx_send_command(char *command, BOOL);
@@ -395,7 +397,7 @@ typedef struct
 {
 	ULONG ha_Type;
 	ULONG ha_Arg;
-	ULONG ha_Data;
+	IPTR ha_Data;
 } HandlerArg;
 
 #ifndef __amigaos3__
@@ -404,7 +406,7 @@ typedef struct
 
 #define rexx_handler_msg(handler, buffer, flags, ...)                                \
 	({                                                                               \
-		IPTR __args[] = {__VA_ARGS__};                                               \
+		IPTR __args[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)};                         \
 		(short)rexx_handler_msg_args(handler, buffer, flags, (HandlerArg *)&__args); \
 	})
 short STDARGS rexx_handler_msg_args(char *handler, DirBuffer *buffer, short flags, HandlerArg *args);

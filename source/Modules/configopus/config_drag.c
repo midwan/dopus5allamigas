@@ -82,7 +82,7 @@ void config_drag_start(CfgDragInfo *drag, Att_List *list, short item, struct Tag
 	drag->drag->flags |= DRAGF_OPAQUE | ((global) ? 0 : DRAGF_NO_LOCK);
 
 	// Draw image
-	ptr = (ULONG)&draw;
+	ptr = (IPTR)&draw;
 	GetAttr(DLV_DrawLine, (Object *)GetTagData(DLV_Object, 0, tags), &ptr);
 
 	// Build drag mask

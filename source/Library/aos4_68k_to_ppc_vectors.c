@@ -608,11 +608,11 @@ static void stub_SetGadgetValuePPC(uint32 *regarray)
 	struct ExtendedLibrary *ExtLib = (struct ExtendedLibrary *)((uint32)Base + Base->lib_PosSize);
 	struct DOpusIFace *Self = (struct DOpusIFace *)ExtLib->MainIFace;
 
-	Self->SetGadgetValue((ObjectList *)regarray[8], (UWORD)(regarray[0] & 0xffff), (ULONG)regarray[1]);
+	Self->SetGadgetValue((ObjectList *)regarray[8], (UWORD)(regarray[0] & 0xffff), (IPTR)regarray[1]);
 }
 STATIC CONST struct EmuTrap stub_SetGadgetValue = {TRAPINST, TRAPTYPENR, (uint32(*)(uint32 *))stub_SetGadgetValuePPC};
 
-static long stub_GetGadgetValuePPC(uint32 *regarray)
+static IPTR stub_GetGadgetValuePPC(uint32 *regarray)
 {
 	struct Library *Base = (struct Library *)regarray[REG68K_A6 / 4];
 	struct ExtendedLibrary *ExtLib = (struct ExtendedLibrary *)((uint32)Base + Base->lib_PosSize);
@@ -1932,8 +1932,8 @@ static struct AppWindow *stub_WB_AddAppWindowPPC(uint32 *regarray)
 	struct ExtendedLibrary *ExtLib = (struct ExtendedLibrary *)((uint32)Base + Base->lib_PosSize);
 	struct DOpusIFace *Self = (struct DOpusIFace *)ExtLib->MainIFace;
 
-	return Self->WB_AddAppWindow((ULONG)regarray[0],
-								 (ULONG)regarray[1],
+	return Self->WB_AddAppWindow((IPTR)regarray[0],
+								 (IPTR)regarray[1],
 								 (struct Window *)regarray[8],
 								 (struct MsgPort *)regarray[9],
 								 (struct TagItem *)regarray[10]);
@@ -1968,7 +1968,7 @@ static struct MsgPort *stub_WB_AppWindowDataPPC(uint32 *regarray)
 	struct ExtendedLibrary *ExtLib = (struct ExtendedLibrary *)((uint32)Base + Base->lib_PosSize);
 	struct DOpusIFace *Self = (struct DOpusIFace *)ExtLib->MainIFace;
 
-	return Self->WB_AppWindowData((struct AppWindow *)regarray[8], (ULONG *)regarray[9], (ULONG *)regarray[10]);
+	return Self->WB_AppWindowData((struct AppWindow *)regarray[8], (IPTR *)regarray[9], (IPTR *)regarray[10]);
 }
 STATIC CONST struct EmuTrap stub_WB_AppWindowData = {TRAPINST, TRAPTYPE, (uint32(*)(uint32 *))stub_WB_AppWindowDataPPC};
 
@@ -2043,7 +2043,7 @@ static void stub_SendNotifyMsgPPC(uint32 *regarray)
 	struct DOpusIFace *Self = (struct DOpusIFace *)ExtLib->MainIFace;
 
 	Self->SendNotifyMsg((ULONG)regarray[0],
-						(ULONG)regarray[1],
+						(IPTR)regarray[1],
 						(ULONG)regarray[2],
 						(short)convert_int16(regarray[3]),
 						(char *)regarray[8],

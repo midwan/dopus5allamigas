@@ -291,7 +291,7 @@ static int disk_error(struct opusftp_globals *ogp, struct Window *win, LONG err,
 	char buf[80], error_text[140];
 	int result = 1;
 	struct TagItem tags[] = {
-		AR_Window, NULL, AR_Screen, NULL, AR_Message, NULL, AR_Button, NULL, AR_Button, NULL, TAG_DONE};
+		AR_Window, 0, AR_Screen, 0, AR_Message, 0, AR_Button, 0, AR_Button, 0, TAG_DONE};
 
 	struct Screen *screen;
 
@@ -309,11 +309,11 @@ static int disk_error(struct opusftp_globals *ogp, struct Window *win, LONG err,
 
 	if (!ogp->og_noreq)
 	{
-		tags[0].ti_Data = (ULONG)win;
-		tags[1].ti_Data = (ULONG)screen;
-		tags[2].ti_Data = (ULONG)error_text;
-		tags[3].ti_Data = (ULONG)GetString(locale, MSG_RETRY);
-		tags[4].ti_Data = (ULONG)GetString(locale, MSG_FTP_CANCEL);
+		tags[0].ti_Data = (IPTR)win;
+		tags[1].ti_Data = (IPTR)screen;
+		tags[2].ti_Data = (IPTR)error_text;
+		tags[3].ti_Data = (IPTR)GetString(locale, MSG_RETRY);
+		tags[4].ti_Data = (IPTR)GetString(locale, MSG_FTP_CANCEL);
 
 		result = AsyncRequest(ipc, REQTYPE_SIMPLE, win, NULL, NULL, tags);
 	}
@@ -825,7 +825,7 @@ static Att_List *do_read_sites_iff(struct opusftp_globals *og, char *filename, L
 
 					e->se_protocol = FTP_PROTOCOL_FTP;
 
-					Att_NewNode(list, e->se_name, (ULONG)e, 0);
+					Att_NewNode(list, e->se_name, (IPTR)e, 0);
 					last_site = e;
 				}
 				else
@@ -1078,7 +1078,7 @@ struct ftp_config *read_options(struct window_params *wp, int opt_type)
 
 		// Ok to read?
 		if (do_filereq(
-				wp->wp_win, path, opt_type == WT_OPT ? MSG_ENV_READ_OPTIONS : MSG_ENV_READ_DEFAULT_OPTIONS, NULL))
+				wp->wp_win, path, opt_type == WT_OPT ? MSG_ENV_READ_OPTIONS : MSG_ENV_READ_DEFAULT_OPTIONS, 0))
 		{
 			LONG err = 0;
 
@@ -1179,7 +1179,7 @@ void set_config_to_default(struct ftp_config *oc)
 BOOL get_global_options(struct opusftp_globals *og)
 {
 	struct ftp_config *conf;
-	LONG err;
+	LONG err = 0;
 
 	if ((conf = do_read_options_iff(FTP_OPTIONS_NAME, WT_DEFOPT, &err)))
 	{
@@ -1344,7 +1344,7 @@ static Att_List *do_import_sites(struct opusftp_globals *og, char *path)
 							e->se_env = &og->og_oc.oc_env;
 							e->se_has_custom_env = FALSE;
 
-							Att_NewNode(list, e->se_name, (ULONG)e, ADDNODE_SORT);
+							Att_NewNode(list, e->se_name, (IPTR)e, ADDNODE_SORT);
 						}
 					}
 					DisposeArgs(fa);
@@ -1815,7 +1815,7 @@ static Att_List *do_import_amftp(struct display_globals *dg, char *path)
 						if (buf[522])
 							e->se_env->e_keep_last_dir = TRUE;
 
-						Att_NewNode(list, e->se_name, (ULONG)e, ADDNODE_SORT);
+						Att_NewNode(list, e->se_name, (IPTR)e, ADDNODE_SORT);
 					}
 				}
 				Close(fp);

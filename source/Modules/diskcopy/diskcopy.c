@@ -27,7 +27,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *disks),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *ipc),
 						   REG(a3, IPCData *main_ipc),
-						   REG(d0, ULONG mod_id),
+						   REG(d0, IPTR mod_id),
 						   REG(d1, ULONG mod_data))
 {
 	diskcopy_data *data;
@@ -401,7 +401,7 @@ Att_List *get_device_list(char *get_only, char *like_device)
 	while ((dl = NextDosEntry(dl, LDF_DEVICES)))
 	{
 		// Is it a valid device?
-		if (dl->dol_Task && dl->dol_misc.dol_handler.dol_Startup > 512)
+		if (dl->dol_Task && (IPTR)dl->dol_misc.dol_handler.dol_Startup > 512)
 		{
 			struct DosEnvec *geo;
 			char devname[32];
@@ -483,7 +483,7 @@ void show_device_info(diskcopy_data *data, short list)
 
 		// Display status
 		if (ok)
-			SetGadgetValue(data->list, GAD_DISKCOPY_STATUS, (ULONG)info_buf);
+			SetGadgetValue(data->list, GAD_DISKCOPY_STATUS, (IPTR)info_buf);
 
 		// Free existing destination list
 		Att_RemList(data->dest_list, 0);
@@ -559,7 +559,7 @@ BOOL start_diskcopy(diskcopy_data *data)
 	SetWindowBusy(data->window);
 
 	// Show status text
-	SetGadgetValue(data->list, GAD_DISKCOPY_STATUS, (ULONG)GetString(locale, MSG_DISKCOPY_OPEN_DEVICES));
+	SetGadgetValue(data->list, GAD_DISKCOPY_STATUS, (IPTR)GetString(locale, MSG_DISKCOPY_OPEN_DEVICES));
 
 	// Open source device
 	if (!(data->source = OpenDisk(node->node.ln_Name, 0)))
@@ -586,7 +586,7 @@ BOOL start_diskcopy(diskcopy_data *data)
 	if (msg)
 	{
 		// Display error text
-		SetGadgetValue(data->list, GAD_DISKCOPY_STATUS, (ULONG)GetString(locale, msg));
+		SetGadgetValue(data->list, GAD_DISKCOPY_STATUS, (IPTR)GetString(locale, msg));
 
 		// Cleanup and return
 		cleanup_diskcopy(data);
@@ -616,7 +616,7 @@ BOOL start_diskcopy(diskcopy_data *data)
 				msg = 0;
 
 				// Try to open device
-				if (!node->data && !(node->data = (ULONG)OpenDisk(node->node.ln_Name, data->dest_port)))
+				if (!node->data && !(node->data = (IPTR)OpenDisk(node->node.ln_Name, data->dest_port)))
 				{
 					msg = MSG_CANT_OPEN_DESTINATION;
 				}
@@ -700,7 +700,7 @@ BOOL start_diskcopy(diskcopy_data *data)
 	if (dest_total == 0)
 	{
 		// Display status text
-		SetGadgetValue(data->list, GAD_DISKCOPY_STATUS, (ULONG)GetString(locale, MSG_ABORTED));
+		SetGadgetValue(data->list, GAD_DISKCOPY_STATUS, (IPTR)GetString(locale, MSG_ABORTED));
 
 		// Cleanup and return
 		cleanup_diskcopy(data);
@@ -753,7 +753,7 @@ BOOL start_diskcopy(diskcopy_data *data)
 	// Display status text
 	SetGadgetValue(data->list,
 				   GAD_DISKCOPY_STATUS,
-				   (ULONG)GetString(locale, (ok) ? MSG_DISKCOPY_SUCCESSFUL : MSG_DISKCOPY_FAILED));
+				   (IPTR)GetString(locale, (ok) ? MSG_DISKCOPY_SUCCESSFUL : MSG_DISKCOPY_FAILED));
 
 	return 1;
 }

@@ -136,7 +136,7 @@ typedef struct _CommandList
 	struct MinNode node;
 	UWORD function;	 // Function ID
 	char *name;		 // Function name
-	ULONG desc;		 // Function description
+	IPTR desc;		 // Function description
 	ULONG flags;	 // Function flags
 
 	// Function code

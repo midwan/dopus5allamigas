@@ -8,7 +8,7 @@ static void ASM button_editor_task_callback(REG(a1, struct TagItem *tag), REG(a2
 {
 	// Get task pointer
 	tag->ti_Tag = GTCustom_ChangeSigTask;
-	tag->ti_Data = (ULONG)FindTask(0);
+	tag->ti_Data = (IPTR)FindTask(0);
 }
 
 // Call-back hook to get signal bit

@@ -58,9 +58,9 @@ IPCData *start_new(char *buttons, char *label, char *image, short x, short y)
 	if ((IPC_Launch(&GUI->startmenu_list,
 					&ipc,
 					"dopus_start_menu",
-					(ULONG)&start_proc,
+					(IPTR)&start_proc,
 					STACK_DEFAULT,
-					(ULONG)menu,
+					(IPTR)menu,
 					(struct Library *)DOSBase)) &&
 		ipc)
 		return ipc;
@@ -147,7 +147,7 @@ IPC_EntryCode(start_proc, static)
 	short quit_flag = 0;
 
 	// Do startup
-	if (!(IPC_ProcStartup((ULONG *)&menu, &start_init)))
+	if (!(IPC_ProcStartup((IPTR *)&menu, &start_init)))
 	{
 		// Failed
 		start_cleanup(menu);
@@ -1245,7 +1245,7 @@ BOOL start_edit(StartMenu *menu)
 
 	// Edit the current bank
 	if ((bank = (Cfg_ButtonBank *)Config_Menus(
-			 menu->ipc, &main_ipc, GUI->screen_pointer, menu->bank, (ULONG)&GUI->command_list.list, 3, menu->buttons)))
+			 menu->ipc, &main_ipc, GUI->screen_pointer, menu->bank, (IPTR)&GUI->command_list.list, 3, menu->buttons)))
 	{
 		// Lock bank lock
 		GetSemaphore(&menu->lock, SEMF_EXCLUSIVE, 0);
@@ -1523,7 +1523,7 @@ void start_add_item(StartMenu *menu, char *pathname)
 	ClearMemHandle(menu->memory);
 
 	// Build new menu
-	if ((item = PopUpNewItem(menu->menu, (ULONG)function_label(func), menu->last_id++, POPUPF_STRING)))
+	if ((item = PopUpNewItem(menu->menu, (IPTR)function_label(func), menu->last_id++, POPUPF_STRING)))
 		item->data = func;
 
 	// Set changed flag

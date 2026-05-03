@@ -35,14 +35,14 @@ Lister *ASM SAVEDS HookGetLister(REG(a0, PathNode *path))
 	return (path) ? path->lister : 0;
 }
 
-ULONG ASM SAVEDS HookExamineEntry(REG(a0, FunctionEntry *entry), REG(d0, long type))
+IPTR ASM SAVEDS HookExamineEntry(REG(a0, FunctionEntry *entry), REG(d0, long type))
 {
 	if (!entry)
 		return 0;
 
 	// Name?
 	if (type == EE_NAME)
-		return (ULONG)entry->name;
+		return (IPTR)entry->name;
 
 	// Type
 	else if (type == EE_TYPE)
@@ -186,7 +186,7 @@ void ASM SAVEDS HookAddFile(REG(a0, FunctionHandle *handle),
 	if (fib->fib_Date.ds_Days == 0 && fib->fib_Date.ds_Minute == 0 && fib->fib_Date.ds_Tick == 0)
 		DateStamp(&fib->fib_Date);
 
-#ifdef USE_64BIT
+#if defined(USE_64BIT) && !defined(__AROS__)
 	#warning detect if there is a valid fib_Size64 in the FIB
 	((FileInfoBlock64 *)fib)->fib_Size64 = fib->fib_Size;
 #endif
@@ -328,7 +328,7 @@ long ASM SAVEDS HookReplaceReq(REG(a0, struct Window *window),
 	return SmartAskReplace(window, screen, ipc, 0, file1, 0, file2, flags);
 }
 
-ULONG ASM SAVEDS HookGetPointer(REG(a0, struct pointer_packet *ptr))
+IPTR ASM SAVEDS HookGetPointer(REG(a0, struct pointer_packet *ptr))
 {
 	// Which type?
 	switch (ptr->type)
@@ -339,7 +339,7 @@ ULONG ASM SAVEDS HookGetPointer(REG(a0, struct pointer_packet *ptr))
 		// Fill out packet
 		ptr->pointer = &environment->env->settings;
 		ptr->flags = 0;
-		return (ULONG)&environment->env->settings;
+		return (IPTR)&environment->env->settings;
 
 	// Filetypes
 	case MODPTR_FILETYPES:
@@ -350,7 +350,7 @@ ULONG ASM SAVEDS HookGetPointer(REG(a0, struct pointer_packet *ptr))
 		// Fill out packet
 		ptr->pointer = &GUI->filetypes;
 		ptr->flags = POINTERF_LOCKED;
-		return (ULONG)&GUI->filetypes;
+		return (IPTR)&GUI->filetypes;
 
 	// Handle
 	case MODPTR_HANDLE:
@@ -358,7 +358,7 @@ ULONG ASM SAVEDS HookGetPointer(REG(a0, struct pointer_packet *ptr))
 		// Allocate a new handle
 		if ((ptr->pointer = function_new_handle((struct MsgPort *)ptr->pointer, 0)))
 			ptr->flags = POINTERF_LOCKED;
-		return (ULONG)ptr->pointer;
+		return (IPTR)ptr->pointer;
 
 	// Default lister format
 	case MODPTR_DEFFORMAT:
@@ -369,7 +369,7 @@ ULONG ASM SAVEDS HookGetPointer(REG(a0, struct pointer_packet *ptr))
 			CopyMem((char *)&environment->env->list_format, (char *)ptr->pointer, sizeof(ListFormat));
 			ptr->flags = POINTERF_LOCKED;
 		}
-		return (ULONG)ptr->pointer;
+		return (IPTR)ptr->pointer;
 
 	// Command list
 	case MODPTR_COMMANDS: {
@@ -459,7 +459,7 @@ ULONG ASM SAVEDS HookGetPointer(REG(a0, struct pointer_packet *ptr))
 		ptr->pointer = list;
 		ptr->flags = POINTERF_LOCKED;
 	}
-		return (ULONG)ptr->pointer;
+		return (IPTR)ptr->pointer;
 
 	// Script list
 	case MODPTR_SCRIPTS: {
@@ -476,7 +476,7 @@ ULONG ASM SAVEDS HookGetPointer(REG(a0, struct pointer_packet *ptr))
 		ptr->pointer = list;
 		ptr->flags = POINTERF_LOCKED;
 	}
-		return (ULONG)ptr->pointer;
+		return (IPTR)ptr->pointer;
 	}
 
 	return 0;

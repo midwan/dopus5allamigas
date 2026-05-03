@@ -28,11 +28,11 @@ For more information on Directory Opus for Windows please see:
 char *lv_FilePart(char *name);
 
 // Listview dispatcher
-ULONG LIBFUNC listview_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg))
+IPTR LIBFUNC listview_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg))
 {
 	ListViewData *data = 0;
 	struct Gadget *gadget = 0;
-	ULONG retval = 0;
+	IPTR retval = 0;
 
 	// Get gadget and data pointers
 	if (obj)
@@ -56,8 +56,8 @@ ULONG LIBFUNC listview_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1
 			struct TextAttr *attr;
 
 			// Get pointer to our gadget and instance data
-			gadget = (struct Gadget *)retval;
-			data = INST_DATA(cl, (APTR)retval);
+			gadget = (struct Gadget *)(IPTR)retval;
+			data = INST_DATA(cl, (APTR)(IPTR)retval);
 
 			// Initialise data
 			data->dims = *(struct IBox *)&gadget->LeftEdge;
@@ -689,7 +689,7 @@ ULONG LIBFUNC listview_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1
 
 		// Labels
 		case DLV_Labels:
-			*get->opg_Storage = (ULONG)data->labels;
+			*get->opg_Storage = (IPTR)data->labels;
 			break;
 
 		// Get line from coordinates
@@ -803,7 +803,7 @@ ULONG LIBFUNC listview_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1
 			data->notify_tags[8].ti_Tag = DLV_Top;
 			data->notify_tags[8].ti_Data = data->top;
 			data->notify_tags[9].ti_Tag = DLV_Object;
-			data->notify_tags[9].ti_Data = (ULONG)gadget;
+			data->notify_tags[9].ti_Data = (IPTR)gadget;
 			data->notify_tags[10].ti_Tag = TAG_END;
 
 			// Clear flag
