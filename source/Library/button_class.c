@@ -26,11 +26,11 @@ For more information on Directory Opus for Windows please see:
 #include "boopsi.h"
 
 // Button dispatcher
-ULONG LIBFUNC button_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg))
+IPTR LIBFUNC button_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg))
 {
 	struct Gadget *gadget = 0;
 	ButtonData *data = 0;
-	ULONG retval = 0;
+	IPTR retval = 0;
 
 	// Get gadget and data pointer
 	if (obj)
@@ -88,15 +88,15 @@ ULONG LIBFUNC button_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, 
 				string_tags[0].ti_Tag = STRINGA_MaxChars;
 				string_tags[0].ti_Data = bufsize;
 				string_tags[1].ti_Tag = (got_buffers & GOTBUF_MAIN) ? TAG_IGNORE : STRINGA_Buffer;
-				string_tags[1].ti_Data = (ULONG)buffer;
+				string_tags[1].ti_Data = (IPTR)buffer;
 				string_tags[2].ti_Tag = (got_buffers & GOTBUF_UNDO) ? TAG_IGNORE : STRINGA_UndoBuffer;
-				string_tags[2].ti_Data = (ULONG)buffer + bufsize + 1;
+				string_tags[2].ti_Data = (IPTR)buffer + bufsize + 1;
 				string_tags[3].ti_Tag = (got_buffers & GOTBUF_WORK) ? TAG_IGNORE : STRINGA_WorkBuffer;
-				string_tags[3].ti_Data = (ULONG)buffer + bufsize + bufsize + 2;
+				string_tags[3].ti_Data = (IPTR)buffer + bufsize + bufsize + 2;
 				string_tags[4].ti_Tag = GA_TabCycle;
 				string_tags[4].ti_Data = TRUE;
 				string_tags[5].ti_Tag = TAG_MORE;
-				string_tags[5].ti_Data = (ULONG)tags;
+				string_tags[5].ti_Data = (IPTR)tags;
 
 				// Set using string tags
 				tags = string_tags;
@@ -110,8 +110,8 @@ ULONG LIBFUNC button_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, 
 			FreeVec(buffer);
 			break;
 		}
-		gadget = (struct Gadget *)retval;
-		data = INST_DATA(cl, (Object *)retval);
+		gadget = (struct Gadget *)(IPTR)retval;
+		data = INST_DATA(cl, (Object *)(IPTR)retval);
 
 		// Get taglist
 		tags = ((struct opSet *)msg)->ops_AttrList;

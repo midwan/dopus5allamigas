@@ -32,7 +32,7 @@ APTR LIBFUNC L_AddNotifyRequest(REG(d0, ULONG type),
 	NotifyNode *node;
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -64,7 +64,7 @@ void LIBFUNC L_RemoveNotifyRequest(REG(a0, NotifyNode *node), REG(a6, struct MyL
 {
 	DOpusNotify *msg;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -110,7 +110,7 @@ void LIBFUNC L_RemoveNotifyRequest(REG(a0, NotifyNode *node), REG(a6, struct MyL
 
 // Send a notify message
 void LIBFUNC L_SendNotifyMsg(REG(d0, ULONG type),
-							 REG(d1, ULONG data),
+							 REG(d1, IPTR data),
 							 REG(d2, ULONG flags),
 							 REG(d3, short wait),
 							 REG(a0, char *name),
@@ -122,7 +122,7 @@ void LIBFUNC L_SendNotifyMsg(REG(d0, ULONG type),
 	struct MsgPort reply_port;
 	short count = 0;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -180,7 +180,7 @@ void LIBFUNC L_SendNotifyMsg(REG(d0, ULONG type),
 
 					// Get pointer to end of name
 					ptr = msg->dn_Name + strlen(msg->dn_Name) + 1;
-					if (((ULONG)ptr) & 1)
+					if (((IPTR)ptr) & 1)
 						++ptr;
 
 					// Set pointer and copy it
@@ -239,7 +239,7 @@ void LIBFUNC L_SetNotifyRequest(REG(a0, NotifyNode *node),
 								REG(d1, ULONG mask),
 								REG(a6, struct MyLibrary *libbase))
 {
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 

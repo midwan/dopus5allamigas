@@ -11,6 +11,9 @@
 #define LIB_STRING STRI(LIB_VERSION) "." STRI(LIB_REVISION) " " STRI(PLATFORM) " (" DOPUSDATE ")"
 
 extern struct DOpusLocale *locale;
+#ifndef __amigaos3__
+	#pragma pack(2)
+#endif
 typedef struct
 {
 	ULONG ver;					 // Module version
@@ -20,6 +23,9 @@ typedef struct
 	ULONG function_count;		 // Number of functions in module
 	ModuleFunction function[7];	 // All the module functions
 } ModuleInfo_7;
+#ifndef __amigaos3__
+	#pragma pack()
+#endif
 extern ModuleInfo_7 module_info;
 
 #define VALID_QUALIFIERS                                                                                           \

@@ -115,7 +115,7 @@ void LIBFUNC L_StoreGadgetValue(REG(a0, ObjectList *list),
 								REG(a1, struct IntuiMessage *msg),
 								REG(a6, struct MyLibrary *libbase))
 {
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -135,7 +135,7 @@ void LIBFUNC L_UpdateGadgetValue(REG(a0, ObjectList *list),
 	GL_Object *object;
 	struct Gadget *gadget;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -278,9 +278,9 @@ void LIBFUNC L_UpdateGadgetValue(REG(a0, ObjectList *list),
 										? MSG_SELECT_FILE
 										: MSG_SELECT_DIRECTORY),
 						ASLFR_InitialFile,
-						(ULONG)file,
+						(IPTR)file,
 						ASLFR_InitialDrawer,
-						(ULONG)path,
+						(IPTR)path,
 						ASLFR_Flags1,
 						(object->flags & FILEBUTFLAG_SAVE) ? FRF_DOSAVEMODE : 0,
 						ASLFR_Flags2,
@@ -298,7 +298,7 @@ void LIBFUNC L_UpdateGadgetValue(REG(a0, ObjectList *list),
 					AddPart(path, ((WindowData *)list->window->UserData)->request->fr_File, 256);
 
 					// Pass filename to gadget
-					L_SetGadgetValue(list, object->control_id, (ULONG)path);
+					L_SetGadgetValue(list, object->control_id, (IPTR)path);
 
 					// Change to gadget up on this gadget
 					msg->Class = IDCMP_GADGETUP;
@@ -339,7 +339,7 @@ void LIBFUNC L_UpdateGadgetValue(REG(a0, ObjectList *list),
 				if (object->tags)
 				{
 					// Get storage
-					pen_storage = (ULONG *)GetTagData(GTCustom_FontPens, 0, object->tags);
+					pen_storage = (unsigned long *)(IPTR)GetTagData(GTCustom_FontPens, 0, object->tags);
 
 					// Pen count and table
 					pen_count = GetTagData(GTCustom_FontPenCount, 8, object->tags);
@@ -392,7 +392,7 @@ void LIBFUNC L_UpdateGadgetValue(REG(a0, ObjectList *list),
 								   ASLFO_TitleText,
 								   L_GetString(&((struct LibData *)libbase->ml_UserData)->locale, MSG_SELECT_FONT),
 								   ASLFO_InitialName,
-								   (ULONG)path,
+								   (IPTR)path,
 								   ASLFO_InitialSize,
 								   size,
 								   ASLFO_SleepWindow,
@@ -421,7 +421,7 @@ void LIBFUNC L_UpdateGadgetValue(REG(a0, ObjectList *list),
 								   TAG_END))
 				{
 					// Set font name
-					L_SetGadgetValue(list, object->control_id, (ULONG)data->font_request->fo_Attr.ta_Name);
+					L_SetGadgetValue(list, object->control_id, (IPTR)data->font_request->fo_Attr.ta_Name);
 
 					// Set font size
 					L_SetGadgetValue(list, object->control_id + 1, data->font_request->fo_Attr.ta_YSize);
@@ -448,7 +448,7 @@ void LIBFUNC L_UpdateGadgetList(REG(a0, ObjectList *list), REG(a6, struct MyLibr
 {
 	GL_Object *object;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -478,7 +478,7 @@ void LIBFUNC L_UpdateGadgetList(REG(a0, ObjectList *list), REG(a6, struct MyLibr
 					  Set the value of a GadTools gadget
  ****************************************************************************/
 
-void LIBFUNC L_SetGadgetValue(REG(a0, ObjectList *list), REG(d0, UWORD id), REG(d1, ULONG value))
+void LIBFUNC L_SetGadgetValue(REG(a0, ObjectList *list), REG(d0, UWORD id), REG(d1, IPTR value))
 {
 	GL_Object *object;
 	struct Gadget *gadget;
@@ -577,7 +577,7 @@ void LIBFUNC L_SetGadgetValue(REG(a0, ObjectList *list), REG(d0, UWORD id), REG(
 						  0,
 						  GTLV_Selected,
 						  value,
-						  (value != (ULONG)~0) ? GTLV_MakeVisible : TAG_IGNORE,
+						  (value != (IPTR)~0) ? GTLV_MakeVisible : TAG_IGNORE,
 						  value,
 						  TAG_END);
 		break;
@@ -593,7 +593,7 @@ void LIBFUNC L_SetGadgetValue(REG(a0, ObjectList *list), REG(d0, UWORD id), REG(
 					   0,
 					   DLV_Selected,
 					   value,
-					   (value != (ULONG)~0) ? DLV_MakeVisible : TAG_IGNORE,
+					   (value != (IPTR)~0) ? DLV_MakeVisible : TAG_IGNORE,
 					   value,
 					   TAG_END);
 		break;
@@ -680,7 +680,7 @@ void LIBFUNC L_SetGadgetValue(REG(a0, ObjectList *list), REG(d0, UWORD id), REG(
 	case TEXT_KIND:
 
 		// Change text
-		SetGadgetAttrs(gadget, list->window, 0, GTTX_Text, (value) ? value : (ULONG) "", TAG_END);
+		SetGadgetAttrs(gadget, list->window, 0, GTTX_Text, (value) ? value : (IPTR) "", TAG_END);
 		break;
 
 	// Default
@@ -695,11 +695,11 @@ void LIBFUNC L_SetGadgetValue(REG(a0, ObjectList *list), REG(d0, UWORD id), REG(
 					  Get the value of a GadTools gadget
  ****************************************************************************/
 
-long LIBFUNC L_GetGadgetValue(REG(a0, ObjectList *list), REG(a1, UWORD id), REG(a6, struct MyLibrary *libbase))
+IPTR LIBFUNC L_GetGadgetValue(REG(a0, ObjectList *list), REG(a1, UWORD id), REG(a6, struct MyLibrary *libbase))
 {
 	GL_Object *object;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -713,12 +713,12 @@ long LIBFUNC L_GetGadgetValue(REG(a0, ObjectList *list), REG(a1, UWORD id), REG(
 		// No string?
 		if (!object->gl_info.gl_gadget.data)
 		{
-			return (long)((struct LibData *)libbase->ml_UserData)->null_string;
+			return (IPTR)((struct LibData *)libbase->ml_UserData)->null_string;
 		}
 
 		// Secure string?
 		if (object->flags2 & OBJECTF_SECURE)
-			return (long)L_GetSecureString(GADGET(object));
+			return (IPTR)L_GetSecureString(GADGET(object));
 	}
 
 	// Return data
@@ -816,6 +816,9 @@ STRPTR LIBFUNC L_GetString(REG(a0, struct DOpusLocale *li), REG(d0, LONG stringN
 	if (!li)
 		return "";
 
+	if (!li->li_BuiltIn)
+		return "";
+
 #define LocaleBase li->li_LocaleBase
 	// Get string from locale
 	if (li->li_Catalog && LocaleBase && (builtIn = (STRPTR)GetCatalogStr(li->li_Catalog, stringNum, 0)))
@@ -833,18 +836,18 @@ STRPTR LIBFUNC L_GetString(REG(a0, struct DOpusLocale *li), REG(d0, LONG stringN
 	while (*l != stringNum)
 #endif
 	{
-		w = (UWORD *)((ULONG)l + sizeof(ULONG));
+		w = (UWORD *)((IPTR)l + sizeof(ULONG));
 #ifdef __AROS__
 		w_le = AROS_BE2WORD(*w);
-		l = (LONG *)((ULONG)l + (ULONG)w_le + sizeof(ULONG) + sizeof(UWORD));
+		l = (LONG *)((IPTR)l + (IPTR)w_le + sizeof(ULONG) + sizeof(UWORD));
 		l_le = AROS_BE2LONG(*l);
 #else
-		l = (LONG *)((ULONG)l + (ULONG)*w + sizeof(ULONG) + sizeof(UWORD));
+		l = (LONG *)((IPTR)l + (IPTR)*w + sizeof(ULONG) + sizeof(UWORD));
 #endif
 	}
 
 	// Return string
-	builtIn = (STRPTR)((ULONG)l + sizeof(ULONG) + sizeof(UWORD));
+	builtIn = (STRPTR)((IPTR)l + sizeof(ULONG) + sizeof(UWORD));
 	return builtIn;
 }
 
@@ -1219,7 +1222,7 @@ struct Gadget *LIBFUNC L_FindKeyEquivalent(REG(a0, ObjectList *first_list),
 							// Custom listview
 							case MY_LISTVIEW_KIND: {
 								Tag tag = DLV_SelectNext;
-								ULONG sel, old;
+								IPTR sel, old;
 
 								// Pressed key equivalent?
 								if (msg->Class == IDCMP_VANILLAKEY)
@@ -1269,7 +1272,7 @@ struct Gadget *LIBFUNC L_FindKeyEquivalent(REG(a0, ObjectList *first_list),
 									SetGadgetAttrs(gadget, list->window, 0, DLV_MakeVisible, sel, TAG_END);
 
 									// Store selection in message code
-									msg->Code = sel;
+									msg->Code = (UWORD)sel;
 								}
 								else
 									gadget = 0;
@@ -1279,7 +1282,7 @@ struct Gadget *LIBFUNC L_FindKeyEquivalent(REG(a0, ObjectList *first_list),
 							// Palette
 							case PALETTE_KIND: {
 								Tag tag;
-								ULONG sel;
+								IPTR sel;
 
 								// Select previous?
 								if ((msg->Class == IDCMP_RAWKEY && msg->Code == CURSORUP) ||
@@ -1294,7 +1297,7 @@ struct Gadget *LIBFUNC L_FindKeyEquivalent(REG(a0, ObjectList *first_list),
 
 								// Get selection
 								GetAttr(DPG_Pen, (Object *)gadget, &sel);
-								msg->Code = sel;
+								msg->Code = (UWORD)sel;
 							}
 							break;
 							}
@@ -1550,8 +1553,8 @@ void LIBFUNC L_SetGadgetChoices(REG(a0, ObjectList *list), REG(d0, ULONG id), RE
 		unsigned short max, min;
 
 		// Get max/min values
-		max = ((ULONG)choices) >> 16;
-		min = ((ULONG)choices) & 0xffff;
+		max = ((IPTR)choices) >> 16;
+		min = ((IPTR)choices) & 0xffff;
 
 		// Store values
 		object->gl_info.gl_gadget.choice_min = min;
@@ -1592,12 +1595,12 @@ void LIBFUNC L_SetGadgetChoices(REG(a0, ObjectList *list), REG(d0, ULONG id), RE
 		}
 
 		// Attach labels to listview
-		GT_SetGadgetAttrs(gadget, list->window, 0, GTLV_Labels, (ULONG)choices, TAG_END);
+		GT_SetGadgetAttrs(gadget, list->window, 0, GTLV_Labels, (IPTR)choices, TAG_END);
 		break;
 
 	// Custom listview
 	case MY_LISTVIEW_KIND:
-		SetGadgetAttrs(gadget, list->window, 0, DLV_Labels, (ULONG)choices, TAG_END);
+		SetGadgetAttrs(gadget, list->window, 0, DLV_Labels, (IPTR)choices, TAG_END);
 		break;
 
 	// Cycle gadget
@@ -1626,7 +1629,7 @@ void LIBFUNC L_SetGadgetChoices(REG(a0, ObjectList *list), REG(d0, ULONG id), RE
 		}
 
 		// Attach labels to gadget
-		GT_SetGadgetAttrs(gadget, list->window, 0, GTCY_Labels, (ULONG)choices, TAG_END);
+		GT_SetGadgetAttrs(gadget, list->window, 0, GTCY_Labels, (IPTR)choices, TAG_END);
 		break;
 	}
 }

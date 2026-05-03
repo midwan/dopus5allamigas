@@ -385,7 +385,7 @@
 		  UWORD,                         \
 		  __p1,                          \
 		  d0,                            \
-		  ULONG,                         \
+		  IPTR,                          \
 		  __p2,                          \
 		  d1,                            \
 		  ,                              \
@@ -2131,7 +2131,7 @@
 		0)
 
 #define GetGadgetValue(__p0, __p1) \
-	LP2(330, long, GetGadgetValue, ObjectList *, __p0, a0, UWORD, __p1, a1, , DOPUS_BASE_NAME, 0, 0, 0, 0, 0, 0)
+	LP2(330, IPTR, GetGadgetValue, ObjectList *, __p0, a0, UWORD, __p1, a1, , DOPUS_BASE_NAME, 0, 0, 0, 0, 0, 0)
 
 #define ReadButton(__p0, __p1) \
 	LP2(906, Cfg_Button *, ReadButton, APTR, __p0, a0, APTR, __p1, a1, , DOPUS_BASE_NAME, 0, 0, 0, 0, 0, 0)
@@ -2570,7 +2570,7 @@
 		  ULONG,                                          \
 		  __p0,                                           \
 		  d0,                                             \
-		  ULONG,                                          \
+		  IPTR,                                           \
 		  __p1,                                           \
 		  d1,                                             \
 		  ULONG,                                          \
@@ -2884,10 +2884,10 @@
 		struct AppWindow *,                \
 		__p0,                              \
 		a0,                                \
-		ULONG *,                           \
+		IPTR *,                            \
 		__p1,                              \
 		a1,                                \
-		ULONG *,                           \
+		IPTR *,                            \
 		__p2,                              \
 		a2,                                \
 		,                                  \
@@ -3999,10 +3999,10 @@
 	LP5(1074,                                         \
 		struct AppWindow *,                           \
 		WB_AddAppWindow,                              \
-		ULONG,                                        \
+		IPTR,                                         \
 		__p0,                                         \
 		d0,                                           \
-		ULONG,                                        \
+		IPTR,                                         \
 		__p1,                                         \
 		d1,                                           \
 		struct Window *,                              \

@@ -159,9 +159,9 @@ void config_menus_edit_item(config_menus_data *data, short type)
 			if ((IPC_Launch(&data->proc_list,
 							&look->ipc,
 							"dopus_function_editor",
-							(ULONG)IPC_NATIVE(FunctionEditor),
+							IPC_NATIVE(FunctionEditor),
 							STACK_DEFAULT,
-							(ULONG)startup,
+							(IPTR)startup,
 							(struct Library *)DOSBase)) &&
 				look->ipc)
 			{

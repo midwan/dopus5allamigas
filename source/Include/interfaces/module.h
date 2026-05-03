@@ -36,8 +36,8 @@ struct ModuleIFace
 								struct Screen *screen,
 								IPCData *ipc,
 								IPCData *main_ipc,
-								ULONG id,
-								ULONG data);
+								IPTR id,
+								IPTR data);
 	ModuleInfo *APICALL (*Module_Identify)(struct ModuleIFace *Self, int num);
 };
 

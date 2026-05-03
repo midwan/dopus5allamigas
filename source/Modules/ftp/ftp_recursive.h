@@ -109,7 +109,7 @@ struct hook_rec_data
 
 	char *hc_opus;				   // Opus port name for ARexx calls
 	struct ftp_node *hc_prognode;  // FTP node of lister with progress bar
-	ULONG hc_proghandle;		   // Handle of lister with progress bar
+	IPTR hc_proghandle;		   // Handle of lister with progress bar
 	struct ftp_environment *hc_env;
 	char hc_fromdirname[FILENAMELEN + 1];  // From 'xxx'
 	char hc_todirname[FILENAMELEN + 1];	   // To 'yyy'
@@ -168,7 +168,7 @@ enum {
 endpoint *create_endpoint(struct opusftp_globals *og, struct TagItem *tags);
 #define create_endpoint_tags(og, ...)                  \
 	({                                                 \
-		IPTR _tags[] = {__VA_ARGS__};                  \
+		IPTR _tags[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)}; \
 		create_endpoint(og, (struct TagItem *)&_tags); \
 	})
 void delete_endpoint(endpoint *);

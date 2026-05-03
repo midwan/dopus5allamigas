@@ -811,7 +811,6 @@ typedef struct
 #define DRAGF_FREE (1 << 8)
 #define DRAGF_CUSTOM (1 << 9)	 // Custom rendering
 #define DRAGF_NO_MASK (1 << 10)	 // No masking
-#define DRAGF_FORCE_CUSTOM (1 << 11)	 // Ignore the user custom-drag disable for this drag
 
 #define DRAGF_NEED_GELS (1 << 0)  // Need GELs initialised
 #define DRAGF_REMOVE (1 << 0)	  // Remove only
@@ -951,7 +950,7 @@ typedef struct _GL_Object
 			struct Gadget *context;	 // Context data for the gadget
 			struct Gadget *gadget;	 // The gadget itself
 			int components;			 // Number of component gadgets
-			LONG data;				 // Some data for the gadget
+			IPTR data;				 // Some data for the gadget
 			short choice_max;		 // Number of choices
 			short choice_min;		 // Minimum choice
 			struct Image *image;	 // Gadget image
@@ -983,7 +982,7 @@ typedef struct _GL_Object
 	char *original_text;  // Original text string
 	char fg, bg;		  // Current pen colours
 
-	ULONG data_ptr;	 // Pointer to other data
+	IPTR data_ptr;	 // Pointer to other data
 
 	struct TagItem *tags;  // Copy of tags
 
@@ -1068,14 +1067,14 @@ typedef struct _WindowData
 	struct NewMenu *new_menu;		// NewMenu structure allocated
 	struct Menu *menu_strip;		// Menu strip allocated
 	struct Requester *busy_req;		// Window busy requester
-	ULONG data;						// Window-specific data
+	IPTR data;						// Window-specific data
 	ULONG flags;					// Flags
 	APTR memory;					// User memory chain, freed when window closes
 
 	ULONG pad;
 	struct FontRequester *font_request;	 // Window's font requester
 
-	ULONG userdata;
+	IPTR userdata;
 	struct TagItem *user_tags;
 
 	struct List boopsi_list;  // BOOPSI list
@@ -1299,7 +1298,7 @@ typedef struct _Att_Node
 {
 	struct Node node;  // Node structure
 	Att_List *list;	   // Pointer to list (inefficient!)
-	ULONG data;		   // User data
+	IPTR data;		   // User data
 } Att_Node;
 
 #define ADDNODE_SORT 1		 // Sort names
@@ -1326,7 +1325,7 @@ typedef struct
 	struct Message dn_Msg;
 	ULONG dn_Type;
 	ULONG dn_UserData;
-	ULONG dn_Data;
+	IPTR dn_Data;
 	ULONG dn_Flags;
 	struct FileInfoBlock *dn_Fib;
 	char dn_Name[1];
@@ -1368,8 +1367,8 @@ typedef struct
 typedef struct
 {
 	struct Message msg;	  // Exec message
-	ULONG command;		  // Message command
-	ULONG flags;		  // Message flags
+	IPTR command;		  // Message command/result
+	IPTR flags;			  // Message flags
 	APTR data;			  // Message data
 	APTR data_free;		  // Data to be FreeVec()ed automatically
 	struct _IPC *sender;  // Sender IPC
@@ -1506,7 +1505,7 @@ enum {
 typedef struct
 {
 	struct MinNode node;
-	char *item_name;  // Menu item name
+	IPTR item_name;	  // Menu item name or locale string ID
 	UWORD id;		  // Menu ID
 	UWORD flags;	  // Menu item flags
 	APTR data;		  // Menu item data
@@ -1523,7 +1522,7 @@ typedef struct
 #define POPUPF_IMAGE (1 << 6)	  // Image is supplied
 #define POPUPF_USERDATA (1 << 7)  // UserData is present
 
-#define POPUP_BARLABEL (char *)-1
+#define POPUP_BARLABEL (IPTR)-1
 
 #define POPUP_HELPFLAG (1 << 15)  // Set if help key pressed
 
@@ -1532,7 +1531,7 @@ typedef struct
 	struct MinList item_list;	 // List of menu items
 	struct DOpusLocale *locale;	 // Locale data
 	ULONG flags;				 // Flags
-	ULONG userdata;				 // User data
+	IPTR userdata;				 // User data
 	REF_CALLBACK callback;		 // Refresh callback
 	struct TextFont *font;		 // Font to use
 	struct Hook *backfill;		 // Backfill hook
@@ -1782,8 +1781,8 @@ typedef struct
 	struct MinNode node;
 	ULONG type;	 // Type of entry
 
-	ULONG id;		 // ID
-	ULONG userdata;	 // User data
+	IPTR id;		 // ID
+	IPTR userdata;	 // User data
 
 	APTR object;		   // Type-specific object
 	char *text;			   // If text is needed
@@ -1877,7 +1876,7 @@ typedef struct _DOpusAppMessage
 	Point *da_DropPos;
 	Point da_DragOffset;
 	ULONG da_Flags;
-	ULONG da_Pad[2];
+	IPTR da_Custom[4];
 } DOpusAppMessage;
 
 #define DAPPF_ICON_DROP (1 << 16)  // Dropped with icon
@@ -1939,8 +1938,8 @@ typedef struct
 	struct RDArgs *FA_RDArgs;	  // RDArgs structure
 	struct RDArgs *FA_RDArgsRes;  // Return from ReadArgs()
 	char *FA_ArgString;			  // Copy of argument string (with newline)
-	LONG *FA_ArgArray;			  // Argument array pointer
-	LONG *FA_Arguments;			  // Argument array you should use
+	IPTR *FA_ArgArray;			  // Argument array pointer
+	IPTR *FA_Arguments;			  // Argument array you should use
 	short FA_Count;				  // Number of arguments
 	short FA_DoneArgs;			  // DOpus uses this flag for its own purposes
 } FuncArgs;
@@ -2057,16 +2056,16 @@ typedef struct
 // SETS - Settings
 typedef struct
 {
-	unsigned long copy_flags;		// Copy flags
-	unsigned long delete_flags;		// Delete flags
-	unsigned long error_flags;		// Error flags
-	unsigned long general_flags;	// General flags
-	unsigned long icon_flags;		// Icon flags
+	ULONG copy_flags;		// Copy flags
+	ULONG delete_flags;		// Delete flags
+	ULONG error_flags;		// Error flags
+	ULONG general_flags;	// General flags
+	ULONG icon_flags;		// Icon flags
 	unsigned short replace_method;	// Replace method
 	unsigned short replace_flags;	// Replace flags
-	unsigned long update_flags;		// Update flags
-	unsigned long dir_flags;		// Directory flags
-	unsigned long view_flags;		// View flags
+	ULONG update_flags;		// Update flags
+	ULONG dir_flags;		// Directory flags
+	ULONG view_flags;		// View flags
 	unsigned char hide_method;		// Hide method
 	unsigned char pad1;
 	unsigned short pad2;
@@ -2075,7 +2074,7 @@ typedef struct
 	unsigned short date_flags;		  // Date flags
 	char pri_main[2];				  // Main priority
 	char pri_lister[2];				  // Lister priority
-	unsigned long flags;
+	ULONG flags;
 	UWORD pop_code;
 	UWORD pop_qual;
 	UWORD pop_qual_mask;
@@ -2084,7 +2083,7 @@ typedef struct
 	short max_openwith;
 	short command_line_length;
 	short max_filename;
-	unsigned long pad[16];
+	ULONG pad[16];
 } CFG_SETS;
 
 // Sort format
@@ -2219,7 +2218,7 @@ typedef struct
 	char output_window[80];	 // Output window
 	char output_device[80];	 // Output device
 
-	unsigned long default_stack;  // Default stack size
+	ULONG default_stack;  // Default stack size
 
 	/*
 		char		scr_title_text[120];	// Screen title text
@@ -2257,7 +2256,7 @@ typedef struct
 
 	char env_NewIconsPrecision;
 
-	unsigned long desktop_flags;
+	ULONG desktop_flags;
 
 	unsigned char iconw_fpen;
 	unsigned char iconw_bpen;
@@ -2364,7 +2363,7 @@ struct AllocBitmapPatchNode
 #define HFFS_SELECTED (TAG_USER + 0x6)	  // BOOL			- Selected state
 #define HFFS_LINK (TAG_USER + 0x7)		  // BOOL			- Set if a link
 #define HFFS_COLOUR (TAG_USER + 0x8)	  // ULONG		- 1 = device, 2 = assign
-#define HFFS_USERDATA (TAG_USER + 0x9)	  // ULONG		- Userdata
+#define HFFS_USERDATA (TAG_USER + 0x9)	  // IPTR		- Userdata
 #define HFFS_FILETYPE (TAG_USER + 0xa)	  // char *		- Filetype description
 #define HFFS_DISPLAY (TAG_USER + 0xb)	  // char *		- Custom display string
 #define HFFS_VERSION (TAG_USER + 0xc)	  // VersionInfo *	- Version information
@@ -2475,43 +2474,43 @@ typedef struct
 	UWORD dc_Count;
 
 	// Create a file entry
-	APTR ASM (*dc_CreateFileEntry)(REG(a0, ULONG lister), REG(a1, struct FileInfoBlock *fib), REG(d0, BPTR lock));
+	APTR ASM (*dc_CreateFileEntry)(REG(a0, APTR lister), REG(a1, struct FileInfoBlock *fib), REG(d0, BPTR lock));
 
 	// Change parameters of a file entry
-	VOID ASM (*dc_FileSet)(REG(a0, ULONG lister), REG(a1, APTR entry), REG(a2, struct TagItem *tags));
+	VOID ASM (*dc_FileSet)(REG(a0, APTR lister), REG(a1, APTR entry), REG(a2, struct TagItem *tags));
 
 	// Sort list of entries into a lister
-	VOID ASM (*dc_SortFileList)(REG(a0, ULONG lister),
+	VOID ASM (*dc_SortFileList)(REG(a0, APTR lister),
 								REG(a1, struct List *list),
 								REG(d0, long file_count),
 								REG(d1, long dir_count));
 
 	// Add single entry to a lister
-	APTR ASM (*dc_AddFileEntry)(REG(a0, ULONG lister), REG(a1, APTR entry), REG(d0, BOOL sort));
+	APTR ASM (*dc_AddFileEntry)(REG(a0, APTR lister), REG(a1, APTR entry), REG(d0, BOOL sort));
 
 	// Resort a lister
-	VOID ASM (*dc_ResortLister)(REG(a0, ULONG lister), REG(a1, struct ListFormat *format));
+	VOID ASM (*dc_ResortLister)(REG(a0, APTR lister), REG(a1, struct ListFormat *format));
 
 	// Refresh a lister
-	VOID ASM (*dc_RefreshLister)(REG(a0, ULONG lister), REG(d0, ULONG flags));
+	VOID ASM (*dc_RefreshLister)(REG(a0, APTR lister), REG(d0, ULONG flags));
 
 	// Lock lister file list
-	VOID ASM (*dc_LockFileList)(REG(a0, ULONG lister), REG(d0, BOOL exclusive));
+	VOID ASM (*dc_LockFileList)(REG(a0, APTR lister), REG(d0, BOOL exclusive));
 
 	// Unlock file list
-	VOID ASM (*dc_UnlockFileList)(REG(a0, ULONG lister));
+	VOID ASM (*dc_UnlockFileList)(REG(a0, APTR lister));
 
 	// Find entry in a lister by name
-	APTR ASM (*dc_FindFileEntry)(REG(a0, ULONG lister), REG(a1, char *name));
+	APTR ASM (*dc_FindFileEntry)(REG(a0, APTR lister), REG(a1, char *name));
 
 	// Change comment of an entry
-	BOOL ASM (*dc_SetFileComment)(REG(a0, ULONG lister), REG(a1, char *name), REG(a2, char *comment));
+	BOOL ASM (*dc_SetFileComment)(REG(a0, APTR lister), REG(a1, char *name), REG(a2, char *comment));
 
 	// Remove file entry from a lister
-	VOID ASM (*dc_RemoveFileEntry)(REG(a0, ULONG lister), REG(a1, APTR entry));
+	VOID ASM (*dc_RemoveFileEntry)(REG(a0, APTR lister), REG(a1, APTR entry));
 
 	// Query file entry
-	BOOL ASM (*dc_FileQuery)(REG(a0, ULONG lister), REG(a1, APTR entry), REG(a2, struct TagItem *tags));
+	BOOL ASM (*dc_FileQuery)(REG(a0, APTR lister), REG(a1, APTR entry), REG(a2, struct TagItem *tags));
 
 	// Show help
 	void ASM (*dc_ShowHelp)(REG(a0, char *file_name), REG(a1, char *node_name));
@@ -2520,7 +2519,7 @@ typedef struct
 	APTR ASM (*dc_ConvertEntry)(REG(a0, APTR entry));
 
 	// Get lister pointer from a path handle
-	ULONG ASM (*dc_GetLister)(REG(a0, APTR path));
+	APTR ASM (*dc_GetLister)(REG(a0, APTR path));
 
 	// Get first source lister
 	APTR ASM (*dc_GetSource)(REG(a0, APTR handle), REG(a1, char *path));
@@ -2544,7 +2543,7 @@ typedef struct
 	APTR ASM (*dc_GetEntry)(REG(a0, APTR handle));
 
 	// Examine an entry
-	ULONG ASM (*dc_ExamineEntry)(REG(a0, APTR entry), REG(d0, long type));
+	IPTR ASM (*dc_ExamineEntry)(REG(a0, APTR entry), REG(d0, long type));
 
 	// End use of an entry
 	void ASM (*dc_EndEntry)(REG(a0, APTR handle), REG(a1, APTR entry), REG(d0, BOOL deselect));
@@ -2562,10 +2561,10 @@ typedef struct
 	void ASM (*dc_AddFile)(REG(a0, APTR handle),
 						   REG(a1, char *path),
 						   REG(a2, struct FileInfoBlock *fib),
-						   REG(a3, ULONG lister));
+						   REG(a3, APTR lister));
 
 	// Delete a file from a lister
-	void ASM (*dc_DelFile)(REG(a0, APTR handle), REG(a1, char *path), REG(a2, char *name), REG(a3, ULONG lister));
+	void ASM (*dc_DelFile)(REG(a0, APTR handle), REG(a1, char *path), REG(a2, char *name), REG(a3, APTR lister));
 
 	// Load/reload a file in a lister
 	void ASM (*dc_LoadFile)(REG(a0, APTR handle),
@@ -2777,7 +2776,7 @@ typedef signed long long QUAD;
 #endif
 
 // 64-bit FIB
-#ifdef __MORPHOS__
+#if defined(__MORPHOS__) || defined(__AROS__)
 typedef struct FileInfoBlock FileInfoBlock64;
 #else
 // added a _s suffix, since AROS might use struct FileInfoBlock64 in the future
@@ -2801,7 +2800,11 @@ typedef struct FileInfoBlock64_s
 
 // Returns file size from FIB pointer
 #ifdef USE_64BIT
-	#define GETFIBSIZE(fib) (((FileInfoBlock64 *)(fib))->fib_Size64)
+	#ifdef __AROS__
+		#define GETFIBSIZE(fib) (((FileInfoBlock64 *)(fib))->fib_Size)
+	#else
+		#define GETFIBSIZE(fib) (((FileInfoBlock64 *)(fib))->fib_Size64)
+	#endif
 #else
 	#define GETFIBSIZE(fib) ((fib)->fib_Size)
 #endif

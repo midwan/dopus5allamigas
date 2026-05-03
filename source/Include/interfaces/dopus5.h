@@ -170,8 +170,8 @@ struct DOpusIFace
 	void APICALL (*RefreshObjectList)(struct DOpusIFace *Self, struct Window *window, ObjectList *list);
 	GL_Object *APICALL (*GetObject)(struct DOpusIFace *Self, ObjectList *list, int id);
 	void APICALL (*StoreGadgetValue)(struct DOpusIFace *Self, ObjectList *list, struct IntuiMessage *msg);
-	void APICALL (*SetGadgetValue)(struct DOpusIFace *Self, ObjectList *list, UWORD id, ULONG value);
-	long APICALL (*GetGadgetValue)(struct DOpusIFace *Self, ObjectList *list, UWORD id);
+	void APICALL (*SetGadgetValue)(struct DOpusIFace *Self, ObjectList *list, UWORD id, IPTR value);
+	IPTR APICALL (*GetGadgetValue)(struct DOpusIFace *Self, ObjectList *list, UWORD id);
 	void APICALL (*SetObjectKind)(struct DOpusIFace *Self, ObjectList *list, ULONG id, UWORD kind);
 	void APICALL (*SetGadgetChoices)(struct DOpusIFace *Self, ObjectList *list, ULONG id, APTR choices);
 	BOOL APICALL (*CheckObjectArea)(struct DOpusIFace *Self, GL_Object *object, int x, int y);
@@ -196,14 +196,14 @@ struct DOpusIFace
 	ULONG APICALL (*GetWindowID)(struct DOpusIFace *Self, struct Window *window);
 	struct MsgPort *APICALL (*GetWindowAppPort)(struct DOpusIFace *Self, struct Window *window);
 	Att_List *APICALL (*Att_NewList)(struct DOpusIFace *Self, ULONG flags);
-	Att_Node *APICALL (*Att_NewNode)(struct DOpusIFace *Self, Att_List *list, char *name, ULONG data, ULONG flags);
+	Att_Node *APICALL (*Att_NewNode)(struct DOpusIFace *Self, Att_List *list, char *name, IPTR data, ULONG flags);
 	void APICALL (*Att_RemNode)(struct DOpusIFace *Self, Att_Node *node);
 	void APICALL (*Att_PosNode)(struct DOpusIFace *Self, Att_List *list, Att_Node *node, Att_Node *before);
 	void APICALL (*Att_RemList)(struct DOpusIFace *Self, Att_List *list, long flags);
 	Att_Node *APICALL (*Att_FindNode)(struct DOpusIFace *Self, Att_List *list, long number);
 	long APICALL (*Att_NodeNumber)(struct DOpusIFace *Self, Att_List *list, char *name);
-	Att_Node *APICALL (*Att_FindNodeData)(struct DOpusIFace *Self, Att_List *list, ULONG data);
-	long APICALL (*Att_NodeDataNumber)(struct DOpusIFace *Self, Att_List *list, ULONG data);
+	Att_Node *APICALL (*Att_FindNodeData)(struct DOpusIFace *Self, Att_List *list, IPTR data);
+	long APICALL (*Att_NodeDataNumber)(struct DOpusIFace *Self, Att_List *list, IPTR data);
 	char *APICALL (*Att_NodeName)(struct DOpusIFace *Self, Att_List *list, long number);
 	long APICALL (*Att_NodeCount)(struct DOpusIFace *Self, Att_List *list);
 	void APICALL (*Att_ChangeNodeName)(struct DOpusIFace *Self, Att_Node *node, char *name);
@@ -215,37 +215,37 @@ struct DOpusIFace
 		*DoPopUpMenu)(struct DOpusIFace *Self, struct Window *window, PopUpMenu *menu, PopUpItem **item, UWORD code);
 	PopUpItem *APICALL (*GetPopUpItem)(struct DOpusIFace *Self, PopUpMenu *menu, UWORD id);
 	int APICALL (*IPC_Startup)(struct DOpusIFace *Self, IPCData *ipc, APTR data, struct MsgPort *reply);
-	ULONG APICALL (*IPC_Command)(struct DOpusIFace *Self,
-								 IPCData *ipc,
-								 ULONG command,
-								 ULONG flags,
-								 APTR data,
-								 APTR data_free,
-								 struct MsgPort *reply);
+	IPTR APICALL (*IPC_Command)(struct DOpusIFace *Self,
+								IPCData *ipc,
+								ULONG command,
+								IPTR flags,
+								APTR data,
+								APTR data_free,
+								struct MsgPort *reply);
 	void APICALL (*IPC_Reply)(struct DOpusIFace *Self, IPCMessage *msg);
 	void APICALL (*IPC_Free)(struct DOpusIFace *Self, IPCData *ipc);
-	IPCData *APICALL (*IPC_FindProc)(struct DOpusIFace *Self, struct ListLock *list, char *name, BOOL act, ULONG data);
+	IPCData *APICALL (*IPC_FindProc)(struct DOpusIFace *Self, struct ListLock *list, char *name, BOOL act, IPTR data);
 	void APICALL (*IPC_Quit)(struct DOpusIFace *Self, IPCData *ipc, ULONG flags, BOOL wait);
 	void APICALL (*IPC_Hello)(struct DOpusIFace *Self, IPCData *ipc, IPCData *owner);
 	void APICALL (*IPC_Goodbye)(struct DOpusIFace *Self, IPCData *ipc, IPCData *owner, ULONG flags);
-	ULONG APICALL (*IPC_GetGoodbye)(struct DOpusIFace *Self, IPCMessage *msg);
+	IPTR APICALL (*IPC_GetGoodbye)(struct DOpusIFace *Self, IPCMessage *msg);
 	ULONG APICALL (
 		*IPC_ListQuit)(struct DOpusIFace *Self, struct ListLock *list, IPCData *owner, ULONG flags, BOOL wait);
 	void APICALL (*IPC_Flush)(struct DOpusIFace *Self, IPCData *port);
 	void APICALL (*IPC_ListCommand)(struct DOpusIFace *Self,
 									struct ListLock *list,
 									ULONG command,
-									ULONG flags,
-									ULONG data,
+									IPTR flags,
+									IPTR data,
 									BOOL wait);
-	IPCData *APICALL (*IPC_ProcStartup)(struct DOpusIFace *Self, ULONG *data, ULONG (*code)(IPCData *, APTR));
+	IPCData *APICALL (*IPC_ProcStartup)(struct DOpusIFace *Self, IPTR *data, ULONG (*code)(IPCData *, APTR));
 	int APICALL (*IPC_Launch)(struct DOpusIFace *Self,
 							  struct ListLock *list,
 							  IPCData **ipc,
 							  char *name,
-							  ULONG entry,
+							  IPTR entry,
 							  ULONG stack,
-							  ULONG data,
+							  IPTR data,
 							  struct Library *dos);
 	APTR APICALL (*OpenImage)(struct DOpusIFace *Self, char *name, OpenImageInfo *info);
 	void APICALL (*CloseImage)(struct DOpusIFace *Self, APTR image);
@@ -356,8 +356,8 @@ struct DOpusIFace
 	void APICALL (*WB_Install_Patch)(struct DOpusIFace *Self);
 	BOOL APICALL (*WB_Remove_Patch)(struct DOpusIFace *Self);
 	struct AppWindow *APICALL (*WB_AddAppWindow)(struct DOpusIFace *Self,
-												 ULONG id,
-												 ULONG data,
+												 IPTR id,
+												 IPTR data,
 												 struct Window *window,
 												 struct MsgPort *port,
 												 struct TagItem *tags);
@@ -365,8 +365,8 @@ struct DOpusIFace
 	struct AppWindow *APICALL (*WB_FindAppWindow)(struct DOpusIFace *Self, struct Window *window);
 	struct MsgPort *APICALL (*WB_AppWindowData)(struct DOpusIFace *Self,
 												struct AppWindow *window,
-												ULONG *id,
-												ULONG *userdata);
+												IPTR *id,
+												IPTR *userdata);
 	BOOL APICALL (*WB_AppWindowLocal)(struct DOpusIFace *Self, struct AppWindow *window);
 	APTR APICALL (*LockAppList)(struct DOpusIFace *Self);
 	APTR APICALL (*NextAppEntry)(struct DOpusIFace *Self, APTR last, ULONG type);
@@ -375,7 +375,7 @@ struct DOpusIFace
 	void APICALL (*RemoveNotifyRequest)(struct DOpusIFace *Self, APTR node);
 	void APICALL (*SendNotifyMsg)(struct DOpusIFace *Self,
 								  ULONG type,
-								  ULONG data,
+								  IPTR data,
 								  ULONG flags,
 								  short wait,
 								  char *name,
@@ -571,14 +571,14 @@ struct DOpusIFace
 	BOOL APICALL (*OriginalRelabel)(struct DOpusIFace *Self, char *dev, char *name);
 	ILBMHandle *APICALL (
 		*FakeILBM)(struct DOpusIFace *Self, UWORD *data, ULONG *pal, short w, short h, short d, ULONG flags);
-	ULONG APICALL (*IPC_SafeCommand)(struct DOpusIFace *Self,
-									 IPCData *ipc,
-									 ULONG command,
-									 ULONG flags,
-									 APTR data,
-									 APTR data_free,
-									 struct MsgPort *reply,
-									 struct ListLock *list);
+	IPTR APICALL (*IPC_SafeCommand)(struct DOpusIFace *Self,
+									IPCData *ipc,
+									ULONG command,
+									IPTR flags,
+									APTR data,
+									APTR data_free,
+									struct MsgPort *reply,
+									struct ListLock *list);
 	void APICALL (*ClearFiletypeCache)(struct DOpusIFace *Self);
 	struct Library *APICALL (*GetTimerBase)(struct DOpusIFace *Self);
 	BOOL APICALL (*InitDragDBuf)(struct DOpusIFace *Self, DragInfo *drag);
@@ -643,12 +643,12 @@ struct DOpusIFace
 	struct Window *APICALL (*WB_AppWindowWindow)(struct DOpusIFace *Self, struct AppWindow *appwindow);
 	BOOL APICALL (*OpenEnvironment)(struct DOpusIFace *Self, char *name, struct OpenEnvironmentData *data);
 	PopUpHandle *APICALL (*PopUpNewHandle)(struct DOpusIFace *Self,
-										   ULONG data,
+										   IPTR data,
 										   ULONG (*callback)(ULONG, APTR, APTR),
 										   struct DOpusLocale *locale);
 	void APICALL (*PopUpFreeHandle)(struct DOpusIFace *Self, PopUpHandle *handle);
 	PopUpItem *APICALL (
-		*PopUpNewItem)(struct DOpusIFace *Self, PopUpHandle *handle, ULONG string, ULONG id, ULONG flags);
+		*PopUpNewItem)(struct DOpusIFace *Self, PopUpHandle *handle, IPTR string, ULONG id, ULONG flags);
 	void APICALL (*PopUpSeparator)(struct DOpusIFace *Self, PopUpHandle *handle);
 	BOOL APICALL (*PopUpItemSub)(struct DOpusIFace *Self, PopUpHandle *handle, PopUpItem *item);
 	void APICALL (*PopUpEndSub)(struct DOpusIFace *Self, PopUpHandle *handle);

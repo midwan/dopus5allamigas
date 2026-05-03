@@ -25,14 +25,6 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopus.h"
 
-#if defined(__amigaos3__)
-static void display_set_iconlib_screen(struct Screen *screen)
-{
-	if (IconBase && IconBase->lib_Version >= 44)
-		IconControl(NULL, ICONCTRLA_SetGlobalScreen, screen, TAG_DONE);
-}
-#endif
-
 // Open the display
 BOOL display_open(long flags)
 {
@@ -66,6 +58,9 @@ BOOL display_open(long flags)
 		environment->env->screen_mode != MODE_PUBLICSCREEN)
 	{
 		UWORD pens[1];
+		UWORD *screen_pens = pens;
+		struct Screen *workbench_screen = 0;
+		struct DrawInfo *workbench_draw_info = 0;
 
 		// Screen mode
 		ULONG screen_mode;
@@ -73,13 +68,12 @@ BOOL display_open(long flags)
 		// Workbench clone?
 		if (environment->env->screen_mode == MODE_WORKBENCHCLONE)
 		{
-			struct Screen *wbscreen;
-
 			// Get Workbench screen
-			if ((wbscreen = LockPubScreen("Workbench")))
+			if (!(workbench_screen = LockPubScreen("Workbench")))
+				workbench_screen = LockPubScreen(0);
+			if (workbench_screen)
 			{
-				screen_mode = GetVPModeID(&wbscreen->ViewPort);
-				UnlockPubScreen(0, wbscreen);
+				screen_mode = GetVPModeID(&workbench_screen->ViewPort);
 			}
 			else
 				screen_mode = HIRES_KEY;
@@ -89,6 +83,9 @@ BOOL display_open(long flags)
 
 		// Initialise pen array
 		pens[0] = (UWORD)~0;
+		if (workbench_screen && (workbench_draw_info = GetScreenDrawInfo(workbench_screen)) &&
+			workbench_draw_info->dri_Pens)
+			screen_pens = workbench_draw_info->dri_Pens;
 
 		// Want a font?
 		if (environment->env->font_name[FONT_SCREEN][0] && environment->env->font_size[FONT_SCREEN] > 4)
@@ -115,6 +112,16 @@ BOOL display_open(long flags)
 			0,
 			SA_LikeWorkbench,
 			TRUE,
+#if defined(SA_OffscreenDragging)
+			SA_OffscreenDragging,
+			TRUE,
+#elif defined(SA_OFFSCREENDRAGGING)
+			SA_OFFSCREENDRAGGING,
+			TRUE,
+#elif defined(SA_OffScreenDragging)
+			SA_OffScreenDragging,
+			TRUE,
+#endif
 			SA_Width,
 			(environment->env->screen_flags & SCRFLAGS_DEFWIDTH) ? STDSCREENWIDTH : environment->env->screen_width,
 			SA_Height,
@@ -128,7 +135,7 @@ BOOL display_open(long flags)
 			SA_DisplayID,
 			screen_mode,
 			SA_PubName,
-			(ULONG)GUI->rexx_port_name,
+			(IPTR)GUI->rexx_port_name,
 			SA_AutoScroll,
 			TRUE,
 			SA_Interleaved,
@@ -136,12 +143,17 @@ BOOL display_open(long flags)
 			SA_SharePens,
 			TRUE,
 			(font) ? SA_Font : SA_SysFont,
-			(font) ? (ULONG)&GUI->screen_font : 1,
+			(font) ? (IPTR)&GUI->screen_font : 1,
 			SA_Pens,
-			(ULONG)pens,
+			(IPTR)screen_pens,
 			SA_PubSig,
 			GUI->screen_signal,
 			TAG_END);
+
+		if (workbench_draw_info)
+			FreeScreenDrawInfo(workbench_screen, workbench_draw_info);
+		if (workbench_screen)
+			UnlockPubScreen(0, workbench_screen);
 
 		// Had a font?
 		if (font)
@@ -157,7 +169,9 @@ BOOL display_open(long flags)
 			GUI->screen_pointer = GUI->screen;
 
 			// Load palette
+#ifndef __AROS__
 			load_screen_palette();
+#endif
 
 			// Default public screen?
 			if (GUI->flags & GUIF_DEFPUBSCR)
@@ -170,7 +184,7 @@ BOOL display_open(long flags)
 			super_request_args(0,
 							   GetString(&locale, MSG_UNABLE_TO_OPEN_SCREEN),
 							   SRF_SCREEN_PARENT,
-							   GetString(&locale, MSG_CONTINUE),
+							   (IPTR)GetString(&locale, MSG_CONTINUE),
 							   0);
 		}
 	}
@@ -397,10 +411,6 @@ BOOL display_open(long flags)
 			if (!GUI->draw_info)
 				GUI->draw_info = GetScreenDrawInfo(GUI->screen_pointer);
 
-#if defined(__amigaos3__)
-			display_set_iconlib_screen(GUI->screen_pointer);
-#endif
-
 			// Turn on appicon notification
 			SetNotifyRequest(GUI->notify_req, DN_APP_ICON_LIST, DN_APP_ICON_LIST);
 
@@ -408,7 +418,7 @@ BOOL display_open(long flags)
 			backdrop_init_info(GUI->backdrop, GUI->window, 0);
 
 			// Try to add AppWindow
-			GUI->appwindow = AddAppWindowA(WINDOW_BACKDROP, (ULONG)&main_ipc, GUI->window, GUI->appmsg_port, 0);
+			GUI->appwindow = AddAppWindowA(WINDOW_BACKDROP, (IPTR)&main_ipc, GUI->window, GUI->appmsg_port, 0);
 
 			// Set menu
 			display_reset_menus(1, 0);
@@ -452,7 +462,7 @@ BOOL display_open(long flags)
 	if (!(IPC_FindProc(&GUI->process_list, NAME_CLOCK, 0, 0)))
 	{
 		// Launch clock
-		IPC_Launch(&GUI->process_list, 0, NAME_CLOCK, (ULONG)&clock_proc, STACK_DEFAULT, 0, (struct Library *)DOSBase);
+		IPC_Launch(&GUI->process_list, 0, NAME_CLOCK, (IPTR)&clock_proc, STACK_DEFAULT, 0, (struct Library *)DOSBase);
 	}
 
 	// Remap lister and button icons
@@ -460,10 +470,10 @@ BOOL display_open(long flags)
 	RemapIcon(GUI->button_icon, GUI->window->WScreen, FALSE);
 
 	// Open buttons
-	IPC_ListCommand(&GUI->buttons_list, BUTTONS_OPEN, 0, (ULONG)GUI->screen_pointer, 0);
+	IPC_ListCommand(&GUI->buttons_list, BUTTONS_OPEN, 0, (IPTR)GUI->screen_pointer, 0);
 
 	// Open StartMenus
-	IPC_ListCommand(&GUI->startmenu_list, IPC_SHOW, 0, (ULONG)GUI->screen_pointer, 0);
+	IPC_ListCommand(&GUI->startmenu_list, IPC_SHOW, 0, (IPTR)GUI->screen_pointer, 0);
 
 	// Tile listers?
 	if (environment->env->flags & ENVRF_AUTO_TILE)
@@ -476,15 +486,15 @@ BOOL display_open(long flags)
 	}
 
 	// Open listers and groups
-	IPC_ListCommand(&GUI->lister_list, LISTER_INIT, 0, (ULONG)GUI->screen_pointer, 0);
-	IPC_ListCommand(&GUI->group_list, IPC_SHOW, 0, (ULONG)GUI->screen_pointer, 0);
+	IPC_ListCommand(&GUI->lister_list, LISTER_INIT, 0, (IPTR)GUI->screen_pointer, 0);
+	IPC_ListCommand(&GUI->group_list, IPC_SHOW, 0, (IPTR)GUI->screen_pointer, 0);
 
 	// Tell all processes to show themselves
-	IPC_ListCommand(&GUI->process_list, IPC_SHOW, 0, (ULONG)GUI->screen_pointer, FALSE);
-	IPC_ListCommand(&GUI->function_list, IPC_SHOW, 0, (ULONG)GUI->screen_pointer, FALSE);
+	IPC_ListCommand(&GUI->process_list, IPC_SHOW, 0, (IPTR)GUI->screen_pointer, FALSE);
+	IPC_ListCommand(&GUI->function_list, IPC_SHOW, 0, (IPTR)GUI->screen_pointer, FALSE);
 
 	// Broadcast notify message
-	SendNotifyMsg(DN_OPUS_SHOW, (ULONG)GUI->window, 0, 0, 0, 0);
+	SendNotifyMsg(DN_OPUS_SHOW, (IPTR)GUI->window, 0, 0, 0, 0);
 
 	// Check source/destination
 	lister_smart_source(0);
@@ -498,6 +508,11 @@ BOOL display_open(long flags)
 
 	// Clear busy pointer
 	ClearPointer(GUI->window);
+
+	/*	// V44 icon stuff
+		if (IconBase->lib_Version>=44)
+			IconControl(NULL,ICONCTRLA_SetGlobalScreen,GUI->screen_pointer,TAG_DONE);
+	*/
 
 	// Success
 	return 1;
@@ -541,10 +556,21 @@ void close_display(int close_flags, BOOL quit_all)
 		else
 			IPC_ListCommand(&GUI->startmenu_list, IPC_HIDE, 0, 0, TRUE);
 
-		// Tell all processes to hide
-		IPC_ListCommand(&GUI->process_list, IPC_HIDE, 0, 0, FALSE);
-		IPC_ListCommand(&GUI->group_list, IPC_HIDE, 0, 0, FALSE);
-		IPC_ListCommand(&GUI->function_list, IPC_HIDE, 0, 0, FALSE);
+		// Tell all other child processes to close before we try to close the screen
+		if (quit_all && (GUI->flags & GUIF_PENDING_QUIT))
+		{
+			IPC_ListQuit(&GUI->process_list, &main_ipc, 0, TRUE);
+			IPC_ListQuit(&GUI->group_list, &main_ipc, 0, TRUE);
+			IPC_ListQuit(&GUI->function_list, &main_ipc, 0, TRUE);
+		}
+
+		// Or just hide them if the display is being closed temporarily
+		else
+		{
+			IPC_ListCommand(&GUI->process_list, IPC_HIDE, 0, 0, FALSE);
+			IPC_ListCommand(&GUI->group_list, IPC_HIDE, 0, 0, FALSE);
+			IPC_ListCommand(&GUI->function_list, IPC_HIDE, 0, 0, FALSE);
+		}
 
 		// Broadcast notify message
 		SendNotifyMsg(DN_OPUS_HIDE, 0, 0, 0, 0, 0);
@@ -634,9 +660,10 @@ void close_display(int close_flags, BOOL quit_all)
 	if (screen_lock)
 		UnlockPubScreen(0, screen_lock);
 
-#if defined(__amigaos3__)
-	display_set_iconlib_screen(NULL);
-#endif
+	/*
+		if (IconBase->lib_Version>=44)
+			IconControl(NULL,ICONCTRLA_SetGlobalScreen,NULL,TAG_DONE);
+	*/
 
 	// Close the screen?
 	if (close_flags & CLOSE_SCREEN)
@@ -680,23 +707,42 @@ void close_display(int close_flags, BOOL quit_all)
 				FreeTimer(handle);
 			}
 
-			// Loop until we can close it
-			while (GUI->screen)
+#ifdef __AROS__
+			// During final shutdown, do not trap the process behind a retry
+			// requester if AROS still reports the custom screen as busy.
+			if (quit_all && (GUI->flags & GUIF_PENDING_QUIT))
 			{
-				// Try to close screen
-				if (CloseScreen(GUI->screen))
-					break;
+				short tries;
 
-				// Put up requester
-				super_request_args(GUI->screen,
-								   GetString(&locale, MSG_UNABLE_TO_CLOSE_SCREEN),
-								   SRF_SCREEN_PARENT | SRF_SIGNAL,
-								   GUI->screen_signal,
-								   GetString(&locale, MSG_TRY_AGAIN),
-								   0);
+				for (tries = 0; tries < 20; tries++)
+				{
+					if (CloseScreen(GUI->screen))
+						break;
+					Delay(5);
+				}
 
-				// Clear signals
-				SetSignal(0, 1 << GUI->screen_signal);
+			}
+			else
+#endif
+			{
+				// Loop until we can close it
+				while (GUI->screen)
+				{
+					// Try to close screen
+					if (CloseScreen(GUI->screen))
+						break;
+
+					// Put up requester
+					super_request_args(GUI->screen,
+									   GetString(&locale, MSG_UNABLE_TO_CLOSE_SCREEN),
+									   SRF_SCREEN_PARENT | SRF_SIGNAL,
+									   GUI->screen_signal,
+									   (IPTR)GetString(&locale, MSG_TRY_AGAIN),
+									   0);
+
+					// Clear signals
+					SetSignal(0, 1 << GUI->screen_signal);
+				}
 			}
 		}
 
@@ -930,7 +976,7 @@ void hide_display(void)
 		if ((IPC_Launch(&GUI->process_list,
 						&ipc,
 						NAME_HIDDEN_CLOCK,
-						(ULONG)&clock_proc,
+						(IPTR)&clock_proc,
 						STACK_DEFAULT,
 						0,
 						(struct Library *)DOSBase)))

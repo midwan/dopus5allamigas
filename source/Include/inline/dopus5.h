@@ -217,11 +217,11 @@ typedef ULONG _sfdc_vararg;
       , DOPUS_BASE_NAME)
 
 #define SetGadgetValue(___list, ___id, ___value) \
-      LP3NR(0x144, SetGadgetValue , ObjectList *, ___list, a0, UWORD, ___id, d0, ULONG, ___value, d1,\
+      LP3NR(0x144, SetGadgetValue , ObjectList *, ___list, a0, UWORD, ___id, d0, IPTR, ___value, d1,\
       , DOPUS_BASE_NAME)
 
 #define GetGadgetValue(___list, ___id) \
-      LP2(0x14a, long, GetGadgetValue , ObjectList *, ___list, a0, UWORD, ___id, a1,\
+      LP2(0x14a, IPTR, GetGadgetValue , ObjectList *, ___list, a0, UWORD, ___id, a1,\
       , DOPUS_BASE_NAME)
 
 #define SetObjectKind(___list, ___id, ___kind) \
@@ -409,15 +409,15 @@ typedef ULONG _sfdc_vararg;
       , DOPUS_BASE_NAME)
 
 #define IPC_ListCommand(___list, ___command, ___flags, ___data, ___wait) \
-      LP5NR(0x264, IPC_ListCommand , struct ListLock *, ___list, a0, ULONG, ___command, d0, ULONG, ___flags, d1, ULONG, ___data, d2, BOOL, ___wait, d3,\
+      LP5NR(0x264, IPC_ListCommand , struct ListLock *, ___list, a0, ULONG, ___command, d0, ULONG, ___flags, d1, IPTR, ___data, d2, BOOL, ___wait, d3,\
       , DOPUS_BASE_NAME)
 
 #define IPC_ProcStartup(___data, ___code) \
-      LP2FP(0x26a, IPCData *, IPC_ProcStartup , ULONG *, ___data, a0, __fpt, ___code, a1,\
+      LP2FP(0x26a, IPCData *, IPC_ProcStartup , IPTR *, ___data, a0, __fpt, ___code, a1,\
       , DOPUS_BASE_NAME, ULONG (*__fpt)(IPCData *,APTR))
 
 #define IPC_Launch(___list, ___ipc, ___name, ___entry, ___stack, ___data, ___dos) \
-      LP7(0x270, int, IPC_Launch , struct ListLock *, ___list, a0, IPCData **, ___ipc, a1, char *, ___name, a2, ULONG, ___entry, d0, ULONG, ___stack, d1, ULONG, ___data, d2, struct Library *, ___dos, a3,\
+      LP7(0x270, int, IPC_Launch , struct ListLock *, ___list, a0, IPCData **, ___ipc, a1, char *, ___name, a2, IPTR, ___entry, d0, ULONG, ___stack, d1, IPTR, ___data, d2, struct Library *, ___dos, a3,\
       , DOPUS_BASE_NAME)
 
 #define OpenImage(___name, ___info) \
@@ -727,7 +727,7 @@ typedef ULONG _sfdc_vararg;
       , DOPUS_BASE_NAME)
 
 #define WB_AddAppWindow(___id, ___data, ___window, ___port, ___tags) \
-      LP5(0x432, struct AppWindow *, WB_AddAppWindow , ULONG, ___id, d0, ULONG, ___data, d1, struct Window *, ___window, a0, struct MsgPort *, ___port, a1, struct TagItem *, ___tags, a2,\
+      LP5(0x432, struct AppWindow *, WB_AddAppWindow , IPTR, ___id, d0, IPTR, ___data, d1, struct Window *, ___window, a0, struct MsgPort *, ___port, a1, struct TagItem *, ___tags, a2,\
       , DOPUS_BASE_NAME)
 
 #ifndef NO_INLINE_STDARG
@@ -744,7 +744,7 @@ typedef ULONG _sfdc_vararg;
       , DOPUS_BASE_NAME)
 
 #define WB_AppWindowData(___window, ___id, ___userdata) \
-      LP3(0x444, struct MsgPort *, WB_AppWindowData , struct AppWindow *, ___window, a0, ULONG *, ___id, a1, ULONG *, ___userdata, a2,\
+      LP3(0x444, struct MsgPort *, WB_AppWindowData , struct AppWindow *, ___window, a0, IPTR *, ___id, a1, IPTR *, ___userdata, a2,\
       , DOPUS_BASE_NAME)
 
 #define WB_AppWindowLocal(___window) \
@@ -772,7 +772,7 @@ typedef ULONG _sfdc_vararg;
       , DOPUS_BASE_NAME)
 
 #define SendNotifyMsg(___type, ___data, ___flags, ___wait, ___name, ___fib) \
-      LP6NR(0x46e, SendNotifyMsg , ULONG, ___type, d0, ULONG, ___data, d1, ULONG, ___flags, d2, short, ___wait, d3, char *, ___name, a0, struct FileInfoBlock *, ___fib, a1,\
+      LP6NR(0x46e, SendNotifyMsg , ULONG, ___type, d0, IPTR, ___data, d1, ULONG, ___flags, d2, short, ___wait, d3, char *, ___name, a0, struct FileInfoBlock *, ___fib, a1,\
       , DOPUS_BASE_NAME)
 
 #define StrCombine(___s1, ___s2, ___s3, ___len) \

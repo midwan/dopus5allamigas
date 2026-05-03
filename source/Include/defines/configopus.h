@@ -103,13 +103,13 @@
 			  /* s */)
 
 #define Config_Menus(___ipc, ___owner, ___screen, ___menu, ___cmdlist, ___type, ___name) \
-	AROS_LC7(ULONG,                                                                      \
+	AROS_LC7(IPTR,                                                                       \
 			 Config_Menus,                                                               \
 			 AROS_LCA(IPCData *, (___ipc), A0),                                          \
 			 AROS_LCA(IPCData *, (___owner), A1),                                        \
 			 AROS_LCA(struct Screen *, (___screen), A2),                                 \
 			 AROS_LCA(Cfg_ButtonBank *, (___menu), A3),                                  \
-			 AROS_LCA(ULONG, (___cmdlist), D0),                                          \
+			 AROS_LCA(IPTR, (___cmdlist), D0),                                           \
 			 AROS_LCA(ULONG, (___type), D1),                                             \
 			 AROS_LCA(char *, (___name), D2),                                            \
 			 struct Library *,                                                           \

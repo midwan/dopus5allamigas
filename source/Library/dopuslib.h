@@ -59,7 +59,7 @@ typedef signed long long QUAD;
 #endif
 
 // 64-bit FIB
-#ifdef __MORPHOS__
+#if defined(__MORPHOS__) || defined(__AROS__)
 typedef struct FileInfoBlock FileInfoBlock64;
 #else
 // added a _s suffix, since AROS might use struct FileInfoBlock64 in the future
@@ -105,11 +105,11 @@ struct MyLibrary
 	struct Library *sysBase;
 	BPTR segList;
 	struct SignalSemaphore libSem;
-	ULONG ml_UserData;
+	APTR ml_UserData;
 };
 
-#ifdef __amigaos4__
-APTR dopuslibbase_global;
+#if defined(__amigaos4__) || defined(__AROS__)
+extern APTR dopuslibbase_global;
 #endif
 
 typedef struct	// Moved here from wb.h
@@ -806,19 +806,19 @@ LIBPROTO(L_IPC_Launch,
 		 REG(a0, struct ListLock *list),
 		 REG(a1, IPCData **storage),
 		 REG(a2, char *name),
-		 REG(d0, ULONG entry),
+		 REG(d0, IPTR entry),
 		 REG(d1, ULONG stack),
-		 REG(d2, ULONG data),
+		 REG(d2, IPTR data),
 		 REG(a3, struct Library *dos_base),
 		 REG(a6, struct MyLibrary *libbase));
 
 LIBPROTO(L_IPC_Startup, int, REG(a0, IPCData *ipc), REG(a1, APTR data), REG(a2, struct MsgPort *reply));
 
 LIBPROTO(L_IPC_Command,
-		 ULONG,
+		 IPTR,
 		 REG(a0, IPCData *ipc),
 		 REG(d0, ULONG command),
-		 REG(d1, ULONG flags),
+		 REG(d1, IPTR flags),
 		 REG(a1, APTR data),
 		 REG(a2, APTR data_free),
 		 REG(a3, struct MsgPort *reply));
@@ -832,11 +832,11 @@ LIBPROTO(L_IPC_FindProc,
 		 REG(a0, struct ListLock *list),
 		 REG(a1, char *name),
 		 REG(d0, BOOL activate),
-		 REG(d1, ULONG data));
+		 REG(d1, IPTR data));
 
 LIBPROTO(L_IPC_ProcStartup,
 		 IPCData *,
-		 REG(a0, ULONG *data),
+		 REG(a0, IPTR *data),
 		 REG(a1, ULONG (*ASM code)(REG(a0, IPCData *), REG(a1, APTR))));
 
 LIBPROTO(L_IPC_Quit, void, REG(a0, IPCData *ipc), REG(d0, ULONG quit_flags), REG(d1, BOOL wait));
@@ -845,7 +845,7 @@ LIBPROTO(L_IPC_Hello, void, REG(a0, IPCData *ipc), REG(a1, IPCData *owner));
 
 LIBPROTO(L_IPC_Goodbye, void, REG(a0, IPCData *ipc), REG(a1, IPCData *owner), REG(d0, ULONG goodbye_flags));
 
-LIBPROTO(L_IPC_GetGoodbye, ULONG, REG(a0, IPCMessage *msg));
+LIBPROTO(L_IPC_GetGoodbye, IPTR, REG(a0, IPCMessage *msg));
 
 LIBPROTO(L_IPC_ListQuit,
 		 ULONG,
@@ -860,17 +860,17 @@ LIBPROTO(L_IPC_ListCommand,
 		 void,
 		 REG(a0, struct ListLock *list),
 		 REG(d0, ULONG command),
-		 REG(d1, ULONG flags),
-		 REG(d2, ULONG data),
+		 REG(d1, IPTR flags),
+		 REG(d2, IPTR data),
 		 REG(d3, BOOL wait));
 
 LIBPROTO(L_IPC_QuitName, void, REG(a0, struct ListLock *list), REG(a1, char *name), REG(d0, ULONG quit_flags));
 
 LIBPROTO(L_IPC_SafeCommand,
-		 ULONG,
+		 IPTR,
 		 REG(a0, IPCData *ipc),
 		 REG(d0, ULONG command),
-		 REG(d1, ULONG flags),
+		 REG(d1, IPTR flags),
 		 REG(a1, APTR data),
 		 REG(a2, APTR data_free),
 		 REG(a3, struct MsgPort *reply),
@@ -995,9 +995,9 @@ LIBPROTO(L_UpdateGadgetValue,
 		 REG(d0, UWORD id),
 		 REG(a6, struct MyLibrary *libbase));
 
-LIBPROTO(L_SetGadgetValue, void, REG(a0, ObjectList *list), REG(d0, UWORD id), REG(d1, ULONG value));
+LIBPROTO(L_SetGadgetValue, void, REG(a0, ObjectList *list), REG(d0, UWORD id), REG(d1, IPTR value));
 
-LIBPROTO(L_GetGadgetValue, long, REG(a0, ObjectList *list), REG(a1, UWORD id), REG(a6, struct MyLibrary *libbase));
+LIBPROTO(L_GetGadgetValue, IPTR, REG(a0, ObjectList *list), REG(a1, UWORD id), REG(a6, struct MyLibrary *libbase));
 
 LIBPROTO(L_CheckObjectArea, BOOL, REG(a0, GL_Object *object), REG(d0, int x), REG(d1, int y));
 
@@ -1065,7 +1065,7 @@ LIBPROTO(L_Att_NewNode,
 		 Att_Node *,
 		 REG(a0, Att_List *list),
 		 REG(a1, char *name),
-		 REG(d0, ULONG data),
+		 REG(d0, IPTR data),
 		 REG(d1, ULONG flags));
 
 LIBPROTO(L_Att_RemNode, void, REG(a0, Att_Node *node));
@@ -1078,9 +1078,9 @@ LIBPROTO(L_Att_FindNode, Att_Node *, REG(a0, Att_List *list), REG(d0, long numbe
 
 LIBPROTO(L_Att_NodeNumber, long, REG(a0, Att_List *list), REG(a1, char *name));
 
-LIBPROTO(L_Att_FindNodeData, Att_Node *, REG(a0, Att_List *list), REG(d0, ULONG data));
+LIBPROTO(L_Att_FindNodeData, Att_Node *, REG(a0, Att_List *list), REG(d0, IPTR data));
 
-LIBPROTO(L_Att_NodeDataNumber, long, REG(a0, Att_List *list), REG(d0, ULONG data));
+LIBPROTO(L_Att_NodeDataNumber, long, REG(a0, Att_List *list), REG(d0, IPTR data));
 
 LIBPROTO(L_Att_NodeName, char *, REG(a0, Att_List *list), REG(d0, long number));
 
@@ -1215,7 +1215,7 @@ LIBPROTO(L_RemoveNotifyRequest, void, REG(a0, NotifyNode *node), REG(a6, struct 
 LIBPROTO(L_SendNotifyMsg,
 		 void,
 		 REG(d0, ULONG type),
-		 REG(d1, ULONG data),
+		 REG(d1, IPTR data),
 		 REG(d2, ULONG flags),
 		 REG(d3, short wait),
 		 REG(a0, char *name),
@@ -1275,7 +1275,7 @@ LIBPROTO(L_GetPopUpImageSize,
 // popup_support.c
 LIBPROTO(L_PopUpNewHandle,
 		 PopUpHandle *,
-		 REG(d0, ULONG userdata),
+		 REG(d0, IPTR userdata),
 		 REG(a0, REF_CALLBACK callback),
 		 REG(a1, struct DOpusLocale *locale));
 
@@ -1284,7 +1284,7 @@ LIBPROTO(L_PopUpFreeHandle, void, REG(a0, PopUpHandle *handle));
 LIBPROTO(L_PopUpNewItem,
 		 PopUpItem *,
 		 REG(a0, PopUpHandle *handle),
-		 REG(d0, ULONG string),
+		 REG(d0, IPTR string),
 		 REG(d1, ULONG id),
 		 REG(d2, ULONG flags));
 
@@ -1509,8 +1509,8 @@ LIBPROTO(L_WB_Remove_Patch, BOOL, REG(a6, struct MyLibrary *libbase));
 #if !defined(__MORPHOS__)
 LIBPROTO(L_WB_AddAppWindow,
 		 struct AppWindow *,
-		 REG(d0, ULONG id),
-		 REG(d1, ULONG userdata),
+		 REG(d0, IPTR id),
+		 REG(d1, IPTR userdata),
 		 REG(a0, struct Window *window),
 		 REG(a1, struct MsgPort *port),
 		 REG(a2, struct TagItem *tags));
@@ -1519,8 +1519,8 @@ LIBPROTO(L_WB_RemoveAppWindow, BOOL, REG(a0, struct AppWindow *window));
 
 LIBPROTO(L_WB_AddAppIcon,
 		 struct AppIcon *,
-		 REG(d0, ULONG id),
-		 REG(d1, ULONG userdata),
+		 REG(d0, IPTR id),
+		 REG(d1, IPTR userdata),
 		 REG(a0, char *text),
 		 REG(a1, struct MsgPort *port),
 		 REG(a2, BPTR lock),
@@ -1531,8 +1531,8 @@ LIBPROTO(L_WB_RemoveAppIcon, BOOL, REG(a0, struct AppIcon *icon));
 
 LIBPROTO(L_WB_AddAppMenuItem,
 		 struct AppMenuItem *,
-		 REG(d0, ULONG id),
-		 REG(d1, ULONG userdata),
+		 REG(d0, IPTR id),
+		 REG(d1, IPTR userdata),
 		 REG(a0, char *text),
 		 REG(a1, struct MsgPort *port),
 		 REG(a2, struct TagItem *tags));
@@ -1557,8 +1557,8 @@ LIBPROTO(L_WB_FindAppWindow, struct AppWindow *, REG(a0, struct Window *window),
 LIBPROTO(L_WB_AppWindowData,
 		 struct MsgPort *,
 		 REG(a0, struct AppWindow *window),
-		 REG(a1, ULONG *id),
-		 REG(a2, ULONG *userdata));
+		 REG(a1, IPTR *id),
+		 REG(a2, IPTR *userdata));
 
 LIBPROTO(L_WB_AppWindowLocal, BOOL, REG(a0, struct AppWindow *window));
 

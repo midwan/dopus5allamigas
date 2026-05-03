@@ -33,7 +33,7 @@ DOpusAppMessage *LIBFUNC L_AllocAppMessage(REG(a0, APTR memory), REG(a1, struct 
 		return 0;
 
 	// Set check pointer
-	msg->da_Msg.am_Reserved[7] = (ULONG)msg;
+	msg->da_Custom[0] = (IPTR)msg;
 
 	// Set ArgList pointer
 	if (num > 0)
@@ -96,7 +96,7 @@ void LIBFUNC L_ReplyAppMessage(REG(a0, DOpusAppMessage *msg))
 BOOL LIBFUNC L_CheckAppMessage(REG(a0, DOpusAppMessage *msg))
 {
 	// Check check pointer
-	return (BOOL)(msg && msg->da_Msg.am_Reserved[7] == (ULONG)msg);
+	return (BOOL)(msg && msg->da_Custom[0] == (IPTR)msg);
 }
 
 // Copy a DOpusAppMessage
@@ -137,6 +137,9 @@ DOpusAppMessage *LIBFUNC L_CopyAppMessage(REG(a0, DOpusAppMessage *orig), REG(a1
 	// Copy other info
 	msg->da_DragOffset = orig->da_DragOffset;
 	msg->da_Flags = orig->da_Flags;
+	msg->da_Custom[1] = orig->da_Custom[1];
+	msg->da_Custom[2] = orig->da_Custom[2];
+	msg->da_Custom[3] = orig->da_Custom[3];
 
 	return msg;
 }

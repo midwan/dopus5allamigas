@@ -36,7 +36,7 @@ typedef struct _Att_Node
 {
 	struct Node node;
 	Att_List *list;
-	ULONG data;
+	IPTR data;
 } Att_Node;
 
 #ifndef __amigaos3__
@@ -51,14 +51,14 @@ typedef struct _Att_Node
 
 // prototypes
 Att_List *Att_NewList(void);
-Att_Node *Att_NewNode(Att_List *list, char *name, ULONG data, ULONG flags);
+Att_Node *Att_NewNode(Att_List *list, char *name, IPTR data, ULONG flags);
 void Att_RemNode(Att_Node *node);
 void Att_PosNode(Att_List *, Att_Node *, Att_Node *);
 void Att_RemList(Att_List *list, int);
 Att_Node *Att_FindNode(Att_List *list, int number);
 Att_NodeNumber(Att_List *list, char *name);
-Att_Node *Att_FindNodeData(Att_List *list, ULONG data);
-Att_NodeDataNumber(Att_List *list, ULONG data);
+Att_Node *Att_FindNodeData(Att_List *list, IPTR data);
+Att_NodeDataNumber(Att_List *list, IPTR data);
 
 #define VALIDLIST(l) ((l) && (l)->list.lh_Head->ln_Succ)
 

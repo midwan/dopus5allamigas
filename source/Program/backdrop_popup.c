@@ -245,7 +245,7 @@ BOOL backdrop_popup(BackdropInfo *info, short x, short y, UWORD qual, long bpfla
 	}
 
 	// Allocate menu handle
-	if (!(menu = PopUpNewHandle((ULONG)info->lister, info->callback, &locale)))
+	if (!(menu = PopUpNewHandle((IPTR)info->lister, info->callback, &locale)))
 	{
 		// Unlock if needed
 		if (flags & BPF_OLOCKED)
@@ -285,7 +285,7 @@ BOOL backdrop_popup(BackdropInfo *info, short x, short y, UWORD qual, long bpfla
 				}
 
 				// Normal item
-				else if ((item = PopUpNewItem(menu, (ULONG)node->ln_Name, MENU_CUSTOM + num, POPUPF_STRING)))
+				else if ((item = PopUpNewItem(menu, (IPTR)node->ln_Name, MENU_CUSTOM + num, POPUPF_STRING)))
 				{
 					// Toggle?
 					if (node->ln_MenuFlags & MNF_TOGGLE)
@@ -650,7 +650,12 @@ BOOL backdrop_popup(BackdropInfo *info, short x, short y, UWORD qual, long bpfla
 					if (desktop_icon_path(object, ipath, 256, 0))
 					{
 						// Get rexx function to run
-						lsprintf(rexxcmd, "%s \"%s\" %s %ld", path, ipath, GUI->rexx_port_name, info->lister);
+						lsprintf(rexxcmd,
+								 "%s \"%s\" %s %lu",
+								 path,
+								 ipath,
+								 GUI->rexx_port_name,
+								 (unsigned long)(IPTR)info->lister);
 
 						// Run rexx thing
 						rexx_send_command(rexxcmd, FALSE);
@@ -751,7 +756,7 @@ BOOL backdrop_popup(BackdropInfo *info, short x, short y, UWORD qual, long bpfla
 // Send a command for a backdrop window
 void backdrop_command(BackdropInfo *info, ULONG cmd, ULONG flags)
 {
-	IPC_Command(info->ipc, LISTER_DO_FUNCTION, flags, (APTR)cmd, 0, 0);
+	IPC_Command(info->ipc, LISTER_DO_FUNCTION, flags, (APTR)(IPTR)cmd, 0, 0);
 }
 
 // Get path for 'Copy To'
@@ -783,7 +788,7 @@ short backdrop_get_copy_path(PopUpItem *item, char *path)
 		short len;
 
 		// Get pointer to string
-		ptr = item->item_name;
+		ptr = (char *)item->item_name;
 
 		// Get 'to' string
 		to_str = GetString(&locale, MSG_ICON_COPY_TO);
@@ -862,7 +867,7 @@ void popup_get_appicon(PopUpHandle *menu, AppEntry *app)
 				PopUpSeparator(menu);
 
 			// Add item
-			if ((item = PopUpNewItem(menu, (ULONG)node->ln_Name, MENU_CUSTOM + num, POPUPF_STRING)))
+			if ((item = PopUpNewItem(menu, (IPTR)node->ln_Name, MENU_CUSTOM + num, POPUPF_STRING)))
 			{
 				// Toggle?
 				if (node->ln_MenuFlags & MNF_TOGGLE)
@@ -986,7 +991,7 @@ BOOL popup_get_filetype(PopUpHandle *menu,
 
 							// Allocate normal item
 							else if ((item = PopUpNewItem(
-										  menu, (ULONG)ext->pe_Menu, MENU_EXTENSION + extnum, POPUPF_STRING)))
+										  menu, (IPTR)ext->pe_Menu, MENU_EXTENSION + extnum, POPUPF_STRING)))
 							{
 								// Set data pointer
 								item->data = ext;
@@ -1037,7 +1042,7 @@ BOOL popup_get_filetype(PopUpHandle *menu,
 
 									// Allocate normal item
 									else if ((item = PopUpNewItem(
-												  menu, (ULONG)ins->string, MENU_CUSTOM + num, POPUPF_STRING)))
+												  menu, (IPTR)ins->string, MENU_CUSTOM + num, POPUPF_STRING)))
 									{
 										// Set data pointer
 										item->data = func;
@@ -1129,7 +1134,7 @@ void popup_build_copyto(PopUpHandle *menu, PopUpItem *item)
 						lsprintf(name, "%s %s", to_str, nameptr);
 
 						// Add item
-						if ((new = PopUpNewItem(menu, (ULONG)name, MENU_ICON_COPY_TO, POPUPF_STRING)))
+						if ((new = PopUpNewItem(menu, (IPTR)name, MENU_ICON_COPY_TO, POPUPF_STRING)))
 						{
 							// Allocate space for name
 							if ((name = AllocMemH(menu->ph_Memory, strlen(fib->fib_FileName) + 23)))
@@ -1161,7 +1166,7 @@ void popup_build_copyto(PopUpHandle *menu, PopUpItem *item)
 					lsprintf(name, "%s %s", to_str, fib->fib_FileName);
 
 					// Add item
-					if ((new = PopUpNewItem(menu, (ULONG)name, MENU_ICON_COPY_TO, POPUPF_STRING)))
+					if ((new = PopUpNewItem(menu, (IPTR)name, MENU_ICON_COPY_TO, POPUPF_STRING)))
 					{
 						// Does entry have a comment?
 						if (fib->fib_Comment[0])
@@ -1241,7 +1246,7 @@ void popup_build_openwith(PopUpHandle *menu)
 			for (node = GUI->open_with_list.list.lh_Head; node->ln_Succ; node = node->ln_Succ, count++)
 			{
 				// Add item
-				PopUpNewItem(menu, (ULONG)FilePart(node->ln_Name), MENU_OPEN_WITH_BASE + count, POPUPF_STRING);
+				PopUpNewItem(menu, (IPTR)FilePart(node->ln_Name), MENU_OPEN_WITH_BASE + count, POPUPF_STRING);
 			}
 
 			// Add separator
@@ -1457,7 +1462,7 @@ void popup_default_menu(BackdropInfo *info, PopUpHandle *menu, short *extnum)
 				PopUpSeparator(menu);
 
 			// Allocate item
-			if ((item = PopUpNewItem(menu, (ULONG)ext->pe_Menu, MENU_EXTENSION + *extnum, POPUPF_STRING)))
+			if ((item = PopUpNewItem(menu, (IPTR)ext->pe_Menu, MENU_EXTENSION + *extnum, POPUPF_STRING)))
 			{
 				// Set data pointer
 				item->data = ext;
@@ -1725,7 +1730,7 @@ MatchHandle *popup_build_icon_menu(BackdropInfo *info,
 					PopUpSeparator(menu);
 
 				// Allocate item
-				if ((item = PopUpNewItem(menu, (ULONG)ext->pe_Menu, MENU_EXTENSION + *extnum, POPUPF_STRING)))
+				if ((item = PopUpNewItem(menu, (IPTR)ext->pe_Menu, MENU_EXTENSION + *extnum, POPUPF_STRING)))
 				{
 					// Set data pointer
 					item->data = ext;

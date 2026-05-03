@@ -10,7 +10,7 @@ ULONG LIBFUNC L_Config_Menu(REG(a0, char *menu_name),
 							REG(a3, struct Screen *screen),
                             REG(d0, Cfg_ButtonBank *def_bank),
                             REG(d1, char *title),
-                            REG(d2, ULONG command_list),
+                            REG(d2, IPTR command_list),
                             REG(d3, char *default_name),
                             REG(d4, short type),
                             REG(d5, Att_List *script_list))
@@ -203,7 +203,7 @@ ULONG LIBFUNC L_Config_Menu(REG(a0, char *menu_name),
 				}
 
 				// Tell children to appear
-				IPC_ListCommand(&data->proc_list, IPC_SHOW, 0, (ULONG)data->window, 0);
+				IPC_ListCommand(&data->proc_list, IPC_SHOW, 0, (IPTR)data->window, 0);
 				break;
 
 			// Activate
@@ -678,7 +678,7 @@ ULONG LIBFUNC L_Config_Menu(REG(a0, char *menu_name),
 	// Reply quit message
 	IPC_Reply(quit_msg);
 
-	return (ULONG)ret_code;
+	return (IPTR)ret_code;
 }
 
 // Open window
@@ -1107,9 +1107,9 @@ void lister_menu_edit_item(lister_menu_data *data)
 		if ((IPC_Launch(&data->proc_list,
 						&ipc,
 						"dopus_function_editor",
-						(ULONG)IPC_NATIVE(FunctionEditor),
+						IPC_NATIVE(FunctionEditor),
 						STACK_DEFAULT,
-						(ULONG)startup,
+						(IPTR)startup,
 						(struct Library *)DOSBase)) &&
 			ipc)
 		{
@@ -1141,7 +1141,7 @@ BOOL lister_menu_receive_edit(lister_menu_data *data, FunctionReturn *ret)
 	BOOL success = 0;
 
 	// Try to find button in list
-	if ((node = Att_FindNodeData(data->menu_list, (ULONG)ret->object)) && (button = (Cfg_Button *)node->data))
+	if ((node = Att_FindNodeData(data->menu_list, (IPTR)ret->object)) && (button = (Cfg_Button *)node->data))
 	{
 		Cfg_ButtonFunction *func;
 
@@ -1719,7 +1719,7 @@ Att_Node *lister_menu_new_item(lister_menu_data *data, Cfg_ButtonFunction *func,
 
 	// Create node
 	return Att_NewNode(
-		data->menu_list, (func) ? label : 0, (ULONG)button, (data->type == TYPE_HOTKEYS) ? 0 : ADDNODE_SORT);
+		data->menu_list, (func) ? label : 0, (IPTR)button, (data->type == TYPE_HOTKEYS) ? 0 : ADDNODE_SORT);
 }
 
 // Fill out name field
@@ -1740,7 +1740,7 @@ void lister_menu_set_name(lister_menu_data *data, char *name)
 	}
 
 	// Set gadget
-	SetGadgetValue(data->objlist, GAD_LISTER_MENU_NAME, (ULONG)name);
+	SetGadgetValue(data->objlist, GAD_LISTER_MENU_NAME, (IPTR)name);
 }
 
 /* label   = english name

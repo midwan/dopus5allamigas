@@ -38,7 +38,7 @@ LIBPROTO(L_Config_Buttons,
 		 REG(a1, IPCData *ipc),
 		 REG(a2, IPCData *owner_ipc),
 		 REG(a3, struct Screen *screen),
-		 REG(d0, ULONG command_list));
+		 REG(d0, IPTR command_list));
 
 LIBPROTO(L_ConvertConfig, BOOL, REG(a0, char *name), REG(a1, struct Screen *parent), REG(a2, IPCData *owner_ipc));
 
@@ -47,17 +47,17 @@ LIBPROTO(L_Config_Filetypes,
 		 REG(a0, struct Screen *screen),
 		 REG(a1, IPCData *ipc),
 		 REG(a2, IPCData *owner_ipc),
-		 REG(d0, ULONG command_list),
+		 REG(d0, IPTR command_list),
 		 REG(a3, char *name));
 
 LIBPROTO(L_Config_ListerButtons,
 		 long,
 		 REG(a0, char *bank_name),
 		 REG(a1, IPCData *ipc),
-		 REG(a2, IPCData *owner_ipc),
-		 REG(a3, struct Screen *screen),
+         REG(a2, IPCData *owner_ipc),
+         REG(a3, struct Screen *screen),
          REG(d0, Cfg_ButtonBank *def_bank),
-         REG(d1, ULONG command_list),
+         REG(d1, IPTR command_list),
          REG(d2, LONG initial));
 
 LIBPROTO(L_Config_Menu,
@@ -65,21 +65,21 @@ LIBPROTO(L_Config_Menu,
 		 REG(a0, char *menu_name),
 		 REG(a1, IPCData *ipc),
 		 REG(a2, IPCData *owner_ipc),
-		 REG(a3, struct Screen *screen),
+         REG(a3, struct Screen *screen),
          REG(d0, Cfg_ButtonBank *def_bank),
          REG(d1, char *title),
-         REG(d2, ULONG command_list),
+         REG(d2, IPTR command_list),
          REG(d3, char *default_name),
          REG(d4, short type),
          REG(d5, Att_List *script_list));
 
 LIBPROTO(L_Config_Menus,
-		 ULONG,
+		 IPTR,
 		 REG(a0, IPCData *ipc),
 		 REG(a1, IPCData *owner_ipc),
 		 REG(a2, struct Screen *screen),
 		 REG(a3, Cfg_ButtonBank *def_bank),
-		 REG(d0, ULONG command_list),
+		 REG(d0, IPTR command_list),
 		 REG(d1, ULONG type),
 		 REG(d2, char *menu_path));
 
@@ -98,7 +98,7 @@ LIBPROTO(L_Config_EditFunction,
 		 REG(a2, struct Window *window),
 		 REG(a3, Cfg_Function *function),
          REG(d0, APTR memory),
-         REG(d1, ULONG command_list));
+         REG(d1, IPTR command_list));
 
 LIBPROTO(L_ShowPaletteBox,
 		 long,

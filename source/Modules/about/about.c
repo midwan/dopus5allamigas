@@ -45,7 +45,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *ipc),
 						   REG(a3, IPCData *main_ipc),
-						   REG(d0, ULONG mod_id),
+						   REG(d0, IPTR mod_id),
 						   REG(d1, ULONG mod_data))
 {
 	ConfigWindow dims;
@@ -282,7 +282,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 			SetAPen(data.window->RPort, DRAWINFO(data.window)->dri_Pens[TEXTPEN]);
 			node = files->lh_Head;
 			for (a = 0; a < 3 && node->ln_Succ; a++, node = node->ln_Succ)
-				SetGadgetValue(objlist, GAD_COPYRIGHT_1 + a, (ULONG)node->ln_Name);
+				SetGadgetValue(objlist, GAD_COPYRIGHT_1 + a, (IPTR)node->ln_Name);
 
 			// Get translator information
 			if (node->ln_Succ)
@@ -293,7 +293,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 
 			// Render registration text
 			for (a = GAD_REGISTRATION_1; a <= GAD_REGISTRATION_9 && node->ln_Succ; node = node->ln_Succ, a++)
-				SetGadgetValue(objlist, a, (ULONG)node->ln_Name);
+				SetGadgetValue(objlist, a, (IPTR)node->ln_Name);
 
 			// Get message
 			get_message(&data);
@@ -773,18 +773,44 @@ void about_next_line(about_data *data)
 // Build scroll message
 void get_message(about_data *data)
 {
-	short size;
+	STRPTR message;
+	STRPTR insert;
+	STRPTR trans_info;
+	ULONG prefix_len = 0;
+	ULONG trans_len;
+	ULONG suffix_len = 0;
+	ULONG size;
+
+	message = (STRPTR)about_message;
+	trans_info = data->trans_info ? data->trans_info : "";
+	trans_len = strlen(trans_info);
+	insert = strstr(message, "%s");
 
 	// Get size we need
-	size = strlen((char *)about_message);
-	if (data->trans_info)
-		size += strlen(data->trans_info);
-	size += 4;
+	if (insert)
+	{
+		prefix_len = insert - message;
+		suffix_len = strlen(insert + 2);
+		size = prefix_len + trans_len + suffix_len + 1;
+	}
+	else
+		size = strlen(message) + 1;
 
 	// Allocate buffer
 	if ((data->message = AllocVec(size, 0)))
 	{
-		// Build message
-		lsprintf(data->message, (STRPTR)about_message, (IPTR)data->trans_info);
+		// Build message without RawDoFmt string varargs on 64-bit targets
+		if (insert)
+		{
+			STRPTR ptr = data->message;
+
+			CopyMem(message, ptr, prefix_len);
+			ptr += prefix_len;
+			CopyMem(trans_info, ptr, trans_len);
+			ptr += trans_len;
+			CopyMem(insert + 2, ptr, suffix_len + 1);
+		}
+		else
+			strcpy(data->message, message);
 	}
 }

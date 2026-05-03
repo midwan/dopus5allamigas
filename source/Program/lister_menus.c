@@ -242,7 +242,7 @@ UWORD lister_listerpopup(Lister *lister, UWORD code)
 	PopUpExt *ext;
 
 	// Allocate menu handle
-	if (!(menu = PopUpNewHandle((ULONG)lister, lister->backdrop_info->callback, &locale)))
+	if (!(menu = PopUpNewHandle((IPTR)lister, lister->backdrop_info->callback, &locale)))
 		return (UWORD)-1;
 
 	// Build default lister popup
@@ -280,7 +280,7 @@ UWORD lister_listerpopup(Lister *lister, UWORD code)
 					PopUpSeparator(menu);
 
 				// Allocate item
-				if ((item = PopUpNewItem(menu, (ULONG)ext->pe_Menu, MENU_EXTENSION + num, POPUPF_STRING)))
+				if ((item = PopUpNewItem(menu, (IPTR)ext->pe_Menu, MENU_EXTENSION + num, POPUPF_STRING)))
 				{
 					// Set data pointer
 					item->data = ext;

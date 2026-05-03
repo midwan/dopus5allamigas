@@ -113,7 +113,7 @@ BPTR open_temp_file(char *filename, IPCData *ipc)
 	BPTR file = 0;
 
 	// Get temporary key
-	temp_key = (ULONG)ipc;
+	temp_key = (IPTR)ipc;
 	CurrentTime(&secs, &micros);
 	if (micros)
 		temp_key *= micros;
@@ -362,7 +362,7 @@ int LIBFUNC L_Module_Entry(REG(a0, char *argstring),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *ipc),
 						   REG(a3, IPCData *main_ipc),
-						   REG(d0, ULONG mod_id),
+						   REG(d0, IPTR mod_id),
 						   REG(d1, EXT_FUNC(func_callback)))
 {
 	Att_List *files;

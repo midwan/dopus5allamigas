@@ -54,7 +54,6 @@ For more information on Directory Opus for Windows please see:
 #define DRAGF_FREE (1 << 8)
 #define DRAGF_CUSTOM (1 << 9)	 // Custom rendering
 #define DRAGF_NO_MASK (1 << 10)	 // No masking
-#define DRAGF_FORCE_CUSTOM (1 << 11)	 // Ignore the user custom-drag disable for this drag
 
 #define DRAGF_NEED_GELS (1 << 0)  // Need GELs initialised
 #define DRAGF_REMOVE (1 << 0)	  // Remove only
@@ -407,10 +406,10 @@ For more information on Directory Opus for Windows please see:
 	#define IPCF_NATIVE (0x0)
 #endif
 
-#define IPC_GET_ENTRY(entry) ((ULONG)entry & ~(IPCF_NATIVE))
-#define IPC_GET_CODETYPE(entry) ((ULONG)entry & IPCF_NATIVE)
+#define IPC_GET_ENTRY(entry) ((IPTR)(entry) & ~(IPTR)(IPCF_NATIVE))
+#define IPC_GET_CODETYPE(entry) ((IPTR)(entry) & (IPTR)(IPCF_NATIVE))
 
-#define IPC_NATIVE(entry) ((ULONG)&entry | IPCF_NATIVE)
+#define IPC_NATIVE(entry) ((IPTR)&entry | (IPTR)(IPCF_NATIVE))
 
 #define IPCSIG_HIDE SIGBREAKF_CTRL_D
 #define IPCSIG_SHOW SIGBREAKF_CTRL_E
@@ -461,7 +460,7 @@ typedef VOID ASM (*REF_CALLBACK)(REG(d0, ULONG iclass), REG(a0, APTR window), RE
 #define POPUPF_IMAGE (1 << 6)	  // Image is supplied
 #define POPUPF_USERDATA (1 << 7)  // UserData is present
 
-#define POPUP_BARLABEL (char *)-1
+#define POPUP_BARLABEL (IPTR)-1
 
 #define POPUPMF_HELP (1 << 0)	   // Supports help
 #define POPUPMF_REFRESH (1 << 1)   // Use refresh callback
@@ -838,7 +837,7 @@ typedef struct _GL_Object
 			struct Gadget *context;	 // Context data for the gadget
 			struct Gadget *gadget;	 // The gadget itself
 			int components;			 // Number of component gadgets
-			LONG data;				 // Some data for the gadget
+			IPTR data;				 // Some data for the gadget
 			short choice_max;		 // Number of choices
 			short choice_min;		 // Minimum choice
 			struct Image *image;	 // Gadget image
@@ -870,7 +869,7 @@ typedef struct _GL_Object
 	char *original_text;  // Original text string
 	char fg, bg;		  // Current pen colours
 
-	ULONG data_ptr;	 // Pointer to other data
+	IPTR data_ptr;	 // Pointer to other data
 
 	struct TagItem *tags;  // Copy of tags
 
@@ -915,14 +914,14 @@ typedef struct _WindowData
 	struct NewMenu *new_menu;		// NewMenu structure allocated
 	struct Menu *menu_strip;		// Menu strip allocated
 	struct Requester *busy_req;		// Window busy requester
-	ULONG data;						// Window-specific data
+	IPTR data;						// Window-specific data
 	ULONG flags;					// Flags
 	APTR memory;					// User memory chain, freed when window closes
 
 	ULONG pad;
 	struct FontRequester *font_request;	 // Window's font requester
 
-	ULONG userdata;
+	IPTR userdata;
 	struct TagItem *user_tags;
 
 	struct List boopsi_list;  // BOOPSI list
@@ -983,7 +982,7 @@ typedef struct _Att_Node
 {
 	struct Node node;  // Node structure
 	Att_List *list;	   // Pointer to list (inefficient!)
-	ULONG data;		   // User data
+	IPTR data;		   // User data
 } Att_Node;
 
 struct ListLock
@@ -1007,7 +1006,7 @@ typedef struct
 	struct Message dn_Msg;
 	ULONG dn_Type;
 	ULONG dn_UserData;
-	ULONG dn_Data;
+	IPTR dn_Data;
 	ULONG dn_Flags;
 	struct FileInfoBlock *dn_Fib;
 	char dn_Name[1];
@@ -1017,8 +1016,8 @@ typedef struct
 typedef struct
 {
 	struct Message msg;	  // Exec message
-	ULONG command;		  // Message command
-	ULONG flags;		  // Message flags
+	IPTR command;		  // Message command/result
+	IPTR flags;			  // Message flags
 	APTR data;			  // Message data
 	APTR data_free;		  // Data to be FreeVec()ed automatically
 	struct _IPC *sender;  // Sender IPC
@@ -1041,7 +1040,7 @@ typedef struct _IPC
 typedef struct
 {
 	struct MinNode node;
-	char *item_name;  // Menu item name
+	IPTR item_name;	  // Menu item name or locale string ID
 	UWORD id;		  // Menu ID
 	UWORD flags;	  // Menu item flags
 	APTR data;		  // Menu item data
@@ -1054,7 +1053,7 @@ typedef struct
 	struct MinList item_list;	 // List of menu items
 	struct DOpusLocale *locale;	 // Locale data
 	ULONG flags;				 // Flags
-	ULONG userdata;				 // User data
+	IPTR userdata;				 // User data
 	REF_CALLBACK(callback);		 // Refresh callback
 	struct TextFont *font;		 // Font to use
 	struct Hook *backfill;		 // Backfill hook
@@ -1145,8 +1144,8 @@ typedef struct
 	struct MinNode node;
 	ULONG type;	 // Type of entry
 
-	ULONG id;		 // ID
-	ULONG userdata;	 // User data
+	IPTR id;		 // ID
+	IPTR userdata;	 // User data
 
 	APTR object;		   // Type-specific object
 	char *text;			   // If text is needed
@@ -1178,7 +1177,7 @@ typedef struct _DOpusAppMessage
 	Point *da_DropPos;
 	Point da_DragOffset;
 	ULONG da_Flags;
-	ULONG da_Pad[2];
+	IPTR da_Custom[4];
 } DOpusAppMessage;
 
 // Args
@@ -1187,8 +1186,8 @@ typedef struct
 	struct RDArgs *FA_RDArgs;	  // RDArgs structure
 	struct RDArgs *FA_RDArgsRes;  // Return from ReadArgs()
 	char *FA_ArgString;			  // Copy of argument string (with newline)
-	LONG *FA_ArgArray;			  // Argument array pointer
-	LONG *FA_Arguments;			  // Argument array you should use
+	IPTR *FA_ArgArray;			  // Argument array pointer
+	IPTR *FA_Arguments;			  // Argument array you should use
 	short FA_Count;				  // Number of arguments
 	short FA_DoneArgs;			  // DOpus uses this flag for its own purposes
 } FuncArgs;
@@ -1352,14 +1351,14 @@ void StoreWindowDims(struct Window *, WindowDimensions *);
 BOOL CheckWindowDims(struct Window *, WindowDimensions *);
 
 Att_List *Att_NewList(ULONG);
-Att_Node *Att_NewNode(Att_List *list, char *name, ULONG data, ULONG flags);
+Att_Node *Att_NewNode(Att_List *list, char *name, IPTR data, ULONG flags);
 void Att_RemNode(Att_Node *node);
 void Att_PosNode(Att_List *, Att_Node *, Att_Node *);
 void Att_RemList(Att_List *list, long);
 Att_Node *Att_FindNode(Att_List *list, long number);
 long Att_NodeNumber(Att_List *list, char *name);
-Att_Node *Att_FindNodeData(Att_List *list, ULONG data);
-long Att_NodeDataNumber(Att_List *list, ULONG data);
+Att_Node *Att_FindNodeData(Att_List *list, IPTR data);
+long Att_NodeDataNumber(Att_List *list, IPTR data);
 char *Att_NodeName(Att_List *list, long number);
 long Att_NodeCount(Att_List *list);
 void Att_ChangeNodeName(Att_Node *node, char *name);
@@ -1382,7 +1381,7 @@ struct Library *GetTimerBase(void);
 APTR AddNotifyRequest(ULONG, ULONG, struct MsgPort *);
 void RemoveNotifyRequest(APTR);
 #ifndef __amigaos4__
-void SendNotifyMsg(ULONG, ULONG, ULONG, short, char *, struct FileInfoBlock *);
+void SendNotifyMsg(ULONG, IPTR, ULONG, short, char *, struct FileInfoBlock *);
 #endif
 void SetNotifyRequest(APTR, ULONG, ULONG);
 
@@ -1394,9 +1393,9 @@ PopUpItem *GetPopUpItem(PopUpMenu *, UWORD);
 void GetPopUpImageSize(struct Window *, PopUpMenu *, short *, short *);
 void SetPopUpDelay(short);
 
-PopUpHandle *PopUpNewHandle(ULONG, REF_CALLBACK name, struct DOpusLocale *);
+PopUpHandle *PopUpNewHandle(IPTR, REF_CALLBACK name, struct DOpusLocale *);
 void PopUpFreeHandle(PopUpHandle *);
-PopUpItem *PopUpNewItem(PopUpHandle *, ULONG, ULONG, ULONG);
+PopUpItem *PopUpNewItem(PopUpHandle *, IPTR, ULONG, ULONG);
 void PopUpSeparator(PopUpHandle *);
 BOOL PopUpItemSub(PopUpHandle *, PopUpItem *);
 void PopUpEndSub(PopUpHandle *);
@@ -1509,8 +1508,8 @@ GL_Object *GetObject(ObjectList *, int);
 void StoreGadgetValue(ObjectList *, struct IntuiMessage *);
 void UpdateGadgetValue(ObjectList *, struct IntuiMessage *, UWORD);
 void UpdateGadgetList(ObjectList *);
-void SetGadgetValue(ObjectList *, UWORD, ULONG);
-long GetGadgetValue(ObjectList *, UWORD);
+void SetGadgetValue(ObjectList *, UWORD, IPTR);
+IPTR GetGadgetValue(ObjectList *, UWORD);
 void SetGadgetChoices(ObjectList *list, ULONG id, APTR choices);
 BOOL CheckObjectArea(GL_Object *, int, int);
 void DisplayObject(struct Window *, GL_Object *, int fg, int bg, char *txt);
@@ -1601,22 +1600,22 @@ Cfg_ButtonFunction *CopyButtonFunction(Cfg_ButtonFunction *, APTR, Cfg_ButtonFun
 Cfg_Function *FindFunctionType(struct List *list, UWORD type);
 
 // IPC
-int IPC_Launch(struct ListLock *, IPCData **, char *, ULONG, ULONG, ULONG, struct Library *);
-int IPC_Launch_Local(struct ListLock *, IPCData **, char *, ULONG, ULONG, ULONG, struct Library *);
+int IPC_Launch(struct ListLock *, IPCData **, char *, IPTR, ULONG, IPTR, struct Library *);
+int IPC_Launch_Local(struct ListLock *, IPCData **, char *, IPTR, ULONG, IPTR, struct Library *);
 int IPC_Startup(IPCData *, APTR, struct MsgPort *);
-ULONG IPC_Command(IPCData *, ULONG, ULONG, APTR, APTR, struct MsgPort *);
-ULONG IPC_SafeCommand(IPCData *, ULONG, ULONG, APTR, APTR, struct MsgPort *, struct ListLock *);
+IPTR IPC_Command(IPCData *, ULONG, IPTR, APTR, APTR, struct MsgPort *);
+IPTR IPC_SafeCommand(IPCData *, ULONG, IPTR, APTR, APTR, struct MsgPort *, struct ListLock *);
 void IPC_Reply(IPCMessage *);
 void IPC_Free(IPCData *);
 void IPC_Flush(IPCData *);
-IPCData *IPC_FindProc(struct ListLock *, char *, BOOL, ULONG);
-IPCData *IPC_ProcStartup(ULONG *, ULONG (*ASM)(REG(a0, IPCData *), REG(a1, APTR)));
+	IPCData *IPC_FindProc(struct ListLock *, char *, BOOL, IPTR);
+IPCData *IPC_ProcStartup(IPTR *, ULONG (*ASM)(REG(a0, IPCData *), REG(a1, APTR)));
 void IPC_Quit(IPCData *, ULONG, BOOL);
 void IPC_Hello(IPCData *, IPCData *);
 void IPC_Goodbye(IPCData *, IPCData *, ULONG);
-ULONG IPC_GetGoodbye(IPCMessage *);
+IPTR IPC_GetGoodbye(IPCMessage *);
 ULONG IPC_ListQuit(struct ListLock *list, IPCData *owner, ULONG quit_flags, BOOL wait);
-void IPC_ListCommand(struct ListLock *list, ULONG command, ULONG flags, ULONG data, BOOL wait);
+void IPC_ListCommand(struct ListLock *list, ULONG command, IPTR flags, IPTR data, BOOL wait);
 void IPC_QuitName(struct ListLock *, char *, ULONG);
 
 // gui
@@ -1695,10 +1694,10 @@ BOOL GetDeviceUnit(BPTR, char *, short *);
 void WB_Install_Patch(void);
 #endif
 BOOL WB_Remove_Patch(void);
-struct AppWindow *WB_AddAppWindow(ULONG, ULONG, struct Window *, struct MsgPort *, struct TagItem *);
+struct AppWindow *WB_AddAppWindow(IPTR, IPTR, struct Window *, struct MsgPort *, struct TagItem *);
 BOOL WB_RemoveAppWindow(struct AppWindow *);
 struct AppWindow *WB_FindAppWindow(struct Window *);
-struct MsgPort *WB_AppWindowData(struct AppWindow *, ULONG *, ULONG *);
+struct MsgPort *WB_AppWindowData(struct AppWindow *, IPTR *, IPTR *);
 BOOL WB_AppWindowLocal(struct AppWindow *);
 struct Window *WB_AppWindowWindow(struct AppWindow *);
 ULONG WB_AppIconFlags(struct AppIcon *);

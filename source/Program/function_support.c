@@ -359,7 +359,7 @@ void function_text(FunctionHandle *handle, char *text)
 }
 
 // Display a requester for a function
-int function_request_args(FunctionHandle *handle, char *message, ULONG *flags)
+int function_request_args(FunctionHandle *handle, char *message, IPTR *flags)
 {
 	PathNode *path;
 	APTR parent;
@@ -405,7 +405,7 @@ void function_cleanup(FunctionHandle *handle, PathNode *node, BOOL full)
 			 * when the xad lister is closed. This pointer check
 			 * is a workaround to prevent illegal memory access.
 			 */
-			if ((LONG)lister->cur_buffer <= 0L)
+			if ((IPTR)lister->cur_buffer <= 0L)
 				return;
 
 			// Get source buffer and lock it

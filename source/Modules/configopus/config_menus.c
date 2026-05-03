@@ -2,18 +2,18 @@
 #include "config_menus.h"
 #include "config_buttons.h"
 
-ULONG LIBFUNC L_Config_Menus(REG(a0, IPCData *ipc),
+IPTR LIBFUNC L_Config_Menus(REG(a0, IPCData *ipc),
 							 REG(a1, IPCData *owner_ipc),
 							 REG(a2, struct Screen *screen),
 							 REG(a3, Cfg_ButtonBank *def_bank),
-							 REG(d0, ULONG command_list),
+							 REG(d0, IPTR command_list),
 							 REG(d1, ULONG type),
 							 REG(d2, char *menu_path))
 {
 	config_menus_data *data;
 	IPCMessage *quit_msg = 0;
 	short undo_flag = 0, pending_quit = 0, save_flag = 0;
-	ULONG ret_code = 0;
+	IPTR ret_code = 0;
 
 	// Allocate data
 	if (!(data = AllocVec(sizeof(config_menus_data), MEMF_CLEAR)) || !(data->drag.timer = AllocTimer(UNIT_VBLANK, 0)))
@@ -127,7 +127,7 @@ ULONG LIBFUNC L_Config_Menus(REG(a0, IPCData *ipc),
 
 				// Tell children to appear
 				else
-					IPC_ListCommand(&data->proc_list, IPC_SHOW, 0, (ULONG)data->window, 0);
+					IPC_ListCommand(&data->proc_list, IPC_SHOW, 0, (IPTR)data->window, 0);
 				break;
 
 			// Activate
@@ -677,7 +677,7 @@ ULONG LIBFUNC L_Config_Menus(REG(a0, IPCData *ipc),
 	if (!undo_flag)
 	{
 		// Return pointer to bank
-		ret_code = (ULONG)data->bank;
+		ret_code = (IPTR)data->bank;
 
 		// Return new path
 		if (menu_path)
@@ -848,7 +848,7 @@ void config_menus_build_list(config_menus_data *data, short type)
 		Cfg_ButtonFunction *func;
 
 		// Copy name to parent field
-		SetGadgetValue(data->objlist, GAD_MENUS_MENU_NAME + type - 1, (ULONG)parent_sel->node.ln_Name);
+		SetGadgetValue(data->objlist, GAD_MENUS_MENU_NAME + type - 1, (IPTR)parent_sel->node.ln_Name);
 
 		// Get parent button
 		button = ((menu_node *)parent_sel->data)->button;
@@ -993,7 +993,7 @@ Att_Node *config_menus_new_node(Att_List *list, Cfg_Button *button, Cfg_ButtonFu
 	node->func = func;
 
 	// Add to menu list
-	if (!(new = Att_NewNode(list, function_label(func), (ULONG)node, 0)))
+	if (!(new = Att_NewNode(list, function_label(func), (IPTR)node, 0)))
 	{
 		// Failed
 		FreeVec(node);
@@ -1043,7 +1043,7 @@ void config_menus_select_item(config_menus_data *data, short type, BOOL sel)
 		if ((sel = Att_FindNode(data->menu_list[MENU_SUB], GetGadgetValue(data->objlist, GAD_MENUS_SUB))))
 		{
 			// Set field
-			SetGadgetValue(data->objlist, GAD_MENUS_SUB_NAME, (ULONG)sel->node.ln_Name);
+			SetGadgetValue(data->objlist, GAD_MENUS_SUB_NAME, (IPTR)sel->node.ln_Name);
 		}
 	}
 }

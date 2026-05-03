@@ -36,10 +36,6 @@ typedef struct _BackdropObject
 	short state;  // Object state
 
 	struct DiskObject *icon;  // Object icon
-#if defined(__amigaos3__)
-	struct DiskObject *iconlib_select_icon;  // Companion icon for IconLib default selected state
-	ULONG iconlib_select_flags;
-#endif
 	char *name;				  // Object name
 	char *path;				  // Path name
 	struct DateStamp date;	  // Object date
@@ -59,7 +55,7 @@ typedef struct _BackdropObject
 	short drag_x_offset;
 	short drag_y_offset;
 
-	ULONG misc_data;		 // Miscellaneous data
+	IPTR misc_data;			 // Miscellaneous data
 	unsigned long value;	 // Value for position-sorting
 	Cfg_Filetype *filetype;	 // Filetype
 
@@ -159,7 +155,6 @@ enum {
 #define BDOF_AUTO_POSITION (1 << 2)	 // Position icon automatically
 #define BDOF_ICON_VIEW (1 << 3)		 // Object is in an iconview lister
 #define BDOF_FAKE_ICON (1 << 4)		 // Not a real icon
-#define BDOF_ICONLIB_DEFAULT (1 << 5)	 // icon.library generated default icon
 
 #define BDOF_STATE_CHANGE (1 << 6)	   // State changed
 #define BDOF_CUSTOM_POS (1 << 7)	   // Custom position
@@ -331,13 +326,6 @@ struct _DOpusAppMessage *backdrop_appmessage(BackdropInfo *info, BOOL);
 void backdrop_drop_appwindow(BackdropInfo *info, struct AppWindow *appwindow, short, short);
 void backdrop_sort_objects(BackdropInfo *info, short, BOOL);
 void backdrop_image_bitmap(BackdropInfo *, struct Image *, UWORD *, struct BitMap *);
-BOOL backdrop_icon_uses_system_draw(BackdropObject *);
-BOOL backdrop_get_system_icon_rect(struct RastPort *, BackdropObject *, struct Rectangle *);
-void backdrop_release_system_icon_state(BackdropInfo *, BackdropObject *);
-struct DiskObject *backdrop_get_iconlib_select_icon(BackdropObject *);
-void backdrop_remap_iconlib_select_icon(BackdropInfo *, BackdropObject *, struct Window *, BOOL);
-void backdrop_free_iconlib_select_icon(BackdropInfo *, BackdropObject *);
-BOOL backdrop_prepare_iconlib_select_icon(BackdropInfo *, BackdropObject *, char *, LONG);
 
 BPTR backdrop_icon_lock(BackdropObject *object);
 
@@ -353,7 +341,7 @@ void backdrop_check_groups(BackdropInfo *info);
 void backdrop_group_add_object(char *, BackdropInfo *, char *, short, short);
 void backdrop_delete_group(BackdropInfo *info, BackdropObject *object);
 void backdrop_remove_group_objects(GroupData *data, BackdropObject *);
-BOOL backdrop_group_do_function(GroupData *, ULONG, struct MenuItem *);
+BOOL backdrop_group_do_function(GroupData *, IPTR, struct MenuItem *);
 
 BOOL backdrop_new_group_object(BackdropInfo *info, BackdropObject *object, unsigned short);
 BOOL backdrop_check_notify(BackdropInfo *info, DOpusNotify *notify, Lister *lister);

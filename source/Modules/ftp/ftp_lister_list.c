@@ -68,7 +68,7 @@ static void lister_reset_index_state(struct ftp_node *ftpnode)
 	ftpnode->fn_ftp.fi_found_fbbs_size = 0;
 }
 
-static void lister_clear_listing(struct ftp_node *ftpnode, ULONG handle, BOOL redo_cache)
+static void lister_clear_listing(struct ftp_node *ftpnode, IPTR handle, BOOL redo_cache)
 {
 	if (redo_cache)
 		rexx_lst_clear(ftpnode->fn_opus, handle);
@@ -105,9 +105,10 @@ BOOL lister_fallback_list_command(struct ftp_node *ftpnode)
 //	Gets called for each line returned by the 'LIST' FTP command
 //	Translates the info for each entry and adds it to the lister
 //
-static int list_update(struct update_info *ui, char *line)
+static int list_update(void *userdata, const char *line)
 {
 	struct entry_info entry = {0};
+	struct update_info *ui = userdata;
 #if defined(__AROS__) || defined(__amigaos3__)
 	struct Device *TimerBase = (struct Device *)GetTimerBase();
 #else
@@ -124,6 +125,8 @@ static int list_update(struct update_info *ui, char *line)
 	// Is this needed any more?
 	ObtainSemaphore(&ui->ui_sem);
 
+	++ui->ui_raw_lines;
+
 	if (ui->ui_ftpnode->fn_ls_to_entryinfo(&entry, line, ui->ui_flags))
 	{
 		lister_add(ui->ui_ftpnode,
@@ -133,6 +136,7 @@ static int list_update(struct update_info *ui, char *line)
 				   entry.ei_seconds,
 				   entry.ei_prot,
 				   entry.ei_comment);
+		++ui->ui_entries;
 
 		GetSysTime(&ui->ui_curr);
 		// gettimeofday(&ui->ui_curr, NULL);
@@ -181,6 +185,7 @@ static int sftp_list_update(void *userdata, const struct ftp_sftp_entry *entry)
 
 	ObtainSemaphore(&ui->ui_sem);
 
+	++ui->ui_raw_lines;
 	lister_add(ui->ui_ftpnode,
 			   (char *)entry->name,
 			   entry->size,
@@ -188,6 +193,7 @@ static int sftp_list_update(void *userdata, const struct ftp_sftp_entry *entry)
 			   ftp_sftp_unix_to_amiga_seconds(entry->seconds),
 			   prot_unix_to_amiga(entry->unixprot),
 			   (char *)entry->comment);
+	++ui->ui_entries;
 
 	GetSysTime(&ui->ui_curr);
 	if (ui->ui_curr.tv_secs - ui->ui_last.tv_secs >= ui->ui_ftpnode->fn_site.se_env->e_list_update)
@@ -262,13 +268,13 @@ static void update_lister_comments(struct ftp_node *ftpnode, char *indexname)
 	char comment[COMMENTLEN];
 	char buf[256];
 	BPTR cf;
-	ULONG lister;
+	APTR lister;
 	DOpusCallbackInfo *infoptr = &ftpnode->fn_og->og_hooks;
 
-	lister = ftpnode->fn_handle;
+	lister = (APTR)ftpnode->fn_handle;
 
 	// lock list.  lister is still busy from previous fn call
-	DC_CALL2(infoptr, dc_LockFileList, DC_REGA0, (ULONG)lister, DC_REGD0, TRUE);
+	DC_CALL2(infoptr, dc_LockFileList, DC_REGA0, lister, DC_REGD0, TRUE);
 	// ftpnode->fn_og->og_hooks.dc_LockFileList( (ULONG)lister, TRUE );
 
 	// open file
@@ -276,7 +282,7 @@ static void update_lister_comments(struct ftp_node *ftpnode, char *indexname)
 	{
 		while (FGets(cf, buf, 256))
 		{
-			*fname = *comment = NULL;
+			*fname = *comment = 0;
 
 			if (*buf == '|' || *buf == '\n')
 				continue;
@@ -302,14 +308,14 @@ static void update_lister_comments(struct ftp_node *ftpnode, char *indexname)
 
 			// update the lister
 			if (*fname && *comment)
-				DC_CALL3(infoptr, dc_SetFileComment, DC_REGA0, (ULONG)lister, DC_REGA1, fname, DC_REGA2, comment);
+				DC_CALL3(infoptr, dc_SetFileComment, DC_REGA0, lister, DC_REGA1, fname, DC_REGA2, comment);
 			// ftpnode->fn_og->og_hooks.dc_SetFileComment( (ULONG)lister, fname, comment );
 		}
 		Close(cf);
 	}
 
 	// unlock list
-	DC_CALL1(infoptr, dc_UnlockFileList, DC_REGA0, (ULONG)lister);
+	DC_CALL1(infoptr, dc_UnlockFileList, DC_REGA0, lister);
 	// ftpnode->fn_og->og_hooks.dc_UnlockFileList( (ULONG)lister );
 
 	// refresh lister
@@ -371,7 +377,7 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 	int lsresult;
 	BOOL abort = FALSE;
 	struct update_info *ui;
-	ULONG handle;
+	IPTR handle;
 #if defined(__AROS__) || defined(__amigaos3__)
 	struct Device *TimerBase = (struct Device *)GetTimerBase();
 #else
@@ -439,7 +445,10 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 			else
 			{
 				rexx_lst_title(ftpnode->fn_opus, handle, GetString(locale, MSG_READING_DIR));
-				send_rexxa(ftpnode->fn_opus, FALSE, "lister refresh %lu full", ftpnode->fn_handle);
+				send_rexxa(ftpnode->fn_opus,
+						   FALSE,
+						   "lister refresh " FTP_HANDLE_PRINTF " full",
+						   FTP_HANDLE_VALUE(ftpnode->fn_handle));
 			}
 
 			lst_addabort(ftpnode, SIGBREAKF_CTRL_D, 0);
@@ -466,11 +475,68 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 					// Send the LIST command
 					lsresult = list(&ftpnode->fn_ftp, list_update, ui, ftpnode->fn_lscmd, "");
 
-				D(bug("list command result %d\n", lsresult));
+				D(bug("list command result %d lines %ld entries %ld\n",
+					  lsresult,
+					  (unsigned long)ui->ui_raw_lines,
+					  (unsigned long)ui->ui_entries));
+				if (ogp->og_oc.oc_log_debug)
+					logprintf("-- List result %ld, command '%s', raw lines %lu, parsed entries %lu\n",
+							  (long)lsresult,
+							  ftpnode->fn_lscmd,
+							  (unsigned long)ui->ui_raw_lines,
+							  (unsigned long)ui->ui_entries);
 
-				if (ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && lsresult == -2 && lister_fallback_list_command(ftpnode))
+				if (ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && lsresult && !(ftpnode->fn_ftp.fi_flags & FTP_PASSIVE) &&
+						 !(ftpnode->fn_ftp.fi_flags & FTP_NO_PASV))
 				{
+					if (ogp->og_oc.oc_log_debug)
+						logprintf("-- Retrying list in passive mode after failure\n");
+					ftpnode->fn_ftp.fi_flags |= FTP_PASSIVE;
 					lister_clear_listing(ftpnode, handle, redo_cache);
+					ui->ui_raw_lines = 0;
+					ui->ui_entries = 0;
+					GetSysTime(&ui->ui_last);
+				}
+				else if (ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && !lsresult && !ui->ui_raw_lines &&
+						 !(ftpnode->fn_ftp.fi_flags & FTP_PASSIVE) && !(ftpnode->fn_ftp.fi_flags & FTP_NO_PASV))
+				{
+					if (ogp->og_oc.oc_log_debug)
+						logprintf("-- Retrying list in passive mode after zero received lines\n");
+					ftpnode->fn_ftp.fi_flags |= FTP_PASSIVE;
+					lister_clear_listing(ftpnode, handle, redo_cache);
+					ui->ui_raw_lines = 0;
+					ui->ui_entries = 0;
+					GetSysTime(&ui->ui_last);
+				}
+				else if (ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && lsresult == -2 && lister_fallback_list_command(ftpnode))
+				{
+					if (ogp->og_oc.oc_log_debug)
+						logprintf("-- Retrying list with fallback command '%s' after command failure\n", ftpnode->fn_lscmd);
+					lister_clear_listing(ftpnode, handle, redo_cache);
+					ui->ui_raw_lines = 0;
+					ui->ui_entries = 0;
+					GetSysTime(&ui->ui_last);
+				}
+				else if (ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && !lsresult && !ui->ui_raw_lines &&
+						 lister_fallback_list_command(ftpnode))
+				{
+					if (ogp->og_oc.oc_log_debug)
+						logprintf("-- Retrying list with fallback command '%s' after zero received lines\n",
+								  ftpnode->fn_lscmd);
+					lister_clear_listing(ftpnode, handle, redo_cache);
+					ui->ui_raw_lines = 0;
+					ui->ui_entries = 0;
+					GetSysTime(&ui->ui_last);
+				}
+				else if (ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && !lsresult && ui->ui_raw_lines && !ui->ui_entries &&
+						 lister_fallback_list_command(ftpnode))
+				{
+					if (ogp->og_oc.oc_log_debug)
+						logprintf("-- Retrying list with fallback command '%s' after zero parsed entries\n",
+								  ftpnode->fn_lscmd);
+					lister_clear_listing(ftpnode, handle, redo_cache);
+					ui->ui_raw_lines = 0;
+					ui->ui_entries = 0;
 					GetSysTime(&ui->ui_last);
 				}
 				else
@@ -478,9 +544,19 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 			}
 
 			if (lsresult)
+			{
 				lister_clear_listing(ftpnode, handle, redo_cache);
+				if (!(ftpnode->fn_flags & LST_ABORT) && !ftpnode->fn_ftp.fi_aborted)
+					lst_server_err(ogp, ftpnode, ftpnode, 0, MSG_FTP_SERVER_ERROR);
+			}
 
 			ftplister_refresh(ftpnode, REFRESH_NODATE);
+
+			if (ogp->og_oc.oc_log_debug)
+				logprintf("-- Lister contents after add: entries %ld, dirs %ld, files %ld\n",
+						  (long)rexx_lst_query_numentries(ftpnode->fn_opus, handle),
+						  (long)rexx_lst_query_numdirs(ftpnode->fn_opus, handle),
+						  (long)rexx_lst_query_numfiles(ftpnode->fn_opus, handle));
 
 			retval = lsresult ? FALSE : TRUE;
 
@@ -504,7 +580,7 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 		}
 		else
 			rexx_lst_title(ftpnode->fn_opus, handle, ftpnode->fn_site.se_host);
-		send_rexxa(ftpnode->fn_opus, FALSE, "lister refresh %lu full", handle);
+		send_rexxa(ftpnode->fn_opus, FALSE, "lister refresh " FTP_HANDLE_PRINTF " full", FTP_HANDLE_VALUE(handle));
 
 		rexx_lst_unlock(ftpnode->fn_opus, handle);
 

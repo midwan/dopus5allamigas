@@ -991,7 +991,7 @@ int function_build_instruction(FunctionHandle *handle,
 		// Query info
 		case FUNC_QUERY_INFO: {
 			char *query_data = 0;
-			char buf[20];
+			char buf[32];
 
 			// Look at next character
 			switch (instruction[++pos])
@@ -1008,25 +1008,25 @@ int function_build_instruction(FunctionHandle *handle,
 
 			// Source lister
 			case 'l':
-				lsprintf(buf, "%ld", source);
+				lsprintf(buf, "%lu", (unsigned long)(IPTR)source);
 				query_data = buf;
 				break;
 
 			// Source lister process
 			case 'L':
-				lsprintf(buf, "%lx", (source) ? source->ipc->proc : 0);
+				lsprintf(buf, "%lx", (unsigned long)(IPTR)((source) ? source->ipc->proc : 0));
 				query_data = buf;
 				break;
 
 			// Destination lister
 			case 'd':
-				lsprintf(buf, "%ld", dest);
+				lsprintf(buf, "%lu", (unsigned long)(IPTR)dest);
 				query_data = buf;
 				break;
 
 			// Destination lister process
 			case 'D':
-				lsprintf(buf, "%lx", (dest) ? dest->ipc->proc : 0);
+				lsprintf(buf, "%lx", (unsigned long)(IPTR)((dest) ? dest->ipc->proc : 0));
 				query_data = buf;
 				break;
 
@@ -1325,7 +1325,7 @@ void function_parse_arguments(FunctionHandle *handle, InstructionParsed *ins)
 				if (strcmp((char *)ins->funcargs->FA_ArgArray[arg], buf))
 				{
 					// Allocate copy
-					if ((ins->funcargs->FA_Arguments[arg] = (long)AllocVec(strlen((char *)buf) + 1, 0)))
+					if ((ins->funcargs->FA_Arguments[arg] = (IPTR)AllocVec(strlen((char *)buf) + 1, 0)))
 					{
 						// Copy new argument string
 						strcpy((char *)ins->funcargs->FA_Arguments[arg], buf);

@@ -54,7 +54,7 @@ void lister_add_filter(Lister *lister)
 	if (!(hook = GetEditHookTags(0,
 								 OBJECTF_NO_SELECT_NEXT,
 								 GTCustom_ChangeSigTask,
-								 FindTask(0),
+								 (IPTR)FindTask(0),
 								 GTCustom_ChangeSigBit,
 								 lister->filter_name_bit,
 								 TAG_END)))
@@ -82,11 +82,11 @@ void lister_add_filter(Lister *lister)
 							 STRINGA_MaxChars,
 							 sizeof(lister->filter_name) - 1,
 							 STRINGA_Buffer,
-							 lister->filter_name,
+							 (IPTR)lister->filter_name,
 							 STRINGA_Font,
-							 FIELD_FONT,
+							 (IPTR)FIELD_FONT,
 							 STRINGA_EditHook,
-							 hook,
+							 (IPTR)hook,
 							 TAG_END)))
 	{
 		FreeEditHook(hook);

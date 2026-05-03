@@ -27,7 +27,7 @@ struct DosList *LIBFUNC L_DeviceFromLock(REG(a0, BPTR lock), REG(a1, char *name)
 {
 	struct FileLock *fl;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -50,7 +50,7 @@ struct DosList *LIBFUNC L_DeviceFromHandler(REG(a0, struct MsgPort *port),
 	struct DosList *dos, *dos_list = 0;
 	DeviceNode *node, *match_node = 0;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -176,7 +176,7 @@ BOOL LIBFUNC L_DevNameFromLockDopus(REG(d1, BPTR lock),
 {
 	char devicename[34], *temp, *ptr;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -228,7 +228,7 @@ BOOL LIBFUNC L_IsDiskDevice(REG(a0, struct MsgPort *port))
 		return 0;
 
 	// Send ACTION_DISKINFO packet to handler
-	if (DoPkt(port, ACTION_DISK_INFO, MKBADDR(info), 0, 0, 0, 0))
+	if (DoPkt(port, ACTION_DISK_INFO, (SIPTR)MKBADDR(info), 0, 0, 0, 0))
 	{
 		// Check for valid DOS type
 		if (info->id_DiskType != 0)

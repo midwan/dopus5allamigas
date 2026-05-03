@@ -128,7 +128,7 @@ IPC_EntryCode(lister_code)
 	struct MinList sniff_list;
 
 	// Do startup
-	if (!(IPC_ProcStartup((ULONG *)&lister, &lister_init)))
+	if (!(IPC_ProcStartup((IPTR *)&lister, &lister_init)))
 	{
 		lister_cleanup(lister, 0);
 		return;
@@ -467,7 +467,7 @@ IPC_EntryCode(lister_code)
 		{
 			while ((lmsg = (IPCMessage *)GetMsg(lister->ipc->command_port)) && !quit_flag)
 			{
-				ULONG flags;
+				IPTR flags;
 				APTR data;
 
 				// Cache stuff
@@ -482,7 +482,7 @@ IPC_EntryCode(lister_code)
 				case IPC_PRIORITY:
 
 					// Store priorities
-					lister->normal_pri = (short)lmsg->data;
+					lister->normal_pri = (short)(IPTR)lmsg->data;
 					lister->busy_pri = (short)lmsg->flags;
 
 					// Fix priority
@@ -867,9 +867,14 @@ IPC_EntryCode(lister_code)
 					break;
 
 				// Show special buffer
-				case LISTER_SHOW_SPECIAL_BUFFER:
-					buffer_show_special(lister, (char *)data);
+				case LISTER_SHOW_SPECIAL_BUFFER: {
+					char *title = (char *)data;
+
+					if (!title && flags)
+						title = GetString(&locale, flags);
+					buffer_show_special(lister, title);
 					break;
+				}
 
 				// Get current path
 				case LISTER_GET_PATH:
@@ -878,7 +883,7 @@ IPC_EntryCode(lister_code)
 
 				// Searches for a named buffer
 				case LISTER_BUFFER_FIND:
-					lmsg->command = (ULONG)lister_find_buffer(lister,
+					lmsg->command = (IPTR)lister_find_buffer(lister,
 															  0,
 															  data,
 															  (struct DateStamp *)flags,
@@ -913,12 +918,12 @@ IPC_EntryCode(lister_code)
 
 				// Finds an empty buffer
 				case LISTER_BUFFER_FIND_EMPTY:
-					lmsg->command = (ULONG)lister_buffer_find_empty(lister, data, (struct DateStamp *)flags);
+					lmsg->command = (IPTR)lister_buffer_find_empty(lister, data, (struct DateStamp *)flags);
 					break;
 
 				// Find cached buffer
 				case LISTER_FIND_CACHED_BUFFER:
-					lmsg->command = (ULONG)lister_find_cached_buffer(lister, (char *)data, (char *)flags);
+					lmsg->command = (IPTR)lister_find_cached_buffer(lister, (char *)data, (char *)flags);
 					break;
 
 				// Refresh path field
@@ -973,10 +978,10 @@ IPC_EntryCode(lister_code)
 				case LISTER_REFRESH_SLIDERS:
 					if (lister->window)
 					{
-						lister_update_slider(lister, (int)data);
-						if (((int)data) & SLIDER_VERT_DISPLAY)
+						lister_update_slider(lister, (int)(IPTR)data);
+						if (((IPTR)data) & SLIDER_VERT_DISPLAY)
 							lister_pos_slider(lister, SLIDER_VERT);
-						if (((int)data) & SLIDER_HORZ_DISPLAY)
+						if (((IPTR)data) & SLIDER_HORZ_DISPLAY)
 							lister_pos_slider(lister, SLIDER_HORZ);
 					}
 					break;
@@ -995,7 +1000,7 @@ IPC_EntryCode(lister_code)
 
 				// Scroll to show first selected entry
 				case LISTER_FIND_FIRST_SEL:
-					lister_show_selected(lister, (int)data);
+					lister_show_selected(lister, (int)(IPTR)data);
 					break;
 
 				// Scroll to show an entry
@@ -1144,7 +1149,7 @@ IPC_EntryCode(lister_code)
 					SetProgressWindowTags(
 						lister->progress_window,
 						(flags == RXPROG_INFO2) ? PW_Info2 : (flags == RXPROG_INFO3) ? PW_Info3 : PW_Info,
-						data,
+						(IPTR)data,
 						TAG_END);
 
 					/*
@@ -1252,7 +1257,7 @@ IPC_EntryCode(lister_code)
 
 				// Get lister handle
 				case LISTER_GET_HANDLE:
-					lmsg->command = (ULONG)lister;
+					lmsg->command = (IPTR)lister;
 					break;
 
 				// Show help on something
@@ -1260,8 +1265,8 @@ IPC_EntryCode(lister_code)
 					short x, y;
 
 					// Get coordinates
-					x = ((ULONG)data) >> 16;
-					y = ((ULONG)data) & 0xffff;
+					x = ((IPTR)data) >> 16;
+					y = ((IPTR)data) & 0xffff;
 
 					// Is point over toolbar?
 					if (lister->flags & LISTERF_TOOLBAR && point_in_element(&lister->toolbar_area, x, y))
@@ -1367,7 +1372,7 @@ IPC_EntryCode(lister_code)
 
 				// Do a function
 				case LISTER_DO_FUNCTION:
-					lister_do_function(lister, (ULONG)data);
+					lister_do_function(lister, (IPTR)data);
 					break;
 
 				// Check for refresh
@@ -1444,7 +1449,7 @@ IPC_EntryCode(lister_code)
 						lister->more_flags &= ~LISTERF_CONFIGURE;
 
 						// Save?
-						if (((ULONG)lmsg->data) & CONFIG_SAVE && lmsg->data_free)
+						if (((IPTR)lmsg->data) & CONFIG_SAVE && lmsg->data_free)
 						{
 							short flags = POSUPF_SAVE | POSUPF_FORMAT;
 
@@ -1484,7 +1489,7 @@ IPC_EntryCode(lister_code)
 
 				// Highlight an entry
 				case LISTER_HIGHLIGHT:
-					lmsg->command = (ULONG)lister_highlight(
+					lmsg->command = (IPTR)lister_highlight(
 						lister, (lmsg->flags) & 0xffff, (lmsg->flags >> 16) & 0xffff, (DragInfo *)lmsg->data);
 					break;
 				}
@@ -1505,11 +1510,11 @@ IPC_EntryCode(lister_code)
 #ifdef USE_64BIT
 			SetProgressWindowTags(lister->progress_window,
 								  (progress_flag & PWF_FILENAME) ? PW_FileName : TAG_IGNORE,
-								  (ULONG)progress_filename,
+								  (IPTR)progress_filename,
 								  (progress_flag & PWF_GRAPH) ? PW_FileNum : TAG_IGNORE,
 								  progress_count,
 								  (progress_flag & PWF_FILESIZE) ? PW_FileDone64 : TAG_IGNORE,
-								  (ULONG)&file_progress_count,
+								  (IPTR)&file_progress_count,
 								  TAG_END);
 #else
 			SetProgressWindowTags(lister->progress_window,

@@ -29,7 +29,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *ipc),
 						   REG(a3, IPCData *main_ipc),
-						   REG(d0, ULONG mod_id),
+						   REG(d0, IPTR mod_id),
 						   REG(d1, EXT_FUNC(func_callback)))
 {
 	diskinfo_data *data;
@@ -298,11 +298,11 @@ BOOL diskinfo_info(diskinfo_data *data)
 
 	// Fill out name field
 	lsprintf(data->volume, "%b", (IPTR)doslist->dol_Name);
-	SetGadgetValue(data->objlist, GAD_NAME, (ULONG)data->volume);
+	SetGadgetValue(data->objlist, GAD_NAME, (IPTR)data->volume);
 
 	// Display type
 	get_dostype_string(disktype, data->buffer);
-	SetGadgetValue(data->objlist, GAD_TYPE, (ULONG)data->buffer);
+	SetGadgetValue(data->objlist, GAD_TYPE, (IPTR)data->buffer);
 
 	// Clear buffer
 	*data->buffer = 0;
@@ -338,7 +338,7 @@ BOOL diskinfo_info(diskinfo_data *data)
 	}
 
 	// Display handler
-	SetGadgetValue(data->objlist, GAD_HANDLER, (ULONG)data->buffer);
+	SetGadgetValue(data->objlist, GAD_HANDLER, (IPTR)data->buffer);
 
 	// Get state
 	switch (data->info.id_DiskState)
@@ -363,7 +363,7 @@ BOOL diskinfo_info(diskinfo_data *data)
 	}
 
 	// Display state
-	SetGadgetValue(data->objlist, GAD_STATE, (ULONG)GetString(locale, id));
+	SetGadgetValue(data->objlist, GAD_STATE, (IPTR)GetString(locale, id));
 
 	// Show used space
 #ifdef USE_64BIT
@@ -426,7 +426,7 @@ BOOL diskinfo_info(diskinfo_data *data)
 		lsprintf(data->buffer,
 				 GetString(locale, (data->info.id_NumSoftErrors > 1) ? MSG_ERRORS : MSG_ERROR),
 				 data->info.id_NumSoftErrors);
-		SetGadgetValue(data->objlist, GAD_ERRORS, (ULONG)data->buffer);
+		SetGadgetValue(data->objlist, GAD_ERRORS, (IPTR)data->buffer);
 	}
 
 	// Release lock
@@ -485,7 +485,7 @@ void diskinfo_show_space(diskinfo_data *data, unsigned long bytes, short id_byte
 	ItoaU(bytes, data->buffer, data->decimal_sep);
 #endif
 	strcat(data->buffer, GetString(locale, MSG_BYTES));
-	SetGadgetValue(data->objlist, id_bytes, (ULONG)data->buffer);
+	SetGadgetValue(data->objlist, id_bytes, (IPTR)data->buffer);
 
 	// More than a kilobyte?
 	if (bytes > 1023 || bytes == 0)
@@ -503,7 +503,7 @@ void diskinfo_show_space(diskinfo_data *data, unsigned long bytes, short id_byte
 	// Use default 1K string
 	else
 		strcpy(data->buffer, "1K");
-	SetGadgetValue(data->objlist, id_mb, (ULONG)data->buffer);
+	SetGadgetValue(data->objlist, id_mb, (IPTR)data->buffer);
 }
 
 // Show graph

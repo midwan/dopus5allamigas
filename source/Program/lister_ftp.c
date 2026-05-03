@@ -109,7 +109,7 @@ BOOL lister_check_ftp(Lister *lister, char *path)
 
 	// Add lister
 	strcat(lister->work_buffer, " LISTER=");
-	lsprintf(lister->work_buffer + strlen(lister->work_buffer), "%ld", lister);
+	lsprintf(lister->work_buffer + strlen(lister->work_buffer), "%lu", (unsigned long)(IPTR)lister);
 
 	// Create new function
 	if ((function = new_default_function(lister->work_buffer, global_memory_pool)))

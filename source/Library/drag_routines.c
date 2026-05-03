@@ -34,7 +34,6 @@ For more information on Directory Opus for Windows please see:
 #endif
 
 void lock_layers(DragInfo *drag, BOOL lock);
-static BOOL drag_custom_bitmap_ok(struct BitMap *bm, BOOL ignore_user_disable, struct MyLibrary *libbase);
 
 // Allocate and initialise a DragInfo structure
 DragInfo *LIBFUNC L_GetDragInfo(REG(a0, struct Window *window),
@@ -49,7 +48,7 @@ DragInfo *LIBFUNC L_GetDragInfo(REG(a0, struct Window *window),
 	BOOL real = 1;
 	short word_width;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -87,8 +86,7 @@ DragInfo *LIBFUNC L_GetDragInfo(REG(a0, struct Window *window),
 	if (flags & DRAGF_CUSTOM)
 	{
 		// Check we can do it
-		if (window && drag_custom_bitmap_ok(
-						  window->WScreen->RastPort.BitMap, (flags & DRAGF_FORCE_CUSTOM) ? TRUE : FALSE, libbase))
+		if (window && L_DragCustomOk(window->WScreen->RastPort.BitMap, libbase))
 		{
 			// Set flag
 			drag->flags |= DRAGF_CUSTOM;
@@ -1425,24 +1423,16 @@ void LIBFUNC L_RemoveDragImage(REG(a0, DragInfo *drag))
 // See if custom dragging is OK
 BOOL LIBFUNC L_DragCustomOk(REG(a0, struct BitMap *bm), REG(a6, struct MyLibrary *libbase))
 {
-	return drag_custom_bitmap_ok(bm, FALSE, libbase);
-}
-
-static BOOL drag_custom_bitmap_ok(struct BitMap *bm, BOOL ignore_user_disable, struct MyLibrary *libbase)
-{
 	BOOL ok = 0;
 
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
 	// Get data pointer
 	data = (struct LibData *)libbase->ml_UserData;
-
-	if (!bm)
-		return 0;
 
 	// Ok to custom drag?
 	// Prefer P96's P96BMA_ISP96 probe - it's the reliable RTG check on
@@ -1450,7 +1440,7 @@ static BOOL drag_custom_bitmap_ok(struct BitMap *bm, BOOL ignore_user_disable, s
 	// from OS3.1). Fall back to CyberGraphX's ISCYBERGFX probe on
 	// installs that only have CGX resident, so custom drag still gets
 	// enabled there.
-	if ((ignore_user_disable || !(data->flags & LIBDF_NO_CUSTOM_DRAG)) && ((struct Library *)GfxBase)->lib_Version >= 39)
+	if (!(data->flags & LIBDF_NO_CUSTOM_DRAG) && ((struct Library *)GfxBase)->lib_Version >= 39)
 	{
 #if !defined(__AROS__)
 		if (P96Base && p96GetBitMapAttr(bm, P96BMA_ISP96))

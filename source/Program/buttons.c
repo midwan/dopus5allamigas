@@ -77,9 +77,9 @@ Buttons *buttons_new(char *name, Cfg_ButtonBank *bank, struct IBox *box, short t
 	if (!(IPC_Launch(&GUI->buttons_list,
 					 &ipc,
 					 "dopus_buttons",
-					 (ULONG)&buttons_code,
+					 (IPTR)&buttons_code,
 					 STACK_DEFAULT,
-					 (ULONG)buttons,
+					 (IPTR)buttons,
 					 (struct Library *)DOSBase)))
 	{
 		// Free stuff if process never got off the ground

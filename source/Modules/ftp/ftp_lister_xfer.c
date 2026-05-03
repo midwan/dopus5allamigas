@@ -95,7 +95,7 @@ static void time_from_seconds(char *buf, ULONG seconds)
 //	Which in turn requires a fake IPCData structure with its proc field filled out
 //	We then add our ARexx handler to the lister so we can trap the 'abort' message
 //
-static struct ftp_node *add_abort_trap(struct opusftp_globals *ogp, char *opus, ULONG lclhandle, IPCData *rmtipc)
+static struct ftp_node *add_abort_trap(struct opusftp_globals *ogp, char *opus, IPTR lclhandle, IPCData *rmtipc)
 {
 	struct ftp_node *tmpnode;
 	int ok = 0;
@@ -115,7 +115,10 @@ static struct ftp_node *add_abort_trap(struct opusftp_globals *ogp, char *opus, 
 		}
 
 		if (ok)
-			send_rexxa(opus, REXX_REPLY_RESULT, "lister set %lu handler '" PORTNAME "' leavegauge", lclhandle);
+			send_rexxa(opus,
+					   REXX_REPLY_NONE,
+					   "lister set " FTP_HANDLE_PRINTF " handler '" PORTNAME "' leavegauge",
+					   FTP_HANDLE_VALUE(lclhandle));
 	}
 
 	if (!ok)
@@ -132,11 +135,14 @@ static struct ftp_node *add_abort_trap(struct opusftp_globals *ogp, char *opus, 
 //
 //	Remove an abort trap from a local lister (not controlled by us)
 //
-static void rem_abort_trap(struct opusftp_globals *ogp, char *opus, struct ftp_node *tmpnode, ULONG lclhandle)
+static void rem_abort_trap(struct opusftp_globals *ogp, char *opus, struct ftp_node *tmpnode, IPTR lclhandle)
 {
 	if (tmpnode)
 	{
-		send_rexxa(opus, REXX_REPLY_RESULT, "lister set %lu handler ''", lclhandle);
+		send_rexxa(opus,
+				   REXX_REPLY_NONE,
+				   "lister set " FTP_HANDLE_PRINTF " handler ''",
+				   FTP_HANDLE_VALUE(lclhandle));
 
 		ListLockRemove(&ogp->og_listerlist, (struct Node *)tmpnode, &ogp->og_listercount);
 		//	if	(tmpnode->fn_ipc)
@@ -930,7 +936,7 @@ void lister_xfer(struct ftp_node *remotenode, IPCMessage *msg)
 {
 	struct xfer_msg *xm;
 	struct ftp_node *srcnode, *destnode, *prognode;
-	ULONG srchandle, desthandle, proghandle;
+	IPTR srchandle, desthandle, proghandle;
 	char *names, *p;  // Quoted names of all selected entries
 	int entrycount;
 	int dircount = 0;
@@ -1458,9 +1464,9 @@ void lister_xfer(struct ftp_node *remotenode, IPCMessage *msg)
 	// Trigger script
 	if (remotenode->fn_og->og_hooks.dc_Script && !(remotenode->fn_flags & LST_ABORT) && timer && CheckTimer(timer))
 	{
-		char handle[13];
+		char handle[FTP_HANDLE_BUFSIZE];
 
-		sprintf(handle, "%lu", srchandle);
+		ftp_format_handle(handle, srchandle);
 
 		if (rexx_result && remotenode->fn_site.se_env->e_script_copy_ok)
 		{
@@ -1494,7 +1500,7 @@ void lister_xfer(struct ftp_node *remotenode, IPCMessage *msg)
 //
 void lister_doubleclick(struct ftp_node *node, IPCMessage *msg)
 {
-	ULONG handle = node->fn_handle;	 // Handle of the lister
+	IPTR handle = node->fn_handle;	 // Handle of the lister
 	struct ftp_msg *fm;
 	struct connect_msg *cm;
 	struct entry_info ei = {0};
@@ -1710,7 +1716,7 @@ void lister_doubleclick(struct ftp_node *node, IPCMessage *msg)
 void lister_traptemp(struct ftp_node *node, IPCMessage *msg)
 {
 	struct traptemp_msg *tm;			 // Our message
-	ULONG handle = node->fn_handle;		 // Lister handle
+	IPTR handle = node->fn_handle;		 // Lister handle
 	char *names, name[FILENAMELEN], *p;	 // Files to act on
 	BOOL gotfileinfo;					 // Real name (for links)
 	struct entry_info ei = {0};
@@ -1877,7 +1883,7 @@ void lister_traptemp(struct ftp_node *node, IPCMessage *msg)
 //
 BOOL lister_xferindex(struct ftp_node *ftpnode, char *localname, char *remotename, int size)
 {
-	ULONG handle;		  // Handle of the lister
+	IPTR handle;		  // Handle of the lister
 	unsigned int actual;  // Length actually read
 	BOOL abort;			  // passed to get(), (ignored)
 	struct update_info ui = {0};
@@ -1986,7 +1992,7 @@ void lister_getput(struct ftp_node *thisnode, IPCMessage *msg)
 {
 	struct xfer_msg *xm;
 	struct ftp_node *srcnode, *destnode, *prognode;
-	ULONG srchandle, desthandle, proghandle;
+	IPTR srchandle, desthandle, proghandle;
 	char *names, *p;  // Quoted names of all selected entries
 	int entrycount;
 	int dircount = 0;
@@ -2376,9 +2382,9 @@ void lister_getput(struct ftp_node *thisnode, IPCMessage *msg)
 	// Trigger script
 	if (thisnode->fn_og->og_hooks.dc_Script && !(prognode->fn_flags & LST_ABORT) && timer && CheckTimer(timer))
 	{
-		char handle[13];
+		char handle[FTP_HANDLE_BUFSIZE];
 
-		sprintf(handle, "%lu", srchandle);
+		ftp_format_handle(handle, srchandle);
 
 		if (rexx_result && (srcnode->fn_site.se_env->e_script_copy_ok || destnode->fn_site.se_env->e_script_copy_ok))
 		{

@@ -93,7 +93,7 @@ void handle_dos_notify(DOpusNotify *notify, FunctionHandle *handle)
 			{
 				// Fill out tag
 				tag.ti_Tag = FM_Date;
-				tag.ti_Data = (ULONG)&notify->dn_Fib->fib_Date;
+				tag.ti_Data = (IPTR)&notify->dn_Fib->fib_Date;
 			}
 
 			// SetComment
@@ -101,7 +101,7 @@ void handle_dos_notify(DOpusNotify *notify, FunctionHandle *handle)
 			{
 				// Fill out tag
 				tag.ti_Tag = FM_Comment;
-				tag.ti_Data = (ULONG)notify->dn_Fib->fib_Comment;
+				tag.ti_Data = (IPTR)notify->dn_Fib->fib_Comment;
 			}
 
 			// SetProtection
@@ -117,7 +117,7 @@ void handle_dos_notify(DOpusNotify *notify, FunctionHandle *handle)
 			{
 				// Fill out tag
 				tag.ti_Tag = FM_Name;
-				tag.ti_Data = (ULONG)notify->dn_Fib->fib_Comment;
+				tag.ti_Data = (IPTR)notify->dn_Fib->fib_Comment;
 
 				// Is this a directory?
 				if (notify->dn_Fib->fib_DirEntryType > 0)

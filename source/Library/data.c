@@ -38,3 +38,7 @@ FAR WB_Data *wb_data;
 char decimal_point = '.';
 
 IPCData *launcher_ipc;
+
+#if defined(__amigaos4__) || defined(__AROS__)
+APTR dopuslibbase_global;
+#endif

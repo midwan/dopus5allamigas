@@ -69,7 +69,7 @@ void help_get_help(short x, short y, unsigned short qual)
 		coords = ((unsigned short)x << 16) | (unsigned short)y;
 
 		// Send help command
-		IPC_Command(ipc, IPC_HELP, qual, (APTR)coords, 0, 0);
+		IPC_Command(ipc, IPC_HELP, qual, (APTR)(IPTR)coords, 0, 0);
 
 		// Enable multitasking now that message has been sent
 		Permit();
@@ -276,7 +276,7 @@ void help_show_help(char *thing, char *file)
 		if (!(IPC_Launch(&GUI->process_list,
 						 &ipc,
 						 "dopus_help",
-						 (ULONG)&help_proc,
+						 (IPTR)&help_proc,
 						 STACK_DEFAULT,
 						 0,
 						 (struct Library *)DOSBase)))

@@ -41,7 +41,7 @@ ProgressWindow *LIBFUNC L_OpenProgressWindow(REG(a0, struct TagItem *tags), REG(
 	char *ptr;
 	struct TagItem *tag = NULL;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	lib = dopuslibbase_global;
 #endif
 
@@ -98,7 +98,7 @@ ProgressWindow *LIBFUNC L_OpenProgressWindow(REG(a0, struct TagItem *tags), REG(
 				 prog->pw_TaskName,
 				 IPC_NATIVE(progress_task),
 				 STACK_DEFAULT,
-				 (ULONG)prog,
+				 (IPTR)prog,
 				 (struct Library *)DOSBase,
 				 lib);
 
@@ -214,7 +214,7 @@ void SAVEDS progress_task(void)
 	IPCMessage *msg;
 
 	// Do startup
-	if (!(ipc = L_IPC_ProcStartup((APTR)&prog, 0)))
+	if (!(ipc = L_IPC_ProcStartup((IPTR *)&prog, 0)))
 		return;
 
 	/*
@@ -947,7 +947,12 @@ void progress_set(ProgressWindow *prog, struct TagItem *tags)
 		}
 		change |= PWF_FILESIZE;
 		if (prog->pw_Flags & PWF_DEBUG)
-			lsprintf(prog->pw_TaskName, "dopus_progressbar - %lld", temp);	// prog->pw_FileDone);
+		{
+			char num[32];
+
+			L_ItoaU64(&temp, num, sizeof(num), 0);
+			lsprintf(prog->pw_TaskName, "dopus_progressbar - %s", (IPTR)num);  // prog->pw_FileDone
+		}
 	}
 
 	// Information?
@@ -1008,7 +1013,7 @@ void progress_get(ProgressWindow *prog, struct TagItem *tags)
 	{
 		// Fill out window pointer
 		if (tag->ti_Data)
-			*((ULONG *)tag->ti_Data) = (ULONG)prog->pw_Window;
+			*((APTR *)tag->ti_Data) = prog->pw_Window;
 	}
 }
 

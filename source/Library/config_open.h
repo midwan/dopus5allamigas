@@ -133,7 +133,7 @@ typedef struct
 	char output_window[80];	 // Output window
 	char output_device[80];	 // Output device
 
-	unsigned long default_stack;  // Default stack size
+	ULONG default_stack;  // Default stack size
 
 	/*
 		char		scr_title_text[120];	// Screen title text
@@ -171,7 +171,7 @@ typedef struct
 
 	char env_NewIconsPrecision;
 
-	unsigned long desktop_flags;
+	ULONG desktop_flags;
 
 	unsigned char iconw_fpen;
 	unsigned char iconw_bpen;

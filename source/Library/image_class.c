@@ -26,11 +26,11 @@ For more information on Directory Opus for Windows please see:
 #include "boopsi.h"
 
 // Image dispatcher
-ULONG LIBFUNC image_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg))
+IPTR LIBFUNC image_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg))
 {
 	BoopsiImageData *data = 0;
 	struct Image *image = 0;
-	ULONG retval = 0;
+	IPTR retval = 0;
 
 	// Get gadget and data pointers
 	if (obj)
@@ -51,7 +51,7 @@ ULONG LIBFUNC image_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, M
 			struct TagItem *tags;
 
 			// Get pointer to our instance data
-			data = INST_DATA(cl, (APTR)retval);
+			data = INST_DATA(cl, (APTR)(IPTR)retval);
 
 			// Get taglist
 			tags = ((struct opSet *)msg)->ops_AttrList;

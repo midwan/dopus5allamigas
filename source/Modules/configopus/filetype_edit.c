@@ -73,9 +73,9 @@ Cfg_Filetype *LIBFUNC L_EditFiletype(REG(a0, Cfg_Filetype *type),
 	if (!(IPC_Launch(0,
 					 &editor,
 					 "dopus_filetype_editor",
-					 (ULONG)IPC_NATIVE(FiletypeEditor),
+					 IPC_NATIVE(FiletypeEditor),
 					 STACK_DEFAULT,
-					 (ULONG)data,
+					 (IPTR)data,
 					 (struct Library *)DOSBase)) ||
 		!editor)
 	{

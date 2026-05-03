@@ -23,14 +23,15 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopus.h"
 
-short STDARGS rexx_handler_msg_args(char *handler, DirBuffer *buffer, short flags, HandlerArg *args)
+short STDARGS rexx_handler_msg_args(char *handler, DirBuffer *buffer, short flags, IPTR *args)
 {
 	struct RexxMsg *msg;
 	char qualbuf[40];
-	short arg, res;
+	short res;
 	unsigned long type = 0, count = 0;
 	RexxDespatch *desp;
 	struct MsgPort *port, *reply_port;
+	IPTR *argptr;
 
 	// If no handler supplied, use buffer's handler
 	if ((!handler || !*handler) && buffer)
@@ -58,45 +59,49 @@ short STDARGS rexx_handler_msg_args(char *handler, DirBuffer *buffer, short flag
 	}
 
 	// Go through arguments
-	for (arg = 0; args[arg].ha_Type != TAG_END; arg++)
+	for (argptr = args; argptr && argptr[0] != TAG_END; argptr += 3)
 	{
+		ULONG ha_type = (ULONG)argptr[0];
+		ULONG ha_arg = (ULONG)argptr[1];
+		IPTR ha_data = argptr[2];
+
 		// Argument not too large?
-		if (args[arg].ha_Arg > 15)
+		if (ha_arg > 15)
 			continue;
 
 		// Value?
-		if (args[arg].ha_Type == HA_Value)
+		if (ha_type == HA_Value)
 		{
 			// Set message slot and conversion key bit
-			msg->rm_Args[args[arg].ha_Arg] = (STRPTR)args[arg].ha_Data;
-			type |= 1 << args[arg].ha_Arg;
+			msg->rm_Args[ha_arg] = ha_data;
+			type |= 1 << ha_arg;
 		}
 
 		// Qualifier?
-		else if (args[arg].ha_Type == HA_Qualifier)
+		else if (ha_type == HA_Qualifier)
 		{
 			// Get qualifier
 			qualbuf[0] = 0;
-			if (args[arg].ha_Data & IEQUAL_ANYSHIFT)
+			if (ha_data & IEQUAL_ANYSHIFT)
 				strcat(qualbuf, "shift ");
-			if (args[arg].ha_Data & IEQUAL_ANYALT)
+			if (ha_data & IEQUAL_ANYALT)
 				strcat(qualbuf, "alt ");
-			if (args[arg].ha_Data & IEQUALIFIER_CONTROL)
+			if (ha_data & IEQUALIFIER_CONTROL)
 				strcat(qualbuf, "control ");
-			if (args[arg].ha_Data & IEQUALIFIER_SUBDROP)
+			if (ha_data & IEQUALIFIER_SUBDROP)
 				strcat(qualbuf, "subdrop");
 
 			// Set message slot
-			msg->rm_Args[args[arg].ha_Arg] = qualbuf;
+			msg->rm_Args[ha_arg] = (IPTR)qualbuf;
 		}
 
 		// String
 		else
-			msg->rm_Args[args[arg].ha_Arg] = (STRPTR)args[arg].ha_Data;
+			msg->rm_Args[ha_arg] = ha_data;
 
 		// Fix count
-		if (args[arg].ha_Arg > count)
-			count = args[arg].ha_Arg;
+		if (ha_arg > count)
+			count = ha_arg;
 	}
 
 	// Increment count

@@ -18,7 +18,7 @@ BOOL ConvertConfig(char * name, struct Screen * screen, IPCData * owner) (a0,a1,
 short Config_Filetypes(struct Screen * screen, IPCData * ipc, IPCData * owner, ULONG cmdlist, char * name) (a0,a1,a2,d0,a3)
 ULONG Config_ListerButtons(char * name, IPCData * ipc, IPCData * owner, struct Screen * screen, Cfg_ButtonBank * bank, ULONG cmdlist, LONG init) (a0,a1,a2,a3,d0,d1,d2)
 ULONG Config_Menu(char * name, IPCData * ipc, IPCData * owner, struct Screen * screen, Cfg_ButtonBank * bank, char * title, ULONG cmdlist, char * def, short hotkeys, Att_List * scripts) (a0,a1,a2,a3,d0,d1,d2,d3,d4,d5)
-ULONG Config_Menus(IPCData * ipc, IPCData * owner, struct Screen * screen, Cfg_ButtonBank * menu, ULONG cmdlist, ULONG type, char * name) (a0,a1,a2,a3,d0,d1,d2)
+IPTR Config_Menus(IPCData * ipc, IPCData * owner, struct Screen * screen, Cfg_ButtonBank * menu, IPTR cmdlist, ULONG type, char * name) (a0,a1,a2,a3,d0,d1,d2)
 Cfg_Filetype * EditFiletype(Cfg_Filetype * type, struct Window * window, IPCData * ipc, IPCData * dopus, ULONG flags) (a0,a1,a2,a3,d0)
 Cfg_Function * Config_EditFunction(IPCData * ipc, IPCData * opus, struct Window * window, Cfg_Function * func, APTR memory, ULONG cmdlist) (a0,a1,a2,a3,d0,d1)
 long ShowPaletteBox(struct Window * window, DOpusScreenData * data, short * fgpen, short * bgpen, struct TextAttr * font, ColourSpec32 * spec, short * pen) (a0,a1,a2,a3,d0,d1,d2)

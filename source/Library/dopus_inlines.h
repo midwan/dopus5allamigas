@@ -186,7 +186,7 @@
 		  ULONG,                                          \
 		  type,                                           \
 		  d0,                                             \
-		  ULONG,                                          \
+		  IPTR,                                           \
 		  data,                                           \
 		  d1,                                             \
 		  ULONG,                                          \

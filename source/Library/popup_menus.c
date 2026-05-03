@@ -42,7 +42,7 @@ UWORD LIBFUNC L_DoPopUpMenu(REG(a0, struct Window *window),
 	BOOL first_move = 1;
 	short first_x, first_y, still_ticks;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -523,8 +523,8 @@ UWORD LIBFUNC L_DoPopUpMenu(REG(a0, struct Window *window),
 				if (item->flags & POPUPF_LOCALE)
 					text = L_GetString(data->menu->locale, (LONG)item->item_name);
 				else
-					text = item->item_name;
-				height = (text == POPUP_BARLABEL) ? data->sep_height : data->menu_list[data->menu_current].item_height;
+					text = (char *)item->item_name;
+				height = ((IPTR)text == POPUP_BARLABEL) ? data->sep_height : data->menu_list[data->menu_current].item_height;
 
 				// Do scroll
 				data->menu_list[data->menu_current].top_item += data->menu_list[data->menu_current].scroll_dir;
@@ -1054,17 +1054,17 @@ short popup_show_item(PopUpData *data, short which, PopUpItem *item, short item_
 		text = L_GetString(data->menu->locale, (LONG)item->item_name);
 	}
 	else
-		text = item->item_name;
+		text = (char *)item->item_name;
 
 	// Get height
-	height = (text == POPUP_BARLABEL) ? data->sep_height : data->menu_list[which].item_height;
+	height = ((IPTR)text == POPUP_BARLABEL) ? data->sep_height : data->menu_list[which].item_height;
 
 	// Will it fit?
 	if (item_y + height > data->menu_list[which].item_y + data->menu_list[which].total_height)
 		return 0;
 
 	// Bar label?
-	if (text == POPUP_BARLABEL)
+	if ((IPTR)text == POPUP_BARLABEL)
 	{
 		short a;
 
@@ -1153,7 +1153,7 @@ short popup_show_item(PopUpData *data, short which, PopUpItem *item, short item_
 
 		// Fill out tags
 		tags[0].ti_Tag = IM_Rectangle;
-		tags[0].ti_Data = (ULONG)&rect;
+		tags[0].ti_Data = (IPTR)&rect;
 		tags[1].ti_Tag = IM_ClipBoundary;
 		tags[1].ti_Data = 1;
 		tags[2].ti_Tag = IM_State;
@@ -1506,10 +1506,10 @@ BOOL popup_init_list(PopUpData *data, short which)
 		if (item->flags & POPUPF_LOCALE)
 			text = L_GetString(data->menu->locale, (LONG)item->item_name);
 		else
-			text = item->item_name;
+			text = (char *)item->item_name;
 
 		// Check valid text
-		if (text && text != POPUP_BARLABEL)
+		if (text && (IPTR)text != POPUP_BARLABEL)
 		{
 			// Get length of text
 			len = TextLength(&rp, text, strlen(text));
@@ -1526,7 +1526,7 @@ BOOL popup_init_list(PopUpData *data, short which)
 		}
 
 		// Increment item count
-		else if (text == POPUP_BARLABEL)
+		else if ((IPTR)text == POPUP_BARLABEL)
 		{
 			++data->menu_list[which].sep_count;
 			data->menu_list[which].pos.Height += data->sep_height;
@@ -1832,7 +1832,7 @@ void LIBFUNC L_SetPopUpDelay(REG(d0, short delay), REG(a6, struct MyLibrary *lib
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 

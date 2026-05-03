@@ -38,7 +38,7 @@ enum {
 };
 
 // Add an AppIcon from rexx
-long rexx_add_appicon(char *str, struct RexxMsg *msg)
+IPTR rexx_add_appicon(char *str, struct RexxMsg *msg)
 {
 	char iconfile[256], menustem[80];
 	RexxAppThing *app;
@@ -205,7 +205,7 @@ long rexx_add_appicon(char *str, struct RexxMsg *msg)
 			if (rexx_get_var(msg, menustem, iconfile, buffer, 80))
 			{
 				// Allocate buffer
-				if ((tags[count + 6].ti_Data = (ULONG)AllocMemH(memory, strlen(buffer) + 1)))
+				if ((tags[count + 6].ti_Data = (IPTR)AllocMemH(memory, strlen(buffer) + 1)))
 				{
 					// Copy name
 					strcpy((char *)tags[count + 6].ti_Data, buffer);
@@ -224,7 +224,7 @@ long rexx_add_appicon(char *str, struct RexxMsg *msg)
 	}
 
 	// Add AppIcon
-	app->app_thing = AddAppIconA(app->id, (ULONG)app, app->icon_name, GUI->rexx_app_port, 0, app->icon, tags);
+	app->app_thing = AddAppIconA(app->id, (IPTR)app, app->icon_name, GUI->rexx_app_port, 0, app->icon, tags);
 
 	// Free memory
 	FreeMemHandle(memory);
@@ -245,7 +245,7 @@ long rexx_add_appicon(char *str, struct RexxMsg *msg)
 	AddTail(&GUI->rexx_apps.list, (struct Node *)app);
 	unlock_listlock(&GUI->rexx_apps);
 
-	return (long)app;
+	return (IPTR)app;
 }
 
 // Remove an AppIcon
@@ -260,7 +260,7 @@ void rexx_rem_appthing(char *str, short type)
 		rexx_skip_space(&str);
 
 		// Get address
-		if (!(app = (RexxAppThing *)rexx_parse_number(&str, 0, 0)))
+		if (!(app = (RexxAppThing *)rexx_parse_iptr(&str, 0, 0)))
 			return;
 	}
 
@@ -386,7 +386,7 @@ BOOL rexx_send_appmsg(RexxAppThing *app, short type, struct AppMessage *msg)
 {
 	char buf[40];
 	char *files = 0, *entry = 0;
-	ULONG lister = 0;
+	IPTR lister = 0;
 	BOOL ret;
 
 	// Snapshot?
@@ -479,7 +479,7 @@ long rexx_set_appicon(char *str, struct RexxMsg *msg)
 	short ret = RXERR_INVALID_SET;
 
 	// Get address
-	if (!(look = (RexxAppThing *)rexx_parse_number(&str, 0, 0)))
+	if (!(look = (RexxAppThing *)rexx_parse_iptr(&str, 0, 0)))
 		return RXERR_INVALID_HANDLE;
 
 	// Lock list

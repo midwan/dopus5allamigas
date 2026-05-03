@@ -40,7 +40,7 @@ void _config_env_palette_update_sliders(config_env_data *data)
 		max = (1 << data->gun_bits[a]) - 1;
 
 		// Set limit
-		SetGadgetChoices(data->option_list, GAD_ENVIRONMENT_PALETTE_RED + a, (APTR)((ULONG)max << 16));
+		SetGadgetChoices(data->option_list, GAD_ENVIRONMENT_PALETTE_RED + a, (APTR)(IPTR)((IPTR)max << 16));
 
 		// Set current level
 		SetGadgetValue(data->option_list,
@@ -185,7 +185,7 @@ void _config_env_palette_init(config_env_data *data)
 		}
 		else
 			max = 0;
-		SetGadgetChoices(data->option_list, GAD_ENVIRONMENT_PALETTE_COUNT, (APTR)(max << 16));
+		SetGadgetChoices(data->option_list, GAD_ENVIRONMENT_PALETTE_COUNT, (APTR)(IPTR)(max << 16));
 		DisableObject(data->option_list, GAD_ENVIRONMENT_PALETTE_COUNT, TRUE);
 	}
 
@@ -199,7 +199,7 @@ void _config_env_palette_init(config_env_data *data)
 			max = 0;
 		if (max > 8)
 			max = 8;
-		SetGadgetChoices(data->option_list, GAD_ENVIRONMENT_PALETTE_COUNT, (APTR)(max << 16));
+		SetGadgetChoices(data->option_list, GAD_ENVIRONMENT_PALETTE_COUNT, (APTR)(IPTR)(max << 16));
 		if (max == 0)
 			DisableObject(data->option_list, GAD_ENVIRONMENT_PALETTE_COUNT, TRUE);
 	}

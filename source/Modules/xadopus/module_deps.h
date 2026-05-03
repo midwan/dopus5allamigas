@@ -7,6 +7,9 @@
 #include <proto/xadmaster.h>
 
 extern struct DOpusLocale *locale;
+#ifndef __amigaos3__
+	#pragma pack(2)
+#endif
 typedef struct
 {
 	ULONG ver;					 // Module version
@@ -16,6 +19,9 @@ typedef struct
 	ULONG function_count;		 // Number of functions in module
 	ModuleFunction function[2];	 // All the module functions
 } ModuleInfo_2;
+#ifndef __amigaos3__
+	#pragma pack()
+#endif
 extern ModuleInfo_2 module_info;
 
 #define VALID_QUALIFIERS                                                                                           \

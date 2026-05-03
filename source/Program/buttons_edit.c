@@ -41,7 +41,7 @@ void buttons_edit_key(Buttons *buttons, UWORD code, UWORD qual)
 		if (buttons->editor)
 		{
 			// Send key to the editor
-			IPC_Command(buttons->editor, BUTTONEDIT_PROCESS_KEY, code, (APTR)qual, 0, 0);
+			IPC_Command(buttons->editor, BUTTONEDIT_PROCESS_KEY, code, (APTR)(IPTR)qual, 0, 0);
 		}
 		break;
 
@@ -53,7 +53,7 @@ void buttons_edit_key(Buttons *buttons, UWORD code, UWORD qual)
 		{
 			// Send edit command
 			IPC_Command(
-				buttons->editor, BUTTONEDIT_EDIT_BUTTON, buttons->editor_sel_col, (APTR)buttons->editor_sel_row, 0, 0);
+				buttons->editor, BUTTONEDIT_EDIT_BUTTON, buttons->editor_sel_col, (APTR)(IPTR)buttons->editor_sel_row, 0, 0);
 		}
 		break;
 	}
@@ -357,7 +357,7 @@ void buttons_edit(IPCData *my_ipc, buttons_edit_packet *packet)
 			if (!buttons->editor)
 			{
 				// Tell editor to edit the toolbar bank
-				IPC_Command(ipc, command, (ULONG)buttons->bank, buttons->ipc, 0, 0);
+				IPC_Command(ipc, command, (IPTR)buttons->bank, buttons->ipc, 0, 0);
 
 				// Set flag for pending edit request
 				buttons->flags |= BUTTONF_EDIT_REQUEST;
@@ -387,7 +387,7 @@ void buttons_edit(IPCData *my_ipc, buttons_edit_packet *packet)
 			if (send_msg)
 			{
 				// Send it on
-				IPC_Command(ipc, CFG_APPMESSAGE_PASS, (ULONG)buttons->bank, send_msg, 0, 0);
+				IPC_Command(ipc, CFG_APPMESSAGE_PASS, (IPTR)buttons->bank, send_msg, 0, 0);
 				send_msg = 0;
 			}
 
@@ -395,7 +395,7 @@ void buttons_edit(IPCData *my_ipc, buttons_edit_packet *packet)
 			if (button_col > -1)
 			{
 				// Send edit command
-				IPC_Command(ipc, BUTTONEDIT_EDIT_BUTTON, button_col, (APTR)button_row, 0, 0);
+				IPC_Command(ipc, BUTTONEDIT_EDIT_BUTTON, button_col, (APTR)(IPTR)button_row, 0, 0);
 				front = 0;
 			}
 		}
@@ -464,7 +464,7 @@ void buttons_edit(IPCData *my_ipc, buttons_edit_packet *packet)
 		startup.bank = 0;
 
 	// Configure buttons
-	ret = Config_Buttons(&startup, my_ipc, &main_ipc, GUI->screen_pointer, (ULONG)&GUI->command_list.list);
+	ret = Config_Buttons(&startup, my_ipc, &main_ipc, GUI->screen_pointer, (IPTR)&GUI->command_list.list);
 
 	// Change our name back
 	my_ipc->proc->pr_Task.tc_Node.ln_Name = NAME_BUTTON_EDITOR;

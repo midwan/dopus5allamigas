@@ -27,7 +27,7 @@ For more information on Directory Opus for Windows please see:
 void lister_receive_drop(Lister *dest, DOpusAppMessage *msg)
 {
 	Lister *source = 0;
-	ULONG flags = 0;
+	IPTR source_data = 0, flags = 0, over_entry_data = 0;
 	char pathname[256];
 	struct ArgArray *arg_array;
 	long func_type;
@@ -41,7 +41,9 @@ void lister_receive_drop(Lister *dest, DOpusAppMessage *msg)
 	info = dest->backdrop_info;
 
 	// Get internal app message data
-	get_appmsg_data(msg, (ULONG *)&source, &flags, (ULONG *)&over_entry);
+	get_appmsg_data(msg, &source_data, &flags, &over_entry_data);
+	source = (Lister *)source_data;
+	over_entry = (DirEntry *)over_entry_data;
 
 	// Get qualifiers
 	qual = (InputBase) ? PeekQualifier() : 0;
@@ -302,7 +304,7 @@ DirEntry *lister_test_drag(Lister *our_lister, DragInfo *drag, short x, short y,
 		else if (lister_check_valid(*last_lister))
 		{
 			// Tell old lister to stop highlighting
-			IPC_Command((*last_lister)->ipc, LISTER_HIGHLIGHT, (ULONG)-1, drag, 0, REPLY_NO_PORT);
+			IPC_Command((*last_lister)->ipc, LISTER_HIGHLIGHT, (IPTR)-1, drag, 0, REPLY_NO_PORT);
 		}
 	}
 

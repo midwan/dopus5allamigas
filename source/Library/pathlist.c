@@ -136,7 +136,7 @@ void LIBFUNC L_UpdatePathList(REG(a6, struct MyLibrary *libbase))
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -167,7 +167,7 @@ void LIBFUNC L_UpdateMyPaths(REG(a6, struct MyLibrary *libbase))
 	struct LibData *data;
 	struct CommandLineInterface *cli;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -276,7 +276,7 @@ BPTR LIBFUNC L_GetOpusPathList(REG(a6, struct MyLibrary *libbase))
 	BPTR copy;
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 

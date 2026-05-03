@@ -182,7 +182,7 @@ struct Window *lister_open_window(Lister *lister, struct Screen *screen)
 							 WA_MaxHeight,
 							 (ULONG)~0,
 							 (lister->dimensions.wd_Flags & WDF_VALID) ? WA_Zoom : TAG_IGNORE,
-							 (ULONG)&lister->dimensions.wd_Zoomed,
+							 (IPTR)&lister->dimensions.wd_Zoomed,
 							 WA_IDCMP,
 							 IDCMP_ACTIVEWINDOW | IDCMP_CHANGEWINDOW | IDCMP_CLOSEWINDOW | IDCMP_GADGETDOWN |
 								 IDCMP_GADGETUP | IDCMP_INACTIVEWINDOW | IDCMP_INTUITICKS | IDCMP_MENUHELP |
@@ -210,19 +210,19 @@ struct Window *lister_open_window(Lister *lister, struct Screen *screen)
 							 WA_SizeBBottom,
 							 TRUE,
 							 WA_CustomScreen,
-							 screen,
+							 (IPTR)screen,
 							 WA_ScreenTitle,
-							 GUI->screen_title,
+							 (IPTR)GUI->screen_title,
 							 WA_WindowName,
-							 DOPUS_WIN_NAME,
+							 (IPTR)DOPUS_WIN_NAME,
 							 WA_Gadgets,
-							 gadget,
+							 (IPTR)gadget,
 							 mode,
 							 TRUE,
 							 (lister->flags & LISTERF_LOCK_POS) ? WA_Title : TAG_IGNORE,
-							 "",
+							 (IPTR) "",
 							 WA_BackFill,
-							 &lister->pattern,
+							 (IPTR)&lister->pattern,
 							 TAG_END)))
 		return 0;
 
@@ -344,7 +344,7 @@ struct Window *lister_open_window(Lister *lister, struct Screen *screen)
 
 	// Create edit hook
 	lister->path_edit_hook =
-		GetEditHookTags(0, OBJECTF_NO_SELECT_NEXT, GTCustom_History, lister->path_history, TAG_END);
+		GetEditHookTags(0, OBJECTF_NO_SELECT_NEXT, GTCustom_History, (IPTR)lister->path_history, TAG_END);
 
 	// Create path field
 	if (!(lister->path_field = (struct Gadget *)NewObject(0,
@@ -368,19 +368,19 @@ struct Window *lister_open_window(Lister *lister, struct Screen *screen)
 														  GTCustom_NoGhost,
 														  TRUE,
 														  STRINGA_TextVal,
-														  (lister->cur_buffer) ? lister->cur_buffer->buf_Path : "",
+														  (IPTR)((lister->cur_buffer) ? lister->cur_buffer->buf_Path : ""),
 														  STRINGA_MaxChars,
 														  511,
 														  STRINGA_Buffer,
-														  lister->path_buffer,
+														  (IPTR)lister->path_buffer,
 														  STRINGA_UndoBuffer,
-														  GUI->global_undo_buffer,
+														  (IPTR)GUI->global_undo_buffer,
 														  STRINGA_WorkBuffer,
-														  GUI->global_undo_buffer + 512,
+														  (IPTR)(GUI->global_undo_buffer + 512),
 														  STRINGA_Font,
-														  FIELD_FONT,
+														  (IPTR)FIELD_FONT,
 														  STRINGA_EditHook,
-														  lister->path_edit_hook,
+														  (IPTR)lister->path_edit_hook,
 														  TAG_END)))
 	{
 		lister_close(lister, 0);
@@ -399,7 +399,7 @@ struct Window *lister_open_window(Lister *lister, struct Screen *screen)
 	lister->parent_button.GadgetID = GAD_PARENT;
 
 	// Try to add AppWindow
-	lister->appwindow = AddAppWindowA(WINDOW_LISTER, (ULONG)lister, lister->window, lister->app_port, 0);
+	lister->appwindow = AddAppWindowA(WINDOW_LISTER, (IPTR)lister, lister->window, lister->app_port, 0);
 
 	// Is lister busy?
 	if (lister->flags & LISTERF_BUSY || lister->old_flags & LISTERF_BUSY)
@@ -438,10 +438,10 @@ struct Window *lister_open_window(Lister *lister, struct Screen *screen)
 	// Is this our first time open?
 	if (lister->flags & LISTERF_FIRST_TIME)
 	{
-		char buf[16];
+		char buf[32];
 
 		// Build handle string
-		lsprintf(buf, "%ld", lister);
+		lsprintf(buf, "%lu", (unsigned long)(IPTR)lister);
 
 		// Launch script
 		RunScript(SCRIPT_OPEN_LISTER, buf);
@@ -506,10 +506,10 @@ void lister_close_window(Lister *lister, BOOL run_script)
 		// Run script?
 		if (run_script)
 		{
-			char buf[16];
+			char buf[32];
 
 			// Build handle string
-			lsprintf(buf, "%ld", lister);
+			lsprintf(buf, "%lu", (unsigned long)(IPTR)lister);
 
 			// Run script
 			RunScript(SCRIPT_CLOSE_LISTER, buf);
@@ -645,7 +645,7 @@ BOOL lister_iconify(Lister *lister)
 	tags[0].ti_Tag = DAE_Local;
 	tags[0].ti_Data = 1;
 	tags[1].ti_Tag = DAE_Menu;
-	tags[1].ti_Data = (ULONG)GetString(&locale, MSG_CLOSE);
+	tags[1].ti_Data = (IPTR)GetString(&locale, MSG_CLOSE);
 	tags[2].ti_Tag = DAE_Special;
 	tags[2].ti_Data = 1;
 	tags[3].ti_Tag = TAG_END;

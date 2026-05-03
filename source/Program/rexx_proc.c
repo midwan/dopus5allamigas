@@ -415,7 +415,7 @@ BOOL rexx_process_msg(struct RexxMsg *msg, struct MsgPort *reply, long *count)
 				Lister *lister;
 
 				// Get lister
-				if ((lister = (Lister *)rexx_parse_number(&commandptr, 0, 0)))
+				if ((lister = (Lister *)rexx_parse_iptr(&commandptr, 0, 0)))
 				{
 					// Is lister valid?
 					if (rexx_lister_valid(lister))
@@ -538,7 +538,7 @@ void rexx_set_return(struct RexxMsg *msg, long rc, char *result)
 		long len = strlen(result);
 		while (len > 0 && result[len - 1] == ' ')
 			--len;
-		if (!(msg->rm_Result2 = (long)CreateArgstring(result, len)))
+		if (!(msg->rm_Result2 = (IPTR)CreateArgstring(result, len)))
 			msg->rm_Result1 = RXERR_NO_MEMORY;
 		else
 			msg->rm_Result1 = 0;
@@ -577,7 +577,7 @@ RexxReader *rexx_read_file(short command, char *args, struct RexxMsg *msg)
 	lock_listlock(&GUI->rexx_readers, TRUE);
 
 	// Given a reader?
-	if ((reader = (RexxReader *)rexx_parse_number(&args, FALSE, 0)))
+	if ((reader = (RexxReader *)rexx_parse_iptr(&args, FALSE, 0)))
 	{
 		RexxReader *test;
 
@@ -765,7 +765,7 @@ BOOL rexx_send_msg(struct MinList *list, IPCMessage **imsg, struct MsgPort *port
 		return 0;
 
 	// Build message
-	msg->rm_Args[0] = (char *)(*imsg)->data_free;
+					msg->rm_Args[0] = (IPTR)(*imsg)->data_free;
 	FillRexxMsg(msg, 1, 0);
 
 	// Set flags

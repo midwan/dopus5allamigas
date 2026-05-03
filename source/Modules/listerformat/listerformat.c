@@ -47,8 +47,8 @@ ULONG LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 							 REG(a1, struct Screen *screen),
 							 REG(a2, IPCData *ipc),
 							 REG(a3, IPCData *main_ipc),
-							 REG(d0, ULONG mod_id),
-							 REG(d1, ULONG mod_data))
+							 REG(d0, IPTR mod_id),
+							 REG(d1, IPTR mod_data))
 {
 	config_lister_data *data;
 	ListFormat *format;
@@ -138,7 +138,7 @@ ULONG LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 	AddObjectList(data->window, obj2);
 
 	// Store data pointer in window
-	DATA(data->window)->data = (ULONG)data;
+	DATA(data->window)->data = (IPTR)data;
 	data->sel_lister = GetObject(data->objlist, GAD_LISTER_FORMAT_SELITEMS);
 
 	// Initialise
@@ -552,8 +552,8 @@ void _config_lister_init_format(config_lister_data *data)
 		SetGadgetValue(data->objlist, GAD_LISTER_INHERIT, data->format.flags & LFORMATF_INHERIT);
 	}
 	// Show/hide pattern
-	SetGadgetValue(data->objlist, GAD_LISTER_SHOW, (ULONG)data->format.show_pattern);
-	SetGadgetValue(data->objlist, GAD_LISTER_HIDE, (ULONG)data->format.hide_pattern);
+	SetGadgetValue(data->objlist, GAD_LISTER_SHOW, (IPTR)data->format.show_pattern);
+	SetGadgetValue(data->objlist, GAD_LISTER_HIDE, (IPTR)data->format.hide_pattern);
 
 	// Check 'defaults' gadget
 	listerformat_check_default(data);

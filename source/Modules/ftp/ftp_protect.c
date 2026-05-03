@@ -351,12 +351,12 @@ int function_change_get_protect(struct opusftp_globals *og, struct protectgui_ms
 
 				// Only has text if bit is set
 				if (FlagIsSet(old_prot, 1 << (7 - x)))
-					objects[obj].gadget_text = (ULONG)&prot_bits[x * 2];
+					objects[obj].gadget_text = (IPTR)&prot_bits[x * 2];
 			}
 
 			// Gadget text
 			else
-				objects[obj].gadget_text = (ULONG)&prot_bits[x * 2];
+				objects[obj].gadget_text = (IPTR)&prot_bits[x * 2];
 
 			// Flags
 			objects[obj].flags |= TEXTFLAG_TEXT_STRING;
@@ -392,12 +392,12 @@ int function_change_get_protect(struct opusftp_globals *og, struct protectgui_ms
 
 				// Only has text if bit is set
 				if (FlagIsSet(pm->pm_current, 1 << (8 - x)))
-					objects_unix[obj].gadget_text = (ULONG)&prot_bits_unix[x * 2];
+					objects_unix[obj].gadget_text = (IPTR)&prot_bits_unix[x * 2];
 			}
 
 			// Gadget text
 			else
-				objects_unix[obj].gadget_text = (ULONG)&prot_bits_unix[x * 2];
+				objects_unix[obj].gadget_text = (IPTR)&prot_bits_unix[x * 2];
 
 			// Flags
 			objects_unix[obj].flags |= TEXTFLAG_TEXT_STRING;

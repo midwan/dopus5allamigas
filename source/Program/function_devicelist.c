@@ -43,6 +43,43 @@ struct device_data
 
 enum { ARG_NEW, ARG_FULL, ARG_BRIEF };
 
+static void devlist_append_long(char *buffer, LONG value)
+{
+	char number[16];
+	char *ptr;
+	ULONG val;
+	BOOL negative = 0;
+
+	ptr = number + sizeof(number) - 1;
+	*ptr = 0;
+
+	if (value < 0)
+	{
+		negative = 1;
+		val = (ULONG)(-(value + 1)) + 1;
+	}
+	else
+		val = (ULONG)value;
+
+	do
+	{
+		*--ptr = (char)('0' + (val % 10));
+		val /= 10;
+	} while (val);
+
+	if (negative)
+		*--ptr = '-';
+
+	strcat(buffer, ptr);
+}
+
+static void devlist_append_column(char *buffer, LONG position)
+{
+	strcat(buffer, "\t\b");
+	devlist_append_long(buffer, position);
+	strcat(buffer, "\b");
+}
+
 // DEVICELIST internal function
 DOPUS_FUNC(function_devicelist)
 {
@@ -99,12 +136,16 @@ DOPUS_FUNC(function_devicelist)
 		return 1;
 
 	// Make window into a "special" buffer
-	IPC_Command(lister->ipc,
-				LISTER_SHOW_SPECIAL_BUFFER,
-				0,
-				GetString(&locale, (command) ? MSG_BUFFER_LIST : MSG_DEVICE_LIST),
-				0,
-				(struct MsgPort *)-1);
+	{
+		LONG title_id = (command->function == FUNC_BUFFERLIST) ? MSG_BUFFER_LIST : MSG_DEVICE_LIST;
+
+		IPC_Command(lister->ipc,
+					LISTER_SHOW_SPECIAL_BUFFER,
+					title_id,
+					0,
+					0,
+					(struct MsgPort *)-1);
+	}
 
 	// Does lister have a handler?
 	if (*lister->old_buffer->buf_CustomHandler)
@@ -167,7 +208,7 @@ DOPUS_FUNC(function_devicelist)
 
 					// Add to list
 					if (handle->work_buffer[0])
-						Att_NewNode(list, handle->work_buffer, (ULONG)buffer, ADDNODE_SORT | ADDNODE_EXCLUSIVE);
+						Att_NewNode(list, handle->work_buffer, (IPTR)buffer, ADDNODE_SORT | ADDNODE_EXCLUSIVE);
 				}
 			}
 
@@ -194,7 +235,7 @@ DOPUS_FUNC(function_devicelist)
 											entry)))
 				{
 					// set userdata to point to buffer
-					entry->de_UserData = (ULONG)node->data;
+					entry->de_UserData = (IPTR)node->data;
 				}
 			}
 
@@ -209,6 +250,7 @@ DOPUS_FUNC(function_devicelist)
 		short max_name_width = 0, max_dev_width = 0, max_full_width = 0, max_free_width = 0, max_used_width = 0,
 			  need_vol = 0;
 		char *dev_format, *asn_format, *dev_val_format;
+		char dev_format_buf[256], dev_val_format_buf[128], asn_format_buf[128];
 		short asn_first_x, asn_multi_x;
 		BOOL full = 0, brief = 0;
 		short num;
@@ -334,7 +376,7 @@ DOPUS_FUNC(function_devicelist)
 					}
 					else
 #endif
-						res = DoPkt(proc->dvp_Port, ACTION_DISK_INFO, MKBADDR(info), 0, 0, 0, 0);
+						res = DoPkt(proc->dvp_Port, ACTION_DISK_INFO, (SIPTR)MKBADDR(info), 0, 0, 0, 0);
 
 					if (!res || !(dos = (struct DosList *)BADDR(info->id_VolumeNode)) ||
 						info->id_DiskType == ID_NO_DISK_PRESENT || info->id_DiskType == ID_UNREADABLE_DISK ||
@@ -527,9 +569,9 @@ DOPUS_FUNC(function_devicelist)
 		}
 
 		// Get format string pointers
-		dev_format = handle->work_buffer + 256;
-		dev_val_format = handle->work_buffer + 384;
-		asn_format = handle->work_buffer + 512;
+		dev_format = dev_format_buf;
+		dev_val_format = dev_val_format_buf;
+		asn_format = asn_format_buf;
 
 		// Need to use volume string in device list?
 		if (need_vol)
@@ -554,23 +596,37 @@ DOPUS_FUNC(function_devicelist)
 					 lister_get_length(lister, GetString(&locale, MSG_FREE));
 			used_w = free_w + max_used_width + pad + lister_get_length(lister, GetString(&locale, MSG_USED));
 
-			// Build format for main device list
-			lsprintf(dev_format,
-					 "%%s\t\b%ld\b%%s\t\b%ld\b%%s%%%% %s,\t\b%ld\b%%s %s,\t\b%ld\b%%s %s\t\b%ld\b[%%s]",
-					 name_w,
-					 dev_w,
-					 GetString(&locale, MSG_FULL),
-					 full_w,
-					 GetString(&locale, MSG_FREE),
-					 free_w,
-					 GetString(&locale, MSG_USED),
-					 used_w);
+			// Build format for main device list. Do this without RawDoFmt
+			// because AROS x64 can consume literal "%%s" fragments as
+			// format arguments when building a second-stage format string.
+			strcpy(dev_format, "%s");
+			devlist_append_column(dev_format, name_w);
+			strcat(dev_format, "%s");
+			devlist_append_column(dev_format, dev_w);
+			strcat(dev_format, "%s%% ");
+			strcat(dev_format, GetString(&locale, MSG_FULL));
+			strcat(dev_format, ",");
+			devlist_append_column(dev_format, full_w);
+			strcat(dev_format, "%s ");
+			strcat(dev_format, GetString(&locale, MSG_FREE));
+			strcat(dev_format, ",");
+			devlist_append_column(dev_format, free_w);
+			strcat(dev_format, "%s ");
+			strcat(dev_format, GetString(&locale, MSG_USED));
+			devlist_append_column(dev_format, used_w);
+			strcat(dev_format, "[%s]");
 
 			// Used if a device is being validated
-			lsprintf(dev_val_format, "%%s\t\b%ld\b%%s\t\b%ld\b%%s", name_w, dev_w, GetString(&locale, MSG_VALIDATING));
+			strcpy(dev_val_format, "%s");
+			devlist_append_column(dev_val_format, name_w);
+			strcat(dev_val_format, "%s");
+			devlist_append_column(dev_val_format, dev_w);
+			strcat(dev_val_format, GetString(&locale, MSG_VALIDATING));
 
 			// Used for assign list
-			lsprintf(asn_format, "%%s\t\b%ld\b%s", name_w, GetString(&locale, MSG_ASSIGN));
+			strcpy(asn_format, "%s");
+			devlist_append_column(asn_format, name_w);
+			strcat(asn_format, GetString(&locale, MSG_ASSIGN));
 
 			// Get assign coordinates
 			asn_first_x = dev_w;
@@ -601,8 +657,10 @@ DOPUS_FUNC(function_devicelist)
 						// Build device name
 						if (type == 0)
 						{
-							lsprintf(buf, "(%s", (char *)(node + 1));
-							buf[strlen(buf) - 1] = ')';
+							buf[0] = '(';
+							stccpy(buf + 1, (char *)(node + 1), sizeof(buf) - 1);
+							if (buf[1])
+								buf[strlen(buf) - 1] = ')';
 						}
 						else
 							strcpy(buf, GetString(&locale, MSG_VOLUME));
@@ -613,19 +671,19 @@ DOPUS_FUNC(function_devicelist)
 							// Build display string
 							lsprintf(handle->work_buffer,
 									 dev_format,
-									 data->name,
-									 buf,
-									 data->full,
-									 data->free,
-									 data->used,
-									 data->fsys);
+									 (IPTR)data->name,
+									 (IPTR)buf,
+									 (IPTR)data->full,
+									 (IPTR)data->free,
+									 (IPTR)data->used,
+									 (IPTR)data->fsys);
 						}
 
 						// Validating
 						else
 						{
 							// Build display string
-							lsprintf(handle->work_buffer, dev_val_format, data->name, buf);
+							lsprintf(handle->work_buffer, dev_val_format, (IPTR)data->name, (IPTR)buf);
 						}
 
 						// Use device name as comment
@@ -646,7 +704,10 @@ DOPUS_FUNC(function_devicelist)
 					// Multi-directory assign?
 					if (node->ln_Type == 255)
 					{
-						lsprintf(handle->work_buffer, "\t\b%ld\b+ %s", asn_multi_x, (char *)(node + 1));
+						handle->work_buffer[0] = 0;
+						devlist_append_column(handle->work_buffer, asn_multi_x);
+						strcat(handle->work_buffer, "+ ");
+						strcat(handle->work_buffer, (char *)(node + 1));
 						if ((comment = AllocMemH(handle->entry_memory, strlen((char *)(node + 1)) + 1)))
 							strcpy(comment, (char *)(node + 1));
 					}
@@ -654,13 +715,11 @@ DOPUS_FUNC(function_devicelist)
 					// Build display string
 					else
 					{
-						lsprintf(handle->work_buffer, asn_format, (char *)(node + 1));
+						lsprintf(handle->work_buffer, asn_format, (IPTR)(char *)(node + 1));
 						if (full)
 						{
-							lsprintf(handle->work_buffer + strlen(handle->work_buffer),
-									 "\t\b%ld\b%s",
-									 asn_first_x,
-									 (IPTR)((char *)(node + 1)) + 32);
+							devlist_append_column(handle->work_buffer, asn_first_x);
+							strcat(handle->work_buffer, ((char *)(node + 1)) + 32);
 						}
 					}
 				}

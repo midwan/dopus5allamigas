@@ -57,7 +57,7 @@ For more information on Directory Opus for Windows please see:
 struct connect_log_data
 {
 	struct ftp_node *cld_node;
-	ULONG cld_handle;
+	IPTR cld_handle;
 	struct connect_msg *cld_cm;
 	char *cld_errmsg;
 	char cld_sftp_errmsg[FTP_SFTP_ERROR_BUFSIZE + 1];
@@ -572,7 +572,16 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 	tries = maxtries;
 
 	// Lister busy
+	if (og->og_oc.oc_log_debug)
+	{
+		char handlebuf[FTP_HANDLE_BUFSIZE];
+
+		ftp_format_handle(handlebuf, cld->cld_handle);
+		logprintf("-- Lister lock start: port '%s', handle %s\n", cld->cld_cm->cm_opus, handlebuf);
+	}
 	rexx_lst_lock(cld->cld_cm->cm_opus, cld->cld_handle);
+	if (og->og_oc.oc_log_debug)
+		logprintf("-- Lister lock done\n");
 
 	// Progress bar on
 	lister_prog_init(node,
@@ -846,11 +855,14 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 
 		send_rexxa(cld->cld_cm->cm_opus,
 				   REXX_REPLY_NONE,
-				   "lister set %lu title SFTP:%s",
-				   cld->cld_handle,
+				   "lister set " FTP_HANDLE_PRINTF " title SFTP:%s",
+				   FTP_HANDLE_VALUE(cld->cld_handle),
 				   cld->cld_cm->cm_site.se_host);
 
-		send_rexxa(cld->cld_cm->cm_opus, REXX_REPLY_NONE, "lister refresh %lu full", cld->cld_handle);
+		send_rexxa(cld->cld_cm->cm_opus,
+				   REXX_REPLY_NONE,
+				   "lister refresh " FTP_HANDLE_PRINTF " full",
+				   FTP_HANDLE_VALUE(cld->cld_handle));
 		rexx_lst_label(cld->cld_cm->cm_opus, cld->cld_handle, "SFTP:", cld->cld_cm->cm_site.se_host, NULL);
 
 		if (cld->cld_okay && !(cld->cld_flags & CONN_OPT_NOSCAN))
@@ -935,11 +947,14 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 
 			send_rexxa(cld->cld_cm->cm_opus,
 					   REXX_REPLY_NONE,
-					   "lister set %lu title FTP:%s",
-					   cld->cld_handle,
+					   "lister set " FTP_HANDLE_PRINTF " title FTP:%s",
+					   FTP_HANDLE_VALUE(cld->cld_handle),
 					   cld->cld_cm->cm_site.se_host);
 
-			send_rexxa(cld->cld_cm->cm_opus, REXX_REPLY_NONE, "lister refresh %lu full", cld->cld_handle);
+			send_rexxa(cld->cld_cm->cm_opus,
+					   REXX_REPLY_NONE,
+					   "lister refresh " FTP_HANDLE_PRINTF " full",
+					   FTP_HANDLE_VALUE(cld->cld_handle));
 			rexx_lst_label(cld->cld_cm->cm_opus, cld->cld_handle, "FTP:", cld->cld_cm->cm_site.se_host, NULL);
 
 			// Scan initial directory - Can TIMEOUT
@@ -1004,7 +1019,10 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 		}
 
 		// Remove handler
-		send_rexxa(cld->cld_cm->cm_opus, REXX_REPLY_NONE, "lister set %lu handler ''", cld->cld_handle);
+		send_rexxa(cld->cld_cm->cm_opus,
+				   REXX_REPLY_NONE,
+				   "lister set " FTP_HANDLE_PRINTF " handler ''",
+				   FTP_HANDLE_VALUE(cld->cld_handle));
 	}
 
 	D(bug("lister_connect_and_login returns %ld\n", cld->cld_okay));
@@ -1181,7 +1199,7 @@ struct ftp_node *lister_new_connection(struct opusftp_globals *ogp, struct msg_l
 {
 	struct connect_msg *cm = NULL;	// Connection message - this must be FreeVec'd
 	struct ftp_node *node = NULL;	// The new node
-	ULONG handle = 0;				// Lister handle
+	IPTR handle = 0;				// Lister handle
 	struct connect_log_data cld = {0};
 	DOpusCallbackInfo *infoptr = &ogp->og_hooks;
 
@@ -1219,8 +1237,10 @@ struct ftp_node *lister_new_connection(struct opusftp_globals *ogp, struct msg_l
 					cm->cm_handle = node->fn_handle;
 
 					// Was lister opened invisible?
+#if !(defined(__AROS__) && defined(__x86_64__))
 					if (!rexx_lst_query_visible(cm->cm_opus, handle))
 						node->fn_flags |= LST_INVISIBLE;
+#endif
 
 					// Keep current format or use one passed by Greg?
 					if ((((Lister *)node->fn_handle)->more_flags & LISTERF_LOCK_FORMAT) ||
@@ -1263,9 +1283,9 @@ struct ftp_node *lister_new_connection(struct opusftp_globals *ogp, struct msg_l
 	// Trigger connect script
 	if (!cld.cld_aborted && ogp->og_hooks.dc_Script && handle)
 	{
-		char script_arg[13];
+		char script_arg[FTP_HANDLE_BUFSIZE];
 
-		sprintf(script_arg, "%lu", handle);
+		ftp_format_handle(script_arg, handle);
 
 		if (cm->cm_site.se_env->e_script_connect_ok && cld.cld_okay)
 			DC_CALL2(infoptr, dc_Script, DC_REGA0, "FTP connect success", DC_REGA1, script_arg);
@@ -1308,7 +1328,7 @@ static int errno_known(void)
 //
 static int opus_lostconn(struct opusftp_globals *og, struct ftp_node *ftpnode)
 {
-	ULONG handle = ftpnode->fn_handle;
+	IPTR handle = ftpnode->fn_handle;
 	int msg;
 	int retval = 0;
 
@@ -1392,7 +1412,7 @@ void lister_disconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 	struct ftp_node *ftpnode = mld->mld_node;
 	struct connect_msg *sm;
 	struct quit_msg *qm;
-	ULONG handle;
+	IPTR handle;
 	BOOL do_script = 0;
 	DOpusCallbackInfo *infoptr = &og->og_hooks;
 
@@ -1467,15 +1487,24 @@ void lister_disconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 		{
 			D(bug("** leaving lister open\n"));
 			// make sure the cache is dumped
-			send_rexxa(opus, REXX_REPLY_NONE, "lister freecaches %lu " PORTNAME "", ftpnode->fn_handle);
+			send_rexxa(opus,
+					   REXX_REPLY_NONE,
+					   "lister freecaches " FTP_HANDLE_PRINTF " " PORTNAME "",
+					   FTP_HANDLE_VALUE(ftpnode->fn_handle));
 
 			// Remove handler so we don't get 'inactive' msg
-			send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu handler ''", ftpnode->fn_handle);
+			send_rexxa(opus,
+					   REXX_REPLY_NONE,
+					   "lister set " FTP_HANDLE_PRINTF " handler ''",
+					   FTP_HANDLE_VALUE(ftpnode->fn_handle));
 
-			send_rexxa(opus, REXX_REPLY_NONE, "lister set %lu source", ftpnode->fn_handle);
+			send_rexxa(opus,
+					   REXX_REPLY_NONE,
+					   "lister set " FTP_HANDLE_PRINTF " source",
+					   FTP_HANDLE_VALUE(ftpnode->fn_handle));
 
 			// No command to issue after quitting?
-			if (!mld->mld_quitmsg || !mld->mld_quitmsg->flags)
+			if (!mld->mld_quitmsg || !mld->mld_quitmsg->data)
 				rexx_lst_refresh(opus, ftpnode->fn_handle, REFRESH_NODATE);
 		}
 
@@ -1491,7 +1520,7 @@ void lister_disconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 	lister_remove_node(og, ftpnode);
 
 	// Command to issue after quitting?
-	if (mld->mld_quitmsg && (qm = (struct quit_msg *)mld->mld_quitmsg->flags))
+	if (mld->mld_quitmsg && (qm = (struct quit_msg *)mld->mld_quitmsg->data))
 	{
 		// Command to send? (DeviceList, ScanDir, FTPConnect...)
 		if (qm->qm_command)
@@ -1499,7 +1528,7 @@ void lister_disconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 	}
 
 	// Reconnect command?
-	else if (mld->mld_quit_command)
+	else if (!mld->mld_quitmsg && mld->mld_quit_command)
 	{
 		if (mld->mld_reconnecting)
 			send_rexxa(opus, REXX_REPLY_NONE, "command %s", mld->mld_quit_command);
@@ -1512,8 +1541,8 @@ void lister_disconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 	// Trigger script
 	if (do_script)
 	{
-		char handlebuf[13];
-		sprintf(handlebuf, "%lu", handle);
+		char handlebuf[FTP_HANDLE_BUFSIZE];
+		ftp_format_handle(handlebuf, handle);
 
 		DC_CALL2(infoptr, dc_Script, DC_REGA0, "FTP close connection", DC_REGA1, handlebuf);
 		//	og->og_hooks.dc_Script( "FTP close connection", handlebuf );
@@ -1550,8 +1579,10 @@ void lister_reconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 		return;
 
 	// Build command string user:pass@host:port/path
-	sprintf(
-		command, "FTPConnect RECON LISTER=%lu DIR=\"%s\"", mld->mld_node->fn_handle, mld->mld_node->fn_site.se_path);
+	sprintf(command,
+			"FTPConnect RECON LISTER=" FTP_HANDLE_PRINTF " DIR=\"%s\"",
+			FTP_HANDLE_VALUE(mld->mld_node->fn_handle),
+			mld->mld_node->fn_site.se_path);
 
 	if (*mld->mld_node->fn_site.se_name)
 	{

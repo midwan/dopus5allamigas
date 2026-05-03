@@ -430,7 +430,7 @@ static int finder_filetypes_in_cache(finder_data *data)
 	int *best_pri;
 	int ok = FALSE;
 
-	SetGadgetValue(data->list, GAD_FIND_TEXT2, (ULONG)GetString(locale, MSG_FIND_MATCHING));
+	SetGadgetValue(data->list, GAD_FIND_TEXT2, (IPTR)GetString(locale, MSG_FIND_MATCHING));
 
 	data->count_filetypes = 0;
 	data->count_storage = 0;
@@ -533,7 +533,7 @@ static void finder_print_blurb(finder_data *data, LONG s)
 	int i;
 
 	for (i = 0; i < 7; i++)
-		SetGadgetValue(data->list, GAD_FIND_TEXT2 + i, (ULONG)(s ? (char *)GetString(locale, s + i) : ""));
+		SetGadgetValue(data->list, GAD_FIND_TEXT2 + i, (IPTR)(s ? (char *)GetString(locale, s + i) : ""));
 
 	DisableObject(data->list, GAD_FIND_INSTALL, s == MSG_NONE_FOUND_1 || s == MSG_INSTALLED_FOUND_1);
 	DisableObject(data->list, GAD_FIND_EDIT, s == MSG_NONE_FOUND_1 || s == MSG_STORED_FOUND_1);
@@ -654,7 +654,7 @@ void SAVEDS finder_creator_proc_code(void)
 
 	// DOpusBase = GET_DOPUSLIB;
 
-	IPC_ProcStartup((ULONG *)&data, (APTR)&finder_creator_proc_init);
+	IPC_ProcStartup((IPTR *)&data, (APTR)&finder_creator_proc_init);
 
 	strcpy(path, data->current_entry_path);
 	name = FilePart(path);
@@ -667,7 +667,7 @@ void SAVEDS finder_creator_proc_code(void)
 		{
 			if ((fti = AllocMemH(list->memory, sizeof(struct filetype_info))))
 			{
-				if ((node = Att_NewNode(list, name, (ULONG)fti, 0)))
+				if ((node = Att_NewNode(list, name, (IPTR)fti, 0)))
 				{
 					strcpy(fti->fti_filename, name);
 					strncpy(fti->fti_path, path, 256);
@@ -687,7 +687,7 @@ void SAVEDS finder_creator_proc_code(void)
 						{
 							// Add created filetype
 							ftl2->flags |= FTLISTF_INSTALLED;
-							if (Att_NewNode(data->filetype_cache, NULL, (ULONG)ftl2, 0))
+							if (Att_NewNode(data->filetype_cache, NULL, (IPTR)ftl2, 0))
 								finder_rescan(data);
 						}
 
@@ -724,9 +724,9 @@ static int finder_create_filetype(finder_data *data)
 	IPC_Launch(0,								 // List to add task to (optional, but useful)
 			   &data->creator_ipc,				 // IPCData ** to store task IPC pointer in (optional)
 			   "filetype_creator",				 // Name
-			   (ULONG)finder_creator_proc_code,	 // Code
+			   (IPTR)finder_creator_proc_code,	 // Code
 			   STACK_DEFAULT,					 // Stack size
-			   (ULONG)data,						 // Data passed to task
+			   (IPTR)data,						 // Data passed to task
 			   (struct Library *)DOSBase);		 // Needs pointer to dos.library
 
 	return ok;
@@ -788,7 +788,7 @@ static int finder_save_edited_filetype(finder_data *data)
 						DeleteFile(data->best_installed_ft->list->path);
 
 					// Remove pre-edited version
-					if ((oldnode = Att_FindNodeData(data->filetype_cache, (ULONG)data->best_installed_ft->list)))
+					if ((oldnode = Att_FindNodeData(data->filetype_cache, (IPTR)data->best_installed_ft->list)))
 					{
 						/* 24/7/97 (JP) : Next two lines swapped around */
 						FreeFiletypeList((Cfg_FiletypeList *)oldnode->data);
@@ -800,7 +800,7 @@ static int finder_save_edited_filetype(finder_data *data)
 
 					// Add edited filetype to cache
 					ftl->flags |= FTLISTF_INSTALLED;
-					if (Att_NewNode(data->filetype_cache, NULL, (ULONG)ftl, 0))
+					if (Att_NewNode(data->filetype_cache, NULL, (IPTR)ftl, 0))
 						finder_rescan(data);
 
 					ok = TRUE;
@@ -832,7 +832,7 @@ void SAVEDS finder_editor_proc_code(void)
 
 	// DOpusBase = GET_DOPUSLIB;
 
-	IPC_ProcStartup((ULONG *)&data, (APTR)&finder_editor_proc_init);
+	IPC_ProcStartup((IPTR *)&data, (APTR)&finder_editor_proc_init);
 
 	if (data->best_installed_ft && (ConfigOpusBase = OpenLibrary("Dopus5:Modules/configopus.module", LIB_VERSION)) &&
 		GETINTERFACE(IConfigOpus, ConfigOpusBase))
@@ -877,9 +877,9 @@ int finder_edit_filetype(finder_data *data)
 	IPC_Launch(0,								// List to add task to (optional, but useful)
 			   &data->editor_ipc,				// IPCData ** to store task IPC pointer in (optional)
 			   "filetype_editor",				// Name
-			   (ULONG)finder_editor_proc_code,	// Code
+			   (IPTR)finder_editor_proc_code,	// Code
 			   STACK_DEFAULT,					// Stack size
-			   (ULONG)data,						// Data passed to task
+			   (IPTR)data,						// Data passed to task
 			   (struct Library *)DOSBase);		// Needs pointer to dos.library
 
 	return ok;
@@ -1124,7 +1124,7 @@ static int finder_build_cache(finder_data *data)
 
 	SetWindowBusy(data->window);
 
-	SetGadgetValue(data->list, GAD_FIND_TEXT2, (ULONG)GetString(locale, MSG_FIND_SCANNING));
+	SetGadgetValue(data->list, GAD_FIND_TEXT2, (IPTR)GetString(locale, MSG_FIND_SCANNING));
 
 	if ((data->filetype_cache = Att_NewList(LISTF_POOL)))
 	{
@@ -1172,7 +1172,7 @@ static int finder_build_cache(finder_data *data)
 					copy->flags |= FTLISTF_INSTALLED;
 
 					/* Create node */
-					if (!Att_NewNode(data->filetype_cache, NULL, (ULONG)copy, 0))
+					if (!Att_NewNode(data->filetype_cache, NULL, (IPTR)copy, 0))
 					{
 						ok = FALSE;
 						FreeFiletypeList(copy);
@@ -1197,7 +1197,7 @@ static int finder_build_cache(finder_data *data)
 					{
 						if ((ftl = ReadFiletypes(fib->fib_FileName, data->filetype_cache->memory)))
 						{
-							if (!Att_NewNode(data->filetype_cache, NULL, (ULONG)ftl, 0))
+							if (!Att_NewNode(data->filetype_cache, NULL, (IPTR)ftl, 0))
 							{
 								ok = FALSE;
 								FreeFiletypeList(ftl);
@@ -1270,7 +1270,7 @@ static int finder(struct Screen *screen, IPCData *ipc, IPCData *main_ipc, EXT_FU
 				// Filename
 				SetGadgetValue(data->list,
 							   GAD_FIND_TEXT1,
-							   (ULONG)(strlen(data->current_entry_path) > FILENAME_MAXLEN
+							   (IPTR)(strlen(data->current_entry_path) > FILENAME_MAXLEN
 										   ? (char *)FilePart(data->current_entry_path)
 										   : data->current_entry_path));
 
@@ -2053,23 +2053,23 @@ static void creator_display_info(creator_data *data)
 
 	SetGadgetValue(data->list, GAD_CREATE_NAME, name);
 	DisableObject(data->list, GAD_CREATE_NAME, (ULONG)!data->match_name);
-	SetGadgetValue(data->list, GAD_CREATE_NAME_FIELD, (ULONG)(data->match_name ? data->match_name : ""));
+	SetGadgetValue(data->list, GAD_CREATE_NAME_FIELD, (IPTR)(data->match_name ? data->match_name : ""));
 
 	SetGadgetValue(data->list, GAD_CREATE_IFF, iff);
 	DisableObject(data->list, GAD_CREATE_IFF, (ULONG)!data->match_iff);
-	SetGadgetValue(data->list, GAD_CREATE_IFF_FIELD, (ULONG)(data->match_iff ? data->match_iff : ""));
+	SetGadgetValue(data->list, GAD_CREATE_IFF_FIELD, (IPTR)(data->match_iff ? data->match_iff : ""));
 
 	SetGadgetValue(data->list, GAD_CREATE_GROUP, group);
 	DisableObject(data->list, GAD_CREATE_GROUP, (ULONG)!data->match_group);
-	SetGadgetValue(data->list, GAD_CREATE_GROUP_FIELD, (ULONG)(data->match_group ? data->match_group : ""));
+	SetGadgetValue(data->list, GAD_CREATE_GROUP_FIELD, (IPTR)(data->match_group ? data->match_group : ""));
 
 	SetGadgetValue(data->list, GAD_CREATE_ID, id);
 	DisableObject(data->list, GAD_CREATE_ID, (ULONG)!data->match_id);
-	SetGadgetValue(data->list, GAD_CREATE_ID_FIELD, (ULONG)(data->match_id ? data->match_id : ""));
+	SetGadgetValue(data->list, GAD_CREATE_ID_FIELD, (IPTR)(data->match_id ? data->match_id : ""));
 
 	SetGadgetValue(data->list, GAD_CREATE_BYTES, bytes);
 	DisableObject(data->list, GAD_CREATE_BYTES, (ULONG)!match_bytes);
-	SetGadgetValue(data->list, GAD_CREATE_BYTES_FIELD, (ULONG)(match_bytes ? match_bytes : ""));
+	SetGadgetValue(data->list, GAD_CREATE_BYTES_FIELD, (IPTR)(match_bytes ? match_bytes : ""));
 
 	DisableObject(data->list, GAD_CREATE_CYCLE, !(data->match_bytes && data->match_bytesc));
 }
@@ -2109,9 +2109,9 @@ static int creator_add_file(creator_data *data)
 	{
 		// Fill out tags
 		tags[0].ti_Tag = ASLFR_Window;
-		tags[0].ti_Data = (ULONG)data->window;
+		tags[0].ti_Data = (IPTR)data->window;
 		tags[1].ti_Tag = ASLFR_InitialDrawer;
-		tags[1].ti_Data = (ULONG)data->req_dir;
+		tags[1].ti_Data = (IPTR)data->req_dir;
 		tags[2].ti_Tag = TAG_DONE;
 
 		// Show filerequester
@@ -2133,7 +2133,7 @@ static int creator_add_file(creator_data *data)
 
 					strcpy(data->req_dir, data->filereq->fr_Drawer);
 
-					if ((node = Att_NewNode(data->file_list, fti->fti_filename, (ULONG)fti, 0)))
+					if ((node = Att_NewNode(data->file_list, fti->fti_filename, (IPTR)fti, 0)))
 					{
 						// Detach list
 						SetGadgetChoices(data->list, GAD_CREATE_LISTVIEW, (APTR)~0);
@@ -2267,7 +2267,7 @@ void SAVEDS creator_editor_proc_code(void)
 
 	// DOpusBase = GET_DOPUSLIB;
 
-	IPC_ProcStartup((ULONG *)&data, (APTR)&creator_editor_proc_init);
+	IPC_ProcStartup((IPTR *)&data, (APTR)&creator_editor_proc_init);
 
 	// Make a filetype from our current information if filetype has been changed
 	if (!data->filetype || !data->edited)
@@ -2320,7 +2320,7 @@ void SAVEDS creator_editor_proc_code(void)
 		if (ok)
 		{
 			strcpy(data->filetype_name, data->filetype->type.name);
-			SetGadgetValue(data->list, GAD_CREATE_FILETYPE, (ULONG)data->filetype_name);
+			SetGadgetValue(data->list, GAD_CREATE_FILETYPE, (IPTR)data->filetype_name);
 		}
 
 #ifdef __amigaos4__
@@ -2359,9 +2359,9 @@ int creator_edit_filetype(creator_data *data)
 		IPC_Launch(0,								 // List to add task to (optional, but useful)
 				   &data->editor_ipc,				 // IPCData ** to store task IPC pointer in (optional)
 				   "filetype_editor",				 // Name
-				   (ULONG)creator_editor_proc_code,	 // Code
+				   (IPTR)creator_editor_proc_code,	 // Code
 				   STACK_DEFAULT,					 // Stack size
-				   (ULONG)data,						 // Data passed to task
+				   (IPTR)data,						 // Data passed to task
 				   (struct Library *)DOSBase);		 // Needs pointer to dos.library
 	}
 
@@ -2458,7 +2458,7 @@ static int creator_handle_appwindow(creator_data *data)
 						strcpy(fti->fti_filename, amsg->am_ArgList[a].wa_Name);
 						strncpy(fti->fti_path, buffer, 256);
 
-						if ((node = Att_NewNode(data->file_list, fti->fti_filename, (ULONG)fti, 0)))
+						if ((node = Att_NewNode(data->file_list, fti->fti_filename, (IPTR)fti, 0)))
 						{
 							// Find relevant filetype info
 							creator_sniff_filetype(data, (struct filetype_info *)node->data);
@@ -2581,13 +2581,13 @@ static int creator_event_loop(creator_data *data)
 					{
 						DisableObject(data->list, GAD_CREATE_BYTES, (ULONG)!data->match_bytes);
 						SetGadgetValue(
-							data->list, GAD_CREATE_BYTES_FIELD, (ULONG)(data->match_bytes ? data->match_bytes : ""));
+							data->list, GAD_CREATE_BYTES_FIELD, (IPTR)(data->match_bytes ? data->match_bytes : ""));
 					}
 					else
 					{
 						DisableObject(data->list, GAD_CREATE_BYTES, (ULONG)!data->match_bytesc);
 						SetGadgetValue(
-							data->list, GAD_CREATE_BYTES_FIELD, (ULONG)(data->match_bytesc ? data->match_bytesc : ""));
+							data->list, GAD_CREATE_BYTES_FIELD, (IPTR)(data->match_bytesc ? data->match_bytesc : ""));
 					}
 
 					break;
@@ -2800,7 +2800,7 @@ static int creator(char *args, struct Screen *screen, IPCData *ipc, IPCData *mai
 				{
 					if ((fti = AllocMemH(list->memory, sizeof(struct filetype_info))))
 					{
-						if ((node = Att_NewNode(list, entry->name, (ULONG)fti, 0)))
+						if ((node = Att_NewNode(list, entry->name, (IPTR)fti, 0)))
 						{
 							strcpy(fti->fti_filename, entry->name);
 							strncpy(fti->fti_path, path, 256);
@@ -2843,7 +2843,7 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *ipc),
 						   REG(a3, IPCData *main_ipc),
-						   REG(d0, ULONG mod_id),
+						   REG(d0, IPTR mod_id),
 						   REG(d1, EXT_FUNC(func_callback)))
 {
 	BPTR olddir = 0, newdir;

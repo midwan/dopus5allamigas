@@ -51,7 +51,7 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *ipc),
 						   REG(a3, IPCData *main_ipc),
-						   REG(d0, ULONG mod_id),
+						   REG(d0, IPTR mod_id),
 						   REG(d1, EXT_FUNC(func_callback)))
 {
 	join_data *data;
@@ -139,7 +139,7 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 			SetGadgetValue(
 				data->list,
 				GAD_JOIN_TO_FIELD,
-				(data->args->FA_Arguments[JOINARG_TO]) ? data->args->FA_Arguments[JOINARG_TO] : (ULONG)data->dest);
+				(data->args->FA_Arguments[JOINARG_TO]) ? data->args->FA_Arguments[JOINARG_TO] : (IPTR)data->dest);
 
 			// If valid destination, start automatically
 			if (data->args->FA_Arguments[JOINARG_TO])
@@ -173,7 +173,7 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 			SetGadgetValue(
 				data->list,
 				GAD_SPLIT_TO,
-				(data->args->FA_Arguments[SPLITARG_TO]) ? data->args->FA_Arguments[SPLITARG_TO] : (ULONG)data->dest);
+				(data->args->FA_Arguments[SPLITARG_TO]) ? data->args->FA_Arguments[SPLITARG_TO] : (IPTR)data->dest);
 		}
 	}
 
@@ -202,7 +202,7 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 		}
 
 		// Set destination path
-		SetGadgetValue(data->list, (data->function == JOIN) ? GAD_JOIN_TO_FIELD : GAD_SPLIT_TO, (ULONG)data->dest);
+		SetGadgetValue(data->list, (data->function == JOIN) ? GAD_JOIN_TO_FIELD : GAD_SPLIT_TO, (IPTR)data->dest);
 	}
 
 	// Split?
@@ -924,7 +924,7 @@ BOOL join_do_join(join_data *data)
 			break;
 
 		// Set new name
-		SetGadgetValue(data->list, GAD_JOIN_TO_FIELD, (ULONG)buf);
+		SetGadgetValue(data->list, GAD_JOIN_TO_FIELD, (IPTR)buf);
 	}
 
 	// Ok?
@@ -1283,7 +1283,7 @@ void split_do_gadgets(join_data *data, Att_Node *node)
 		char splitname[60], *ptr;
 
 		// Set filename
-		SetGadgetValue(data->list, GAD_SPLIT_FROM, (ULONG)node->node.ln_Name);
+		SetGadgetValue(data->list, GAD_SPLIT_FROM, (IPTR)node->node.ln_Name);
 
 		// Get filename for stem
 		stccpy(splitname, FilePart(node->node.ln_Name), 25);
@@ -1299,7 +1299,7 @@ void split_do_gadgets(join_data *data, Att_Node *node)
 		}
 
 		// Set stem
-		SetGadgetValue(data->list, GAD_SPLIT_STEM, (ULONG)splitname);
+		SetGadgetValue(data->list, GAD_SPLIT_STEM, (IPTR)splitname);
 	}
 }
 

@@ -68,7 +68,7 @@ struct TagItem
 									 {TAG_MORE, (IPTR)ftp_custom_relative_tags}};
 
 #define STRHGT 6
-#define CHECKBOX_HGT 4
+#define CHECKBOX_HGT STRHGT
 
 #define BUTWIDTH 7
 #define BUTWID2 9

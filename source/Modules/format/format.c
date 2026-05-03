@@ -29,7 +29,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *disks),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *ipc),
 						   REG(a3, IPCData *main_ipc),
-						   REG(d0, ULONG mod_id),
+						   REG(d0, IPTR mod_id),
 						   REG(d1, ULONG mod_data))
 {
 	format_data *data;
@@ -350,7 +350,7 @@ BOOL format_open(format_data *data, BOOL noactive)
 	}
 
 	// Set defaults
-	SetGadgetValue(data->list, GAD_FORMAT_NAME, (ULONG)data->default_name);
+	SetGadgetValue(data->list, GAD_FORMAT_NAME, (IPTR)data->default_name);
 	SetGadgetValue(data->list, GAD_FORMAT_FFS, data->default_ffs);
 	SetGadgetValue(data->list, GAD_FORMAT_INTERNATIONAL, data->default_int);
 	SetGadgetValue(data->list, GAD_FORMAT_CACHING, data->default_cache);
@@ -424,7 +424,7 @@ Att_List *get_device_list(char *only_get)
 	while ((dl = NextDosEntry(dl, LDF_DEVICES)))
 	{
 		// Is it a valid device?
-		if (dl->dol_Task && dl->dol_misc.dol_handler.dol_Startup > 512)
+		if (dl->dol_Task && (IPTR)dl->dol_misc.dol_handler.dol_Startup > 512)
 		{
 			char devname[32];
 
@@ -506,7 +506,7 @@ void show_device_info(format_data *data)
 	UnLockDosList(LDF_DEVICES | LDF_READ);
 
 	// Display status
-	SetGadgetValue(data->list, GAD_FORMAT_STATUS, (ULONG)info_buf);
+	SetGadgetValue(data->list, GAD_FORMAT_STATUS, (IPTR)info_buf);
 
 	// If this isn't a standard dos disk, disable FFS, etc
 	DisableObject(data->list, GAD_FORMAT_FFS, (dos_type & ID_DOS_DISK) != ID_DOS_DISK);
@@ -537,7 +537,7 @@ BOOL start_format(format_data *data, unsigned short type, BOOL reopen)
 	SetWindowBusy(data->window);
 
 	// Show status text
-	SetGadgetValue(data->list, GAD_FORMAT_STATUS, (ULONG)GetString(locale, MSG_OPENING_DEVICE));
+	SetGadgetValue(data->list, GAD_FORMAT_STATUS, (IPTR)GetString(locale, MSG_OPENING_DEVICE));
 
 	// Open device
 	if (!(disk = OpenDisk(node->node.ln_Name, 0)))
@@ -585,7 +585,7 @@ BOOL start_format(format_data *data, unsigned short type, BOOL reopen)
 	if (msg)
 	{
 		// Display error text
-		SetGadgetValue(data->list, GAD_FORMAT_STATUS, (ULONG)GetString(locale, msg));
+		SetGadgetValue(data->list, GAD_FORMAT_STATUS, (IPTR)GetString(locale, msg));
 
 		// Cleanup and return
 		CloseDisk(disk);
@@ -594,7 +594,7 @@ BOOL start_format(format_data *data, unsigned short type, BOOL reopen)
 	}
 
 	// Display status text
-	SetGadgetValue(data->list, GAD_FORMAT_STATUS, (ULONG)GetString(locale, MSG_CHECKING_DISK));
+	SetGadgetValue(data->list, GAD_FORMAT_STATUS, (IPTR)GetString(locale, MSG_CHECKING_DISK));
 
 	// Try and lock device
 	if ((lock = Lock(disk->dh_name, ACCESS_READ)))
@@ -656,7 +656,7 @@ BOOL start_format(format_data *data, unsigned short type, BOOL reopen)
 	if (!blank)
 	{
 		// Display aborted
-		SetGadgetValue(data->list, GAD_FORMAT_STATUS, (ULONG)GetString(locale, MSG_ABORTED));
+		SetGadgetValue(data->list, GAD_FORMAT_STATUS, (IPTR)GetString(locale, MSG_ABORTED));
 
 		// Cleanup and return
 		CloseDisk(disk);
@@ -709,7 +709,7 @@ BOOL start_format(format_data *data, unsigned short type, BOOL reopen)
 
 	// Display status text
 	SetGadgetValue(
-		data->list, GAD_FORMAT_STATUS, (ULONG)GetString(locale, (blank) ? MSG_FORMAT_SUCCESSFUL : MSG_FORMAT_FAILED));
+		data->list, GAD_FORMAT_STATUS, (IPTR)GetString(locale, (blank) ? MSG_FORMAT_SUCCESSFUL : MSG_FORMAT_FAILED));
 
 	return 1;
 }

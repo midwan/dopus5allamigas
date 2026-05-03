@@ -33,8 +33,8 @@ typedef struct _FuncArgs
 	struct RDArgs *rdargs;		// RDArgs structure
 	struct RDArgs *rdargs_res;	// Return from ReadArgs()
 	char *arg_string;			// Copy of argument string (with newline)
-	LONG *arg_array;			// Argument array pointer
-	LONG *arguments;			// Arguments we use
+	IPTR *arg_array;			// Argument array pointer
+	IPTR *arguments;			// Arguments we use
 	short count;
 	short done_args;
 } FuncArgs;

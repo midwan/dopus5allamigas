@@ -27,7 +27,7 @@ DirEntry *ASM SAVEDS HookCreateFileEntry(REG(a0, Lister *lister),
 										 REG(a1, struct FileInfoBlock *fib),
 										 REG(d0, BPTR lock))
 {
-#ifdef USE_64BIT
+#if defined(USE_64BIT) && !defined(__AROS__)
 	#warning detect if there is a valid fib_Size64 in the FIB
 	((FileInfoBlock64 *)fib)->fib_Size64 = fib->fib_Size;
 #endif
@@ -177,7 +177,7 @@ void ASM SAVEDS HookFileSet(REG(a0, Lister *lister), REG(a1, DirEntry *entry), R
 
 					// Fill out tags
 					tags[0].ti_Tag = DE_PopupMenu;
-					tags[0].ti_Data = (ULONG)list;
+					tags[0].ti_Data = (IPTR)list;
 					tags[1].ti_Tag = TAG_END;
 
 					// Add tags to entry
@@ -289,7 +289,7 @@ BOOL ASM SAVEDS HookFileQuery(REG(a0, Lister *lister), REG(a1, DirEntry *entry),
 		// Userdata
 		case HFFS_USERDATA:
 			if (tag->ti_Data)
-				*((ULONG *)tag->ti_Data) = entry->de_UserData;
+				*((IPTR *)tag->ti_Data) = entry->de_UserData;
 			break;
 
 		// Filetype
@@ -325,7 +325,7 @@ BOOL ASM SAVEDS HookFileQuery(REG(a0, Lister *lister), REG(a1, DirEntry *entry),
 				VersionInfo *ptr;
 
 				// Clear pointer
-				*((ULONG *)tag->ti_Data) = 0;
+				*((APTR *)tag->ti_Data) = 0;
 
 				// Get version info
 				if ((ptr = (VersionInfo *)GetTagData(DE_VersionInfo, 0, entry->de_Tags)))
@@ -340,7 +340,7 @@ BOOL ASM SAVEDS HookFileQuery(REG(a0, Lister *lister), REG(a1, DirEntry *entry),
 						CopyMem((char *)ptr, (char *)copy, size);
 
 						// Store pointer
-						*((ULONG *)tag->ti_Data) = (ULONG)copy;
+						*((APTR *)tag->ti_Data) = copy;
 					}
 				}
 			}
@@ -377,7 +377,7 @@ BOOL ASM SAVEDS HookSetFileComment(REG(a0, Lister *lister), REG(a1, char *name),
 
 		// Fill out tags
 		tags[0].ti_Tag = HFFS_COMMENT;
-		tags[0].ti_Data = (ULONG)comment;
+		tags[0].ti_Data = (IPTR)comment;
 		tags[1].ti_Tag = TAG_DONE;
 
 		// Set comment

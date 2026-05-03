@@ -27,8 +27,8 @@ For more information on Directory Opus for Windows please see:
 DOpusAppMessage *alloc_appmsg_files(DirEntry *, DirBuffer *, BOOL);
 struct ArgArray *AppArgArray(DOpusAppMessage *, short);
 void FreeArgArray(struct ArgArray *);
-void set_appmsg_data(DOpusAppMessage *, ULONG, ULONG, ULONG);
-BOOL get_appmsg_data(DOpusAppMessage *, ULONG *, ULONG *, ULONG *);
+void set_appmsg_data(DOpusAppMessage *, IPTR, IPTR, IPTR);
+BOOL get_appmsg_data(DOpusAppMessage *, IPTR *, IPTR *, IPTR *);
 short FindWBArg(struct WBArg *args, short count, char *name);
 void UnlockWBArg(struct WBArg *args, short count);
 struct ArgArray *WBArgArray(struct WBArg *, short, short);
@@ -64,7 +64,7 @@ struct ArgArrayEntry
 
 #define BuildArgArray(...)                                   \
 	({                                                       \
-		IPTR __args[] = {__VA_ARGS__};                       \
+		IPTR __args[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)};  \
 		(struct ArgArray *)BuildArgArrayA((char **)&__args); \
 	})
 struct ArgArray *BuildArgArrayA(char **);

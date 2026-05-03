@@ -103,7 +103,7 @@ PopUpHandle *popup_from_bank(Cfg_ButtonBank *bank, short *last_id)
 				PopUpSeparator(handle);
 
 			// Add a new item
-			else if ((item = PopUpNewItem(handle, (ULONG)label, id++, POPUPF_STRING)))
+			else if ((item = PopUpNewItem(handle, (IPTR)label, id++, POPUPF_STRING)))
 			{
 				// Save pointer to function in item data
 				item->data = func;
@@ -132,7 +132,7 @@ PopUpHandle *popup_from_bank(Cfg_ButtonBank *bank, short *last_id)
 		else if (ins_count < 1 && func->node.ln_Succ->ln_Succ)
 		{
 			// Add parent item
-			if ((item = PopUpNewItem(handle, (ULONG)label, id++, POPUPF_STRING | POPUPF_SUB | POPUPF_USERDATA)))
+			if ((item = PopUpNewItem(handle, (IPTR)label, id++, POPUPF_STRING | POPUPF_SUB | POPUPF_USERDATA)))
 			{
 				// Initialise item for sub-items
 				item->userdata = func;
@@ -147,7 +147,7 @@ PopUpHandle *popup_from_bank(Cfg_ButtonBank *bank, short *last_id)
 							continue;
 						if (strncmp(label, "---", 3) == 0)
 							PopUpSeparator(handle);
-						else if ((item = PopUpNewItem(handle, (ULONG)label, id++, POPUPF_STRING)))
+						else if ((item = PopUpNewItem(handle, (IPTR)label, id++, POPUPF_STRING)))
 						{
 							// Save pointer to function in item data
 							item->data = func;
@@ -161,7 +161,7 @@ PopUpHandle *popup_from_bank(Cfg_ButtonBank *bank, short *last_id)
 		}
 
 		// Create item
-		else if ((item = PopUpNewItem(handle, (ULONG)label, id++, POPUPF_STRING)))
+		else if ((item = PopUpNewItem(handle, (IPTR)label, id++, POPUPF_STRING)))
 		{
 			// Save pointer to function in item data
 			item->data = func;

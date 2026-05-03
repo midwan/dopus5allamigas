@@ -464,7 +464,7 @@ int function_internal_command(struct _CommandList *, char *, FunctionHandle *, I
 struct _CommandList *function_find_internal(char **, short);
 ULONG parse_internal_function(char *str, char *template, ULONG orig_flags);
 char *parse_find_path(char *str);
-REF_CALLBACK_PROTO(ULONG,
+REF_CALLBACK_PROTO(IPTR,
 				   ASM SAVEDS function_external_hook,
 				   d0,
 				   ULONG,
@@ -493,10 +493,10 @@ void function_error_text(FunctionHandle *handle, int);
 void function_text(FunctionHandle *handle, char *text);
 #define function_request(handle, message, ...)                         \
 	({                                                                 \
-		IPTR __args[] = {__VA_ARGS__};                                 \
-		(int)function_request_args(handle, message, (ULONG *)&__args); \
+		IPTR __args[] = {DOPUS_VARIADIC_IPTR(__VA_ARGS__)};            \
+		(int)function_request_args(handle, message, __args);           \
 	})
-int function_request_args(FunctionHandle *, char *, ULONG *);
+int function_request_args(FunctionHandle *, char *, IPTR *);
 void function_build_source(FunctionHandle *handle, FunctionEntry *entry, char *buffer);
 void function_build_dest(FunctionHandle *handle, FunctionEntry *entry, char *buffer);
 PathNode *function_path_current(PathList *);

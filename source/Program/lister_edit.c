@@ -180,7 +180,7 @@ void lister_end_edit(Lister *lister, short flags)
 								if (buffer->user_info && (DoPkt(proc->dvp_Port,
 																ACTION_UID_TO_USERINFO,
 																val,
-																(ULONG)buffer->user_info,
+																(SIPTR)buffer->user_info,
 																0,
 																0,
 																0)))
@@ -212,7 +212,7 @@ void lister_end_edit(Lister *lister, short flags)
 								if (buffer->group_info && (DoPkt(proc->dvp_Port,
 																 ACTION_GID_TO_GROUPINFO,
 																 val,
-																 (ULONG)buffer->group_info,
+																 (SIPTR)buffer->group_info,
 																 0,
 																 0,
 																 0)))
@@ -248,7 +248,7 @@ void lister_end_edit(Lister *lister, short flags)
 						if (lister->edit_type == DISPLAY_OWNER)
 						{
 							// Try packet first
-							res = DoPkt(proc->dvp_Port, ACTION_NAME_TO_UID, (ULONG)lister->edit_ptr, 0, 0, 0, 0);
+							res = DoPkt(proc->dvp_Port, ACTION_NAME_TO_UID, (SIPTR)lister->edit_ptr, 0, 0, 0, 0);
 							if (IoErr() == 0)
 							{
 								// Got name?
@@ -288,7 +288,7 @@ void lister_end_edit(Lister *lister, short flags)
 						else if (lister->edit_type == DISPLAY_GROUP)
 						{
 							// Try packet first
-							res = DoPkt(proc->dvp_Port, ACTION_NAME_TO_GID, (ULONG)lister->edit_ptr, 0, 0, 0, 0);
+							res = DoPkt(proc->dvp_Port, ACTION_NAME_TO_GID, (SIPTR)lister->edit_ptr, 0, 0, 0, 0);
 							if (IoErr() == 0)
 							{
 								// Got group?

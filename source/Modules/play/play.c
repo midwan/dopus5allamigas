@@ -33,7 +33,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *ipc),
 						   REG(a3, IPCData *main_ipc),
-						   REG(d0, ULONG mod_id),
+						   REG(d0, IPTR mod_id),
 						   REG(d1, ULONG mod_data))
 {
 	play_data *data;
@@ -188,7 +188,7 @@ BOOL play_file(play_data *data)
 	// If we've got datatypes, see if it matches
 	if (DataTypesBase && (data->dt_object = NewDTObject(data->file,
 														SDTA_SignalTask,
-														(ULONG)FindTask(0),
+														(IPTR)FindTask(0),
 														SDTA_SignalBit,
 														1 << data->dt_signal,
 														DTA_GroupID,
@@ -203,7 +203,7 @@ BOOL play_file(play_data *data)
 				   0,
 				   0,
 				   SDTA_SignalTask,
-				   (ULONG)FindTask(0),
+				   (IPTR)FindTask(0),
 				   SDTA_SignalBit,
 				   1 << data->dt_signal,
 				   SDTA_Volume,
@@ -484,9 +484,9 @@ void play_iconify(play_data *data)
 	tags[0].ti_Tag = DAE_SnapShot;
 	tags[0].ti_Data = 1;
 	tags[1].ti_Tag = DAE_Menu;
-	tags[1].ti_Data = (ULONG)GetString(locale, MSG_PLAY_NEXT);
+	tags[1].ti_Data = (IPTR)GetString(locale, MSG_PLAY_NEXT);
 	tags[2].ti_Tag = DAE_Menu;
-	tags[2].ti_Data = (ULONG)GetString(locale, MSG_PLAY_ABORT);
+	tags[2].ti_Data = (IPTR)GetString(locale, MSG_PLAY_ABORT);
 	tags[3].ti_Tag = TAG_END;
 
 	// Set position
@@ -554,10 +554,10 @@ void play_open_window(play_data *data, struct Screen *screen, struct Window *par
 		if (data->objlist)
 		{
 			// Initialise fields
-			SetGadgetValue(data->objlist, GAD_PLAY_FILENAME, (ULONG)data->play_name);
-			SetGadgetValue(data->objlist, GAD_PLAY_LENGTH, (ULONG)data->play_length);
-			SetGadgetValue(data->objlist, GAD_PLAY_TYPE, (ULONG)data->play_type);
-			SetGadgetValue(data->objlist, GAD_PLAY_STATUS, (ULONG)data->play_status);
+			SetGadgetValue(data->objlist, GAD_PLAY_FILENAME, (IPTR)data->play_name);
+			SetGadgetValue(data->objlist, GAD_PLAY_LENGTH, (IPTR)data->play_length);
+			SetGadgetValue(data->objlist, GAD_PLAY_TYPE, (IPTR)data->play_type);
+			SetGadgetValue(data->objlist, GAD_PLAY_STATUS, (IPTR)data->play_status);
 		}
 	}
 }
@@ -576,7 +576,7 @@ void play_update_info(play_data *data, const char *filename, const char *length,
 
 		// Update field if window open
 		if (data->window)
-			SetGadgetValue(data->objlist, GAD_PLAY_FILENAME, (ULONG)data->play_name);
+			SetGadgetValue(data->objlist, GAD_PLAY_FILENAME, (IPTR)data->play_name);
 
 		// Or, if AppIcon is open, change label
 		else if (data->app_icon)
@@ -594,7 +594,7 @@ void play_update_info(play_data *data, const char *filename, const char *length,
 
 		// Update field if window open
 		if (data->window)
-			SetGadgetValue(data->objlist, GAD_PLAY_LENGTH, (ULONG)data->play_length);
+			SetGadgetValue(data->objlist, GAD_PLAY_LENGTH, (IPTR)data->play_length);
 	}
 
 	// Change type?
@@ -608,7 +608,7 @@ void play_update_info(play_data *data, const char *filename, const char *length,
 
 		// Update field if window open
 		if (data->window)
-			SetGadgetValue(data->objlist, GAD_PLAY_TYPE, (ULONG)data->play_type);
+			SetGadgetValue(data->objlist, GAD_PLAY_TYPE, (IPTR)data->play_type);
 	}
 
 	// Change status?
@@ -622,7 +622,7 @@ void play_update_info(play_data *data, const char *filename, const char *length,
 
 		// Update field if window open
 		if (data->window)
-			SetGadgetValue(data->objlist, GAD_PLAY_STATUS, (ULONG)data->play_status);
+			SetGadgetValue(data->objlist, GAD_PLAY_STATUS, (IPTR)data->play_status);
 	}
 }
 

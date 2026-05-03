@@ -566,7 +566,7 @@ struct DirectoryBuffer *lister_new_buffer(Lister *);
 void lister_free_buffer(struct DirectoryBuffer *);
 void lister_process_msg(Lister *, struct IntuiMessage *);
 void lister_send_abort(Lister *);
-int lister_do_function(Lister *, ULONG);
+int lister_do_function(Lister *, IPTR);
 
 void lister_busy(Lister *, int);
 void lister_unbusy(Lister *, int);

@@ -6,6 +6,9 @@
 #include <proto/module.h>
 
 extern struct DOpusLocale *locale;
+#ifndef __amigaos3__
+	#pragma pack(2)
+#endif
 typedef struct
 {
 	ULONG ver;					 // Module version
@@ -15,6 +18,9 @@ typedef struct
 	ULONG function_count;		 // Number of functions in module
 	ModuleFunction function[3];	 // All the module functions
 } ModuleInfo_3;
+#ifndef __amigaos3__
+	#pragma pack()
+#endif
 extern ModuleInfo_3 module_info;
 
 #define VALID_QUALIFIERS                                                                                           \

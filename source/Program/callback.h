@@ -76,7 +76,7 @@ void ASM HookFirstEntry(REG(a0, FunctionHandle *handle));
 
 APTR ASM HookGetEntry(REG(a0, FunctionHandle *handle));
 
-ULONG ASM HookExamineEntry(REG(a0, FunctionEntry *entry), REG(d0, long type));
+IPTR ASM HookExamineEntry(REG(a0, FunctionEntry *entry), REG(d0, long type));
 
 void ASM HookEndEntry(REG(a0, FunctionHandle *handle), REG(a1, APTR entry), REG(d0, BOOL deselect));
 
@@ -129,7 +129,7 @@ long ASM HookReplaceReq(REG(a0, struct Window *window),
 						REG(a4, struct FileInfoBlock *file2),
 						REG(d0, long default_option));
 
-ULONG ASM HookGetPointer(REG(a0, struct pointer_packet *ptr));
+IPTR ASM HookGetPointer(REG(a0, struct pointer_packet *ptr));
 
 void ASM HookFreePointer(REG(a0, struct pointer_packet *ptr));
 
@@ -244,10 +244,10 @@ typedef struct
 #define HFFS_SELECTED (TAG_USER + 0x6)	  // BOOL			- Selected state
 #define HFFS_LINK (TAG_USER + 0x7)		  // BOOL			- Set if a link
 #define HFFS_COLOUR (TAG_USER + 0x8)	  // ULONG		- 1 = device, 2 = assign
-#define HFFS_USERDATA (TAG_USER + 0x9)	  // ULONG		- Userdata
+#define HFFS_USERDATA (TAG_USER + 0x9)	  // IPTR		- Userdata
 #define HFFS_FILETYPE (TAG_USER + 0xa)	  // char *		- Filetype description
 #define HFFS_DISPLAY (TAG_USER + 0xb)	  // char *		- Custom display string
-#define HFFS_VERSION (TAG_USER + 0xc)	  // ULONG *		- version, revision, days
+#define HFFS_VERSION (TAG_USER + 0xc)	  // VersionInfo *	- Version information
 #define HFFS_MENU (TAG_USER + 0xd)		  // void *		- not implemented
 
 #define HOOKREFRESH_DATE (1 << 0)

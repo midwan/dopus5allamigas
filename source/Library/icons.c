@@ -257,7 +257,7 @@ BOOL LIBFUNC L_WriteIcon(REG(a0, char *name), REG(a1, struct DiskObject *icon), 
 	struct LibData *data;
 	BOOL result;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 	// Get data pointer
@@ -292,7 +292,7 @@ BOOL LIBFUNC L_WriteIcon(REG(a0, char *name), REG(a1, struct DiskObject *icon), 
 		write_obj.do_Gadget.Height = temp->do_Gadget.Height;
 
 		// Fix revision
-		if ((((ULONG)write_obj.do_Gadget.UserData) & WB_DISKREVISIONMASK) == 0)
+		if ((((IPTR)write_obj.do_Gadget.UserData) & WB_DISKREVISIONMASK) == 0)
 			*((ULONG *)&write_obj.do_Gadget.UserData) |= WB_DISKREVISION;
 
 		// Clear SpecialInfo field so we won't get stuck in a loop
@@ -316,7 +316,7 @@ BOOL LIBFUNC L_WriteIcon(REG(a0, char *name), REG(a1, struct DiskObject *icon), 
 	else
 	{
 		// Fix revision
-		if ((((ULONG)icon->do_Gadget.UserData) & WB_DISKREVISIONMASK) == 0)
+		if ((((IPTR)icon->do_Gadget.UserData) & WB_DISKREVISIONMASK) == 0)
 			*((ULONG *)&icon->do_Gadget.UserData) |= WB_DISKREVISION;
 
 		//#define IconBase	(data->icon_base)
@@ -341,7 +341,7 @@ BOOL LIBFUNC L_DeleteIcon(REG(a0, char *name), REG(a6, struct MyLibrary *libbase
 {
 	struct LibData *data;
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__AROS__)
 	libbase = dopuslibbase_global;
 #endif
 
@@ -362,7 +362,7 @@ ULONG LIBFUNC L_GetIconFlags(REG(a0, struct DiskObject *icon))
 		return 0;
 
 	// Stored in gadget userdata
-	flags = (ULONG)icon->do_Gadget.UserData;
+	flags = (IPTR)icon->do_Gadget.UserData;
 
 	// Mask off flags we're not interested in
 	flags &= ICONF_POSITION_OK | ICONF_ICON_VIEW | ICONF_BORDER_OFF | ICONF_NO_LABEL | ICONF_BORDER_ON;
@@ -399,7 +399,7 @@ void LIBFUNC L_SetIconFlags(REG(a0, struct DiskObject *icon), REG(d0, ULONG flag
 		return;
 
 	// Get old flags from gadget
-	oldflags = (ULONG)icon->do_Gadget.UserData;
+	oldflags = (IPTR)icon->do_Gadget.UserData;
 
 	// Clear flags we're interested in
 	oldflags &= ~(ICONF_POSITION_OK | ICONF_ICON_VIEW | ICONF_BORDER_OFF | ICONF_NO_LABEL | ICONF_BORDER_ON);
@@ -408,7 +408,7 @@ void LIBFUNC L_SetIconFlags(REG(a0, struct DiskObject *icon), REG(d0, ULONG flag
 	oldflags |= flags;
 
 	// Store back in gadget
-	icon->do_Gadget.UserData = (APTR)oldflags;
+	icon->do_Gadget.UserData = (APTR)(IPTR)oldflags;
 }
 
 // Set Opus icon position

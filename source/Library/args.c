@@ -53,7 +53,7 @@ FuncArgs *LIBFUNC L_ParseArgs(REG(a0, char *template), REG(a1, char *args))
 	}
 
 	// Initialise pointers
-	funcargs->FA_ArgArray = (LONG *)(funcargs + 1);
+	funcargs->FA_ArgArray = (IPTR *)(funcargs + 1);
 	funcargs->FA_Arguments = funcargs->FA_ArgArray + count;
 	funcargs->FA_ArgString = (char *)(funcargs->FA_Arguments + count);
 

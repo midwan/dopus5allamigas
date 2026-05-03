@@ -218,34 +218,34 @@ void FreeArgArray(struct ArgArray *array)
 }
 
 // Set AppMessage custom data
-void set_appmsg_data(DOpusAppMessage *msg, ULONG value1, ULONG value2, ULONG value3)
+void set_appmsg_data(DOpusAppMessage *msg, IPTR value1, IPTR value2, IPTR value3)
 {
 	if (msg)
 	{
 		// Set check pointer
-		msg->da_Msg.am_Reserved[6] = (ULONG)msg;
+		msg->da_Custom[0] = (IPTR)msg;
 
 		// Store data
-		msg->da_Msg.am_Reserved[3] = value1;
-		msg->da_Msg.am_Reserved[4] = value2;
-		msg->da_Msg.am_Reserved[5] = value3;
+		msg->da_Custom[1] = value1;
+		msg->da_Custom[2] = value2;
+		msg->da_Custom[3] = value3;
 	}
 }
 
 // Get AppMessage custom data
-BOOL get_appmsg_data(DOpusAppMessage *msg, ULONG *value1, ULONG *value2, ULONG *value3)
+BOOL get_appmsg_data(DOpusAppMessage *msg, IPTR *value1, IPTR *value2, IPTR *value3)
 {
 	// Check for valid message
-	if (!msg || msg->da_Msg.am_Reserved[6] != (ULONG)msg)
+	if (!msg || msg->da_Custom[0] != (IPTR)msg)
 		return 0;
 
 	// Return data
 	if (value1)
-		*value1 = msg->da_Msg.am_Reserved[3];
+		*value1 = msg->da_Custom[1];
 	if (value2)
-		*value2 = msg->da_Msg.am_Reserved[4];
+		*value2 = msg->da_Custom[2];
 	if (value3)
-		*value3 = msg->da_Msg.am_Reserved[5];
+		*value3 = msg->da_Custom[3];
 	return 1;
 }
 

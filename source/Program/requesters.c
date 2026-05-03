@@ -26,7 +26,7 @@ For more information on Directory Opus for Windows please see:
 unsigned char map_font_colour(unsigned char);
 
 // generic requester wrapper
-short super_request(APTR parent, char *message, IPCData *ipc, ULONG *flagptr)
+short super_request(APTR parent, char *message, IPCData *ipc, IPTR *flagptr)
 {
 	struct super_request_data *data;
 	short ret = 1;

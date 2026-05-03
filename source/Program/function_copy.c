@@ -208,7 +208,7 @@ DOPUS_FUNC(function_copy)
 						GetString(&locale,
 								  (function == FUNC_MAKELINK) ? MSG_CANT_OVERLINK_FILES : MSG_CANT_OVERCOPY_FILES),
 						0,
-						(ULONG)GetString(&locale, MSG_CONTINUE),
+						(IPTR)GetString(&locale, MSG_CONTINUE),
 						0);
 				}
 
@@ -493,18 +493,18 @@ DOPUS_FUNC(function_copy)
 										 handle,
 										 GetString(&locale, MSG_ENTER_NEW_NAME),
 										 SRF_BUFFER | SRF_BUFFER2 | SRF_PATH_FILTER,
-										 (ULONG)new_name_edit,
+										 (IPTR)new_name_edit,
 										 GUI->def_filename_length,
-										 (ULONG)old_name_edit,
+										 (IPTR)old_name_edit,
 										 GUI->def_filename_length,
-										 (ULONG)GetString(&locale,
+										 (IPTR)GetString(&locale,
 														  (move_flag)
 															  ? MSG_MOVE
 															  : ((link_flag) ? MSG_MAKELINK
 																			 : ((function == FUNC_CLONE) ? MSG_DUPLICATE
 																										 : MSG_COPY))),
-										 (ULONG)GetString(&locale, MSG_ABORT),
-										 (ULONG)GetString(&locale, MSG_SKIP),
+										 (IPTR)GetString(&locale, MSG_ABORT),
+										 (IPTR)GetString(&locale, MSG_SKIP),
 										 0)) == 2)
 								{
 									function_abort(handle);
@@ -589,12 +589,12 @@ DOPUS_FUNC(function_copy)
 					else if (!(function_request(handle,
 												GetString(&locale, MSG_ENTER_PASSWORD),
 												SRF_BUFFER | SRF_CHECKMARK,
-												(ULONG)password_buf,
+												(IPTR)password_buf,
 												24,
-												(ULONG)GetString(&locale, MSG_DECRYPT),
-												(ULONG)&data->func.encrypt.decrypt,
-												(ULONG)GetString(&locale, MSG_OKAY),
-												(ULONG)GetString(&locale, MSG_ABORT),
+												(IPTR)GetString(&locale, MSG_DECRYPT),
+												(IPTR)&data->func.encrypt.decrypt,
+												(IPTR)GetString(&locale, MSG_OKAY),
+												(IPTR)GetString(&locale, MSG_ABORT),
 												0)) ||
 							 !password_buf[0])
 					{
@@ -758,8 +758,8 @@ DOPUS_FUNC(function_copy)
 																 (link_flag) ? MSG_CANT_LINK_DIR_INTO_ITSELF
 																			 : MSG_CANT_COPY_DIR_INTO_ITSELF),
 													   0,
-													   (ULONG)GetString(&locale, MSG_CONTINUE),
-													   (ULONG)GetString(&locale, MSG_ABORT),
+													   (IPTR)GetString(&locale, MSG_CONTINUE),
+													   (IPTR)GetString(&locale, MSG_ABORT),
 													   0)))
 									ret = -1;
 								else
@@ -857,7 +857,7 @@ DOPUS_FUNC(function_copy)
 								}
 
 								// Try to make link
-								if (lock && !(MakeLink(dest_file, (APTR)lock, FALSE)))
+								if (lock && !(MakeLink(dest_file, (SIPTR)lock, FALSE)))
 									error = IoErr();
 
 								// Successful?
@@ -1119,10 +1119,10 @@ DOPUS_FUNC(function_copy)
 						if (!(ret = function_request(handle,
 													 handle->work_buffer,
 													 0,
-													 (ULONG)GetString(&locale, MSG_UNPROTECT),
-													 (ULONG)GetString(&locale, MSG_UNPROTECT_ALL),
-													 (ULONG)GetString(&locale, MSG_ABORT),
-													 (ULONG)GetString(&locale, MSG_SKIP),
+													 (IPTR)GetString(&locale, MSG_UNPROTECT),
+													 (IPTR)GetString(&locale, MSG_UNPROTECT_ALL),
+													 (IPTR)GetString(&locale, MSG_ABORT),
+													 (IPTR)GetString(&locale, MSG_SKIP),
 													 0)))
 							break;
 

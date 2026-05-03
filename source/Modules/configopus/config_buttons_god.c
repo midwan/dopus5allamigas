@@ -624,7 +624,7 @@ BOOL _config_buttons_handle_key(config_buttons_data *data, UWORD code, UWORD qua
 	data->select_row = sel_row;
 
 	// Send new row/column
-	if (IPC_Command(data->bank_node->button_ipc, BUTTONEDIT_SET_SELECTION, sel_col, (APTR)sel_row, 0, REPLY_NO_PORT))
+	if (IPC_Command(data->bank_node->button_ipc, BUTTONEDIT_SET_SELECTION, sel_col, (APTR)(IPTR)sel_row, 0, REPLY_NO_PORT))
 		redraw = 1;
 
 	// Refresh window

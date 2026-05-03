@@ -45,7 +45,7 @@ void rexx_lister_new(struct RexxMsg *msg, char *args)
 	Cfg_Lister *cfg;
 	Lister *new_lister = 0, *parent = 0;
 	char toolbar_path[256];
-	char buf[12];
+	char buf[32];
 	short key, fromicon = 0, nomode = 0;
 	ULONG flags = 0;
 	position_rec *pos = 0;
@@ -74,7 +74,7 @@ void rexx_lister_new(struct RexxMsg *msg, char *args)
 		else if (key == NL_PARENT)
 		{
 			// Get parent lister
-			parent = (Lister *)rexx_parse_number(&args, 0, 0);
+			parent = (Lister *)rexx_parse_iptr(&args, 0, 0);
 		}
 
 		// Invisible
@@ -231,7 +231,7 @@ void rexx_lister_new(struct RexxMsg *msg, char *args)
 		// Build return codes
 		if (new_lister)
 		{
-			lsprintf(buf, "%ld", new_lister);
+			rexx_format_iptr(buf, (IPTR)new_lister);
 			rexx_set_return(msg, 0, buf);
 		}
 		else
@@ -266,7 +266,7 @@ BOOL rexx_lister_cmd(struct RexxMsg *msg, short command, char *args)
 
 	// Get handle
 	else
-		lister = (Lister *)rexx_parse_number(&args, 0, 0);
+		lister = (Lister *)rexx_parse_iptr(&args, 0, 0);
 
 	// See if variable or stem is specified
 	for (id = strlen(args), val = 0; id > 0 && val < 2; id--)
@@ -549,8 +549,7 @@ BOOL rexx_lister_cmd(struct RexxMsg *msg, short command, char *args)
 			// Byte count
 			case RXCMD_NUMBYTES:
 #ifdef USE_64BIT
-	#warning What about the high 32-bits?
-				lsprintf(result, "%ld", (LONG)(lister->cur_buffer->buf_TotalBytes[0] & 0xffffffff));
+				ItoaU64(&lister->cur_buffer->buf_TotalBytes[0], result, sizeof(result), 0);
 #else
 				lsprintf(result, "%ld", lister->cur_buffer->buf_TotalBytes[0]);
 #endif
@@ -575,8 +574,7 @@ BOOL rexx_lister_cmd(struct RexxMsg *msg, short command, char *args)
 			// Selected byte count
 			case RXCMD_NUMSELBYTES:
 #ifdef USE_64BIT
-	#warning What about the high 32-bits?
-				lsprintf(result, "%ld", (LONG)(lister->cur_buffer->buf_SelectedBytes[0] & 0xffffffff));
+				ItoaU64(&lister->cur_buffer->buf_SelectedBytes[0], result, sizeof(result), 0);
 #else
 				lsprintf(result, "%ld", lister->cur_buffer->buf_SelectedBytes[0]);
 #endif
@@ -693,12 +691,12 @@ BOOL rexx_lister_cmd(struct RexxMsg *msg, short command, char *args)
 
 			// Window pointer
 			case RXCMD_WINDOW:
-				lsprintf(result, "%ld", lister->window);
+				rexx_format_iptr(result, (IPTR)lister->window);
 				break;
 
 			// Process pointer
 			case RXCMD_PROC:
-				lsprintf(result, "%ld", lister->ipc->proc);
+				rexx_format_iptr(result, (IPTR)lister->ipc->proc);
 				break;
 
 			// Custom title/header
@@ -876,7 +874,7 @@ BOOL rexx_lister_cmd(struct RexxMsg *msg, short command, char *args)
 					lister_build_icon_name(lister);
 
 					// Update app icon
-					SendNotifyMsg(DN_APP_ICON_LIST, (ULONG)lister->appicon, DNF_ICON_CHANGED, FALSE, 0, 0);
+					SendNotifyMsg(DN_APP_ICON_LIST, (IPTR)lister->appicon, DNF_ICON_CHANGED, FALSE, 0, 0);
 				}
 				break;
 
@@ -1002,8 +1000,8 @@ BOOL rexx_lister_cmd(struct RexxMsg *msg, short command, char *args)
 					// Turn busy on or off
 					IPC_Command(lister->ipc,
 								LISTER_WAIT_BUSY,
-								(ULONG)msg,
-								(APTR)((val & 1) ? 1 : 0),
+								(IPTR)msg,
+								(APTR)(IPTR)((val & 1) ? 1 : 0),
 								0,
 								(wait) ? REPLY_NO_PORT : 0);
 
@@ -1272,7 +1270,7 @@ BOOL rexx_lister_cmd(struct RexxMsg *msg, short command, char *args)
 				rexx_skip_space(&args);
 
 				// Tell lister to get toolbar
-				IPC_Command(lister->ipc, LISTER_TOOLBAR, (ULONG)args, 0, 0, REPLY_NO_PORT);
+				IPC_Command(lister->ipc, LISTER_TOOLBAR, (IPTR)args, 0, 0, REPLY_NO_PORT);
 				break;
 
 			// Mode
@@ -1460,7 +1458,7 @@ BOOL rexx_lister_cmd(struct RexxMsg *msg, short command, char *args)
 					 "%ld",
 					 IPC_Command(lister->ipc,
 								 LISTER_FIND_CACHED_BUFFER,
-								 (ULONG)lister->cur_buffer->buf_CustomHandler,
+								 (IPTR)lister->cur_buffer->buf_CustomHandler,
 								 args,
 								 0,
 								 REPLY_NO_PORT));
@@ -1473,7 +1471,7 @@ BOOL rexx_lister_cmd(struct RexxMsg *msg, short command, char *args)
 
 			// Get destination lister handle
 			rexx_skip_space(&args);
-			dest_lister = (Lister *)rexx_parse_number(&args, 0, 0);
+			dest_lister = (Lister *)rexx_parse_iptr(&args, 0, 0);
 
 			// Check it's valid
 			if (rexx_lister_valid(dest_lister))
@@ -1614,7 +1612,7 @@ void rexx_lister_file_return(struct RexxMsg *msg, DirBuffer *buffer, short id, c
 		{
 			// Variable?
 			if (var_flag == RETURN_VAR)
-				rexx_set_var(msg, varname, 0, (ULONG) "", RX_STRING);
+				rexx_set_var(msg, varname, 0, (IPTR) "", RX_STRING);
 
 			else
 				// Didn't ask for a result?
@@ -1626,7 +1624,7 @@ void rexx_lister_file_return(struct RexxMsg *msg, DirBuffer *buffer, short id, c
 
 			else
 				// Result string
-				if (!(msg->rm_Result2 = (long)CreateArgstring(0, 0)))
+				if (!(msg->rm_Result2 = (IPTR)CreateArgstring(0, 0)))
 				msg->rm_Result1 = RXERR_NO_MEMORY;
 			return;
 		}
@@ -1657,7 +1655,7 @@ void rexx_lister_file_return(struct RexxMsg *msg, DirBuffer *buffer, short id, c
 			lsprintf(buf, "%ld", count++);
 
 			// Set rexx variable
-			rexx_set_var(msg, varname, buf, (ULONG)entry->de_Node.dn_Name, RX_STRING);
+			rexx_set_var(msg, varname, buf, (IPTR)entry->de_Node.dn_Name, RX_STRING);
 		}
 
 		// Otherwise, building string
@@ -1680,7 +1678,7 @@ void rexx_lister_file_return(struct RexxMsg *msg, DirBuffer *buffer, short id, c
 
 	// Variable?
 	else if (var_flag == RETURN_VAR)
-		rexx_set_var(msg, varname, 0, (ULONG)string, RX_STRING);
+		rexx_set_var(msg, varname, 0, (IPTR)string, RX_STRING);
 
 	else
 		// Didn't ask for a result?
@@ -1689,7 +1687,7 @@ void rexx_lister_file_return(struct RexxMsg *msg, DirBuffer *buffer, short id, c
 
 	else
 		// Result string
-		if (!(msg->rm_Result2 = (long)CreateArgstring(string, strlen(string))))
+		if (!(msg->rm_Result2 = (IPTR)CreateArgstring(string, strlen(string))))
 		msg->rm_Result1 = RXERR_NO_MEMORY;
 
 	// Free temporary string
@@ -1705,6 +1703,9 @@ void rexx_lister_entry_info(struct RexxMsg *msg, DirBuffer *buffer, char *args, 
 	char *string, *ptr;
 	ULONG date;
 	short type;
+#ifdef USE_64BIT
+	char sizebuf[32];
+#endif
 
 	// If we haven't been asked for a result code, return
 	if (!(msg->rm_Action & (1 << RXFB_RESULT)) && var_flag == RETURN_RESULT)
@@ -1719,6 +1720,9 @@ void rexx_lister_entry_info(struct RexxMsg *msg, DirBuffer *buffer, char *args, 
 
 	// Get date value
 	date = (entry->de_Date.ds_Days * 86400) + (entry->de_Date.ds_Minute * 60) + (entry->de_Date.ds_Tick / 50);
+#ifdef USE_64BIT
+	ItoaU64(&entry->de_Size, sizebuf, sizeof(sizebuf), 0);
+#endif
 
 	// Get entry type
 	if (entry->de_Node.dn_Type == 0)
@@ -1771,10 +1775,9 @@ void rexx_lister_entry_info(struct RexxMsg *msg, DirBuffer *buffer, char *args, 
 		VersionInfo *ver;
 
 		// Return information
-		rexx_set_var(msg, varname, "NAME", (ULONG)entry->de_Node.dn_Name, RX_STRING);
+		rexx_set_var(msg, varname, "NAME", (IPTR)entry->de_Node.dn_Name, RX_STRING);
 #ifdef USE_64BIT
-	#warning What about the high 32-bits?
-		rexx_set_var(msg, varname, "SIZE", (LONG)(entry->de_Size & 0xffffffff), RX_LONG);
+		rexx_set_var(msg, varname, "SIZE", (IPTR)sizebuf, RX_STRING);
 #else
 		rexx_set_var(msg, varname, "SIZE", entry->de_Size, RX_LONG);
 #endif
@@ -1782,34 +1785,34 @@ void rexx_lister_entry_info(struct RexxMsg *msg, DirBuffer *buffer, char *args, 
 		rexx_set_var(msg, varname, "SELECTED", (entry->de_Flags & ENTF_SELECTED) ? 1 : 0, RX_LONG);
 		rexx_set_var(msg, varname, "DATE", date, RX_LONG);
 		rexx_set_var(msg, varname, "PROTECT", entry->de_Protection, RX_LONG);
-		rexx_set_var(msg, varname, "PROTSTRING", (ULONG)entry->de_ProtBuf, RX_STRING);
+		rexx_set_var(msg, varname, "PROTSTRING", (IPTR)entry->de_ProtBuf, RX_STRING);
 		rexx_set_var(msg, varname, "COMMENT", GetTagData(DE_Comment, 0, entry->de_Tags), RX_STRING);
-		rexx_set_var(msg, varname, "DATESTRING", (ULONG)entry->de_DateBuf, RX_STRING);
+		rexx_set_var(msg, varname, "DATESTRING", (IPTR)entry->de_DateBuf, RX_STRING);
 		rexx_set_var(msg, varname, "FILETYPE", GetTagData(DE_Filetype, 0, entry->de_Tags), RX_STRING);
 		rexx_set_var(msg, varname, "USERDATA", GetTagData(DE_UserData, 0, entry->de_Tags), RX_LONG);
 		rexx_set_var(msg, varname, "DISPLAY", GetTagData(DE_DisplayString, 0, entry->de_Tags), RX_STRING);
 
 		// Get date string
 		date_string(entry->de_Date.ds_Days, datebuf, FORMAT_CDN, 0);
-		rexx_set_var(msg, varname, "DATENUM", (ULONG)datebuf, RX_STRING);
+		rexx_set_var(msg, varname, "DATENUM", (IPTR)datebuf, RX_STRING);
 
 		// Get time string
 		time_string(entry->de_Date.ds_Minute, entry->de_Date.ds_Tick, datebuf);
-		rexx_set_var(msg, varname, "TIME", (ULONG)datebuf, RX_STRING);
+		rexx_set_var(msg, varname, "TIME", (IPTR)datebuf, RX_STRING);
 
 		// Got version info?
 		if (entry->de_Flags & ENTF_VERSION && (ver = (VersionInfo *)GetTagData(DE_VersionInfo, 0, entry->de_Tags)))
 		{
 			// Set version & revision
-			rexx_set_var(msg, varname, "VERSION", (ULONG)ver->vi_Version, RX_LONG);
-			rexx_set_var(msg, varname, "REVISION", (ULONG)ver->vi_Revision, RX_LONG);
+			rexx_set_var(msg, varname, "VERSION", (IPTR)ver->vi_Version, RX_LONG);
+			rexx_set_var(msg, varname, "REVISION", (IPTR)ver->vi_Revision, RX_LONG);
 
 			// Got date?
 			if (ver->vi_Days > 0)
 			{
 				// Build date string
 				date_string(ver->vi_Days, datebuf, FORMAT_CDN, 0);
-				rexx_set_var(msg, varname, "VERDATE", (ULONG)datebuf, RX_STRING);
+				rexx_set_var(msg, varname, "VERDATE", (IPTR)datebuf, RX_STRING);
 			}
 		}
 
@@ -1830,14 +1833,12 @@ void rexx_lister_entry_info(struct RexxMsg *msg, DirBuffer *buffer, char *args, 
 	else
 		sep = ' ';
 
-		// Build entry information
 #ifdef USE_64BIT
-	#warning What about the high 32-bits?
 	lsprintf(name,
-			 "%s%lc%lu%lc%ld%lc%ld%lc%ld%lc%s%lc",
-			 entry->de_Node.dn_Name,
+			 "%s%lc%s%lc%ld%lc%ld%lc%ld%lc%s%lc",
+			 (IPTR)entry->de_Node.dn_Name,
 			 sep,
-			 (LONG)(entry->de_Size & 0xffffffff),
+			 (IPTR)sizebuf,
 			 sep,
 			 type,
 			 sep,
@@ -1845,12 +1846,12 @@ void rexx_lister_entry_info(struct RexxMsg *msg, DirBuffer *buffer, char *args, 
 			 sep,
 			 (entry->de_Date.ds_Days * 86400) + (entry->de_Date.ds_Minute * 60) + (entry->de_Date.ds_Tick / 50),
 			 sep,
-			 entry->de_ProtBuf,
+			 (IPTR)entry->de_ProtBuf,
 			 sep);
 #else
 	lsprintf(name,
 			 "%s%lc%lu%lc%ld%lc%ld%lc%ld%lc%s%lc",
-			 entry->de_Node.dn_Name,
+			 (IPTR)entry->de_Node.dn_Name,
 			 sep,
 			 entry->de_Size,
 			 sep,
@@ -1860,7 +1861,7 @@ void rexx_lister_entry_info(struct RexxMsg *msg, DirBuffer *buffer, char *args, 
 			 sep,
 			 (entry->de_Date.ds_Days * 86400) + (entry->de_Date.ds_Minute * 60) + (entry->de_Date.ds_Tick / 50),
 			 sep,
-			 entry->de_ProtBuf,
+			 (IPTR)entry->de_ProtBuf,
 			 sep);
 #endif
 
@@ -1884,7 +1885,7 @@ void rexx_lister_entry_info(struct RexxMsg *msg, DirBuffer *buffer, char *args, 
 
 	// Set variable?
 	if (var_flag == RETURN_VAR)
-		rexx_set_var(msg, varname, 0, (ULONG)string, RX_STRING);
+		rexx_set_var(msg, varname, 0, (IPTR)string, RX_STRING);
 
 	else
 		// Didn't ask for a result?
@@ -1893,7 +1894,7 @@ void rexx_lister_entry_info(struct RexxMsg *msg, DirBuffer *buffer, char *args, 
 
 	else
 		// Result string
-		if (!(msg->rm_Result2 = (long)CreateArgstring(string, strlen(string))))
+		if (!(msg->rm_Result2 = (IPTR)CreateArgstring(string, strlen(string))))
 		msg->rm_Result1 = RXERR_NO_MEMORY;
 
 	// Free temp string
@@ -1906,7 +1907,7 @@ void rexx_lister_get_current(struct RexxMsg *msg, short type, short var_flag, ch
 	Lister *lister;
 	IPCData *ipc;
 	short num, count = 0;
-	char *string = 0, buf[12];
+	char *string = 0, buf[32];
 
 	// If setting stem, set count to 0 initially
 	if (var_flag == RETURN_STEM)
@@ -1960,7 +1961,7 @@ void rexx_lister_get_current(struct RexxMsg *msg, short type, short var_flag, ch
 	}
 
 	// Allocate result string
-	if (var_flag != RETURN_STEM && !(string = AllocVec(num * 11 + 1, MEMF_CLEAR)))
+	if (var_flag != RETURN_STEM && !(string = AllocVec(num * (sizeof(buf) - 1) + 1, MEMF_CLEAR)))
 	{
 		msg->rm_Result1 = RXERR_NO_MEMORY;
 	}
@@ -1979,18 +1980,21 @@ void rexx_lister_get_current(struct RexxMsg *msg, short type, short var_flag, ch
 				if (var_flag == RETURN_STEM)
 				{
 					char name[12];
+					char handle[32];
 
 					// Build variable
 					lsprintf(name, "%ld", count++);
+					rexx_format_iptr(handle, (IPTR)lister);
 
 					// Set rexx variable
-					rexx_set_var(msg, varname, name, (ULONG)lister, RX_LONG);
+					rexx_set_var(msg, varname, name, (IPTR)handle, RX_STRING);
 				}
 
 				// Otherwise, add handle to string
 				else
 				{
-					lsprintf(buf, "%ld ", lister);
+					rexx_format_iptr(buf, (IPTR)lister);
+					strcat(buf, " ");
 					strcat(string, buf);
 				}
 
@@ -2005,7 +2009,7 @@ void rexx_lister_get_current(struct RexxMsg *msg, short type, short var_flag, ch
 
 		// Setting variable?
 		else if (var_flag == RETURN_VAR)
-			rexx_set_var(msg, varname, 0, (ULONG)string, RX_STRING);
+			rexx_set_var(msg, varname, 0, (IPTR)string, RX_STRING);
 
 		else
 			// Didn't ask for a result?
@@ -2013,7 +2017,7 @@ void rexx_lister_get_current(struct RexxMsg *msg, short type, short var_flag, ch
 			msg->rm_Result2 = 0;
 
 		// Result string
-		else if (!(msg->rm_Result2 = (long)CreateArgstring(string, strlen(string))))
+		else if (!(msg->rm_Result2 = (IPTR)CreateArgstring(string, strlen(string))))
 			msg->rm_Result1 = RXERR_NO_MEMORY;
 
 		// Free temporary string
@@ -2222,7 +2226,7 @@ long rexx_set_format(short command, short id, ListFormat *format, char *args)
 }
 
 // New progress indicator
-long rexx_lister_newprogress(Lister *lister, char *args, long *retval)
+long rexx_lister_newprogress(Lister *lister, char *args, IPTR *retval)
 {
 	short key;
 	APTR handle = 0;
@@ -2237,13 +2241,13 @@ long rexx_lister_newprogress(Lister *lister, char *args, long *retval)
 	// No lister?
 	if (!lister)
 	{
-		long value;
+		IPTR value;
 
 		// Skip spaces
 		rexx_skip_space(&args);
 
 		// See if number is given
-		if ((value = rexx_parse_number(&args, 0, -1)) != -1)
+		if ((value = rexx_parse_iptr(&args, 0, (IPTR)-1)) != (IPTR)-1)
 		{
 			RexxProgress *look;
 
@@ -2340,7 +2344,7 @@ long rexx_lister_newprogress(Lister *lister, char *args, long *retval)
 
 					// Send back handle
 					if (retval)
-						*retval = (long)prog;
+						*retval = (IPTR)prog;
 					return 1;
 				}
 
@@ -2485,7 +2489,7 @@ long rexx_lister_newprogress(Lister *lister, char *args, long *retval)
 
 				// Return -1 for no abort
 				if (!abort)
-					*retval = -1;
+					*retval = (IPTR)-1;
 				else
 					*retval = 1;
 			}
@@ -2498,7 +2502,7 @@ long rexx_lister_newprogress(Lister *lister, char *args, long *retval)
 
 		// Return value
 		if (retval)
-			*retval = (long)handle;
+			*retval = (IPTR)handle;
 		return 0;
 	}
 

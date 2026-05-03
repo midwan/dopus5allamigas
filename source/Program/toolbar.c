@@ -33,16 +33,23 @@ ToolBarInfo *OpenToolBar(Cfg_ButtonBank *buttons, char *pathname)
 	// Allocate toolbar structure
 	if ((toolbar = AllocVec(sizeof(ToolBarInfo), MEMF_CLEAR)))
 	{
+		BOOL cache_ok = FALSE;
+
 		// Bank provided?
 		if (buttons)
 			toolbar->buttons = buttons;
 
 		// Load disk file
 		else if (pathname && pathname[0])
+		{
 			toolbar->buttons = OpenButtonBank(pathname);
+		}
+
+		if (toolbar->buttons)
+			cache_ok = GetToolBarCache(toolbar, FALSE);
 
 		// Invalid?
-		if (!toolbar->buttons || !(GetToolBarCache(toolbar, FALSE)))
+		if (!toolbar->buttons || !cache_ok)
 		{
 			FreeToolBar(toolbar);
 			return 0;
@@ -283,14 +290,37 @@ BOOL GetToolBarCache(ToolBarInfo *toolbar, BOOL real)
 	// Got cache successfully
 	toolbar->cache = 1;
 
+#ifdef __AROS__
+	// AROS can have pen 0 as black; initialise the off-screen cache
+	// with the screen background pen before images and button frames are drawn.
+	if (GUI->draw_info && toolbar->width > 0 && toolbar->height > 0)
+	{
+		SetAPen(&toolbar->rp, GUI->draw_info->dri_Pens[BACKGROUNDPEN]);
+		RectFill(&toolbar->rp, 0, 0, toolbar->width - 1, toolbar->height - 1);
+	}
+#endif
+
 	// Set pens and font
+#ifdef __AROS__
+	if (GUI->draw_info)
+	{
+		SetAPen(&toolbar->rp, GUI->draw_info->dri_Pens[TEXTPEN]);
+		SetBPen(&toolbar->rp, GUI->draw_info->dri_Pens[BACKGROUNDPEN]);
+	}
+	else
+	{
+		SetAPen(&toolbar->rp, 1);
+		SetBPen(&toolbar->rp, 0);
+	}
+#else
 	SetAPen(&toolbar->rp, 1);
 	SetBPen(&toolbar->rp, 0);
+#endif
 	SetFont(&toolbar->rp, GUI->screen_pointer->RastPort.Font);
 
 	// Initialise draw tags
 	tags[0].ti_Tag = IM_Rectangle;
-	tags[0].ti_Data = (ULONG)&rect;
+	tags[0].ti_Data = (IPTR)&rect;
 	tags[1].ti_Tag = IM_ClipBoundary;
 	tags[1].ti_Data = (toolbar->buttons->window.flags & BTNWF_BORDERLESS) ? 0 : 2;
 	tags[2].ti_Tag = IM_NoIconRemap;
