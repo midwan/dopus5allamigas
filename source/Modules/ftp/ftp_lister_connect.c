@@ -1528,7 +1528,7 @@ void lister_disconnect(struct opusftp_globals *og, struct msg_loop_data *mld)
 	}
 
 	// Reconnect command?
-	else if (mld->mld_quit_command)
+	else if (!mld->mld_quitmsg && mld->mld_quit_command)
 	{
 		if (mld->mld_reconnecting)
 			send_rexxa(opus, REXX_REPLY_NONE, "command %s", mld->mld_quit_command);

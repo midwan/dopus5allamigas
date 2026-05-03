@@ -3642,7 +3642,9 @@ void lister(void)
 		mld.mld_node = NULL;
 		mld.mld_ftpreply = &zero;
 		mld.mld_quitmsg = NULL;
+		mld.mld_quit_command = NULL;
 		mld.mld_done = FALSE;
+		mld.mld_reconnecting = FALSE;
 
 		lister_msg_loop(og, &mld);
 
