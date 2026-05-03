@@ -354,6 +354,7 @@ typedef enum {
 	ICON_ERROR_EMERGENCY_RESET
 } IconErrorCode;
 
+#if defined(__amigaos3__)
 BOOL backdrop_acquire_iconlib_select_icon(BackdropObject *);      // NEW: Safe acquisition
 BOOL backdrop_release_iconlib_select_icon_ref(BackdropObject *);  // NEW: Safe release
 IconErrorCode backdrop_get_last_icon_error(void);                 // NEW: Get last error
@@ -362,14 +363,20 @@ BOOL backdrop_set_icon_state_safe(BackdropObject *, short);       // NEW: Atomic
 void backdrop_cleanup_icon_resources(BackdropInfo *, BackdropObject *); // NEW: Comprehensive cleanup
 BOOL backdrop_init_icon_object_safe(BackdropObject *);            // NEW: Safe initialization
 BOOL backdrop_validate_icon_object_safe(BackdropObject *);        // NEW: State validation
+#endif
+#if defined(__amigaos3__)
 BOOL backdrop_validate_icon_fast(BackdropObject *);                // NEW: Fast validation for common cases
 PLANEPTR backdrop_alloc_icon_mask_safe(short, short);             // NEW: Safe mask allocation
 BOOL backdrop_validate_icon_dimensions_safe(struct DiskObject *); // NEW: Dimension validation
 void backdrop_emergency_reset_icon_object(BackdropObject *);      // NEW: Emergency reset
+#endif
+#if defined(__amigaos3__)
 BOOL backdrop_validate_and_recover_icon_object(BackdropObject *); // NEW: Validation with recovery
 struct DiskObject *backdrop_alloc_icon_safe(const char *);        // NEW: Safe icon allocation
 BOOL backdrop_validate_info_safe(BackdropInfo *);                 // NEW: Info validation
+#endif
 
+#if defined(__amigaos3__)
 // Debug logging functions
 typedef enum {
 	ICON_DEBUG_NONE = 0,
@@ -383,6 +390,7 @@ void backdrop_set_icon_debug_level(IconDebugLevel);               // NEW: Set de
 void backdrop_icon_debug_log(IconDebugLevel, const char *, const char *, ...); // NEW: Debug log
 void backdrop_get_icon_statistics(unsigned long *, unsigned long *, unsigned long *, unsigned long *, unsigned long *); // NEW: Get stats
 void backdrop_reset_icon_statistics(void);                        // NEW: Reset stats
+#endif
 
 BPTR backdrop_icon_lock(BackdropObject *object);
 

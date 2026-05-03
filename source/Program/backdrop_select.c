@@ -37,17 +37,24 @@ void backdrop_select_all(BackdropInfo *info, short state)
 		 object = (BackdropObject *)object->node.ln_Succ)
 	{
 		// Fast validate object before processing (use fast path for performance)
+		#if defined(__amigaos3__)
 		if (!backdrop_validate_icon_fast(object)) {
 			// Skip corrupted objects
 			continue;
 		}
+		#endif
 		
 		// Is object not selected?
 		if (((state && !object->state) || (!state && object->state)) && object->icon)
 		{
 			// Select object
+			#if defined(__amigaos3__)
 			// Select object using safe atomic operation
 			backdrop_set_icon_state_safe(object, state);
+			#else
+			// Standard selection for non-OS3 platforms
+			object->state = state;
+			#endif
 
 			/*
 						// Add to selection list
@@ -93,10 +100,12 @@ void backdrop_select_area(BackdropInfo *info, short state)
 		 object = (BackdropObject *)object->node.ln_Succ)
 	{
 		// Fast validate object before processing (use fast path for performance)
+		#if defined(__amigaos3__)
 		if (!backdrop_validate_icon_fast(object)) {
 			// Skip corrupted objects
 			continue;
 		}
+		#endif
 		
 		// Valid icon?
 		if (object->icon)
@@ -108,7 +117,11 @@ void backdrop_select_area(BackdropInfo *info, short state)
 				if (state == 1)
 				{
 				// Select object using safe atomic operation
-				backdrop_set_icon_state_safe(object, 1);
+				#if defined(__amigaos3__)
+			backdrop_set_icon_state_safe(object, 1);
+			#else
+			object->state = 1;
+			#endif
 
 					// Is this a tool?
 					if (object->type != BDO_APP_ICON && object->icon->do_Type == WBTOOL)
@@ -123,7 +136,11 @@ void backdrop_select_area(BackdropInfo *info, short state)
 				else if (state == 0 || !(geo_box_intersect(&object->image_rect, &info->select)))
 				{
 				// Deselect this object using safe atomic operation
-				backdrop_set_icon_state_safe(object, 0);
+				#if defined(__amigaos3__)
+			backdrop_set_icon_state_safe(object, 0);
+			#else
+			object->state = 0;
+			#endif
 				backdrop_render_object(info, object, 0);
 					backdrop_render_object(info, object, 0);
 				}
@@ -136,7 +153,11 @@ void backdrop_select_area(BackdropInfo *info, short state)
 				if (geo_box_intersect(&object->image_rect, &info->select))
 				{
 				// Select this object using safe atomic operation
-				backdrop_set_icon_state_safe(object, 2);
+				#if defined(__amigaos3__)
+			backdrop_set_icon_state_safe(object, 2);
+			#else
+			object->state = 2;
+			#endif
 				backdrop_render_object(info, object, 0);
 				}
 			}

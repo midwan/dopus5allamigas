@@ -350,14 +350,18 @@ BOOL backdrop_drag_object(BackdropInfo *info, BackdropObject *object)
 	if (system_draw)
 	{
 		// Fast validate object state before dragging
+#if defined(__amigaos3__)
 		if (!backdrop_validate_icon_fast(object)) {
 			// Object is corrupted, fail gracefully
 			return 0;
 		}
+#endif
 		
 		// Safely acquire the iconlib select icon before dragging
 		if (object->flags & BDOF_ICONLIB_DEFAULT) {
+#if defined(__amigaos3__)
 			backdrop_acquire_iconlib_select_icon(object);
+#endif
 		}
 		
 		GetDragImage(object->drag_info,
@@ -371,7 +375,9 @@ BOOL backdrop_drag_object(BackdropInfo *info, BackdropObject *object)
 		
 		// Release the icon reference after drag setup
 		if (object->flags & BDOF_ICONLIB_DEFAULT) {
+#if defined(__amigaos3__)
 			backdrop_release_iconlib_select_icon_ref(object);
+#endif
 		}
 	}
 	else
@@ -485,7 +491,9 @@ BOOL backdrop_stop_drag(BackdropInfo *info)
 				
 				// Ensure icon resources are properly cleaned up after drag
 				if (object->flags & BDOF_ICONLIB_DEFAULT) {
+#if defined(__amigaos3__)
 					backdrop_release_iconlib_select_icon_ref(object);
+#endif
 				}
 			}
 		}

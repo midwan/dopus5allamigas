@@ -313,113 +313,12 @@ BOOL backdrop_prepare_iconlib_select_icon(BackdropInfo *info, BackdropObject *ob
 	(void)fallback_type;
 	return FALSE;
 }
-
-// NEW: Safe acquisition of iconlib select icon with reference counting
-BOOL backdrop_acquire_iconlib_select_icon(BackdropObject *object)
-{
-	if (!object || !object->iconlib_select_icon)
-		return FALSE;
-	
-	// Simple atomic increment (for single-threaded AmigaOS this is safe)
-	object->iconlib_select_refcount++;
-	return TRUE;
-}
-
-// NEW: Safe release of iconlib select icon with reference counting
-void backdrop_release_iconlib_select_icon_ref(BackdropObject *object)
-{
-	if (!object || !object->iconlib_select_icon)
-		return;
-	
-	if (object->iconlib_select_refcount > 0) {
-		object->iconlib_select_refcount--;
-		
-		// Only free when refcount reaches zero
-		if (object->iconlib_select_refcount == 0) {
-			// This will be called by the actual free function
-			// when it's safe to do so
-		}
-	}
-}
-
-// NEW: Atomic state change with simple locking
-BOOL backdrop_set_icon_state_safe(BackdropObject *object, short new_state)
-{
-	if (!object)
-		return FALSE;
-	
-	// Simple spinlock implementation
-	int attempts = 0;
-	while (object->iconlib_state_lock && attempts < MAX_LOCK_ATTEMPTS) {
-		attempts++;
-		// Simple delay loop
-		for (int i = 0; i < LOCK_DELAY_CYCLES; i++) {
-			// NOP
-		}
-	}
-	
-	if (attempts >= MAX_LOCK_ATTEMPTS) {
-		// Couldn't acquire lock, fail gracefully
-		return FALSE;
-	}
-	
-	// Acquire lock
-	object->iconlib_state_lock = 1;
-	
-	// Change state
-	object->state = new_state;
-	object->flags |= BDOF_STATE_CHANGE;
-	
-	// Release lock
-	object->iconlib_state_lock = 0;
-	
-	return TRUE;
-}
-
-// NEW: Comprehensive and safe icon resource cleanup
-void backdrop_cleanup_icon_resources(BackdropInfo *info, BackdropObject *object)
-{
-	if (!object)
-		return;
-	
-	// Always release system state first
-	backdrop_release_system_icon_state(info, object);
-	
-	// Clean up iconlib select icon safely
-	if (object->iconlib_select_icon) {
-		// Wait for reference count to reach zero
-		int wait_count = 0;
-		while (object->iconlib_select_refcount > 0 && wait_count < MAX_LOCK_ATTEMPTS) {
-			wait_count++;
-			// Simple delay
-			for (int i = 0; i < LOCK_DELAY_CYCLES; i++) {
-				// NOP
-			}
-		}
-		
-		// Force cleanup if wait exceeded
-		if (object->iconlib_select_refcount > 0) {
-			object->iconlib_select_refcount = 0;
-		}
-		
-		backdrop_free_iconlib_select_icon(info, object);
-	}
-	
-	// Clean up main icon
-	if (object->icon) {
-		if (object->flags & BDOF_REMAPPED) {
-			RemapIcon(object->icon, 
-					(info && info->window) ? info->window->WScreen : 0, 1);
-			object->flags &= ~BDOF_REMAPPED;
-		}
-		if (object->icon) FreeCachedDiskObject(object->icon);
-		object->icon = NULL;
-	}
-	
-	// Reset all flags
-	object->flags &= ~(BDOF_ICONLIB_DEFAULT | BDOF_STATE_CHANGE);
-}
 #endif
+
+
+
+
+
 
 // Create a new backdrop handle
 BackdropInfo *backdrop_new(IPCData *ipc, ULONG flags)
@@ -654,7 +553,9 @@ BackdropObject *backdrop_new_object(BackdropInfo *info, char *name, char *extra,
 	object->type = type;
 
 	// Initialize icon-related fields safely
+#if defined(__amigaos3__)
 	backdrop_init_icon_object_safe(object);
+#endif
 
 	// Any extra?
 	if (extra)
@@ -704,8 +605,21 @@ void backdrop_remove_object(BackdropInfo *info, BackdropObject *object)
 	Remove(&object->node);
 
 	// Not an appicon?
+#if defined(__amigaos3__)
 	// Use the comprehensive safe cleanup function
 	backdrop_cleanup_icon_resources(info, object);
+#else
+	// Standard cleanup for non-OS3 platforms
+	if (object->icon) {
+		if (object->flags & BDOF_REMAPPED) {
+			RemapIcon(object->icon, 
+					(info && info->window) ? info->window->WScreen : 0, 1);
+			object->flags &= ~BDOF_REMAPPED;
+		}
+		if (object->icon) FreeCachedDiskObject(object->icon);
+		object->icon = NULL;
+	}
+#endif
 
 	// Mask plane?
 	for (a = 0; a < 2; a++)
@@ -732,8 +646,21 @@ void backdrop_get_icon(BackdropInfo *info, BackdropObject *object, short flags)
 
 		if (!(flags & GETICON_KEEP))
 		{
+#if defined(__amigaos3__)
 			// Use comprehensive safe cleanup
 			backdrop_cleanup_icon_resources(info, object);
+#else
+			// Standard cleanup for non-OS3 platforms
+			if (object->icon) {
+				if (object->flags & BDOF_REMAPPED) {
+					RemapIcon(object->icon, 
+							(info && info->window) ? info->window->WScreen : 0, 1);
+					object->flags &= ~BDOF_REMAPPED;
+				}
+				if (object->icon) FreeCachedDiskObject(object->icon);
+				object->icon = NULL;
+			}
+#endif
 		}
 
 		// Already got icon?
