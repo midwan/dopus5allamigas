@@ -47,7 +47,7 @@ void lister_fix_menus(Lister *lister, BOOL sel_only)
 {
 	struct MenuItem *item;
 	struct Menu *menu;
-	BOOL busy = 0, icon = 0, action = 0, sel = 0;
+	BOOL busy = 0, icon = 0, action = 0, sel = 0, special = 0;
 	short a;
 
 	// Get menu pointer
@@ -64,6 +64,8 @@ void lister_fix_menus(Lister *lister, BOOL sel_only)
 		icon = 1;
 	if (lister->flags & LISTERF_ICON_ACTION)
 		action = 1;
+	if (lister->cur_buffer->more_flags & (DWF_DEVICE_LIST | DWF_CACHE_LIST))
+		special = 1;
 
 	// In icon mode?
 	if (icon)
@@ -143,10 +145,10 @@ void lister_fix_menus(Lister *lister, BOOL sel_only)
 			}
 		}
 
-		// Edit (disabled when busy or in icon mode)
+		// Edit (disabled when busy, in icon action mode, or showing device/cache list)
 		if ((item = find_menu_item(menu, MENU_EDIT_LISTER)))
 		{
-			off_item(item, busy || icon);
+			off_item(item, busy || (icon && action) || special);
 		}
 
 		// New drawer (disabled when busy)

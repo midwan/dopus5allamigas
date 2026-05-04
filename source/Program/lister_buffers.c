@@ -444,6 +444,9 @@ void lister_show_buffer(Lister *lister, DirBuffer *buffer, int show, BOOL active
 		else
 			lister_show_name(lister);
 
+		// Re-evaluate gauge visibility (e.g. returning to root from a subdir)
+		lister_set_gauge(lister, TRUE);
+
 		// Not showing icons?
 		if (!(lister->flags & LISTERF_VIEW_ICONS) || lister->flags & LISTERF_ICON_ACTION)
 		{

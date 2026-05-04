@@ -35,6 +35,12 @@ void lister_configure(Lister *lister)
 	if (lister->more_flags & LISTERF_CONFIGURE)
 		return;
 
+	// Not available when showing a device/cache list or in icon action mode
+	if (lister->cur_buffer->more_flags & (DWF_DEVICE_LIST | DWF_CACHE_LIST))
+		return;
+	if ((lister->flags & LISTERF_VIEW_ICONS) && (lister->flags & LISTERF_ICON_ACTION))
+		return;
+
 	// Run configure function
 	function_launch_quick(FUNCTION_RUN_FUNCTION, def_function_configure, lister);
 }

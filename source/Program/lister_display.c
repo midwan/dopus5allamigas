@@ -301,6 +301,11 @@ void lister_refresh(Lister *lister, unsigned short mode)
 	// Viewing icons?
 	if (lister->flags & LISTERF_VIEW_ICONS)
 	{
+		// Full refresh with layout change (e.g. gauge added/removed)?
+		// Clear old icon positions before recalculating to avoid ghost images
+		if (mode & LREFRESH_FULL_ICON)
+			backdrop_show_objects(lister->backdrop_info, BDSF_CLEAR | BDSF_CLEAR_ONLY);
+
 		// Full refresh?
 		if (mode & LREFRESH_FULL)
 			backdrop_show_objects(lister->backdrop_info, BDSF_RECALC);
