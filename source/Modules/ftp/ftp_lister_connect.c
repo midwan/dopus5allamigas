@@ -576,6 +576,14 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 
 	D(bug("lister_connect_and_login()\n"));
 
+	// Clear FEAT-derived UTF-8 state before connecting.  This guarantees the
+	// flag reflects the current server rather than leftover state from a prior
+	// session on the same node (e.g. reconnect from SFTP to plain FTP, or
+	// reconnect to a server that no longer advertises UTF-8).  Both branches
+	// below re-set the flag if appropriate: SFTP sets it unconditionally on
+	// login success, plain FTP sets it from the FEAT reply and OPTS UTF8 ON.
+	node->fn_ftp.fi_flags &= ~FTP_FEAT_UTF8;
+
 	// Get number of retries from config
 	if (node->fn_site.se_env->e_retry)
 		maxtries = node->fn_site.se_env->e_retry_count + 1;

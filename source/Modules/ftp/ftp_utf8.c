@@ -100,17 +100,17 @@ char *ftp_local_to_utf8(const char *local_name)
 	return (char *)result;
 }
 
-// Convert filename from UTF-8 (server) to local charset (display/filesystem)
-// This modifies the entry_info structure in place.
+// Convert filename (and link-target comment) from UTF-8 (server) to local
+// charset (display/filesystem). Modifies the entry_info structure in place.
 //
-// On conversion failure the entry keeps its raw UTF-8 bytes and FTP_FEAT_UTF8
-// stays set. Rationale: a single bad filename in a directory listing (e.g.
-// garbled upload from another tool) is not a reason to disable UTF-8 for the
-// whole session - the other entries still convert cleanly. Only that one
-// entry will mismatch if the user later tries to operate on it.
+// On conversion failure the affected field keeps its raw UTF-8 bytes and
+// FTP_FEAT_UTF8 stays set. Rationale: a single bad entry in a directory
+// listing (e.g. garbled upload from another tool) is not a reason to disable
+// UTF-8 for the whole session - the other entries still convert cleanly.
+// Only that one entry will mismatch if the user later tries to operate on it.
 void ftp_convert_filename_from_utf8(struct entry_info *entry, struct ftp_info *info)
 {
-	char *converted_name;
+	char *converted;
 
 	if (!entry || !info)
 		return;
@@ -119,15 +119,28 @@ void ftp_convert_filename_from_utf8(struct entry_info *entry, struct ftp_info *i
 	if (!ftp_is_utf8_server(info) || !ftp_codesets_available())
 		return;
 
-	converted_name = ftp_utf8_to_local(entry->ei_name);
-
-	if (converted_name)
+	if (entry->ei_name[0])
 	{
-		// Copy converted name back to entry, ensuring we don't overflow
-		stccpy(entry->ei_name, converted_name, sizeof(entry->ei_name));
-		ftp_codesets_free(converted_name);
+		converted = ftp_utf8_to_local(entry->ei_name);
+		if (converted)
+		{
+			stccpy(entry->ei_name, converted, sizeof(entry->ei_name));
+			ftp_codesets_free(converted);
+		}
+		// else: leave ei_name as raw UTF-8; flag stays set.
 	}
-	// else: leave ei_name as-is (raw UTF-8); do not touch FTP_FEAT_UTF8.
+
+	// Symlink targets parsed out of FTP LIST lines end up in ei_comment and
+	// may also contain non-ASCII path components on UTF-8 servers.
+	if (entry->ei_comment[0])
+	{
+		converted = ftp_utf8_to_local(entry->ei_comment);
+		if (converted)
+		{
+			stccpy(entry->ei_comment, converted, sizeof(entry->ei_comment));
+			ftp_codesets_free(converted);
+		}
+	}
 }
 
 // Convert a UTF-8 path in-place to the local charset.

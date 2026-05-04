@@ -2655,6 +2655,12 @@ static int callback_func(struct rec_updateinfo *ui, char *line)
 		// Can we fill it out?
 		if (ui->ui_ls_to_entryinfo(entry, line, ui->ui_flags))
 		{
+			// Convert UTF-8 filename to local charset if server supports UTF-8.
+			// Mirrors sftp_callback_func so recursive plain-FTP operations see
+			// the same local-charset ei_name as the interactive lister.
+			if (ui->ui_ftpnode)
+				ftp_convert_filename_from_utf8(entry, &ui->ui_ftpnode->fn_ftp);
+
 			// Add to list
 			AddTail(&ui->ui_list->rl_list, &entry->ei_node);
 			++ui->ui_list->rl_entry_count;
