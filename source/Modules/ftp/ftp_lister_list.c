@@ -199,6 +199,7 @@ static int sftp_list_update(void *userdata, const struct ftp_sftp_entry *entry)
 	entry_info.ei_type = entry->type;
 	entry_info.ei_seconds = ftp_sftp_unix_to_amiga_seconds(entry->seconds);
 	entry_info.ei_prot = prot_unix_to_amiga(entry->unixprot);
+	entry_info.ei_unixprot = entry->unixprot;
 	strncpy(entry_info.ei_comment, entry->comment, sizeof(entry_info.ei_comment) - 1);
 	entry_info.ei_comment[sizeof(entry_info.ei_comment) - 1] = '\0';
 

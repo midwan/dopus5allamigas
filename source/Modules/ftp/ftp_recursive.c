@@ -2755,25 +2755,31 @@ struct rec_entry_list *rec_ftp_list(endpoint *ep, char *dirname)
 	if (ep->ep_ftpnode->fn_site.se_env->e_passive)
 		ep->ep_ftpnode->fn_ftp.fi_flags |= FTP_PASSIVE;
 
-	// Call FTP LIST command
-	if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+	// Call FTP LIST command. Both SFTP and plain FTP need UTF-8 when the server
+	// advertises it, so convert once and use the result for either branch.
 	{
 		char *utf8_dirname = ftp_convert_path_to_utf8(dirname, &ep->ep_ftpnode->fn_ftp);
 		const char *send_dirname = utf8_dirname ? utf8_dirname : dirname;
-		list_result = ftp_sftp_list(&ep->ep_ftpnode->fn_sftp, send_dirname, sftp_callback_func, &ui) ? 0 : -1;
-		if (utf8_dirname) ftp_codesets_free(utf8_dirname);
-	}
-	else
-	{
-		for (;;)
+
+		if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
 		{
-			ui.ui_ls_to_entryinfo = ep->ep_ftpnode->fn_ls_to_entryinfo;
-			list_result = list(&ep->ep_ftpnode->fn_ftp, callback_func, &ui, ep->ep_ftpnode->fn_lscmd, dirname);
-			if (list_result == -2 && lister_fallback_list_command(ep->ep_ftpnode))
-				rec_entry_list_clear(rel);
-			else
-				break;
+			list_result = ftp_sftp_list(&ep->ep_ftpnode->fn_sftp, send_dirname, sftp_callback_func, &ui) ? 0 : -1;
 		}
+		else
+		{
+			for (;;)
+			{
+				ui.ui_ls_to_entryinfo = ep->ep_ftpnode->fn_ls_to_entryinfo;
+				list_result = list(&ep->ep_ftpnode->fn_ftp, callback_func, &ui, ep->ep_ftpnode->fn_lscmd, send_dirname);
+				if (list_result == -2 && lister_fallback_list_command(ep->ep_ftpnode))
+					rec_entry_list_clear(rel);
+				else
+					break;
+			}
+		}
+
+		if (utf8_dirname)
+			ftp_codesets_free(utf8_dirname);
 	}
 
 	if (list_result != 0)

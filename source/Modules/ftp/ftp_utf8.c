@@ -121,6 +121,58 @@ void ftp_convert_filename_from_utf8(struct entry_info *entry, struct ftp_info *i
 		stccpy(entry->ei_name, converted_name, sizeof(entry->ei_name));
 		ftp_codesets_free(converted_name);
 	}
+	else
+	{
+		// Conversion failed while codesets is available (invalid UTF-8 from
+		// server, or OOM). Stop treating this session as UTF-8 so raw bytes
+		// pass through unchanged in both directions. ei_name keeps the raw
+		// UTF-8 bytes it already holds, which the server will accept back
+		// verbatim now that conversion is disabled.
+		info->fi_flags &= ~FTP_FEAT_UTF8;
+	}
+}
+
+// Convert a UTF-8 path in-place to the local charset.
+// - If the server does not advertise UTF-8 or codesets is unavailable, does
+//   nothing (the buffer is left untouched).
+// - On conversion failure while codesets is available, clears FTP_FEAT_UTF8
+//   for the session so the raw UTF-8 bytes round-trip cleanly in subsequent
+//   operations.
+void ftp_convert_inplace_utf8_to_local(char *buf, int buf_size, struct ftp_info *info)
+{
+	char *local_path;
+
+	if (!buf || buf_size <= 0 || !info)
+		return;
+
+	if (!ftp_is_utf8_server(info) || !ftp_codesets_available())
+		return;
+
+	local_path = ftp_utf8_to_local(buf);
+	if (local_path)
+	{
+		stccpy(buf, local_path, buf_size);
+		ftp_codesets_free(local_path);
+	}
+	else
+	{
+		// Conversion failed: leave the UTF-8 bytes in place and disable
+		// UTF-8 for the session so ftp_convert_path_to_utf8 also becomes a
+		// no-op. This keeps bytes consistent in both directions.
+		info->fi_flags &= ~FTP_FEAT_UTF8;
+	}
+}
+
+// Store a server-returned UTF-8 path into a local-charset buffer.
+// Wrapper around ftp_convert_inplace_utf8_to_local for the common case of
+// copying from a separate UTF-8 source buffer.
+void ftp_store_utf8_path_as_local(char *dest, int dest_size, const char *utf8_path, struct ftp_info *info)
+{
+	if (!dest || dest_size <= 0 || !utf8_path || !info)
+		return;
+
+	stccpy(dest, utf8_path, dest_size);
+	ftp_convert_inplace_utf8_to_local(dest, dest_size, info);
 }
 
 // Convert local path to UTF-8 for sending to server

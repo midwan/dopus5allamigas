@@ -35,6 +35,8 @@ char *ftp_utf8_to_local(const char *utf8_name);
 char *ftp_local_to_utf8(const char *local_name);
 void ftp_convert_filename_from_utf8(struct entry_info *entry, struct ftp_info *info);
 char *ftp_convert_path_to_utf8(const char *local_path, struct ftp_info *info);
+void ftp_convert_inplace_utf8_to_local(char *buf, int buf_size, struct ftp_info *info);
+void ftp_store_utf8_path_as_local(char *dest, int dest_size, const char *utf8_path, struct ftp_info *info);
 
 // Utility functions
 BOOL ftp_codesets_available(void);

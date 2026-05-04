@@ -455,6 +455,18 @@ static void lister_getfeats(struct ftp_node *node)
 		strcpy(node->fn_lscmd, FTP_LISTCMD_MLSD);
 		node->fn_ls_to_entryinfo = mlsd_line_to_entryinfo;
 	}
+
+	// Per RFC 2640 the server only guarantees UTF-8 encoding after the client
+	// sends OPTS UTF8 ON. Some servers (FileZilla, pure-ftpd) stay on their
+	// native charset until we do this; others (vsftpd) already default to
+	// UTF-8. If the server rejects the option, clear FTP_FEAT_UTF8 so we do
+	// not mis-encode filenames in either direction.
+	if (node->fn_ftp.fi_flags & FTP_FEAT_UTF8)
+	{
+		int reply = ftpa(&node->fn_ftp, "OPTS UTF8 ON");
+		if (reply / 100 != COMPLETE)
+			node->fn_ftp.fi_flags &= ~FTP_FEAT_UTF8;
+	}
 }
 
 /********************************/
@@ -482,6 +494,8 @@ static int connect_cwd(struct ftp_node *ftpnode,
 				strchr(ftpnode->fn_ftp.fi_iobuf + 5, '"'))
 			{
 				stptok(ftpnode->fn_ftp.fi_iobuf + 5, ftpnode->fn_site.se_path, PATHLEN, "\"");
+				// CWD reply echoes the new path in UTF-8 when FTP_FEAT_UTF8 is set.
+				ftp_convert_inplace_utf8_to_local(ftpnode->fn_site.se_path, PATHLEN + 1, &ftpnode->fn_ftp);
 				pwd_done = 1;
 			}
 
@@ -861,19 +875,7 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 		{
 			char utf8_path[PATHLEN + 1];
 			if (ftp_sftp_pwd(&node->fn_sftp, utf8_path, sizeof(utf8_path)))
-			{
-				char *local_path = ftp_utf8_to_local(utf8_path);
-				if (local_path)
-				{
-					stccpy(node->fn_site.se_path, local_path, PATHLEN + 1);
-					ftp_codesets_free(local_path);
-				}
-				else
-				{
-					// Fallback: use UTF-8 path directly
-					stccpy(node->fn_site.se_path, utf8_path, PATHLEN + 1);
-				}
-			}
+				ftp_store_utf8_path_as_local(node->fn_site.se_path, PATHLEN + 1, utf8_path, &node->fn_ftp);
 		}
 
 		rexx_lst_set_path(node->fn_opus, node->fn_handle, node->fn_site.se_path);

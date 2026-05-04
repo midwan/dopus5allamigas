@@ -365,6 +365,9 @@ int lister_synch_path(struct ftp_info *info, char *result)
 		if (strlen(info->fi_iobuf) >= 5)
 		{
 			stptok(info->fi_iobuf + 5, result, PATHLEN, "\"");
+			// The server reply is UTF-8 when FTP_FEAT_UTF8 is set; convert
+			// so callers can treat result consistently with listing names.
+			ftp_convert_inplace_utf8_to_local(result, PATHLEN + 1, info);
 			retval = TRUE;
 		}
 	}
@@ -1107,19 +1110,7 @@ int lister_cwd(struct ftp_node *ftpnode, char *path, ULONG flags)
 		{
 			char utf8_path[PATHLEN + 1];
 			if (ftp_sftp_pwd(&ftpnode->fn_sftp, utf8_path, sizeof(utf8_path)))
-			{
-				char *local_path = ftp_utf8_to_local(utf8_path);
-				if (local_path)
-				{
-					stccpy(ftpnode->fn_site.se_path, local_path, PATHLEN + 1);
-					ftp_codesets_free(local_path);
-				}
-				else
-				{
-					// Fallback: use UTF-8 path directly
-					stccpy(ftpnode->fn_site.se_path, utf8_path, PATHLEN + 1);
-				}
-			}
+				ftp_store_utf8_path_as_local(ftpnode->fn_site.se_path, PATHLEN + 1, utf8_path, &ftpnode->fn_ftp);
 			pwd_done = 1;
 		}
 
@@ -1128,6 +1119,8 @@ int lister_cwd(struct ftp_node *ftpnode, char *path, ULONG flags)
 			strchr(ftpnode->fn_ftp.fi_iobuf + 5, '"'))
 		{
 			stptok(ftpnode->fn_ftp.fi_iobuf + 5, ftpnode->fn_site.se_path, PATHLEN, "\"");
+			// CWD reply echoes the new path in UTF-8 when FTP_FEAT_UTF8 is set.
+			ftp_convert_inplace_utf8_to_local(ftpnode->fn_site.se_path, PATHLEN + 1, &ftpnode->fn_ftp);
 			pwd_done = 1;
 		}
 
@@ -1230,19 +1223,7 @@ static int lister_cdup(struct ftp_node *ftpnode)
 		{
 			char utf8_path[PATHLEN + 1];
 			if (ftp_sftp_pwd(&ftpnode->fn_sftp, utf8_path, sizeof(utf8_path)))
-			{
-				char *local_path = ftp_utf8_to_local(utf8_path);
-				if (local_path)
-				{
-					stccpy(ftpnode->fn_site.se_path, local_path, PATHLEN + 1);
-					ftp_codesets_free(local_path);
-				}
-				else
-				{
-					// Fallback: use UTF-8 path directly
-					stccpy(ftpnode->fn_site.se_path, utf8_path, PATHLEN + 1);
-				}
-			}
+				ftp_store_utf8_path_as_local(ftpnode->fn_site.se_path, PATHLEN + 1, utf8_path, &ftpnode->fn_ftp);
 			pwd_done = 1;
 		}
 
@@ -1251,6 +1232,8 @@ static int lister_cdup(struct ftp_node *ftpnode)
 			strchr(ftpnode->fn_ftp.fi_iobuf + 5, '"'))
 		{
 			stptok(ftpnode->fn_ftp.fi_iobuf + 5, ftpnode->fn_site.se_path, PATHLEN, "\"");
+			// CDUP reply echoes the new path in UTF-8 when FTP_FEAT_UTF8 is set.
+			ftp_convert_inplace_utf8_to_local(ftpnode->fn_site.se_path, PATHLEN + 1, &ftpnode->fn_ftp);
 			pwd_done = 1;
 		}
 
