@@ -756,6 +756,11 @@ static unsigned int recursive_getput_file(endpoint *ep,
 										  unsigned int restart)
 {
 	struct rec_favour_xfer xfer;
+	// The server speaks UTF-8 when advertised; the lister works in local charset.
+	// Convert once and use for both the direct calls and the forwarded xfer.
+	char *utf8_remote = ftp_convert_path_to_utf8(remote_path, &ep->ep_ftpnode->fn_ftp);
+	char *send_remote = utf8_remote ? utf8_remote : remote_path;
+	unsigned int result;
 
 	if (ep->ep_ftpnode->fn_ftp.fi_task == FindTask(0))
 	{
@@ -763,16 +768,14 @@ static unsigned int recursive_getput_file(endpoint *ep,
 		{
 			if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
 			{
-				unsigned int actual;
-
 				ep->ep_ftpnode->fn_ftp.fi_aborted = 0;
 				ep->ep_ftpnode->fn_ftp.fi_errno = 0;
 				ep->ep_ftpnode->fn_ftp.fi_ioerr = 0;
 				*ep->ep_ftpnode->fn_ftp.fi_serverr = 0;
-				actual = ftp_sftp_get(&ep->ep_ftpnode->fn_sftp,
+				result = ftp_sftp_get(&ep->ep_ftpnode->fn_sftp,
 									  updatefn,
 									  updateinfo,
-									  remote_path,
+									  send_remote,
 									  local_path,
 									  restart);
 				if (ftp_sftp_session_error(&ep->ep_ftpnode->fn_sftp) != FTP_SFTP_ERROR_NONE)
@@ -787,24 +790,23 @@ static unsigned int recursive_getput_file(endpoint *ep,
 								ftp_sftp_error_message(&ep->ep_ftpnode->fn_sftp));
 					}
 				}
-				return actual;
+				goto done;
 			}
-			return get(&ep->ep_ftpnode->fn_ftp, updatefn, updateinfo, remote_path, local_path, restart);
+			result = get(&ep->ep_ftpnode->fn_ftp, updatefn, updateinfo, send_remote, local_path, restart);
+			goto done;
 		}
 
 		if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
 		{
-			unsigned int actual;
-
 			ep->ep_ftpnode->fn_ftp.fi_aborted = 0;
 			ep->ep_ftpnode->fn_ftp.fi_errno = 0;
 			ep->ep_ftpnode->fn_ftp.fi_ioerr = 0;
 			*ep->ep_ftpnode->fn_ftp.fi_serverr = 0;
-			actual = ftp_sftp_put(&ep->ep_ftpnode->fn_sftp,
+			result = ftp_sftp_put(&ep->ep_ftpnode->fn_sftp,
 								  updatefn,
 								  updateinfo,
 								  local_path,
-								  remote_path,
+								  send_remote,
 								  restart);
 			if (ftp_sftp_session_error(&ep->ep_ftpnode->fn_sftp) != FTP_SFTP_ERROR_NONE)
 			{
@@ -818,18 +820,25 @@ static unsigned int recursive_getput_file(endpoint *ep,
 							ftp_sftp_error_message(&ep->ep_ftpnode->fn_sftp));
 				}
 			}
-			return actual;
+			goto done;
 		}
-		return put(&ep->ep_ftpnode->fn_ftp, updatefn, updateinfo, local_path, remote_path, restart);
+		result = put(&ep->ep_ftpnode->fn_ftp, updatefn, updateinfo, local_path, send_remote, restart);
+		goto done;
 	}
 
 	xfer.updatefn = NULL;
 	xfer.updateinfo = NULL;
-	xfer.remote_path = remote_path;
+	xfer.remote_path = send_remote;
 	xfer.local_path = local_path;
 	xfer.restart = restart;
 
-	return rec_ask_lister_favour(favour, ep, &xfer, 0);
+	// rec_ask_lister_favour is synchronous; send_remote stays valid for the whole call.
+	result = rec_ask_lister_favour(favour, ep, &xfer, 0);
+
+done:
+	if (utf8_remote)
+		ftp_codesets_free(utf8_remote);
+	return result;
 }
 
 static void recursive_getput_temp_error(struct ftp_info *info, ULONG xfer_error, int msg)

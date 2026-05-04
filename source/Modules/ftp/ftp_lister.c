@@ -569,16 +569,22 @@ int entry_info_from_remote(struct ftp_node *ftpnode, char *entryname, struct ent
 		if (!stat_success)
 			return 0;
 
-		stccpy(ei->ei_name, sftp_entry.name[0] ? sftp_entry.name : FilePart(entryname), FILENAMELEN + 1);
+		// Only the server-provided name is UTF-8; FilePart(entryname) is already local.
+		if (sftp_entry.name[0])
+		{
+			stccpy(ei->ei_name, sftp_entry.name, FILENAMELEN + 1);
+			ftp_convert_filename_from_utf8(ei, &ftpnode->fn_ftp);
+		}
+		else
+			stccpy(ei->ei_name, FilePart(entryname), FILENAMELEN + 1);
+
 		ei->ei_size = sftp_entry.size;
 		ei->ei_type = sftp_entry.type;
 		ei->ei_seconds = ftp_sftp_unix_to_amiga_seconds(sftp_entry.seconds);
 		ei->ei_prot = prot_unix_to_amiga(sftp_entry.unixprot);
 		ei->ei_unixprot = sftp_entry.unixprot;
 		stccpy(ei->ei_comment, sftp_entry.comment, COMMENTLEN + 1);
-		
-		// Convert UTF-8 filename to local charset if server supports UTF-8
-		ftp_convert_filename_from_utf8(ei, &ftpnode->fn_ftp);
+
 		return 2;
 	}
 
