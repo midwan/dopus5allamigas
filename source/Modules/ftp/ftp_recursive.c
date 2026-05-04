@@ -759,7 +759,7 @@ static unsigned int recursive_getput_file(endpoint *ep,
 	// The server speaks UTF-8 when advertised; the lister works in local charset.
 	// Convert once and use for both the direct calls and the forwarded xfer.
 	char *utf8_remote = ftp_convert_path_to_utf8(remote_path, &ep->ep_ftpnode->fn_ftp);
-	char *send_remote = utf8_remote ? utf8_remote : remote_path;
+	const char *send_remote = utf8_remote ? utf8_remote : remote_path;
 	unsigned int result;
 
 	if (ep->ep_ftpnode->fn_ftp.fi_task == FindTask(0))
@@ -792,7 +792,7 @@ static unsigned int recursive_getput_file(endpoint *ep,
 				}
 				goto done;
 			}
-			result = get(&ep->ep_ftpnode->fn_ftp, updatefn, updateinfo, send_remote, local_path, restart);
+			result = get(&ep->ep_ftpnode->fn_ftp, updatefn, updateinfo, (char *)send_remote, local_path, restart);
 			goto done;
 		}
 
@@ -822,13 +822,14 @@ static unsigned int recursive_getput_file(endpoint *ep,
 			}
 			goto done;
 		}
-		result = put(&ep->ep_ftpnode->fn_ftp, updatefn, updateinfo, local_path, send_remote, restart);
+		result = put(&ep->ep_ftpnode->fn_ftp, updatefn, updateinfo, local_path, (char *)send_remote, restart);
 		goto done;
 	}
 
 	xfer.updatefn = NULL;
 	xfer.updateinfo = NULL;
-	xfer.remote_path = send_remote;
+	// The IPC favour handlers read but never modify remote_path; cast away const.
+	xfer.remote_path = (char *)send_remote;
 	xfer.local_path = local_path;
 	xfer.restart = restart;
 
@@ -2828,14 +2829,8 @@ int rec_ftp_cwd(endpoint *ep, char *dirname)
 		if (utf8_dirname) ftp_codesets_free(utf8_dirname);
 		return cwd_success;
 	}
-	else if (ep->ep_ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && ftp_cwd(&ep->ep_ftpnode->fn_ftp, 0, 0, dirname) == 250)
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
+
+	return ftp_cwd(&ep->ep_ftpnode->fn_ftp, 0, 0, dirname) == 250 ? 1 : 0;
 }
 
 //
@@ -3033,14 +3028,8 @@ int rec_ftp_dele(endpoint *ep, struct entry_info *file)
 		if (utf8_name) ftp_codesets_free(utf8_name);
 		return delete_success;
 	}
-	else if (ep->ep_ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && ftp_dele(&ep->ep_ftpnode->fn_ftp, file->ei_name) == 250)
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
+
+	return ftp_dele(&ep->ep_ftpnode->fn_ftp, file->ei_name) == 250 ? 1 : 0;
 }
 
 //
@@ -3074,14 +3063,8 @@ int rec_ftp_rmd(endpoint *ep, struct entry_info *dir)
 		if (utf8_name) ftp_codesets_free(utf8_name);
 		return rmdir_success;
 	}
-	else if (ep->ep_ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && ftp_rmd(&ep->ep_ftpnode->fn_ftp, dir->ei_name) / 100 == COMPLETE)
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
+
+	return ftp_rmd(&ep->ep_ftpnode->fn_ftp, dir->ei_name) / 100 == COMPLETE ? 1 : 0;
 }
 
 //

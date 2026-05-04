@@ -2433,7 +2433,7 @@ static void lister_edit(struct ftp_node *ftpnode, IPCMessage *msg)
 			if (rename_success)
 				rexx_result = 1;
 		}
-		else if (ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && ftp_rename(&ftpnode->fn_ftp, em->em_entry, em->em_value) == 250)
+		else if (ftp_rename(&ftpnode->fn_ftp, em->em_entry, em->em_value) == 250)
 		{
 			rexx_result = 1;
 		}
@@ -2503,7 +2503,7 @@ static void lister_edit(struct ftp_node *ftpnode, IPCMessage *msg)
 			if (chmod_success)
 				rexx_result = 1;
 		}
-		else if (ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && ftp_chmod(&ftpnode->fn_ftp, mode, em->em_entry) == 200)
+		else if (ftp_chmod(&ftpnode->fn_ftp, mode, em->em_entry) == 200)
 		{
 			rexx_result = 1;
 		}

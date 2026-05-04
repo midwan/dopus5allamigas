@@ -192,16 +192,15 @@ static int sftp_list_update(void *userdata, const struct ftp_sftp_entry *entry)
 
 	++ui->ui_raw_lines;
 
-	// Copy SFTP entry data to entry_info structure
-	strncpy(entry_info.ei_name, entry->name, sizeof(entry_info.ei_name) - 1);
-	entry_info.ei_name[sizeof(entry_info.ei_name) - 1] = '\0';
+	// Copy SFTP entry data to entry_info structure.
+	// Use stccpy (safe bounded copy) for consistency with entry_info_from_remote.
+	stccpy(entry_info.ei_name, entry->name, sizeof(entry_info.ei_name));
 	entry_info.ei_size = entry->size;
 	entry_info.ei_type = entry->type;
 	entry_info.ei_seconds = ftp_sftp_unix_to_amiga_seconds(entry->seconds);
 	entry_info.ei_prot = prot_unix_to_amiga(entry->unixprot);
 	entry_info.ei_unixprot = entry->unixprot;
-	strncpy(entry_info.ei_comment, entry->comment, sizeof(entry_info.ei_comment) - 1);
-	entry_info.ei_comment[sizeof(entry_info.ei_comment) - 1] = '\0';
+	stccpy(entry_info.ei_comment, entry->comment, sizeof(entry_info.ei_comment));
 
 	// Convert UTF-8 filename to local charset if server supports UTF-8
 	ftp_convert_filename_from_utf8(&entry_info, &ui->ui_ftpnode->fn_ftp);

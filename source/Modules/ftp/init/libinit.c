@@ -990,6 +990,8 @@ ULONG initBase(struct LibraryHeader *lib)
 														GETINTERFACE(ILocale, LocaleBase))
 													{
 // codesets.library is optional; UTF-8 conversion degrades gracefully without it.
+// The library is re-entrant (uses internal semaphores for its conversion tables),
+// so opening it once here and using it from main/IPC/transfer tasks is safe.
 														CodesetsBase = OpenLibrary("codesets.library", 6);
 #ifdef __amigaos4__
 														if (CodesetsBase)

@@ -101,7 +101,13 @@ char *ftp_local_to_utf8(const char *local_name)
 }
 
 // Convert filename from UTF-8 (server) to local charset (display/filesystem)
-// This modifies the entry_info structure in place
+// This modifies the entry_info structure in place.
+//
+// On conversion failure the entry keeps its raw UTF-8 bytes and FTP_FEAT_UTF8
+// stays set. Rationale: a single bad filename in a directory listing (e.g.
+// garbled upload from another tool) is not a reason to disable UTF-8 for the
+// whole session - the other entries still convert cleanly. Only that one
+// entry will mismatch if the user later tries to operate on it.
 void ftp_convert_filename_from_utf8(struct entry_info *entry, struct ftp_info *info)
 {
 	char *converted_name;
@@ -121,15 +127,7 @@ void ftp_convert_filename_from_utf8(struct entry_info *entry, struct ftp_info *i
 		stccpy(entry->ei_name, converted_name, sizeof(entry->ei_name));
 		ftp_codesets_free(converted_name);
 	}
-	else
-	{
-		// Conversion failed while codesets is available (invalid UTF-8 from
-		// server, or OOM). Stop treating this session as UTF-8 so raw bytes
-		// pass through unchanged in both directions. ei_name keeps the raw
-		// UTF-8 bytes it already holds, which the server will accept back
-		// verbatim now that conversion is disabled.
-		info->fi_flags &= ~FTP_FEAT_UTF8;
-	}
+	// else: leave ei_name as-is (raw UTF-8); do not touch FTP_FEAT_UTF8.
 }
 
 // Convert a UTF-8 path in-place to the local charset.
