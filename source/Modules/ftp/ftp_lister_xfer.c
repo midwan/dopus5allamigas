@@ -45,6 +45,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_lister_xfer.h"
 #include "ftp_addressbook.h"
 #include "ftp_addrsupp_protos.h"
+#include "ftp_utf8.h"
 
 /********************************/
 
@@ -1240,7 +1241,12 @@ void lister_xfer(struct ftp_node *remotenode, IPCMessage *msg)
 				if ((xm->xm_flags & (XFER_DROP | XFER_SUBDIR)) == (XFER_DROP | XFER_SUBDIR))
 				{
 					if (remotenode->fn_protocol == FTP_PROTOCOL_SFTP)
-						ftp_sftp_cwd(&remotenode->fn_sftp, xm->xm_dstpath);
+					{
+						char *utf8_path = ftp_convert_path_to_utf8(xm->xm_dstpath, &remotenode->fn_ftp);
+						const char *send_path = utf8_path ? utf8_path : xm->xm_dstpath;
+						ftp_sftp_cwd(&remotenode->fn_sftp, send_path);
+						if (utf8_path) ftp_codesets_free(utf8_path);
+					}
 					else
 						ftp_cwd(&remotenode->fn_ftp, 0, 0, xm->xm_dstpath);
 					dest_list = dest->ep_list(dest, 0);
@@ -1643,26 +1649,35 @@ void lister_doubleclick(struct ftp_node *node, IPCMessage *msg)
 
 				init_xfer_time(&ui);
 
-				if (node->fn_protocol == FTP_PROTOCOL_SFTP)
 				{
-					node->fn_ftp.fi_aborted = 0;
-					node->fn_ftp.fi_errno = 0;
-					node->fn_ftp.fi_ioerr = 0;
-					*node->fn_ftp.fi_serverr = 0;
-					actual = ftp_sftp_get(&node->fn_sftp, xfer_update, &ui, ei.ei_name, temp, FALSE);
-					if (ftp_sftp_session_error(&node->fn_sftp) != FTP_SFTP_ERROR_NONE)
+					// The lister holds local-charset names; the server expects UTF-8.
+					char *utf8_name = ftp_convert_path_to_utf8(ei.ei_name, &node->fn_ftp);
+					const char *send_name = utf8_name ? utf8_name : ei.ei_name;
+
+					if (node->fn_protocol == FTP_PROTOCOL_SFTP)
 					{
-						if (ftp_sftp_session_error(&node->fn_sftp) == FTP_SFTP_ERROR_ABORTED)
-							node->fn_ftp.fi_aborted = 1;
-						else
+						node->fn_ftp.fi_aborted = 0;
+						node->fn_ftp.fi_errno = 0;
+						node->fn_ftp.fi_ioerr = 0;
+						*node->fn_ftp.fi_serverr = 0;
+						actual = ftp_sftp_get(&node->fn_sftp, xfer_update, &ui, send_name, temp, FALSE);
+						if (ftp_sftp_session_error(&node->fn_sftp) != FTP_SFTP_ERROR_NONE)
 						{
-							node->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
-							sprintf(node->fn_ftp.fi_serverr, "550 %s\r\n", ftp_sftp_error_message(&node->fn_sftp));
+							if (ftp_sftp_session_error(&node->fn_sftp) == FTP_SFTP_ERROR_ABORTED)
+								node->fn_ftp.fi_aborted = 1;
+							else
+							{
+								node->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
+								sprintf(node->fn_ftp.fi_serverr, "550 %s\r\n", ftp_sftp_error_message(&node->fn_sftp));
+							}
 						}
 					}
+					else
+						actual = get(&node->fn_ftp, xfer_update, &ui, send_name, temp, FALSE);
+
+					if (utf8_name)
+						ftp_codesets_free(utf8_name);
 				}
-				else
-					actual = get(&node->fn_ftp, xfer_update, &ui, ei.ei_name, temp, FALSE);
 
 				lst_remabort(node);
 
@@ -1794,26 +1809,35 @@ void lister_traptemp(struct ftp_node *node, IPCMessage *msg)
 
 						init_xfer_time(&ui);
 
-						if (node->fn_protocol == FTP_PROTOCOL_SFTP)
 						{
-							node->fn_ftp.fi_aborted = 0;
-							node->fn_ftp.fi_errno = 0;
-							node->fn_ftp.fi_ioerr = 0;
-							*node->fn_ftp.fi_serverr = 0;
-							actual = ftp_sftp_get(&node->fn_sftp, xfer_update, &ui, ei.ei_name, temp, FALSE);
-							if (ftp_sftp_session_error(&node->fn_sftp) != FTP_SFTP_ERROR_NONE)
+							// The lister holds local-charset names; the server expects UTF-8.
+							char *utf8_name = ftp_convert_path_to_utf8(ei.ei_name, &node->fn_ftp);
+							const char *send_name = utf8_name ? utf8_name : ei.ei_name;
+
+							if (node->fn_protocol == FTP_PROTOCOL_SFTP)
 							{
-								if (ftp_sftp_session_error(&node->fn_sftp) == FTP_SFTP_ERROR_ABORTED)
-									node->fn_ftp.fi_aborted = 1;
-								else
+								node->fn_ftp.fi_aborted = 0;
+								node->fn_ftp.fi_errno = 0;
+								node->fn_ftp.fi_ioerr = 0;
+								*node->fn_ftp.fi_serverr = 0;
+								actual = ftp_sftp_get(&node->fn_sftp, xfer_update, &ui, send_name, temp, FALSE);
+								if (ftp_sftp_session_error(&node->fn_sftp) != FTP_SFTP_ERROR_NONE)
 								{
-									node->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
-									sprintf(node->fn_ftp.fi_serverr, "550 %s\r\n", ftp_sftp_error_message(&node->fn_sftp));
+									if (ftp_sftp_session_error(&node->fn_sftp) == FTP_SFTP_ERROR_ABORTED)
+										node->fn_ftp.fi_aborted = 1;
+									else
+									{
+										node->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
+										sprintf(node->fn_ftp.fi_serverr, "550 %s\r\n", ftp_sftp_error_message(&node->fn_sftp));
+									}
 								}
 							}
+							else
+								actual = get(&node->fn_ftp, xfer_update, &ui, send_name, temp, FALSE);
+
+							if (utf8_name)
+								ftp_codesets_free(utf8_name);
 						}
-						else
-							actual = get(&node->fn_ftp, xfer_update, &ui, ei.ei_name, temp, FALSE);
 
 						lst_remabort(node);
 
@@ -1928,26 +1952,35 @@ BOOL lister_xferindex(struct ftp_node *ftpnode, char *localname, char *remotenam
 
 	init_xfer_time(&ui);
 
-	if (ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
 	{
-		ftpnode->fn_ftp.fi_aborted = 0;
-		ftpnode->fn_ftp.fi_errno = 0;
-		ftpnode->fn_ftp.fi_ioerr = 0;
-		*ftpnode->fn_ftp.fi_serverr = 0;
-		actual = ftp_sftp_get(&ftpnode->fn_sftp, xfer_update, &ui, remotename, localname, FALSE);
-		if (ftp_sftp_session_error(&ftpnode->fn_sftp) != FTP_SFTP_ERROR_NONE)
+		// The caller provides a local-charset name; the server expects UTF-8.
+		char *utf8_name = ftp_convert_path_to_utf8(remotename, &ftpnode->fn_ftp);
+		const char *send_name = utf8_name ? utf8_name : remotename;
+
+		if (ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
 		{
-			if (ftp_sftp_session_error(&ftpnode->fn_sftp) == FTP_SFTP_ERROR_ABORTED)
-				ftpnode->fn_ftp.fi_aborted = 1;
-			else
+			ftpnode->fn_ftp.fi_aborted = 0;
+			ftpnode->fn_ftp.fi_errno = 0;
+			ftpnode->fn_ftp.fi_ioerr = 0;
+			*ftpnode->fn_ftp.fi_serverr = 0;
+			actual = ftp_sftp_get(&ftpnode->fn_sftp, xfer_update, &ui, send_name, localname, FALSE);
+			if (ftp_sftp_session_error(&ftpnode->fn_sftp) != FTP_SFTP_ERROR_NONE)
 			{
-				ftpnode->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
-				sprintf(ftpnode->fn_ftp.fi_serverr, "550 %s\r\n", ftp_sftp_error_message(&ftpnode->fn_sftp));
+				if (ftp_sftp_session_error(&ftpnode->fn_sftp) == FTP_SFTP_ERROR_ABORTED)
+					ftpnode->fn_ftp.fi_aborted = 1;
+				else
+				{
+					ftpnode->fn_ftp.fi_errno |= FTPERR_XFER_SRCERR;
+					sprintf(ftpnode->fn_ftp.fi_serverr, "550 %s\r\n", ftp_sftp_error_message(&ftpnode->fn_sftp));
+				}
 			}
 		}
+		else
+			actual = get(&ftpnode->fn_ftp, xfer_update, &ui, send_name, localname, FALSE);
+
+		if (utf8_name)
+			ftp_codesets_free(utf8_name);
 	}
-	else
-		actual = get(&ftpnode->fn_ftp, xfer_update, &ui, remotename, localname, FALSE);
 
 	lst_remabort(ftpnode);
 

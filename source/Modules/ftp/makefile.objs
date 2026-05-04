@@ -11,7 +11,7 @@ COMMON_OBJS := 	init/libinit.o init/amiga.o \
 				ftp_sftp_sockets.o \
 				ftp_arexx.o ftp_util.o ftp_recursive.o \
 				ftp_addressbook.o ftp_addrsupp.o ftp_addrformat.o \
-				ftp_protect.o ftp_module.o ftp_data.o ftp_strings.o
+				ftp_protect.o ftp_module.o ftp_data.o ftp_strings.o ftp_utf8.o
 
 OS4_OBJS    :=	init/aos4_ppc_libstub.o \
 				init/aos4_68k_to_ppc_vectors.o

@@ -139,6 +139,9 @@ struct RexxSysIFace *IRexxSys = NULL;
 // struct NewIconIFace 	*INewIcon = NULL;
 
 struct DOpusIFace *IDOpus = NULL;
+#ifdef __amigaos4__
+struct CodesetsIFace *ICodesets = NULL;
+#endif
 // struct ConfigOpusIFace	*IConfigOpus = NULL;
 
 	#if !defined(__NEWLIB__)
@@ -173,6 +176,7 @@ struct Library *DiskFontBase = NULL;
 struct Library *IconBase = NULL;
 struct Library *WorkbenchBase = NULL;
 struct Library *DataTypesBase = NULL;
+struct Library *CodesetsBase = NULL;
 // struct Library 			*NewIconBase = NULL;
 
 /*#if defined(__MORPHOS__)
@@ -929,6 +933,20 @@ ULONG freeBase(struct LibraryHeader *lib)
 		UtilityBase = NULL;
 	}
 
+	// close codesets.library
+	if (CodesetsBase != NULL)
+	{
+#ifdef __amigaos4__
+		if (ICodesets)
+		{
+			DropInterface((struct Interface *)ICodesets);
+			ICodesets = NULL;
+		}
+#endif
+		CloseLibrary((struct Library *)CodesetsBase);
+		CodesetsBase = NULL;
+	}
+
 	// close dos.library
 	if (DOSBase != NULL)
 	{
@@ -971,6 +989,15 @@ ULONG initBase(struct LibraryHeader *lib)
 															NULL &&
 														GETINTERFACE(ILocale, LocaleBase))
 													{
+// codesets.library is optional; UTF-8 conversion degrades gracefully without it.
+// The library is re-entrant (uses internal semaphores for its conversion tables),
+// so opening it once here and using it from main/IPC/transfer tasks is safe.
+														CodesetsBase = OpenLibrary("codesets.library", 6);
+#ifdef __amigaos4__
+														if (CodesetsBase)
+															ICodesets = (struct CodesetsIFace *)GetInterface(CodesetsBase, "main", 1, NULL);
+#endif
+
 // we have to please the internal utilitybase
 // pointers of libnix and clib2
 #if !defined(__libnix__) && !defined(__NEWLIB__) && !defined(__AROS__)

@@ -27,7 +27,7 @@ OPTIMIZE := -O2
 C_LIB :=  -mcrt=newlib
 DEBUGSYM := -gstabs 
 OPTIONS  := $(C_LIB) -D__USE_INLINE__ -D__USE_OLD_TIMEVAL__ -D__OBSOLETE_MEMHANDLER_FLAGS__ -DCOMPDATE=$(NEWDATE)
-INCLUDES := -I../../Include -Iinit -Iinit/../ -I../../
+INCLUDES := -I../../Include -Iinit -Iinit/../ -I../../ -I$(CROSS_ROOT)/usr/include -I$(CROSS_ROOT)/usr/include/inline
 LDFLAGS  := $(C_LIB) -nostartfiles
 WARNINGS := -Wall -fno-strict-aliasing
 CC       := ppc-amigaos-gcc

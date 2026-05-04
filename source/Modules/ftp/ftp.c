@@ -54,6 +54,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_util.h"  // for cat_bytes()
 #include "ftp_parse.h"
 #include "ftp_listcmd.h"
+#include "ftp_utf8.h"
 
 #ifdef __amigaos3__
 // dummy TimerBase to get amiga.lib to link
@@ -91,15 +92,23 @@ int ftp_cdup(struct ftp_info *info, int (*updatefn)(void *, int, char *), void *
 int ftp_chmod(struct ftp_info *info, unsigned int mode, char *name)
 {
 	int reply;
+	char *utf8_name = NULL;
 
 	*info->fi_serverr = 0;
 
-	reply = ftpa(info, "SITE CHMOD %o %s", mode, name);
+	// Convert name to UTF-8 if server supports UTF-8
+	utf8_name = ftp_convert_path_to_utf8(name, info);
+
+	reply = ftpa(info, "SITE CHMOD %o %s", mode, utf8_name ? utf8_name : name);
 
 	if (reply == 500 || reply == 502)
 		info->fi_flags |= FTP_NO_CHMOD;
 	else if (reply / 100 != COMPLETE)
 		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
+
+	// Clean up converted name
+	if (utf8_name)
+		ftp_codesets_free(utf8_name);
 
 	return reply;
 }
@@ -108,15 +117,23 @@ int ftp_chmod(struct ftp_info *info, unsigned int mode, char *name)
 int ftp_cwd(struct ftp_info *info, int (*updatefn)(void *, int, char *), void *updateinfo, char *path)
 {
 	int reply;
+	char *utf8_path = NULL;
 
 	*info->fi_serverr = 0;
 
-	reply = _ftpa(info, FTPFLAG_ASYNCH, "CWD %s", path);
+	// Convert path to UTF-8 if server supports UTF-8
+	utf8_path = ftp_convert_path_to_utf8(path, info);
+
+	reply = _ftpa(info, FTPFLAG_ASYNCH, "CWD %s", utf8_path ? utf8_path : path);
 	if (reply < 600)
 		reply = _getreply(info, 0, updatefn, updateinfo);
 
 	if (reply / 100 != COMPLETE)
 		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
+
+	// Clean up converted path
+	if (utf8_path)
+		ftp_codesets_free(utf8_path);
 
 	return reply;
 }
@@ -125,13 +142,21 @@ int ftp_cwd(struct ftp_info *info, int (*updatefn)(void *, int, char *), void *u
 int ftp_dele(struct ftp_info *info, char *name)
 {
 	int reply;
+	char *utf8_name = NULL;
 
 	*info->fi_serverr = 0;
 
-	reply = ftpa(info, "DELE %s", name);
+	// Convert name to UTF-8 if server supports UTF-8
+	utf8_name = ftp_convert_path_to_utf8(name, info);
+
+	reply = ftpa(info, "DELE %s", utf8_name ? utf8_name : name);
 
 	if (reply / 100 != COMPLETE)
 		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
+
+	// Clean up converted name
+	if (utf8_name)
+		ftp_codesets_free(utf8_name);
 
 	return reply;
 }
@@ -146,15 +171,23 @@ int ftp_image(struct ftp_info *info)
 int ftp_mdtm(struct ftp_info *info, char *name)
 {
 	int reply;
+	char *utf8_name = NULL;
 
 	*info->fi_serverr = 0;
 
-	reply = ftpa(info, "MDTM %s", name);
+	// Convert name to UTF-8 if server supports UTF-8
+	utf8_name = ftp_convert_path_to_utf8(name, info);
+
+	reply = ftpa(info, "MDTM %s", utf8_name ? utf8_name : name);
 
 	if (reply >= 500 && reply <= 502)
 		info->fi_flags |= FTP_NO_MDTM;
 	else if (reply / 100 != COMPLETE)
 		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
+
+	// Clean up converted name
+	if (utf8_name)
+		ftp_codesets_free(utf8_name);
 
 	return reply;
 }
@@ -163,13 +196,21 @@ int ftp_mdtm(struct ftp_info *info, char *name)
 int ftp_mkd(struct ftp_info *info, char *name)
 {
 	int reply;
+	char *utf8_name = NULL;
 
 	*info->fi_serverr = 0;
 
-	reply = ftpa(info, "MKD %s", name);
+	// Convert name to UTF-8 if server supports UTF-8
+	utf8_name = ftp_convert_path_to_utf8(name, info);
+
+	reply = ftpa(info, "MKD %s", utf8_name ? utf8_name : name);
 
 	if (reply / 100 != COMPLETE)
 		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
+
+	// Clean up converted name
+	if (utf8_name)
+		ftp_codesets_free(utf8_name);
 
 	return reply;
 }
@@ -280,22 +321,34 @@ int ftp_pwd(struct ftp_info *info)
 int ftp_rename(struct ftp_info *info, char *oldname, char *newname)
 {
 	int reply;
+	char *utf8_oldname = NULL;
+	char *utf8_newname = NULL;
 
 	*info->fi_serverr = 0;
 
+	// Convert names to UTF-8 if server supports UTF-8
+	utf8_oldname = ftp_convert_path_to_utf8(oldname, info);
+	utf8_newname = ftp_convert_path_to_utf8(newname, info);
+
 	// Can TIMEOUT
-	reply = ftpa(info, "RNFR %s", oldname);
+	reply = ftpa(info, "RNFR %s", utf8_oldname ? utf8_oldname : oldname);
 
 	if (reply / 100 != CONTINUE)
 		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
 	else
 	{
 		// Can TIMEOUT
-		reply = ftpa(info, "RNTO %s", newname);
+		reply = ftpa(info, "RNTO %s", utf8_newname ? utf8_newname : newname);
 
 		if (reply / 100 != COMPLETE)
 			stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
 	}
+
+	// Clean up converted names
+	if (utf8_oldname)
+		ftp_codesets_free(utf8_oldname);
+	if (utf8_newname)
+		ftp_codesets_free(utf8_newname);
 
 	return reply;
 }
@@ -322,13 +375,21 @@ int ftp_rest(struct ftp_info *info, unsigned int offset)
 int ftp_rmd(struct ftp_info *info, char *name)
 {
 	int reply;
+	char *utf8_name = NULL;
 
 	*info->fi_serverr = 0;
 
-	reply = ftpa(info, "RMD %s", name);
+	// Convert name to UTF-8 if server supports UTF-8
+	utf8_name = ftp_convert_path_to_utf8(name, info);
+
+	reply = ftpa(info, "RMD %s", utf8_name ? utf8_name : name);
 
 	if (reply / 100 != COMPLETE)
 		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
+
+	// Clean up converted name
+	if (utf8_name)
+		ftp_codesets_free(utf8_name);
 
 	return reply;
 }
@@ -337,15 +398,23 @@ int ftp_rmd(struct ftp_info *info, char *name)
 int ftp_size(struct ftp_info *info, char *name)
 {
 	int reply;
+	char *utf8_name = NULL;
 
 	*info->fi_serverr = 0;
 
-	reply = ftpa(info, "SIZE %s", name);
+	// Convert name to UTF-8 if server supports UTF-8
+	utf8_name = ftp_convert_path_to_utf8(name, info);
+
+	reply = ftpa(info, "SIZE %s", utf8_name ? utf8_name : name);
 
 	if (reply >= 500 && reply <= 502)
 		info->fi_flags |= FTP_NO_SIZE;
 	else if (reply / 100 != COMPLETE)
 		stccpy(info->fi_serverr, info->fi_iobuf, IOBUFSIZE + 1);
+
+	// Clean up converted name
+	if (utf8_name)
+		ftp_codesets_free(utf8_name);
 
 	return reply;
 }

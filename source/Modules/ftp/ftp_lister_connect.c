@@ -53,6 +53,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_addrsupp_protos.h"
 #include "ftp_protocol.h"
 #include "ftp_sftp.h"
+#include "ftp_utf8.h"
 
 struct connect_log_data
 {
@@ -454,6 +455,18 @@ static void lister_getfeats(struct ftp_node *node)
 		strcpy(node->fn_lscmd, FTP_LISTCMD_MLSD);
 		node->fn_ls_to_entryinfo = mlsd_line_to_entryinfo;
 	}
+
+	// Per RFC 2640 the server only guarantees UTF-8 encoding after the client
+	// sends OPTS UTF8 ON. Some servers (FileZilla, pure-ftpd) stay on their
+	// native charset until we do this; others (vsftpd) already default to
+	// UTF-8. If the server rejects the option, clear FTP_FEAT_UTF8 so we do
+	// not mis-encode filenames in either direction.
+	if (node->fn_ftp.fi_flags & FTP_FEAT_UTF8)
+	{
+		int reply = ftpa(&node->fn_ftp, "OPTS UTF8 ON");
+		if (reply / 100 != COMPLETE)
+			node->fn_ftp.fi_flags &= ~FTP_FEAT_UTF8;
+	}
 }
 
 /********************************/
@@ -481,6 +494,8 @@ static int connect_cwd(struct ftp_node *ftpnode,
 				strchr(ftpnode->fn_ftp.fi_iobuf + 5, '"'))
 			{
 				stptok(ftpnode->fn_ftp.fi_iobuf + 5, ftpnode->fn_site.se_path, PATHLEN, "\"");
+				// CWD reply echoes the new path in UTF-8 when FTP_FEAT_UTF8 is set.
+				ftp_convert_inplace_utf8_to_local(ftpnode->fn_site.se_path, PATHLEN + 1, &ftpnode->fn_ftp);
 				pwd_done = 1;
 			}
 
@@ -560,6 +575,14 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 	ULONG sigs;
 
 	D(bug("lister_connect_and_login()\n"));
+
+	// Clear FEAT-derived UTF-8 state before connecting.  This guarantees the
+	// flag reflects the current server rather than leftover state from a prior
+	// session on the same node (e.g. reconnect from SFTP to plain FTP, or
+	// reconnect to a server that no longer advertises UTF-8).  Both branches
+	// below re-set the flag if appropriate: SFTP sets it unconditionally on
+	// login success, plain FTP sets it from the FEAT reply and OPTS UTF8 ON.
+	node->fn_ftp.fi_flags &= ~FTP_FEAT_UTF8;
 
 	// Get number of retries from config
 	if (node->fn_site.se_env->e_retry)
@@ -641,6 +664,11 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 			{
 				node->fn_flags |= LST_CONNECTED | LST_LOGGEDIN;
 				logged_in = 1;
+				loginerr = 0;  // Initialize loginerr for SFTP success path
+				
+				// SFTP inherently supports UTF-8 as per SSH protocol specification
+				node->fn_ftp.fi_flags |= FTP_FEAT_UTF8;
+				
 				tries = 0;
 			}
 			else
@@ -656,11 +684,13 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 				{
 					connected = -1;
 					prompt_userpass = 0;
+					loginerr = -2;  // Set error for fatal SFTP failures
 				}
 				else
 				{
 					connected = 0;
 					prompt_userpass = (sftp_error == FTP_SFTP_ERROR_AUTH);
+					loginerr = (sftp_error == FTP_SFTP_ERROR_AUTH) ? -1 : -2;  // -1 for auth, -2 for other errors
 				}
 			}
 		}
@@ -754,7 +784,7 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 			else
 				cld->cld_errmsg = (char *)GetString(locale, MSG_FTP_COULD_NOT_CONNECT);
 		}
-		else if (prompt_userpass)
+		else if (prompt_userpass && !logged_in)
 		{
 			// Set error message
 			if (!cld->cld_errmsg && errno)
@@ -837,7 +867,12 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 		if (*node->fn_site.se_path)
 		{
 			lister_prog_info(node, GetString(locale, MSG_INITIAL_DIR));
-			if (!ftp_sftp_cwd(&node->fn_sftp, node->fn_site.se_path))
+			char *utf8_path = ftp_convert_path_to_utf8(node->fn_site.se_path, &node->fn_ftp);
+			const char *send_path = utf8_path ? utf8_path : node->fn_site.se_path;
+			int cwd_success = ftp_sftp_cwd(&node->fn_sftp, send_path);
+			if (utf8_path) ftp_codesets_free(utf8_path);
+			
+			if (!cwd_success)
 			{
 				cld->cld_okay = FALSE;
 				lister_sftp_set_connect_error(cld, ftp_sftp_error_message(&node->fn_sftp));
@@ -845,7 +880,11 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 		}
 
 		if (cld->cld_okay)
-			ftp_sftp_pwd(&node->fn_sftp, node->fn_site.se_path, PATHLEN + 1);
+		{
+			char utf8_path[PATHLEN + 1];
+			if (ftp_sftp_pwd(&node->fn_sftp, utf8_path, sizeof(utf8_path)))
+				ftp_store_utf8_path_as_local(node->fn_site.se_path, PATHLEN + 1, utf8_path, &node->fn_ftp);
+		}
 
 		rexx_lst_set_path(node->fn_opus, node->fn_handle, node->fn_site.se_path);
 
