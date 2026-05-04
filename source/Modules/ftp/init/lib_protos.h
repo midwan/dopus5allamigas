@@ -6,6 +6,21 @@
 #include <proto/dopus5.h>
 #include <proto/module.h>
 
+// Include codesets.library prototypes if available
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// External declarations for codesets.library
+extern struct Library *CodesetsBase;
+#ifdef __amigaos4__
+extern struct CodesetsIFace *ICodesets;
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
 /* init.c */
 ULONG freeBase(struct LibraryHeader *lib);
 ULONG initBase(struct LibraryHeader *lib);

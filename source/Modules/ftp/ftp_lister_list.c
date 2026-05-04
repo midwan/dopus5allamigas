@@ -36,6 +36,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_list.h"
 #include "ftp_recursive.h"
 #include "ftp_util.h"
+#include "ftp_utf8.h"
 
 #define min(a, b) (((a) <= (b)) ? (a) : (b))
 
@@ -129,6 +130,9 @@ static int list_update(void *userdata, const char *line)
 
 	if (ui->ui_ftpnode->fn_ls_to_entryinfo(&entry, line, ui->ui_flags))
 	{
+		// Convert UTF-8 filename to local charset if server supports UTF-8
+		ftp_convert_filename_from_utf8(&entry, &ui->ui_ftpnode->fn_ftp);
+
 		lister_add(ui->ui_ftpnode,
 				   entry.ei_name,
 				   entry.ei_size,
@@ -162,6 +166,7 @@ static int list_update(void *userdata, const char *line)
 static int sftp_list_update(void *userdata, const struct ftp_sftp_entry *entry)
 {
 	struct update_info *ui = userdata;
+	struct entry_info entry_info = {0};
 #if defined(__AROS__) || defined(__amigaos3__)
 	struct Device *TimerBase;
 #else
@@ -186,13 +191,27 @@ static int sftp_list_update(void *userdata, const struct ftp_sftp_entry *entry)
 	ObtainSemaphore(&ui->ui_sem);
 
 	++ui->ui_raw_lines;
+
+	// Copy SFTP entry data to entry_info structure
+	strncpy(entry_info.ei_name, entry->name, sizeof(entry_info.ei_name) - 1);
+	entry_info.ei_name[sizeof(entry_info.ei_name) - 1] = '\0';
+	entry_info.ei_size = entry->size;
+	entry_info.ei_type = entry->type;
+	entry_info.ei_seconds = ftp_sftp_unix_to_amiga_seconds(entry->seconds);
+	entry_info.ei_prot = prot_unix_to_amiga(entry->unixprot);
+	strncpy(entry_info.ei_comment, entry->comment, sizeof(entry_info.ei_comment) - 1);
+	entry_info.ei_comment[sizeof(entry_info.ei_comment) - 1] = '\0';
+
+	// Convert UTF-8 filename to local charset if server supports UTF-8
+	ftp_convert_filename_from_utf8(&entry_info, &ui->ui_ftpnode->fn_ftp);
+
 	lister_add(ui->ui_ftpnode,
-			   (char *)entry->name,
-			   entry->size,
-			   entry->type,
-			   ftp_sftp_unix_to_amiga_seconds(entry->seconds),
-			   prot_unix_to_amiga(entry->unixprot),
-			   (char *)entry->comment);
+			   entry_info.ei_name,
+			   entry_info.ei_size,
+			   entry_info.ei_type,
+			   entry_info.ei_seconds,
+			   entry_info.ei_prot,
+			   entry_info.ei_comment);
 	++ui->ui_entries;
 
 	GetSysTime(&ui->ui_curr);
@@ -462,6 +481,7 @@ int lister_list(struct opusftp_globals *ogp, struct ftp_node *ftpnode, BOOL redo
 				{
 					ftpnode->fn_ftp.fi_aborted = 0;
 					*ftpnode->fn_ftp.fi_serverr = 0;
+					// For root directory listing, use empty string (no conversion needed)
 					lsresult = ftp_sftp_list(&ftpnode->fn_sftp, "", sftp_list_update, ui) ? 0 : -1;
 					if (lsresult)
 					{

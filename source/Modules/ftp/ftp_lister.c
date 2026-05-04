@@ -105,6 +105,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_opusftp.h"
 #include "ftp_recursive.h"
 #include "ftp_util.h"
+#include "ftp_utf8.h"
 #include "ftp_addressbook.h"
 #include "ftp_addrsupp_protos.h"
 #include "ftp_protect.h"
@@ -560,7 +561,12 @@ int entry_info_from_remote(struct ftp_node *ftpnode, char *entryname, struct ent
 
 	if (ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
 	{
-		if (!ftp_sftp_stat(&ftpnode->fn_sftp, entryname, &sftp_entry))
+		char *utf8_entryname = ftp_convert_path_to_utf8(entryname, &ftpnode->fn_ftp);
+		const char *send_entryname = utf8_entryname ? utf8_entryname : entryname;
+		int stat_success = ftp_sftp_stat(&ftpnode->fn_sftp, send_entryname, &sftp_entry);
+		if (utf8_entryname) ftp_codesets_free(utf8_entryname);
+		
+		if (!stat_success)
 			return 0;
 
 		stccpy(ei->ei_name, sftp_entry.name[0] ? sftp_entry.name : FilePart(entryname), FILENAMELEN + 1);
@@ -570,6 +576,9 @@ int entry_info_from_remote(struct ftp_node *ftpnode, char *entryname, struct ent
 		ei->ei_prot = prot_unix_to_amiga(sftp_entry.unixprot);
 		ei->ei_unixprot = sftp_entry.unixprot;
 		stccpy(ei->ei_comment, sftp_entry.comment, COMMENTLEN + 1);
+		
+		// Convert UTF-8 filename to local charset if server supports UTF-8
+		ftp_convert_filename_from_utf8(ei, &ftpnode->fn_ftp);
 		return 2;
 	}
 
@@ -638,7 +647,14 @@ int get_file_size(struct ftp_node *n, char *name)
 	struct ftp_sftp_entry entry;
 
 	if (n->fn_protocol == FTP_PROTOCOL_SFTP)
-		return ftp_sftp_stat(&n->fn_sftp, name, &entry) && entry.type < 0 ? (int)entry.size : -2;
+	{
+		char *utf8_name = ftp_convert_path_to_utf8(name, &n->fn_ftp);
+		const char *send_name = utf8_name ? utf8_name : name;
+		int stat_success = ftp_sftp_stat(&n->fn_sftp, send_name, &entry);
+		if (utf8_name) ftp_codesets_free(utf8_name);
+		
+		return stat_success && entry.type < 0 ? (int)entry.size : -2;
+	}
 
 	// Server supports SIZE command?
 	if (!(n->fn_ftp.fi_flags & FTP_NO_SIZE))
@@ -689,7 +705,12 @@ ULONG get_file_mdtm(struct ftp_node *n, char *name)
 
 	if (n->fn_protocol == FTP_PROTOCOL_SFTP)
 	{
-		if (!ftp_sftp_stat(&n->fn_sftp, name, &entry))
+		char *utf8_name = ftp_convert_path_to_utf8(name, &n->fn_ftp);
+		const char *send_name = utf8_name ? utf8_name : name;
+		int stat_success = ftp_sftp_stat(&n->fn_sftp, send_name, &entry);
+		if (utf8_name) ftp_codesets_free(utf8_name);
+		
+		if (!stat_success)
 			return -3;
 		if (entry.type >= 0)
 			return -2;
@@ -1061,7 +1082,12 @@ int lister_cwd(struct ftp_node *ftpnode, char *path, ULONG flags)
 	}
 
 	if (ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
-		reply = ftp_sftp_cwd(&ftpnode->fn_sftp, path) ? 250 : 550;
+	{
+		char *utf8_path = ftp_convert_path_to_utf8(path, &ftpnode->fn_ftp);
+		const char *send_path = utf8_path ? utf8_path : path;
+		reply = ftp_sftp_cwd(&ftpnode->fn_sftp, send_path) ? 250 : 550;
+		if (utf8_path) ftp_codesets_free(utf8_path);
+	}
 	else
 		reply = ftp_cwd(&ftpnode->fn_ftp, updatefn, mu, path);
 
@@ -1073,7 +1099,21 @@ int lister_cwd(struct ftp_node *ftpnode, char *path, ULONG flags)
 
 		if (ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
 		{
-			ftp_sftp_pwd(&ftpnode->fn_sftp, ftpnode->fn_site.se_path, PATHLEN + 1);
+			char utf8_path[PATHLEN + 1];
+			if (ftp_sftp_pwd(&ftpnode->fn_sftp, utf8_path, sizeof(utf8_path)))
+			{
+				char *local_path = ftp_utf8_to_local(utf8_path);
+				if (local_path)
+				{
+					stccpy(ftpnode->fn_site.se_path, local_path, PATHLEN + 1);
+					ftp_codesets_free(local_path);
+				}
+				else
+				{
+					// Fallback: use UTF-8 path directly
+					stccpy(ftpnode->fn_site.se_path, utf8_path, PATHLEN + 1);
+				}
+			}
 			pwd_done = 1;
 		}
 
@@ -1182,7 +1222,21 @@ static int lister_cdup(struct ftp_node *ftpnode)
 
 		if (ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
 		{
-			ftp_sftp_pwd(&ftpnode->fn_sftp, ftpnode->fn_site.se_path, PATHLEN + 1);
+			char utf8_path[PATHLEN + 1];
+			if (ftp_sftp_pwd(&ftpnode->fn_sftp, utf8_path, sizeof(utf8_path)))
+			{
+				char *local_path = ftp_utf8_to_local(utf8_path);
+				if (local_path)
+				{
+					stccpy(ftpnode->fn_site.se_path, local_path, PATHLEN + 1);
+					ftp_codesets_free(local_path);
+				}
+				else
+				{
+					// Fallback: use UTF-8 path directly
+					stccpy(ftpnode->fn_site.se_path, utf8_path, PATHLEN + 1);
+				}
+			}
 			pwd_done = 1;
 		}
 
@@ -1369,7 +1423,12 @@ static void lister_makedir(struct ftp_node *ftpnode, IPCMessage *msg)
 		rexx_lst_lock(ftpnode->fn_opus, ftpnode->fn_handle);
 
 		if (ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
-			reply = ftp_sftp_mkdir(&ftpnode->fn_sftp, name) ? 250 : 550;
+		{
+			char *utf8_name = ftp_convert_path_to_utf8(name, &ftpnode->fn_ftp);
+			const char *send_name = utf8_name ? utf8_name : name;
+			reply = ftp_sftp_mkdir(&ftpnode->fn_sftp, send_name) ? 250 : 550;
+			if (utf8_name) ftp_codesets_free(utf8_name);
+		}
 		else
 			// Can TIMEOUT
 			reply = ftp_mkd(&ftpnode->fn_ftp, name);
@@ -1546,7 +1605,18 @@ static void lister_rename(struct ftp_node *ftpnode, IPCMessage *msg)
 					*newname)
 				{
 					if (ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
-						reply = ftp_sftp_rename(&ftpnode->fn_sftp, ei.ei_name, newname) ? 250 : 550;
+					{
+						char *utf8_oldname = ftp_convert_path_to_utf8(ei.ei_name, &ftpnode->fn_ftp);
+						char *utf8_newname = ftp_convert_path_to_utf8(newname, &ftpnode->fn_ftp);
+						
+						const char *send_oldname = utf8_oldname ? utf8_oldname : ei.ei_name;
+						const char *send_newname = utf8_newname ? utf8_newname : newname;
+						
+						reply = ftp_sftp_rename(&ftpnode->fn_sftp, send_oldname, send_newname) ? 250 : 550;
+						
+						if (utf8_oldname) ftp_codesets_free(utf8_oldname);
+						if (utf8_newname) ftp_codesets_free(utf8_newname);
+					}
 					else
 						reply = ftp_rename(&ftpnode->fn_ftp, ei.ei_name, newname);
 
@@ -2358,12 +2428,29 @@ static void lister_edit(struct ftp_node *ftpnode, IPCMessage *msg)
 
 	if (!strcmp(em->em_field, "name"))
 	{
-		if ((ftpnode->fn_protocol == FTP_PROTOCOL_SFTP &&
-			 ftp_sftp_rename(&ftpnode->fn_sftp, em->em_entry, em->em_value)) ||
-			(ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && ftp_rename(&ftpnode->fn_ftp, em->em_entry, em->em_value) == 250))
+		if (ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+		{
+			char *utf8_oldname = ftp_convert_path_to_utf8(em->em_entry, &ftpnode->fn_ftp);
+			char *utf8_newname = ftp_convert_path_to_utf8(em->em_value, &ftpnode->fn_ftp);
+			
+			const char *send_oldname = utf8_oldname ? utf8_oldname : em->em_entry;
+			const char *send_newname = utf8_newname ? utf8_newname : em->em_value;
+			
+			int rename_success = ftp_sftp_rename(&ftpnode->fn_sftp, send_oldname, send_newname);
+			
+			if (utf8_oldname) ftp_codesets_free(utf8_oldname);
+			if (utf8_newname) ftp_codesets_free(utf8_newname);
+			
+			if (rename_success)
+				rexx_result = 1;
+		}
+		else if (ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && ftp_rename(&ftpnode->fn_ftp, em->em_entry, em->em_value) == 250)
 		{
 			rexx_result = 1;
+		}
 
+		if (rexx_result)
+		{
 			if (entry_info_from_lister(ftpnode, em->em_entry, &ei, 0))
 			{
 				// Set/clear hidden flag?
@@ -2415,11 +2502,25 @@ static void lister_edit(struct ftp_node *ftpnode, IPCMessage *msg)
 			prot &= ~FIBF_EXECUTE;
 		}
 
-		if ((ftpnode->fn_protocol == FTP_PROTOCOL_SFTP && ftp_sftp_chmod(&ftpnode->fn_sftp, em->em_entry, mode)) ||
-			(ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && ftp_chmod(&ftpnode->fn_ftp, mode, em->em_entry) == 200))
+		if (ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
+		{
+			char *utf8_name = ftp_convert_path_to_utf8(em->em_entry, &ftpnode->fn_ftp);
+			const char *send_name = utf8_name ? utf8_name : em->em_entry;
+			
+			int chmod_success = ftp_sftp_chmod(&ftpnode->fn_sftp, send_name, mode);
+			
+			if (utf8_name) ftp_codesets_free(utf8_name);
+			
+			if (chmod_success)
+				rexx_result = 1;
+		}
+		else if (ftpnode->fn_protocol != FTP_PROTOCOL_SFTP && ftp_chmod(&ftpnode->fn_ftp, mode, em->em_entry) == 200)
 		{
 			rexx_result = 1;
+		}
 
+		if (rexx_result)
+		{
 			if (entry_info_from_lister(ftpnode, em->em_entry, &ei, 0))
 			{
 				// Don't change HSPA bits

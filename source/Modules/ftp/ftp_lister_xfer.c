@@ -45,6 +45,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_lister_xfer.h"
 #include "ftp_addressbook.h"
 #include "ftp_addrsupp_protos.h"
+#include "ftp_utf8.h"
 
 /********************************/
 
@@ -1240,7 +1241,12 @@ void lister_xfer(struct ftp_node *remotenode, IPCMessage *msg)
 				if ((xm->xm_flags & (XFER_DROP | XFER_SUBDIR)) == (XFER_DROP | XFER_SUBDIR))
 				{
 					if (remotenode->fn_protocol == FTP_PROTOCOL_SFTP)
-						ftp_sftp_cwd(&remotenode->fn_sftp, xm->xm_dstpath);
+					{
+						char *utf8_path = ftp_convert_path_to_utf8(xm->xm_dstpath, &remotenode->fn_ftp);
+						const char *send_path = utf8_path ? utf8_path : xm->xm_dstpath;
+						ftp_sftp_cwd(&remotenode->fn_sftp, send_path);
+						if (utf8_path) ftp_codesets_free(utf8_path);
+					}
 					else
 						ftp_cwd(&remotenode->fn_ftp, 0, 0, xm->xm_dstpath);
 					dest_list = dest->ep_list(dest, 0);

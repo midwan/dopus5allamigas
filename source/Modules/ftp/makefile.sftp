@@ -1,4 +1,5 @@
 # Shared SFTP build support for the Amiga cross makefiles.
+# SFTP support is ALWAYS enabled - no conditional compilation
 
 .DEFAULT_GOAL := all
 
@@ -6,6 +7,9 @@ SFTP_BACKEND ?= bundled
 SFTP_CFLAGS ?=
 SFTP_LIBS ?=
 SFTP_DEPS :=
+
+# Always enable SFTP support
+sftp := yes
 
 ifeq ($(sftp), yes)
 CFLAGS += -DFTP_SFTP_BACKEND_LIBSSH2

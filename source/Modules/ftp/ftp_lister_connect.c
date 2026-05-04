@@ -53,6 +53,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_addrsupp_protos.h"
 #include "ftp_protocol.h"
 #include "ftp_sftp.h"
+#include "ftp_utf8.h"
 
 struct connect_log_data
 {
@@ -641,6 +642,11 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 			{
 				node->fn_flags |= LST_CONNECTED | LST_LOGGEDIN;
 				logged_in = 1;
+				loginerr = 0;  // Initialize loginerr for SFTP success path
+				
+				// SFTP inherently supports UTF-8 as per SSH protocol specification
+				node->fn_ftp.fi_flags |= FTP_FEAT_UTF8;
+				
 				tries = 0;
 			}
 			else
@@ -656,11 +662,13 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 				{
 					connected = -1;
 					prompt_userpass = 0;
+					loginerr = -2;  // Set error for fatal SFTP failures
 				}
 				else
 				{
 					connected = 0;
 					prompt_userpass = (sftp_error == FTP_SFTP_ERROR_AUTH);
+					loginerr = (sftp_error == FTP_SFTP_ERROR_AUTH) ? -1 : -2;  // -1 for auth, -2 for other errors
 				}
 			}
 		}
@@ -754,7 +762,7 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 			else
 				cld->cld_errmsg = (char *)GetString(locale, MSG_FTP_COULD_NOT_CONNECT);
 		}
-		else if (prompt_userpass)
+		else if (prompt_userpass && !logged_in)
 		{
 			// Set error message
 			if (!cld->cld_errmsg && errno)
@@ -837,7 +845,12 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 		if (*node->fn_site.se_path)
 		{
 			lister_prog_info(node, GetString(locale, MSG_INITIAL_DIR));
-			if (!ftp_sftp_cwd(&node->fn_sftp, node->fn_site.se_path))
+			char *utf8_path = ftp_convert_path_to_utf8(node->fn_site.se_path, &node->fn_ftp);
+			const char *send_path = utf8_path ? utf8_path : node->fn_site.se_path;
+			int cwd_success = ftp_sftp_cwd(&node->fn_sftp, send_path);
+			if (utf8_path) ftp_codesets_free(utf8_path);
+			
+			if (!cwd_success)
 			{
 				cld->cld_okay = FALSE;
 				lister_sftp_set_connect_error(cld, ftp_sftp_error_message(&node->fn_sftp));
@@ -845,7 +858,23 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 		}
 
 		if (cld->cld_okay)
-			ftp_sftp_pwd(&node->fn_sftp, node->fn_site.se_path, PATHLEN + 1);
+		{
+			char utf8_path[PATHLEN + 1];
+			if (ftp_sftp_pwd(&node->fn_sftp, utf8_path, sizeof(utf8_path)))
+			{
+				char *local_path = ftp_utf8_to_local(utf8_path);
+				if (local_path)
+				{
+					stccpy(node->fn_site.se_path, local_path, PATHLEN + 1);
+					ftp_codesets_free(local_path);
+				}
+				else
+				{
+					// Fallback: use UTF-8 path directly
+					stccpy(node->fn_site.se_path, utf8_path, PATHLEN + 1);
+				}
+			}
+		}
 
 		rexx_lst_set_path(node->fn_opus, node->fn_handle, node->fn_site.se_path);
 
