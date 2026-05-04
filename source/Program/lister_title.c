@@ -102,8 +102,9 @@ void lister_show_name(Lister *lister)
 			}
 		}
 
-		// Displaying free space?
-		if (buffer->buf_TotalDiskSpace > 0 && !(lister->more_flags & LISTERF_TITLEBARRED))
+		// Displaying free space? Only at root of a volume (path ends with ':')
+		if (buffer->buf_TotalDiskSpace > 0 && !(lister->more_flags & LISTERF_TITLEBARRED) &&
+			strlen(buffer->buf_Path) > 0 && buffer->buf_Path[strlen(buffer->buf_Path) - 1] == ':')
 		{
 			char space_buf[50], *ptr;
 

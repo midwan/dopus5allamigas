@@ -620,15 +620,7 @@ void readdir_check_format(Lister *lister, char *path, ListFormat *format, BOOL s
 		// Use current format from lister
 		*format = lister->format;
 
-		// Don't inherit format?
-		if (!(lister->format.flags & LFORMATF_INHERIT))
-		{
-			// Get space gauge setting from default format
-			if (environment->env->list_format.flags & LFORMATF_GAUGE)
-				format->flags |= LFORMATF_GAUGE;
-			else
-				format->flags &= ~LFORMATF_GAUGE;
-		}
+		// Gauge flag is preserved from lister->format as-is (already copied above)
 	}
 
 	// Is the lister in icon mode?
