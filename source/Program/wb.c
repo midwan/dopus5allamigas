@@ -42,7 +42,7 @@ void wb_do_startup(void)
 	if (!(lock = Lock("sys:wbstartup", ACCESS_READ)))
 	{
 		// if no wbstartup drawer found, use DOpus's own drawer
-		if (!(lock = Lock("dopus5:wbstartup", ACCESS_READ)))
+		if (!(lock = Lock("DOpus5:WBStartup", ACCESS_READ)))
 		{
 			Att_RemList(launch_list, 0);
 

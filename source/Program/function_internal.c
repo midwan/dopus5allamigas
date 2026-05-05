@@ -167,7 +167,7 @@ int function_internal_command(CommandList *command, char *args, FunctionHandle *
 		}
 
 		// User command?
-		else if (strnicmp(command->stuff.module_name, "dopus5:commands/", 16) == 0)
+		else if (strnicmp(command->stuff.module_name, "DOpus5:Commands/", 16) == 0)
 		{
 			// Shouldn't be able to get here!
 		}
@@ -177,7 +177,7 @@ int function_internal_command(CommandList *command, char *args, FunctionHandle *
 		{
 			// Get rexx function to run
 			lsprintf(buffer,
-					 "dopus5:modules/%s %s %s %ld %ld %s",
+					 "DOpus5:Modules/%s %s %s %ld %ld %s",
 					 command->stuff.module_name,
 					 GUI->rexx_port_name,
 					 command->name,

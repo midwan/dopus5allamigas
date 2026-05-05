@@ -41,7 +41,7 @@ void backdrop_read_groups(BackdropInfo *info)
 	anchor->ap_Strlen = 256;
 
 	// Search for icons
-	error = MatchFirst("dopus5:groups/#?.info", anchor);
+	error = MatchFirst("DOpus5:Groups/#?.info", anchor);
 
 	// Continue while there's files
 	while (!error)
@@ -880,7 +880,7 @@ void backdrop_read_group_objects(GroupData *group)
 		return;
 
 	// Get path to search
-	lsprintf(buffer, "dopus5:groups/%s", group->name);
+	lsprintf(buffer, "DOpus5:Groups/%s", group->name);
 
 	// Lock path
 	if ((lock = Lock(buffer, ACCESS_READ)))
@@ -1016,7 +1016,7 @@ void backdrop_group_add_object(char *groupname, BackdropInfo *info, char *path, 
 	filename = FilePart(path);
 
 	// Check an object of this name isn't already in the group
-	lsprintf(buffer, "dopus5:groups/%s/%s", groupname, filename);
+	lsprintf(buffer, "DOpus5:Groups/%s/%s", groupname, filename);
 	if ((lock = Lock(buffer, ACCESS_READ)))
 	{
 		// Already exists
@@ -1077,7 +1077,7 @@ void backdrop_delete_group(BackdropInfo *info, BackdropObject *object)
 	BPTR lock, old, dir;
 
 	// Lock group path
-	if (!(lock = Lock("dopus5:groups", ACCESS_READ)))
+	if (!(lock = Lock("DOpus5:Groups", ACCESS_READ)))
 		return;
 
 	// CD to directory
@@ -1146,7 +1146,7 @@ void backdrop_remove_group_objects(GroupData *data, BackdropObject *only_one)
 	char buf[80];
 
 	// CD to group directory
-	lsprintf(buf, "dopus5:groups/%s", data->name);
+	lsprintf(buf, "DOpus5:Groups/%s", data->name);
 	if (!(lock = Lock(buf, ACCESS_READ)))
 		return;
 	old = CurrentDir(lock);
@@ -1269,7 +1269,7 @@ BOOL backdrop_group_do_function(GroupData *group, IPTR id, struct MenuItem *item
 			backdrop_snapshot(group->info, 0, 1, 0);
 
 		// Snapshot owner
-		lsprintf(buf, "dopus5:groups/%s", group->name);
+		lsprintf(buf, "DOpus5:Groups/%s", group->name);
 		backdrop_snapshot_group(group->info, buf);
 
 		// Clear busy pointer

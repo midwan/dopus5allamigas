@@ -425,7 +425,7 @@ void filetype_read_list(APTR memory, struct List *main_list)
 	anchor->ap_Flags = APF_DOWILD;
 
 	// Search for filetypes
-	error = MatchFirst("dopus5:filetypes/~(#?.info)", anchor);
+	error = MatchFirst("DOpus5:Filetypes/~(#?.info)", anchor);
 
 	// Continue while there's files
 	while (!error)
@@ -772,9 +772,9 @@ short filetype_save(config_filetypes_data *data)
 
 					// Storage or normal?
 					if (list->flags & FTLISTF_STORE)
-						strcpy(list->path, "dopus5:Filetypes/Storage/");
+						strcpy(list->path, "DOpus5:Filetypes/Storage/");
 					else
-						strcpy(list->path, "dopus5:Filetypes/");
+						strcpy(list->path, "DOpus5:Filetypes/");
 
 					// Check name for / characters
 					for (ptr = type->type.name; *ptr; ptr++)
@@ -791,7 +791,7 @@ short filetype_save(config_filetypes_data *data)
 					char buf[256];
 
 					// Build storage filename
-					lsprintf(buf, "dopus5:Storage/Filetypes/%s", FilePart(list->path));
+					lsprintf(buf, "DOpus5:Storage/Filetypes/%s", FilePart(list->path));
 
 					// Delete existing stored filetype
 					DeleteFile(buf);
@@ -894,7 +894,7 @@ void filetype_edit_name(config_filetypes_data *data, char *name)
 			AddTail(&data->list_list, &list->node);
 
 			// Fix list path and flags
-			strcpy(list->path, "dopus5:filetypes/");
+			strcpy(list->path, "DOpus5:Filetypes/");
 			strcat(list->path, name);
 			list->flags = FTLISTF_CHANGED;
 

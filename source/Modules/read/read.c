@@ -1311,7 +1311,7 @@ BOOL read_view(read_data *data)
 						struct TagItem tags[3];
 
 						// No icon yet?
-						if (!data->app_diskobj && !(data->app_diskobj = GetDiskObject("dopus5:icons/read")) &&
+						if (!data->app_diskobj && !(data->app_diskobj = GetDiskObject("DOpus5:Icons/read")) &&
 							!(data->app_diskobj = GetDefDiskObject(WBPROJECT)))
 							break;
 
@@ -3961,7 +3961,7 @@ void read_print(read_data *data)
 	SetBusyPointer(data->window);
 
 	// Get print module
-	if ((ModuleBase = OpenLibrary("dopus5:modules/print.module", LIB_VERSION)) && GETINTERFACE(IModule, ModuleBase))
+	if ((ModuleBase = OpenLibrary("DOpus5:Modules/print.module", LIB_VERSION)) && GETINTERFACE(IModule, ModuleBase))
 	{
 		struct List list;
 		struct Node node;

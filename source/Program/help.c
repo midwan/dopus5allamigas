@@ -255,7 +255,7 @@ void help_show_help(char *thing, char *file)
 		if (cmd->flags & FUNCF_EXTERNAL_FUNCTION && cmd->help_name)
 		{
 			// Build full path to help file
-			strcpy(helpbuf, "dopus5:help/");
+			strcpy(helpbuf, "DOpus5:Help/");
 			AddPart(helpbuf, FilePart(cmd->help_name), 256);
 
 			// Use this file for help
@@ -291,7 +291,7 @@ void help_show_help(char *thing, char *file)
 
 	// No file given?
 	if (!file || !*file)
-		file = "dopus5:Help/dopus5.guide";
+		file = "DOpus5:Help/DOpus5.guide";
 
 	// Copy thing
 	if (ipc && (copy = AllocVec(strlen(thing) + 1 + strlen(file) + 1, 0)))
@@ -324,7 +324,7 @@ IPC_EntryCode(help_proc, static)
 	if ((ipc = IPC_ProcStartup(0, 0)))
 	{
 		// Get initial database name
-		strcpy(filename, "dopus5:Help/dopus5.guide");
+		strcpy(filename, "DOpus5:Help/DOpus5.guide");
 
 		// Get wait bits
 		waitbits = 1 << ipc->command_port->mp_SigBit;

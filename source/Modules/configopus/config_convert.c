@@ -143,7 +143,7 @@ BOOL LIBFUNC L_ConvertConfig(REG(a0, char *name), REG(a1, struct Screen *parent)
 			// Send name back
 			if (convert & (1 << CONVERT_ENVIRONMENT) && basename[0])
 			{
-				lsprintf(name, "dopus5:environment/%s", basename);
+				lsprintf(name, "DOpus5:Environment/%s", basename);
 				success = 1;
 			}
 
@@ -429,7 +429,7 @@ short convert_config(ConfigStuff *cstuff, short convert, char *basename)
 #endif
 
 			// Build filename
-			lsprintf(buffer, "dopus5:environment/%s", basename);
+			lsprintf(buffer, "DOpus5:Environment/%s", basename);
 
 			// Try to open file to write
 			while ((iff = IFFOpen(buffer, MODE_NEWFILE, ID_EPUS)))
@@ -444,7 +444,7 @@ short convert_config(ConfigStuff *cstuff, short convert, char *basename)
 				// Write hotkeys file name
 				if (convert & (1 << CONVERT_HOTKEYS))
 				{
-					lsprintf(buffer, "dopus5:buttons/%s_hotkeys", basename);
+					lsprintf(buffer, "DOpus5:Buttons/%s_hotkeys", basename);
 					if (!(IFFWriteChunk(iff, buffer, ID_HKEY, strlen(buffer) + 1)))
 						break;
 				}
@@ -452,7 +452,7 @@ short convert_config(ConfigStuff *cstuff, short convert, char *basename)
 				// Write menus file name
 				if (convert & (1 << CONVERT_MENUS))
 				{
-					lsprintf(buffer, "dopus5:buttons/%s_menu", basename);
+					lsprintf(buffer, "DOpus5:Buttons/%s_menu", basename);
 					if (!(IFFWriteChunk(iff, buffer, ID_UMEN, strlen(buffer) + 1)))
 						break;
 				}
@@ -497,7 +497,7 @@ short convert_config(ConfigStuff *cstuff, short convert, char *basename)
 						break;
 
 					// Write bank path
-					lsprintf(buffer, "dopus5:buttons/%s", basename);
+					lsprintf(buffer, "DOpus5:Buttons/%s", basename);
 					if (!(IFFWriteChunkBytes(iff, buffer, strlen(buffer) + 1)) || !(IFFPopChunk(iff)))
 						break;
 				}
@@ -530,9 +530,9 @@ short convert_config(ConfigStuff *cstuff, short convert, char *basename)
 			{
 				// Build name to save
 				if (count == 0)
-					lsprintf(buffer, "dopus5:buttons/%s", basename);
+					lsprintf(buffer, "DOpus5:Buttons/%s", basename);
 				else
-					lsprintf(buffer, "dopus5:buttons/%s.%ld", basename, count + 1);
+					lsprintf(buffer, "DOpus5:Buttons/%s.%ld", basename, count + 1);
 
 				// Save bank
 				if (SaveButtonBank(new_bank, buffer))
@@ -632,7 +632,7 @@ short convert_config(ConfigStuff *cstuff, short convert, char *basename)
 				bank->window.rows = 1;
 
 			// Build name to save
-			lsprintf(buffer, "dopus5:buttons/%s_drives", basename);
+			lsprintf(buffer, "DOpus5:Buttons/%s_drives", basename);
 
 			// Save bank
 			if (SaveButtonBank(bank, buffer))
@@ -795,7 +795,7 @@ short convert_config(ConfigStuff *cstuff, short convert, char *basename)
 				bank->window.rows = 1;
 
 			// Build name to save
-			lsprintf(buffer, "dopus5:buttons/%s_menu", basename);
+			lsprintf(buffer, "DOpus5:Buttons/%s_menu", basename);
 
 			// Save bank
 			if (SaveButtonBank(bank, buffer))
@@ -823,7 +823,7 @@ short convert_config(ConfigStuff *cstuff, short convert, char *basename)
 			list.flags = 0;
 
 			// Build filetype path
-			lsprintf(buffer, "dopus5:filetypes/%s", oldtype->type);
+			lsprintf(buffer, "DOpus5:Filetypes/%s", oldtype->type);
 
 			// Check that it doesn't exist
 			if (!(lock = Lock(buffer, ACCESS_READ)))
@@ -965,7 +965,7 @@ short convert_config(ConfigStuff *cstuff, short convert, char *basename)
 				bank->window.rows = 1;
 
 			// Build name to save
-			lsprintf(buffer, "dopus5:buttons/%s_hotkeys", basename);
+			lsprintf(buffer, "DOpus5:Buttons/%s_hotkeys", basename);
 
 			// Save bank
 			if (SaveButtonBank(bank, buffer))

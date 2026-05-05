@@ -99,7 +99,7 @@ int LIBFUNC L_SaveSettings(REG(a0, CFG_SETS *settings), REG(a1, char *name), REG
 			if ((GetVar("dopus/dopus", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0) && strstr(buf, "-icons-"))
 			{
 				// Write icon file
-				L_WriteFileIcon("dopus5:icons/Settings", name, libbase);
+				L_WriteFileIcon("DOpus5:Icons/Settings", name, libbase);
 			}
 		}
 	}
@@ -274,7 +274,7 @@ int LIBFUNC L_SaveButtonBank(REG(a0, Cfg_ButtonBank *bank), REG(a1, char *name),
 		if ((GetVar("dopus/dopus", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0) && strstr(buf, "-icons-"))
 		{
 			// Write icon file
-			L_WriteFileIcon("dopus5:icons/Buttons", name, libbase);
+			L_WriteFileIcon("DOpus5:Icons/Buttons", name, libbase);
 		}
 		break;
 	}
@@ -364,7 +364,7 @@ int LIBFUNC L_SaveFiletypeList(REG(a0, Cfg_FiletypeList *list), REG(a1, char *na
 		if ((GetVar("dopus/dopus", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0) && strstr(buf, "-icons-"))
 		{
 			// Write icon file
-			L_WriteFileIcon("dopus5:icons/Filetype", name, libbase);
+			L_WriteFileIcon("DOpus5:Icons/Filetype", name, libbase);
 		}
 		break;
 	}

@@ -688,7 +688,7 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 						SetWindowBusy(data->window);
 
 						// Get lister format module
-						if ((ModuleBase = OpenLibrary("dopus5:modules/listerformat.module", LIB_VERSION)) &&
+						if ((ModuleBase = OpenLibrary("DOpus5:Modules/listerformat.module", LIB_VERSION)) &&
 							GETINTERFACE(IModule, ModuleBase))
 						{
 							// Edit format
@@ -2789,7 +2789,7 @@ void config_env_load(config_env_data *data, UWORD id)
 		// If new, clear filename
 		if (id == BUTTONEDIT_MENU_NEW)
 		{
-			strcpy(path, "dopus5:environment/");
+			strcpy(path, "DOpus5:Environment/");
 			strcat(path, GetString(locale, MSG_UNTITLED));
 		}
 		ret = READCFG_OK;
@@ -2832,7 +2832,7 @@ void config_env_load(config_env_data *data, UWORD id)
 			struct OpenEnvironmentData *opendata;
 
 			// Get filename
-			if (ask && !(config_filereq(data->window, MSG_ENVIRONMENT_OPEN, path, "dopus5:environment/", 0)))
+			if (ask && !(config_filereq(data->window, MSG_ENVIRONMENT_OPEN, path, "DOpus5:Environment/", 0)))
 				break;
 
 			// Initialise open structure
@@ -2991,7 +2991,7 @@ BOOL config_env_save(config_env_data *data, short saveas)
 		if (retry || saveas || !config_valid_path(path))
 		{
 			// Get filename
-			if (!config_filereq(data->window, MSG_ENVIRONMENT_SAVE, path, "dopus5:environment/", 1))
+			if (!config_filereq(data->window, MSG_ENVIRONMENT_SAVE, path, "DOpus5:Environment/", 1))
 				break;
 		}
 

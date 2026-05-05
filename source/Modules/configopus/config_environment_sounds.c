@@ -82,7 +82,7 @@ void config_env_test_sound(config_env_data *data)
 	SetWindowBusy(data->window);
 
 	// Open play.module
-	if ((ModuleBase = OpenLibrary("dopus5:modules/play.module", LIB_VERSION)) && GETINTERFACE(IModule, ModuleBase))
+	if ((ModuleBase = OpenLibrary("DOpus5:Modules/play.module", LIB_VERSION)) && GETINTERFACE(IModule, ModuleBase))
 	{
 		short num;
 		Cfg_SoundEntry *sound;

@@ -834,7 +834,7 @@ void SAVEDS finder_editor_proc_code(void)
 
 	IPC_ProcStartup((IPTR *)&data, (APTR)&finder_editor_proc_init);
 
-	if (data->best_installed_ft && (ConfigOpusBase = OpenLibrary("Dopus5:Modules/configopus.module", LIB_VERSION)) &&
+	if (data->best_installed_ft && (ConfigOpusBase = OpenLibrary("DOpus5:Modules/configopus.module", LIB_VERSION)) &&
 		GETINTERFACE(IConfigOpus, ConfigOpusBase))
 	{
 		if ((edited_filetype =
@@ -2273,7 +2273,7 @@ void SAVEDS creator_editor_proc_code(void)
 	if (!data->filetype || !data->edited)
 		creator_create_filetype(data);
 
-	if (data->filetype && (ConfigOpusBase = OpenLibrary("Dopus5:Modules/configopus.module", LIB_VERSION)) &&
+	if (data->filetype && (ConfigOpusBase = OpenLibrary("DOpus5:Modules/configopus.module", LIB_VERSION)) &&
 		GETINTERFACE(IConfigOpus, ConfigOpusBase))
 	{
 		DisableObject(data->list, GAD_CREATE_LISTVIEW, TRUE);

@@ -1095,15 +1095,15 @@ static Image_Data *aros_read_image_fallback(char *name, OpenImageInfo *info)
 	if (info || !name || !name[0])
 		return 0;
 
-	if (strnicmp(name, "dopus5:images/", 14) == 0 || strnicmp(name, "dopus5:Images/", 14) == 0)
+	if (strnicmp(name, "DOpus5:Images/", 14) == 0)
 		leaf = name + 14;
-	else if (strnicmp(name, "PROGDIR:images/", 15) == 0 || strnicmp(name, "PROGDIR:Images/", 15) == 0)
+	else if (strnicmp(name, "PROGDIR:Images/", 15) == 0)
 		leaf = name + 15;
 
 	if (!leaf || !leaf[0])
 		return 0;
 
-	if ((image = aros_try_image_path("dopus5:Images/", leaf)))
+	if ((image = aros_try_image_path("DOpus5:Images/", leaf)))
 		return image;
 
 	return aros_try_image_path("PROGDIR:Images/", leaf);

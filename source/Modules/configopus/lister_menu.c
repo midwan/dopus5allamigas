@@ -1202,7 +1202,7 @@ BOOL lister_menu_save(lister_menu_data *data, unsigned short gadgetid)
 
 			// Invalid path?
 			if (!path[0])
-				strcpy(path, "dopus5:buttons/");
+				strcpy(path, "DOpus5:Buttons/");
 
 			// Get filename
 			else if ((ptr = FilePart(path)))
@@ -1326,7 +1326,7 @@ BOOL lister_menu_load(lister_menu_data *data, short new)
 	else if (new == -2)
 	{
 		// Default name
-		strcpy(path, "dopus5:buttons/");
+		strcpy(path, "DOpus5:Buttons/");
 		strcat(path, data->default_name);
 		strcat(path, "_default");
 	}
@@ -1354,7 +1354,7 @@ BOOL lister_menu_load(lister_menu_data *data, short new)
 
 		// Invalid path?
 		if (!path[0])
-			strcpy(path, "dopus5:buttons/");
+			strcpy(path, "DOpus5:Buttons/");
 
 		// Display file requester
 		if ((ok = AslRequestTags(
@@ -1838,7 +1838,7 @@ void scripts_check_bank(lister_menu_data *data)
 	}
 
 	// Default name
-	strcpy(data->menu_name, "dopus5:Buttons/Scripts");
+	strcpy(data->menu_name, "DOpus5:Buttons/Scripts");
 }
 
 // Fix colours in function list

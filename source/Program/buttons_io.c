@@ -74,7 +74,7 @@ void buttons_saveas(Buttons *buttons)
 
 	// Ask for filename
 	while (buttons_request_file(
-		buttons, GetString(&locale, MSG_BUTTONS_ENTER_NAME), path, "dopus5:buttons/", FRF_DOSAVEMODE))
+		buttons, GetString(&locale, MSG_BUTTONS_ENTER_NAME), path, "DOpus5:Buttons/", FRF_DOSAVEMODE))
 	{
 		short err;
 
@@ -124,7 +124,7 @@ int buttons_load(Buttons *buttons, struct Screen *screen, char *name)
 
 	// Loop while unsuccessful
 	while (name || buttons_request_file(
-					   buttons, GetString(&locale, MSG_BUTTONS_SELECT_FILE), path, "dopus5:buttons/", FRF_PRIVATEIDCMP))
+					   buttons, GetString(&locale, MSG_BUTTONS_SELECT_FILE), path, "DOpus5:Buttons/", FRF_PRIVATEIDCMP))
 	{
 		// Open status window
 		status = OpenStatusWindow(GetString(&locale, MSG_BUTTONS_STATUS_TITLE),

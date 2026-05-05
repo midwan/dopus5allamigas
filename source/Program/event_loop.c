@@ -899,7 +899,7 @@ void event_loop()
 				wsave = proc->pr_WindowPtr;
 				proc->pr_WindowPtr = (APTR)-1;
 
-				if ((file = Open("dopus5:system/seed", MODE_NEWFILE)))
+				if ((file = Open("DOpus5:System/seed", MODE_NEWFILE)))
 				{
 					Write(file, buf, strlen(buf));
 					Close(file);

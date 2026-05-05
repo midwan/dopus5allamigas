@@ -243,7 +243,7 @@ Cfg_ButtonBank *LIBFUNC L_OpenButtonBank(REG(a0, char *name))
 	// It doesn't
 	if (!ok)
 	{
-		char *drawers[] = {"PROGDIR:Buttons", "dopus5:buttons", "dopus5:Buttons", 0};
+		char *drawers[] = {"PROGDIR:Buttons", "DOpus5:Buttons", 0};
 		short a;
 
 		// Get filename only

@@ -2001,10 +2001,10 @@ PATCHED_3(ULONG, LIBFUNC L_PatchedWBInfo, a0, BPTR, lock, a1, char *, name, a2, 
 			struct ModuleIFace *IModule = NULL;
 
 			// Open the icon.module
-			if ((ModuleBase = OpenLibrary("dopus5:modules/icon.module", LIB_VERSION)) &&
+			if ((ModuleBase = OpenLibrary("DOpus5:Modules/icon.module", LIB_VERSION)) &&
 				((IModule = (APTR)GetInterface((struct Library *)ModuleBase, "main", 1L, NULL))))
 #else
-			if ((ModuleBase = OpenLibrary("dopus5:modules/icon.module", LIB_VERSION)))
+			if ((ModuleBase = OpenLibrary("DOpus5:Modules/icon.module", LIB_VERSION)))
 #endif
 			{
 				BPTR old;

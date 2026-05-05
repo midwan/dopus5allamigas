@@ -152,7 +152,7 @@ static void format_code(void)
 			function_no = 3;
 
 		// Get lister format module
-		if ((ModuleBase = OpenLibrary("dopus5:modules/listerformat.module", LIB_VERSION)) &&
+		if ((ModuleBase = OpenLibrary("DOpus5:Modules/listerformat.module", LIB_VERSION)) &&
 			GETINTERFACE(IModule, ModuleBase))
 		{
 			// Edit format

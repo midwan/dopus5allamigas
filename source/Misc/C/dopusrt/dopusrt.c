@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 		sprintf(buffer, "\"%s\" \"%s\"", argv[1], argv[2]);
 
 	// Open dopus library
-	if (!(DOpusBase = OpenLibrary("dopus5:libs/dopus5.library", LIB_VERSION)))
+	if (!(DOpusBase = OpenLibrary("DOpus5:Libs/dopus5.library", LIB_VERSION)))
 		return (RETURN_ERROR);
 
 #ifdef __amigaos4__

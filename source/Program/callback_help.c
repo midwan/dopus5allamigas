@@ -30,8 +30,8 @@ void ASM SAVEDS HookShowHelp(REG(a0, char *file_name), REG(a1, char *node_name))
 	// Filename supplied?
 	if (file_name && *file_name)
 	{
-		// Make string into "dopus5:help/" followed by filename
-		stccpy(filename, "dopus5:help", 256);
+		// Make string into "DOpus5:Help/" followed by filename
+		stccpy(filename, "DOpus5:Help", 256);
 		AddPart(filename, FilePart(file_name), 256);
 
 		// Get new pointer

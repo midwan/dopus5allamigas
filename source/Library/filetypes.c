@@ -791,7 +791,7 @@ BOOL LIBFUNC L_MatchFiletype(REG(a0, MatchHandle *handle), REG(a1, Cfg_Filetype 
 					struct Library *MUSICBase;
 
 					// Open music library?
-					if ((MUSICBase = OpenLibrary("dopus5:libs/inovamusic.library", 0)))
+					if ((MUSICBase = OpenLibrary("DOpus5:Libs/inovamusic.library", 0)))
 					{
 						short ret;
 

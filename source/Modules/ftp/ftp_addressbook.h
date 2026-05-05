@@ -25,7 +25,7 @@ For more information on Directory Opus for Windows please see:
 #define _addressbook_h
 
 /*
- *	09-04-96	Changed CONFIGFILE from "Dopus5:FTP/ftp.config" to "Dopus5:System/ftp.config"
+ *	09-04-96	Changed CONFIGFILE from "DOpus5:FTP/ftp.config" to "DOpus5:System/ftp.config"
  */
 
 #include "ftp_opusftp.h"

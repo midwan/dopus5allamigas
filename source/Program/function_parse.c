@@ -94,7 +94,7 @@ int function_parse_function(FunctionHandle *handle)
 			{
 				// User command?
 				if (command->flags & FUNCF_EXTERNAL_FUNCTION &&
-					strnicmp(command->stuff.module_name, "dopus5:commands/", 16) == 0)
+					strnicmp(command->stuff.module_name, "DOpus5:Commands/", 16) == 0)
 				{
 					// Load the function
 					if ((function[user_depth] = function_load_function(command->stuff.module_name)))

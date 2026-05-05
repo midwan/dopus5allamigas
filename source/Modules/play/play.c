@@ -243,7 +243,7 @@ BOOL play_file(play_data *data)
 	else
 	{
 		// Open music library
-		if (!MUSICBase && !(MUSICBase = OpenLibrary("dopus5:libs/inovamusic.library", 0)))
+		if (!MUSICBase && !(MUSICBase = OpenLibrary("DOpus5:Libs/inovamusic.library", 0)))
 			MUSICBase = OpenLibrary("inovamusic.library", 0);
 
 		// Try for module
@@ -476,7 +476,7 @@ void play_iconify(play_data *data)
 		return;
 
 	// No icon yet?
-	if (!data->icon && !(data->icon = GetDiskObject("dopus5:icons/play")) &&
+	if (!data->icon && !(data->icon = GetDiskObject("DOpus5:Icons/play")) &&
 		!(data->icon = GetDefDiskObject(WBPROJECT)))
 		return;
 

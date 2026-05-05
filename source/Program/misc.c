@@ -798,7 +798,7 @@ struct Library *OpenModule(char *name)
 		if (!(lib = OpenLibrary(buf, ver)))
 		{
 			// Fall back to the DOpus5: assign
-			strcpy(buf, "dopus5:modules/");
+			strcpy(buf, "DOpus5:Modules/");
 			strcat(buf, name);
 			lib = OpenLibrary(buf, ver);
 		}
@@ -816,7 +816,7 @@ struct Library *OpenModule(char *name)
 
 			if (!(lib = OpenLibrary(buf, 0)))
 			{
-				strcpy(buf, "dopus5:modules/");
+				strcpy(buf, "DOpus5:Modules/");
 				strcat(buf, name);
 				lib = OpenLibrary(buf, 0);
 			}

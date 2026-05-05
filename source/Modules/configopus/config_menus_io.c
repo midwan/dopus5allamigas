@@ -30,7 +30,7 @@ BOOL config_menus_save(config_menus_data *data, BOOL save_as)
 
 			// No path given?
 			if (!*path)
-				strcpy(path, "dopus5:buttons/");
+				strcpy(path, "DOpus5:Buttons/");
 
 			// Get filename
 			else if ((ptr = FilePart(path)))
@@ -164,7 +164,7 @@ void config_menus_load(config_menus_data *data, short type)
 
 		// If no path specified, use default
 		if (!*path)
-			strcpy(path, "dopus5:buttons/");
+			strcpy(path, "DOpus5:Buttons/");
 
 		// Display file requester
 		if (AslRequestTags(DATA(data->window)->request,

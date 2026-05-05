@@ -164,7 +164,7 @@ static void environment_fix_button_path(char *path, char *default_name)
 	const char *legacy;
 	char *name;
 
-	if (path && strnicmp(path, "dopus5:buttons/", 15) == 0)
+	if (path && strnicmp(path, "DOpus5:Buttons/", 15) == 0)
 		environment_try_button_path(path, "PROGDIR:Buttons/", FilePart(path));
 
 	if (environment_path_exists(path))
@@ -175,15 +175,13 @@ static void environment_fix_button_path(char *path, char *default_name)
 		name = default_name;
 
 	if (environment_try_button_path(path, "PROGDIR:Buttons/", name) ||
-		environment_try_button_path(path, "dopus5:buttons/", name) ||
-		environment_try_button_path(path, "dopus5:Buttons/", name))
+		environment_try_button_path(path, "DOpus5:Buttons/", name))
 		return;
 
 	if (stricmp(name, default_name) != 0)
 	{
 		if (environment_try_button_path(path, "PROGDIR:Buttons/", default_name) ||
-			environment_try_button_path(path, "dopus5:buttons/", default_name) ||
-			environment_try_button_path(path, "dopus5:Buttons/", default_name))
+			environment_try_button_path(path, "DOpus5:Buttons/", default_name))
 			return;
 	}
 
@@ -191,8 +189,7 @@ static void environment_fix_button_path(char *path, char *default_name)
 	if (legacy && stricmp(name, legacy) != 0)
 	{
 		if (environment_try_button_path(path, "PROGDIR:Buttons/", (char *)legacy) ||
-			environment_try_button_path(path, "dopus5:buttons/", (char *)legacy) ||
-			environment_try_button_path(path, "dopus5:Buttons/", (char *)legacy))
+			environment_try_button_path(path, "DOpus5:Buttons/", (char *)legacy))
 			return;
 	}
 }
@@ -211,7 +208,7 @@ static void environment_fix_open_button_path(char *path)
 	if (!path || !path[0])
 		return;
 
-	if (strnicmp(path, "dopus5:buttons/", 15) == 0)
+	if (strnicmp(path, "DOpus5:Buttons/", 15) == 0)
 	{
 		char *name = FilePart(path);
 
@@ -235,9 +232,9 @@ static ToolBarInfo *environment_open_toolbar(Cfg_Environment *env)
 	char *fallbacks[] = {"PROGDIR:Buttons/Toolbar",
 						 "PROGDIR:Buttons/Toolbar.default",
 						 "PROGDIR:Buttons/toolbar_default",
-						 "dopus5:Buttons/Toolbar",
-						 "dopus5:Buttons/Toolbar.default",
-						 "dopus5:Buttons/toolbar_default",
+						 "DOpus5:Buttons/Toolbar",
+						 "DOpus5:Buttons/Toolbar.default",
+						 "DOpus5:Buttons/toolbar_default",
 						 0};
 	short a;
 
@@ -1138,7 +1135,7 @@ int environment_save(Cfg_Environment *env, char *name, short snapshot, CFG_ENVR 
 	// Write icon if successful (and enabled)
 	if ((!success) && (GUI->flags & GUIF_SAVE_ICONS))
 	{
-		WriteFileIcon("dopus5:icons/Environment", name);
+		WriteFileIcon("DOpus5:Icons/Environment", name);
 	}
 
 	// Free stuff
@@ -1194,7 +1191,7 @@ IPC_EntryCode(environment_proc)
 			if (!(request_file(GUI->window,
 							   GetString(&locale, MSG_ENVIRONMENT_SELECT_FILE),
 							   path,
-							   "dopus5:environment/",
+							   "DOpus5:Environment/",
 							   FRF_PRIVATEIDCMP,
 							   0)))
 				break;
@@ -1356,7 +1353,7 @@ IPC_EntryCode(environment_proc)
 				if (!(request_file(GUI->window,
 								   GetString(&locale, MSG_ENVIRONMENT_ENTER_NAME),
 								   path,
-								   "dopus5:environment/",
+								   "DOpus5:Environment/",
 								   FRF_DOSAVEMODE | FRF_PRIVATEIDCMP,
 								   0)))
 					break;
