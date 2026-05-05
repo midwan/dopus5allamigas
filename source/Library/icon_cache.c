@@ -212,12 +212,16 @@ struct DiskObject *LIBFUNC L_GetCachedDiskObject(REG(a0, char *name),
 	{
 		icon = NULL;
 
-		// old method with no remap.
-		// icon=GetIconTags(name,ICONGETA_FailIfUnavailable,TRUE,ICONGETA_RemapIcon,FALSE,TAG_DONE);
-
+		// Return only real icons here. Setting ICONGETA_FailIfUnavailable=FALSE
+		// would make icon.library hand back a filename-pattern deficon (e.g.
+		// env:sys/def_ascii) for any file without a real .info, which
+		// short-circuits GetProperIcon() and prevents DOpus filetype icons from
+		// ever being consulted in icon-view listers (issue #24).
+		// Deficons fallback for files without .info still happens via
+		// GetProperIcon() -> filetype_identify() -> GetCachedDiskObjectNew().
 		if (data->backfill_screen)
 			icon = GetIconTags(
-				name, ICONGETA_FailIfUnavailable, FALSE, ICONGETA_Screen, (IPTR)*data->backfill_screen, TAG_DONE);
+				name, ICONGETA_FailIfUnavailable, TRUE, ICONGETA_Screen, (IPTR)*data->backfill_screen, TAG_DONE);
 
 		return icon;
 	}
