@@ -99,6 +99,11 @@ int main(int argc, char **argv)
 	PROG(14);  // Initialise display
 	startup_check_pirates();
 	PROG(15);  // Check for pirated version
+	// Now that the display is up, resolve any missing button banks
+	// noted by the initial environment_open above. Doing this earlier
+	// would put the requesters on Workbench, where they often vanish
+	// behind the startup picture.
+	environment_resolve_missing_banks(environment, GUI->window);
 	startup_misc_final();
 	PROG(16);  // Startup final miscellaneous steps
 

@@ -28,6 +28,7 @@ Cfg_Environment *environment_new(void);
 void environment_free(Cfg_Environment *env);
 BOOL environment_open(Cfg_Environment *env, char *name, BOOL, APTR);
 int environment_save(Cfg_Environment *env, char *name, short, CFG_ENVR *);
+void environment_resolve_missing_banks(Cfg_Environment *env, struct Window *parent);
 IPC_EntryProto(environment_proc, extern);
 ButtonBankNode *env_read_open_bank(APTR, Cfg_Environment *, ULONG);
 OpenListerNode *env_read_open_lister(APTR, Cfg_Environment *, ULONG);

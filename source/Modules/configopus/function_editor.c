@@ -1355,7 +1355,13 @@ void funced_store_edits(FuncEdData *data)
 		data->function->function.flags2 |= FUNCF2_LABEL_FUNC;
 	}
 	else
+	{
+		// This editor has no label gadget; ensure no stale label
+		// (e.g. from a paste of a labelled function) leaks through
+		// to the compiled instructions.
+		data->label[0] = 0;
 		data->function->function.flags2 &= ~FUNCF2_LABEL_FUNC;
+	}
 
 	// Compile function list into function
 	funced_compile(data);
