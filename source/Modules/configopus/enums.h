@@ -121,7 +121,12 @@ enum {
 	GAD_BUTTONED_CANCEL,
 	GAD_CONVERT_LAYOUT,
 	GAD_CONVERT_ENVIRONMENT,
-	GAD_CONVERT_SETTINGS,
+	/* GAD_CONVERT_SETTINGS removed: was a leftover for an "Options" checkbox
+	 * that no longer exists in the dialog (see config_convert_data.c). Keeping
+	 * it in the enum shifted GAD_CONVERT_BUTTONS..HOTKEYS one slot up relative
+	 * to the CONVERT_* bit enum used in config_convert.c, so the loop
+	 *   convert |= 1 << (a - GAD_CONVERT_ENVIRONMENT);
+	 * mapped BUTTONS->CONVERT_MENUS, MENUS->CONVERT_DRIVES, etc. (issue #29). */
 	GAD_CONVERT_BUTTONS,
 	GAD_CONVERT_MENUS,
 	GAD_CONVERT_DRIVES,
