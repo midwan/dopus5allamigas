@@ -51,11 +51,11 @@ Cfg_Environment *environment_new(void)
 	NewList((struct List *)&env->path_formats);
 	NewList((struct List *)&env->path_list);
 	NewList((struct List *)&env->sound_list);
-	strcpy(env->toolbar_path, "PROGDIR:Buttons/toolbar");
-	strcpy(env->menu_path, "PROGDIR:Buttons/lister_menu");
-	strcpy(env->user_menu_path, "PROGDIR:Buttons/user_menu");
-	strcpy(env->hotkeys_path, "PROGDIR:Buttons/hotkeys");
-	strcpy(env->scripts_path, "PROGDIR:Buttons/scripts");
+	strcpy(env->toolbar_path, "PROGDIR:Buttons/Toolbar");
+	strcpy(env->menu_path, "PROGDIR:Buttons/Lister Menu");
+	strcpy(env->user_menu_path, "PROGDIR:Buttons/User Menu");
+	strcpy(env->hotkeys_path, "PROGDIR:Buttons/Hotkeys");
+	strcpy(env->scripts_path, "PROGDIR:Buttons/Scripts");
 	NewList((struct List *)&env->desktop);
 	InitSemaphore(&env->desktop_lock);
 	InitSemaphore(&env->sound_lock);
@@ -142,8 +142,26 @@ static BOOL environment_try_button_path(char *path, char *drawer, char *name)
 	return TRUE;
 }
 
+/* Legacy underscored alias for default names that contain a space, so users
+ * upgrading from open-source builds shipped between 2013 and 5.99 (which had
+ * `lister_menu` / `user_menu` files in basedata.lha) still get their existing
+ * files picked up by default if they haven't extracted the new archive.
+ * AmigaDOS is case-insensitive, so `Toolbar` / `Hotkeys` / `Scripts` already
+ * match the legacy `toolbar` / `hotkeys` / `scripts` files without help. */
+static const char *environment_legacy_alias(const char *default_name)
+{
+	if (!default_name)
+		return NULL;
+	if (stricmp(default_name, "Lister Menu") == 0)
+		return "lister_menu";
+	if (stricmp(default_name, "User Menu") == 0)
+		return "user_menu";
+	return NULL;
+}
+
 static void environment_fix_button_path(char *path, char *default_name)
 {
+	const char *legacy;
 	char *name;
 
 	if (path && strnicmp(path, "dopus5:buttons/", 15) == 0)
@@ -168,15 +186,24 @@ static void environment_fix_button_path(char *path, char *default_name)
 			environment_try_button_path(path, "dopus5:Buttons/", default_name))
 			return;
 	}
+
+	legacy = environment_legacy_alias(default_name);
+	if (legacy && stricmp(name, legacy) != 0)
+	{
+		if (environment_try_button_path(path, "PROGDIR:Buttons/", (char *)legacy) ||
+			environment_try_button_path(path, "dopus5:buttons/", (char *)legacy) ||
+			environment_try_button_path(path, "dopus5:Buttons/", (char *)legacy))
+			return;
+	}
 }
 
 static void environment_fix_button_paths(Cfg_Environment *env)
 {
-	environment_fix_button_path(env->toolbar_path, "toolbar");
-	environment_fix_button_path(env->menu_path, "lister_menu");
-	environment_fix_button_path(env->user_menu_path, "user_menu");
-	environment_fix_button_path(env->scripts_path, "scripts");
-	environment_fix_button_path(env->hotkeys_path, "hotkeys");
+	environment_fix_button_path(env->toolbar_path, "Toolbar");
+	environment_fix_button_path(env->menu_path, "Lister Menu");
+	environment_fix_button_path(env->user_menu_path, "User Menu");
+	environment_fix_button_path(env->scripts_path, "Scripts");
+	environment_fix_button_path(env->hotkeys_path, "Hotkeys");
 }
 
 static void environment_fix_open_button_path(char *path)
@@ -201,11 +228,15 @@ static BOOL environment_minlist_empty(struct MinList *list)
 static ToolBarInfo *environment_open_toolbar(Cfg_Environment *env)
 {
 	ToolBarInfo *toolbar;
-	char *fallbacks[] = {"PROGDIR:Buttons/toolbar",
+	/* AmigaDOS is case-insensitive, so "Toolbar" also matches the legacy
+	 * "toolbar" file. The .default fallback is shipped alongside Toolbar
+	 * in basedata.lha so a clean install always recovers if the user
+	 * trashes their saved Toolbar. */
+	char *fallbacks[] = {"PROGDIR:Buttons/Toolbar",
+						 "PROGDIR:Buttons/Toolbar.default",
 						 "PROGDIR:Buttons/toolbar_default",
-						 "dopus5:buttons/toolbar",
-						 "dopus5:Buttons/toolbar",
-						 "dopus5:buttons/toolbar_default",
+						 "dopus5:Buttons/Toolbar",
+						 "dopus5:Buttons/Toolbar.default",
 						 "dopus5:Buttons/toolbar_default",
 						 0};
 	short a;

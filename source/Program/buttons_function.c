@@ -190,11 +190,11 @@ void buttons_new_bank(Buttons *buttons, short func, Cfg_ButtonBank *use_bank)
 	{
 		char *paths[] = {
 			environment->toolbar_path,
-			"PROGDIR:Buttons/toolbar",
+			"PROGDIR:Buttons/Toolbar",
+			"PROGDIR:Buttons/Toolbar.default",
 			"PROGDIR:Buttons/toolbar_default",
-			"dopus5:buttons/toolbar",
-			"dopus5:Buttons/toolbar",
-			"dopus5:buttons/toolbar_default",
+			"dopus5:Buttons/Toolbar",
+			"dopus5:Buttons/Toolbar.default",
 			"dopus5:Buttons/toolbar_default",
 			0,
 		};
