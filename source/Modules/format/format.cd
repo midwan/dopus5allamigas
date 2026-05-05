@@ -104,3 +104,6 @@ Installing Bootblock...
 MSG_FORMAT_DESC (//)
 Format disks
 ;
+MSG_FORMAT_LNFS (//)
+_Long File Names
+;

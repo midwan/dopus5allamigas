@@ -94,7 +94,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *disks),
 
 			// FFS?
 			if (data->info.id_DiskType == ID_FFS_DISK || data->info.id_DiskType == ID_INTER_FFS_DISK ||
-				data->info.id_DiskType == ID_FASTDIR_FFS_DISK)
+				data->info.id_DiskType == ID_FASTDIR_FFS_DISK || data->info.id_DiskType == ID_FFS7_DISK)
 				data->default_ffs = 1;
 
 			// >=39?
@@ -109,6 +109,13 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *disks),
 				{
 					data->default_int = 1;
 					data->default_cache = 1;
+				}
+
+				// Long File Names? (FFS-LNFS implies FFS+International)
+				if (data->info.id_DiskType == ID_FFS7_DISK)
+				{
+					data->default_int = 1;
+					data->default_lnfs = 1;
 				}
 			}
 
@@ -215,7 +222,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *disks),
 						show_device_info(data);
 						break;
 
-					// Caching implies International:
+					// Caching implies International, mutually exclusive with Long File Names
 					case GAD_FORMAT_CACHING: {
 						BOOL state;
 
@@ -225,9 +232,34 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *disks),
 						// Enable/disable International gadget
 						DisableObject(data->list, GAD_FORMAT_INTERNATIONAL, state);
 
-						// If on, check International
+						// If on, check International and clear LNFS
 						if (state)
+						{
 							SetGadgetValue(data->list, GAD_FORMAT_INTERNATIONAL, 1);
+							SetGadgetValue(data->list, GAD_FORMAT_LNFS, 0);
+						}
+					}
+					break;
+
+					// Long File Names implies FFS+International, excludes Caching
+					case GAD_FORMAT_LNFS: {
+						BOOL state;
+
+						// Get state
+						state = GetGadgetValue(data->list, GAD_FORMAT_LNFS);
+
+						// If on, force FFS+International, clear Caching
+						if (state)
+						{
+							SetGadgetValue(data->list, GAD_FORMAT_FFS, 1);
+							SetGadgetValue(data->list, GAD_FORMAT_INTERNATIONAL, 1);
+							SetGadgetValue(data->list, GAD_FORMAT_CACHING, 0);
+						}
+
+						// Lock implied gadgets while LNFS is active
+						DisableObject(data->list, GAD_FORMAT_FFS, state);
+						DisableObject(data->list, GAD_FORMAT_INTERNATIONAL, state);
+						DisableObject(data->list, GAD_FORMAT_CACHING, state);
 					}
 					break;
 
@@ -354,6 +386,7 @@ BOOL format_open(format_data *data, BOOL noactive)
 	SetGadgetValue(data->list, GAD_FORMAT_FFS, data->default_ffs);
 	SetGadgetValue(data->list, GAD_FORMAT_INTERNATIONAL, data->default_int);
 	SetGadgetValue(data->list, GAD_FORMAT_CACHING, data->default_cache);
+	SetGadgetValue(data->list, GAD_FORMAT_LNFS, data->default_lnfs);
 	SetGadgetValue(data->list, GAD_FORMAT_TRASHCAN, data->default_trash);
 	SetGadgetValue(data->list, GAD_FORMAT_INSTALL, data->default_boot);
 	SetGadgetValue(data->list, GAD_FORMAT_VERIFY, data->default_verify);
@@ -361,6 +394,14 @@ BOOL format_open(format_data *data, BOOL noactive)
 	// If caching is on, disable international
 	if (data->default_cache)
 		DisableObject(data->list, GAD_FORMAT_INTERNATIONAL, TRUE);
+
+	// If LNFS is on, FFS/International/Caching are forced and locked
+	if (data->default_lnfs)
+	{
+		DisableObject(data->list, GAD_FORMAT_FFS, TRUE);
+		DisableObject(data->list, GAD_FORMAT_INTERNATIONAL, TRUE);
+		DisableObject(data->list, GAD_FORMAT_CACHING, TRUE);
+	}
 
 	return 1;
 }
@@ -380,6 +421,7 @@ void format_close(format_data *data)
 		data->default_ffs = GetGadgetValue(data->list, GAD_FORMAT_FFS);
 		data->default_int = GetGadgetValue(data->list, GAD_FORMAT_INTERNATIONAL);
 		data->default_cache = GetGadgetValue(data->list, GAD_FORMAT_CACHING);
+		data->default_lnfs = GetGadgetValue(data->list, GAD_FORMAT_LNFS);
 		data->default_trash = GetGadgetValue(data->list, GAD_FORMAT_TRASHCAN);
 		data->default_boot = GetGadgetValue(data->list, GAD_FORMAT_INSTALL);
 		data->default_verify = GetGadgetValue(data->list, GAD_FORMAT_VERIFY);
@@ -509,11 +551,21 @@ void show_device_info(format_data *data)
 	SetGadgetValue(data->list, GAD_FORMAT_STATUS, (IPTR)info_buf);
 
 	// If this isn't a standard dos disk, disable FFS, etc
-	DisableObject(data->list, GAD_FORMAT_FFS, (dos_type & ID_DOS_DISK) != ID_DOS_DISK);
-	DisableObject(data->list, GAD_FORMAT_CACHING, (dos_type & ID_DOS_DISK) != ID_DOS_DISK);
-	DisableObject(data->list,
-				  GAD_FORMAT_INTERNATIONAL,
-				  ((dos_type & ID_DOS_DISK) != ID_DOS_DISK || (GetGadgetValue(data->list, GAD_FORMAT_CACHING))));
+	{
+		BOOL not_dos = (BOOL)((dos_type & ID_DOS_DISK) != ID_DOS_DISK);
+		BOOL lnfs_on = (BOOL)GetGadgetValue(data->list, GAD_FORMAT_LNFS);
+		BOOL cache_on = (BOOL)GetGadgetValue(data->list, GAD_FORMAT_CACHING);
+
+		// LNFS is only valid for standard DOS disks
+		DisableObject(data->list, GAD_FORMAT_LNFS, not_dos);
+
+		// FFS/Caching are locked when LNFS is active
+		DisableObject(data->list, GAD_FORMAT_FFS, (BOOL)(not_dos || lnfs_on));
+		DisableObject(data->list, GAD_FORMAT_CACHING, (BOOL)(not_dos || lnfs_on));
+		DisableObject(data->list,
+					  GAD_FORMAT_INTERNATIONAL,
+					  (BOOL)(not_dos || cache_on || lnfs_on));
+	}
 
 	// Disable install if no bootblock entry in table
 	DisableObject(data->list, GAD_FORMAT_INSTALL, (table_size < DE_BOOTBLOCKS));
@@ -670,6 +722,10 @@ BOOL start_format(format_data *data, unsigned short type, BOOL reopen)
 	// Non-standard DOS?
 	if ((disk->dh_geo->de_DosType & ID_DOS_DISK) != ID_DOS_DISK)
 		data->dos_type = disk->dh_geo->de_DosType;
+
+	// Long File Names? (always FFS+International, requires FFS-LNFS aware filesystem)
+	else if (data->default_lnfs)
+		data->dos_type = ID_FFS7_DISK;
 
 	// Caching?
 	else if (data->default_cache)

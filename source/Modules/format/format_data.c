@@ -26,7 +26,7 @@ For more information on Directory Opus for Windows please see:
 ModuleInfo module_info =
 	{1, "format.module", "format.catalog", 0, 1, {{0, "Format", MSG_FORMAT_DESC, FUNCF_NO_ARGS, 0}}};
 
-ConfigWindow format_window = {{POS_CENTER, POS_CENTER, 40, 9}, {0, 0, 44, 67}};
+ConfigWindow format_window = {{POS_CENTER, POS_CENTER, 40, 10}, {0, 0, 44, 72}};
 
 struct TagItem
 
@@ -51,8 +51,8 @@ ObjectDef format_objects[] = {
 	// Device lister
 	{OD_GADGET,
 	 MY_LISTVIEW_KIND,
-	 {0, 0, 10, 7},
-	 {4, 4, 24, 35},
+	 {0, 0, 10, 8},
+	 {4, 4, 24, 40},
 	 0,
 	 LISTVIEWFLAG_CURSOR_KEYS,
 	 GAD_FORMAT_DEVICES,
@@ -98,11 +98,21 @@ ObjectDef format_objects[] = {
 	 GAD_FORMAT_CACHING,
 	 format_layout_tags},
 
-	// Install
+	// Long File Names
 	{OD_GADGET,
 	 CHECKBOX_KIND,
 	 {10, 4, 0, 1},
 	 {36, 25, 26, 4},
+	 MSG_FORMAT_LNFS,
+	 PLACETEXT_RIGHT,
+	 GAD_FORMAT_LNFS,
+	 format_layout_tags},
+
+	// Install
+	{OD_GADGET,
+	 CHECKBOX_KIND,
+	 {10, 5, 0, 1},
+	 {36, 30, 26, 4},
 	 MSG_FORMAT_INSTALL,
 	 PLACETEXT_RIGHT,
 	 GAD_FORMAT_INSTALL,
@@ -111,8 +121,8 @@ ObjectDef format_objects[] = {
 	// Trashcan
 	{OD_GADGET,
 	 CHECKBOX_KIND,
-	 {10, 5, 0, 1},
-	 {36, 30, 26, 4},
+	 {10, 6, 0, 1},
+	 {36, 35, 26, 4},
 	 MSG_FORMAT_TRASHCAN,
 	 PLACETEXT_RIGHT,
 	 GAD_FORMAT_TRASHCAN,
@@ -121,8 +131,8 @@ ObjectDef format_objects[] = {
 	// Verify
 	{OD_GADGET,
 	 CHECKBOX_KIND,
-	 {10, 6, 0, 1},
-	 {36, 35, 26, 4},
+	 {10, 7, 0, 1},
+	 {36, 40, 26, 4},
 	 MSG_FORMAT_VERIFY,
 	 PLACETEXT_RIGHT,
 	 GAD_FORMAT_VERIFY,
@@ -131,8 +141,8 @@ ObjectDef format_objects[] = {
 	// Status bar
 	{OD_AREA,
 	 TEXTPEN,
-	 {0, 7, SIZE_MAXIMUM, 1},
-	 {4, 43, -4, 6},
+	 {0, 8, SIZE_MAXIMUM, 1},
+	 {4, 48, -4, 6},
 	 0,
 	 AREAFLAG_RECESSED | AREAFLAG_ERASE | TEXTFLAG_CENTER,
 	 GAD_FORMAT_STATUS,

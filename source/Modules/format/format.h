@@ -48,6 +48,7 @@ typedef struct
 	char default_ffs;
 	char default_int;
 	char default_cache;
+	char default_lnfs;
 	char default_trash;
 	char default_boot;
 	char default_verify;
@@ -91,6 +92,7 @@ enum {
 	GAD_FORMAT_FFS,
 	GAD_FORMAT_INTERNATIONAL,
 	GAD_FORMAT_CACHING,
+	GAD_FORMAT_LNFS,
 	GAD_FORMAT_TRASHCAN,
 	GAD_FORMAT_INSTALL,
 	GAD_FORMAT_VERIFY,

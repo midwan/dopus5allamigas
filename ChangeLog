@@ -1,3 +1,22 @@
+[dopus5allamigas next] format.module: Long File Names (FFS-LNFS) support
+Program remains at 5.100. format.module ships in v73r5.
+
+Format / FFS-LNFS:
+- Add a "Long File Names" checkbox to the format dialog so volumes can
+  be formatted as FFS-LNFS (DOS\7), matching the option exposed by the
+  AmigaOS 3.2+ system Format command.
+- LNFS implies FFS+International compare and excludes Directory
+  Caching: selecting it auto-enables and locks FFS/INTL while clearing
+  and locking the Caching checkbox. Toggling Caching also clears LNFS
+  so the two stay mutually exclusive.
+- When inspecting an existing FFS-LNFS volume, default the Long File
+  Names checkbox on so the format defaults round-trip to DOS\7.
+- Resizes the format window by one row to accommodate the new gadget;
+  listview height grows in step so it still aligns with the bottom
+  checkbox.
+- Resolves #46.
+2026-05-05 by Dimitris Panokostas <midwan@gmail.com>
+
 [dopus5allamigas next] FTP SFTP support
 Program remains at 5.100. ftp.module bumps to v73r5.
 

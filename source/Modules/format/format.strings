@@ -65,6 +65,7 @@
 #define MSG_FORMAT_MAKING_TRASH 1031
 #define MSG_INSTALLING_DISK 1032
 #define MSG_FORMAT_DESC 1033
+#define MSG_FORMAT_LNFS 1034
 
 #endif /* CATCOMP_NUMBERS */
 
@@ -107,6 +108,7 @@
 #define MSG_FORMAT_MAKING_TRASH_STR "Making Trashcan..."
 #define MSG_INSTALLING_DISK_STR "Installing Bootblock..."
 #define MSG_FORMAT_DESC_STR "Format disks"
+#define MSG_FORMAT_LNFS_STR "_Long File Names"
 
 #endif /* CATCOMP_STRINGS */
 
@@ -157,6 +159,7 @@ static const struct CatCompArrayType CatCompArray[] =
     {MSG_FORMAT_MAKING_TRASH,(STRPTR)MSG_FORMAT_MAKING_TRASH_STR},
     {MSG_INSTALLING_DISK,(STRPTR)MSG_INSTALLING_DISK_STR},
     {MSG_FORMAT_DESC,(STRPTR)MSG_FORMAT_DESC_STR},
+    {MSG_FORMAT_LNFS,(STRPTR)MSG_FORMAT_LNFS_STR},
 };
 
 #endif /* CATCOMP_ARRAY */
@@ -235,6 +238,8 @@ static const char CatCompBlock[] =
     MSG_INSTALLING_DISK_STR "\x00"
     "\x00\x00\x04\x09\x00\x0E"
     MSG_FORMAT_DESC_STR "\x00\x00"
+    "\x00\x00\x04\x0A\x00\x12"
+    MSG_FORMAT_LNFS_STR "\x00"
 };
 
 #endif /* CATCOMP_BLOCK */
