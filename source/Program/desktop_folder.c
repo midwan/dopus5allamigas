@@ -69,6 +69,12 @@ short read_desktop_folder(BackdropInfo *info, BOOL show)
 			struct List *search;
 			char *ptr;
 
+			// Skip the basedata.lha placeholder used to keep this directory
+			// archived (lha drops empty directories on extraction). We don't
+			// want it rendered as a desktop icon.
+			if (stricmp(fib->fib_FileName, ".dummy") == 0)
+				continue;
+
 			// An icon?
 			if ((ptr = sufcmp(fib->fib_FileName, ".info")))
 			{
