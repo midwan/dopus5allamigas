@@ -731,6 +731,9 @@ Open Parent
 MSG_LISTER_RESTORE (//)
 Restore
 ;
+MSG_LISTER_RESIZE_FIT (//)
+Resize to Fit
+;
 ;
 ;
 ;

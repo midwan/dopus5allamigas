@@ -274,6 +274,7 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_LISTER_NEW_DRAWER 2831
 	#define MSG_OPEN_PARENT_MENU 2832
 	#define MSG_LISTER_RESTORE 2833
+	#define MSG_LISTER_RESIZE_FIT 2834
 	#define MSG_ICONS_MENU 2900
 	#define MSG_ICON_OPEN_MENU 2901
 	#define MSG_ICON_INFO_MENU 2902
@@ -806,6 +807,7 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_LISTER_NEW_DRAWER_STR "New Drawer..."
 	#define MSG_OPEN_PARENT_MENU_STR "Open Parent"
 	#define MSG_LISTER_RESTORE_STR "Restore"
+	#define MSG_LISTER_RESIZE_FIT_STR "Resize to Fit"
 	#define MSG_ICONS_MENU_STR "Icons"
 	#define MSG_ICON_OPEN_MENU_STR "Open"
 	#define MSG_ICON_INFO_MENU_STR "Information..."
@@ -1355,6 +1357,7 @@ static const struct CatCompArrayType CatCompArray[] = {
 	{MSG_LISTER_NEW_DRAWER, (STRPTR)MSG_LISTER_NEW_DRAWER_STR},
 	{MSG_OPEN_PARENT_MENU, (STRPTR)MSG_OPEN_PARENT_MENU_STR},
 	{MSG_LISTER_RESTORE, (STRPTR)MSG_LISTER_RESTORE_STR},
+	{MSG_LISTER_RESIZE_FIT, (STRPTR)MSG_LISTER_RESIZE_FIT_STR},
 	{MSG_ICONS_MENU, (STRPTR)MSG_ICONS_MENU_STR},
 	{MSG_ICON_OPEN_MENU, (STRPTR)MSG_ICON_OPEN_MENU_STR},
 	{MSG_ICON_INFO_MENU, (STRPTR)MSG_ICON_INFO_MENU_STR},
@@ -2109,6 +2112,8 @@ static const char CatCompBlock[] = {"\x00\x00\x00\x00\x00\x0C" MSG_ABORTED_STR
 									"\x00\x00\x0B\x10\x00\x0C" MSG_OPEN_PARENT_MENU_STR
 									"\x00"
 									"\x00\x00\x0B\x11\x00\x08" MSG_LISTER_RESTORE_STR
+									"\x00"
+									"\x00\x00\x0B\x12\x00\x0E" MSG_LISTER_RESIZE_FIT_STR
 									"\x00"
 									"\x00\x00\x0B\x54\x00\x06" MSG_ICONS_MENU_STR
 									"\x00"

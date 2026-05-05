@@ -175,6 +175,13 @@ void lister_fix_menus(Lister *lister, BOOL sel_only)
 			off_item(item, busy || !icon);
 		}
 
+		// Resize to fit (disabled when busy or not in icon mode -
+		// matches CleanUp since it only makes sense for icon listers)
+		if ((item = find_menu_item(menu, MENU_LISTER_RESIZE_FIT)))
+		{
+			off_item(item, busy || !icon);
+		}
+
 		// Open parent (disabled when there's no parent)
 		if ((item = find_menu_item(menu, MENU_OPEN_PARENT)))
 		{
