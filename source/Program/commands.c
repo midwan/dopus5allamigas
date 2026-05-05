@@ -126,6 +126,15 @@ void init_commands_scan(short type)
 			BOOL ok = 1, real_module = 0;
 			char *name_ptr = 0;
 
+			// Skip the basedata.lha placeholder used to keep dopus5:Commands
+			// archived (lha drops empty directories on extraction). We don't
+			// want it registered as a phantom user command.
+			if (type == SCAN_USER && stricmp(anchor->ap_Info.fib_FileName, ".dummy") == 0)
+			{
+				error = MatchNext(anchor);
+				continue;
+			}
+
 			// A user command?
 			if (type == SCAN_USER)
 			{
