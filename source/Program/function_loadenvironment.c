@@ -46,7 +46,7 @@ DOPUS_FUNC(function_loadenvironment)
 		{
 			// If file didn't exist, look in default directory
 			if (!lock)
-				lsprintf(handle->work_buffer, "dopus5:environment/%s", entry->name);
+				lsprintf(handle->work_buffer, "DOpus5:Environment/%s", entry->name);
 
 			// Allocate packet
 			if ((packet = AllocVec(sizeof(env_packet) + strlen(handle->work_buffer), 0)))

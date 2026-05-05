@@ -3521,7 +3521,7 @@ static void add_to_main_list(struct display_globals *dg, Att_List *atlist)
 /***************************************************
  *
  * User gets a new toolbar file
- * remove dopus5:system if selected path
+ * remove DOpus5:System if selected path
  * defaults to "toolbar_ftp"
  *
  */
@@ -3569,7 +3569,7 @@ static BOOL get_toolbar(struct window_params *wp, char *filename)
 	{
 		// Get new path
 
-		if (stricmp("DOpus5:buttons", DATA(wp->wp_win)->request->fr_Drawer))
+		if (stricmp("DOpus5:Buttons", DATA(wp->wp_win)->request->fr_Drawer))
 		{
 			strcpy(filename, DATA(wp->wp_win)->request->fr_Drawer);
 			AddPart(filename, DATA(wp->wp_win)->request->fr_File, 256);

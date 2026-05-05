@@ -715,7 +715,7 @@ void lister_new_toolbar(Lister *lister, char *name, ToolBarInfo *bank)
 				   sizeof(lister->toolbar_path) - strlen(lister->toolbar_path));
 			if (!(lock = Lock(lister->toolbar_path, ACCESS_READ)))
 			{
-				strcpy(lister->toolbar_path, "dopus5:buttons/");
+				strcpy(lister->toolbar_path, "DOpus5:Buttons/");
 				stccpy(lister->toolbar_path + strlen(lister->toolbar_path),
 					   name,
 					   sizeof(lister->toolbar_path) - strlen(lister->toolbar_path));

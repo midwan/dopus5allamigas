@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 
 	// Need dopus library
 	if (!(DOpusBase = OpenLibrary("dopus5.library", LIB_VERSION)))
-		if (!(DOpusBase = OpenLibrary("dopus5:libs/dopus5.library", 55)))
+		if (!(DOpusBase = OpenLibrary("DOpus5:Libs/dopus5.library", 55)))
 			return (10);
 #ifdef __amigaos4__
 	if (!(IDOpus = (struct DOpusIFace *)GetInterface(DOpusBase, "main", 1, NULL)))
@@ -78,8 +78,8 @@ int main(int argc, char **argv)
 	{
 		BPTR lock;
 
-		// Change PROGDIR: to dopus5:, save old PROGDIR for restore on exit
-		if ((lock = Lock("dopus5:", ACCESS_READ)))
+		// Change PROGDIR: to DOpus5:, save old PROGDIR for restore on exit
+		if ((lock = Lock("DOpus5:", ACCESS_READ)))
 			data->lock = SetProgramDir(lock);
 
 		// Initialise
@@ -457,7 +457,7 @@ void font_free(font_data *data)
 			CloseCatalog(data->locale.li_Catalog);
 		}
 
-		// Restore PROGDIR: and unlock our dopus5: lock
+		// Restore PROGDIR: and unlock our DOpus5: lock
 		if (data->lock)
 			UnLock(SetProgramDir(data->lock));
 

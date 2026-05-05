@@ -588,7 +588,7 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 	// Screen pointer should not be global to support multiple Opuses
 	og.og_screen = screen;
 
-	/*if	((DOpusBase = OpenLibrary( "dopus5:libs/dopus5.library", VERSION_DOPUSLIB )))
+	/*if	((DOpusBase = OpenLibrary( "DOpus5:Libs/dopus5.library", VERSION_DOPUSLIB )))
 		{
 		#ifdef __amigaos4__
 		IDOpus = (struct DOpusIFace *)GetInterface(DOpusBase, "main", 1, NULL);

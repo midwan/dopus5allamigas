@@ -235,10 +235,10 @@ void startup_open_dopuslib()
 	// Open the library
 #ifdef __amigaos4__
 	if (!OpenLibIFace("PROGDIR:Libs/dopus5.library", (APTR)&DOpusBase, (APTR)&IDOpus, LIB_VERSION) &&
-		!OpenLibIFace("dopus5:libs/dopus5.library", (APTR)&DOpusBase, (APTR)&IDOpus, LIB_VERSION))
+		!OpenLibIFace("DOpus5:Libs/dopus5.library", (APTR)&DOpusBase, (APTR)&IDOpus, LIB_VERSION))
 #else
 	if (!(DOpusBase = OpenLibrary("PROGDIR:Libs/dopus5.library", LIB_VERSION)) &&
-		!(DOpusBase = OpenLibrary("dopus5:libs/dopus5.library", LIB_VERSION)))
+		!(DOpusBase = OpenLibrary("DOpus5:Libs/dopus5.library", LIB_VERSION)))
 #endif
 	{
 #ifndef __amigaos3__
@@ -322,10 +322,10 @@ void startup_run_update()
 	// Try and get update.module
 #ifdef __amigaos4__
 	if (OpenLibIFace("PROGDIR:Modules/update.module", (APTR)&ModuleBase, (APTR)&IModule, LIB_VERSION) ||
-		OpenLibIFace("dopus5:modules/update.module", (APTR)&ModuleBase, (APTR)&IModule, LIB_VERSION))
+		OpenLibIFace("DOpus5:Modules/update.module", (APTR)&ModuleBase, (APTR)&IModule, LIB_VERSION))
 #else
 	if ((ModuleBase = OpenLibrary("PROGDIR:Modules/update.module", 0)) ||
-		(ModuleBase = OpenLibrary("dopus5:modules/update.module", 0)))
+		(ModuleBase = OpenLibrary("DOpus5:Modules/update.module", 0)))
 #endif
 	{
 		// Launch update function
@@ -472,7 +472,7 @@ void startup_open_libraries()
 	};
 
 	// Seed random number with something interesting
-	if ((file = Open("dopus5:system/seed", MODE_OLDFILE)))
+	if ((file = Open("DOpus5:System/seed", MODE_OLDFILE)))
 	{
 		char buf[20];
 		Read(file, buf, 20);
@@ -859,7 +859,7 @@ void startup_process_args(int argc, char **argv)
 			BOOL fail = 1;
 
 			// Get environment path
-			if ((dir = Lock("dopus5:environment", ACCESS_READ)))
+			if ((dir = Lock("DOpus5:Environment", ACCESS_READ)))
 			{
 				// Move there
 				old = CurrentDir(dir);
@@ -1003,7 +1003,7 @@ void startup_read_positions()
 		quit(0);
 
 	// Read position list
-	GUI->position_name = "dopus5:system/position-info";
+	GUI->position_name = "DOpus5:System/position-info";
 	GetPositions(&GUI->positions, GUI->position_memory, GUI->position_name);
 }
 
@@ -1270,16 +1270,16 @@ void startup_init_filetypes()
 void startup_init_notification()
 {
 	// Start notification of filetype directory
-	GUI->filetype_notify = start_file_notify("dopus5:filetypes", NOTIFY_FILETYPES_CHANGED, GUI->appmsg_port);
+	GUI->filetype_notify = start_file_notify("DOpus5:Filetypes", NOTIFY_FILETYPES_CHANGED, GUI->appmsg_port);
 
 	// Start notification of modules directory
-	GUI->modules_notify = start_file_notify("dopus5:modules", NOTIFY_MODULES_CHANGED, GUI->appmsg_port);
+	GUI->modules_notify = start_file_notify("DOpus5:Modules", NOTIFY_MODULES_CHANGED, GUI->appmsg_port);
 
 	// Start notification of env:dopus directory
 	GUI->env_notify = start_file_notify("env:dopus", NOTIFY_ENV_CHANGED, GUI->appmsg_port);
 
 	// Start notification of commands directory
-	GUI->commands_notify = start_file_notify("dopus5:commands", NOTIFY_COMMANDS_CHANGED, GUI->appmsg_port);
+	GUI->commands_notify = start_file_notify("DOpus5:Commands", NOTIFY_COMMANDS_CHANGED, GUI->appmsg_port);
 
 	// Start notification of font prefs
 	GUI->font_notify = start_file_notify("env:sys/font.prefs", NOTIFY_FONT_CHANGED, GUI->appmsg_port);
@@ -1347,13 +1347,13 @@ void startup_init_icons()
 #endif
 
 	// Get arrow image for toolbars
-	GUI->toolbar_arrow_image = OpenImage("dopus5:images/ToolbarArrow.image", 0);
+	GUI->toolbar_arrow_image = OpenImage("DOpus5:Images/ToolbarArrow.image", 0);
 
 	// Get icon for listers
-	GUI->lister_icon = GetCachedDiskObject("dopus5:Icons/Lister", GCDOF_NOCACHE);
+	GUI->lister_icon = GetCachedDiskObject("DOpus5:Icons/Lister", GCDOF_NOCACHE);
 
 	// Get icon for buttons
-	GUI->button_icon = GetCachedDiskObject("dopus5:Icons/Buttons", GCDOF_NOCACHE);
+	GUI->button_icon = GetCachedDiskObject("DOpus5:Icons/Buttons", GCDOF_NOCACHE);
 }
 
 // Run pre-startup script

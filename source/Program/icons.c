@@ -38,7 +38,7 @@ int icon_write(short type, char *filename, BOOL replace_image, ULONG iflags, ULO
 	if (type == ICONTYPE_GROUP)
 	{
 		// Try to get group icon
-		if (!(icon = GetCachedDiskObject("dopus5:icons/Group", GCDOF_NOCACHE)))
+		if (!(icon = GetCachedDiskObject("DOpus5:Icons/Group", GCDOF_NOCACHE)))
 			icon = GetCachedDefDiskObject(WBDRAWER | GCDOF_NOCACHE);
 	}
 

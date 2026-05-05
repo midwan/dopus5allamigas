@@ -75,9 +75,9 @@ void show_about(struct Screen *screen, IPCData *ipc)
 
 	// Try for external about library
 #ifdef __amigaos4__
-	if (OpenLibIFace("dopus5:modules/about.module", (APTR)&ModuleBase, (APTR)&IModule, LIB_VERSION))
+	if (OpenLibIFace("DOpus5:Modules/about.module", (APTR)&ModuleBase, (APTR)&IModule, LIB_VERSION))
 #else
-	if ((ModuleBase = OpenLibrary("dopus5:modules/about.module", LIB_VERSION)))
+	if ((ModuleBase = OpenLibrary("DOpus5:Modules/about.module", LIB_VERSION)))
 #endif
 	{
 		short ret;

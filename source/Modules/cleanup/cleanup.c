@@ -55,7 +55,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 		APTR iff;
 
 		// Open position info file
-		if ((iff = IFFOpen("dopus5:system/position-info", IFF_READ, ID_OPUS)))
+		if ((iff = IFFOpen("DOpus5:System/position-info", IFF_READ, ID_OPUS)))
 		{
 			ULONG id;
 			BOOL ok = 1;
@@ -147,7 +147,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 				ok = 0;
 
 			// Re-open file
-			if (ok && (iff = IFFOpen("dopus5:system/position-info", IFF_WRITE | IFF_SAFE, ID_OPUS)))
+			if (ok && (iff = IFFOpen("DOpus5:System/position-info", IFF_WRITE | IFF_SAFE, ID_OPUS)))
 			{
 				struct Node *node;
 

@@ -1093,7 +1093,7 @@ void popup_build_copyto(PopUpHandle *menu, PopUpItem *item)
 	menu->ph_List = list;
 
 	// Try and lock CopyTo directory
-	if ((lock = Lock("dopus5:system/CopyTo", ACCESS_READ)))
+	if ((lock = Lock("DOpus5:System/CopyTo", ACCESS_READ)))
 	{
 		D_S(struct FileInfoBlock, fib)
 
@@ -1140,7 +1140,7 @@ void popup_build_copyto(PopUpHandle *menu, PopUpItem *item)
 							if ((name = AllocMemH(menu->ph_Memory, strlen(fib->fib_FileName) + 23)))
 							{
 								// Build full name of script
-								strcpy(name + 1, "dopus5:System/CopyTo/");
+								strcpy(name + 1, "DOpus5:System/CopyTo/");
 								strcat(name + 1, fib->fib_FileName);
 								new->data = name;
 							}

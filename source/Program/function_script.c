@@ -93,7 +93,7 @@ int function_open_script(FunctionHandle *handle)
 static char const *const script_type_intro[] = {
 	0,					   // INST_COMMAND
 	0,					   // INST_AMIGADOS
-	"Dopus5:C/dopusrt5 ",  // INST_WORKBENCH
+	"DOpus5:C/dopusrt5 ",  // INST_WORKBENCH
 	"execute ",			   // INST_SCRIPT
 	"rx ",				   // INST_AREXX
 };

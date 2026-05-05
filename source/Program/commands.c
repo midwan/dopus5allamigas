@@ -98,19 +98,19 @@ void init_commands_scan(short type)
 	if (type == SCAN_BOTH)
 	{
 		patterns[0] = "PROGDIR:Modules/#?.(module|dopus5)";
-		patterns[1] = "dopus5:modules/#?.(module|dopus5)";
+		patterns[1] = "DOpus5:Modules/#?.(module|dopus5)";
 	}
 	else if (type == SCAN_MODULES)
 	{
 		patterns[0] = "PROGDIR:Modules/#?.module";
-		patterns[1] = "dopus5:modules/#?.module";
+		patterns[1] = "DOpus5:Modules/#?.module";
 	}
 	else if (type == SCAN_USER)
-		patterns[0] = "dopus5:commands/~(#?.info)";
+		patterns[0] = "DOpus5:Commands/~(#?.info)";
 	else
 	{
 		patterns[0] = "PROGDIR:Modules/#?.dopus5";
-		patterns[1] = "dopus5:modules/#?.dopus5";
+		patterns[1] = "DOpus5:Modules/#?.dopus5";
 	}
 
 	for (pat = 0; patterns[pat]; pat++)
@@ -126,7 +126,7 @@ void init_commands_scan(short type)
 			BOOL ok = 1, real_module = 0;
 			char *name_ptr = 0;
 
-			// Skip the basedata.lha placeholder used to keep dopus5:Commands
+			// Skip the basedata.lha placeholder used to keep DOpus5:Commands
 			// archived (lha drops empty directories on extraction). We don't
 			// want it registered as a phantom user command.
 			if (type == SCAN_USER && stricmp(anchor->ap_Info.fib_FileName, ".dummy") == 0)
@@ -223,7 +223,7 @@ void init_commands_scan(short type)
 			else if (!real_module)
 			{
 				// Function to run
-				lsprintf(anchor->ap_Buf, "dopus5:modules/%s %s init", anchor->ap_Info.fib_FileName, GUI->rexx_port_name);
+				lsprintf(anchor->ap_Buf, "DOpus5:Modules/%s %s init", anchor->ap_Info.fib_FileName, GUI->rexx_port_name);
 
 				// Run rexx thing
 				rexx_send_command(anchor->ap_Buf, FALSE);

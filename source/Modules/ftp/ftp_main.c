@@ -3174,7 +3174,7 @@ void dopus_ftp(void)
 	// Open our module so we can't be expunged
 	if (!(ourbase = OpenLibrary("ftp.module", 0)))
 		if (!(ourbase = OpenLibrary("PROGDIR:Modules/ftp.module", 0)))
-			ourbase = OpenLibrary("dopus5:modules/ftp.module", 0);
+			ourbase = OpenLibrary("DOpus5:Modules/ftp.module", 0);
 
 	if (ourbase && GETINTERFACE(IModule, ourbase))
 	{

@@ -363,7 +363,7 @@ long config_menus_title[] = {MSG_MENUS_TITLE,
 							 MSG_MENUS_START_TITLE,
 							 MSG_START_DEF_TITLE};
 
-char *config_menus_default[] = {"dopus5:buttons/user menu_default",
-								"dopus5:buttons/lister menu_default",
-								"dopus5:system/menu keys_default",
-								"dopus5:buttons/start menu_default"};
+char *config_menus_default[] = {"DOpus5:Buttons/user menu_default",
+								"DOpus5:Buttons/lister menu_default",
+								"DOpus5:System/menu keys_default",
+								"DOpus5:Buttons/start menu_default"};

@@ -58,7 +58,7 @@ void groups_new(BackdropInfo *info, IPCData *ipc)
 		return;
 
 	// Build full path
-	strcpy(path, "dopus5:groups");
+	strcpy(path, "DOpus5:Groups");
 	AddPart(path, name, 80);
 
 	// Create directory
@@ -263,7 +263,7 @@ void group_snapshot_icon(BackdropInfo *info, BackdropObject *icon, short x, shor
 	group = (GroupData *)IPCDATA(info->ipc);
 
 	// Build group path
-	lsprintf(buffer, "dopus5:groups/%s", group->name);
+	lsprintf(buffer, "DOpus5:Groups/%s", group->name);
 
 	// Change into group directory
 	if (!(lock = Lock(buffer, ACCESS_READ)))

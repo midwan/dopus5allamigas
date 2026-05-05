@@ -991,9 +991,9 @@ void hide_display(void)
 	case HIDE_ICON:
 
 		// Get disk object
-		if (!(GUI->hide_diskobject = GetCachedDiskObject("dopus5:Icons/AppIcon", 0)))
+		if (!(GUI->hide_diskobject = GetCachedDiskObject("DOpus5:Icons/AppIcon", 0)))
 		{
-			GUI->hide_diskobject = GetCachedDiskObjectNew("dopus5:DirectoryOpus", 1);
+			GUI->hide_diskobject = GetCachedDiskObjectNew("DOpus5:DirectoryOpus", 1);
 		}
 
 		// Got one?

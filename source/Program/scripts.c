@@ -101,7 +101,7 @@ void InitScripts(void)
 	anchor->ap_Flags = APF_DOWILD;
 
 	// Search for scripts
-	error = MatchFirst("dopus5:system/scripts/#?.scp", anchor);
+	error = MatchFirst("DOpus5:System/scripts/#?.scp", anchor);
 
 	// Continue while there's files
 	while (!error)
@@ -423,7 +423,7 @@ void InitSoundEvents(BOOL force)
 			}
 
 			// See what the last random sound was
-			lsprintf(buf, "dopus5:system/rnd.%s", sound->dse_Node.ln_Name);
+			lsprintf(buf, "DOpus5:System/rnd.%s", sound->dse_Node.ln_Name);
 			if ((file = OpenBuf(buf, MODE_OLDFILE, 512)))
 			{
 				ReadBufLine(file, buf + 200, 256);

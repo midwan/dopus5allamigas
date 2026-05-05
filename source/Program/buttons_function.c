@@ -193,9 +193,9 @@ void buttons_new_bank(Buttons *buttons, short func, Cfg_ButtonBank *use_bank)
 			"PROGDIR:Buttons/Toolbar",
 			"PROGDIR:Buttons/Toolbar.default",
 			"PROGDIR:Buttons/toolbar_default",
-			"dopus5:Buttons/Toolbar",
-			"dopus5:Buttons/Toolbar.default",
-			"dopus5:Buttons/toolbar_default",
+			"DOpus5:Buttons/Toolbar",
+			"DOpus5:Buttons/Toolbar.default",
+			"DOpus5:Buttons/toolbar_default",
 			0,
 		};
 		short a;

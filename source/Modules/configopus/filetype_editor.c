@@ -949,7 +949,7 @@ BOOL filetypeed_pick_icon(filetype_ed_data *data)
 	}
 
 	if (!path[0])
-		strcpy(path, "Dopus5:");
+		strcpy(path, "DOpus5:");
 
 	// Build pattern
 	ParsePatternNoCase("#?.info", pattern, 18);
@@ -982,8 +982,9 @@ BOOL filetypeed_pick_icon(filetype_ed_data *data)
 		// Build new path
 		if (reqpath[0] && (lock = Lock(reqpath, ACCESS_READ)))
 		{
-			// Copy drawer path if it's in Dopus5 dir
-			if (strstr(reqpath, "Dopus5:") && !strstr(reqpath, ":/"))
+			// Copy drawer path if it's in DOpus5: tree (case-insensitive,
+			// since the assign is registered as "DOPUS5")
+			if (strnicmp(reqpath, "DOpus5:", 7) == 0 && !strstr(reqpath, ":/"))
 				strcpy(path, reqpath);
 			// Get absolute path to avoid relative paths
 			else if (!(NameFromLock(lock, path, sizeof(path))))

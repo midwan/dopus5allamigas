@@ -56,7 +56,7 @@ void filetype_read_list(APTR memory, struct ListLock *main_list)
 	anchor->ap_BreakBits = IPCSIG_QUIT;
 
 	// Search for filetypes
-	error = MatchFirst("dopus5:filetypes/~(#?.info)", anchor);
+	error = MatchFirst("DOpus5:Filetypes/~(#?.info)", anchor);
 
 	// Continue while there's files
 	while (!error)
@@ -218,7 +218,7 @@ void filetype_default_list(APTR memory, struct ListLock *main_list)
 
 		// Create default startmenu filetype
 		if ((type = filetype_default_new(
-				 memory, list, "Opus 5 Start Menu", "STRTMEN", 30, "loadbuttons start", "dopus5:icons/startmenu.info")))
+				 memory, list, "Opus 5 Start Menu", "STRTMEN", 30, "loadbuttons start", "DOpus5:Icons/startmenu.info")))
 		{
 			// Recognition string for buttons
 			lsprintf(type->recognition,
@@ -236,7 +236,7 @@ void filetype_default_list(APTR memory, struct ListLock *main_list)
 
 		// Create default button filetype
 		if ((type = filetype_default_new(
-				 memory, list, "Opus 5 Buttons", "BUTTONS", 12, "loadbuttons", "dopus5:icons/buttons.info")))
+				 memory, list, "Opus 5 Buttons", "BUTTONS", 12, "loadbuttons", "DOpus5:Icons/buttons.info")))
 		{
 			// Recognition string for buttons
 			lsprintf(type->recognition, "%lcOPUS%lc%lcBTNW", FTOP_MATCHFORM, FTOP_AND, FTOP_MATCHCHUNK);
@@ -249,7 +249,7 @@ void filetype_default_list(APTR memory, struct ListLock *main_list)
 										 "ENVIRON",
 										 12,
 										 "loadenvironment",
-										 "dopus5:icons/environment.info")))
+										 "DOpus5:Icons/environment.info")))
 		{
 			// Recognition string for environment
 			lsprintf(type->recognition, "%lcOPUS%lc%lcENVR", FTOP_MATCHFORM, FTOP_AND, FTOP_MATCHCHUNK);
@@ -257,7 +257,7 @@ void filetype_default_list(APTR memory, struct ListLock *main_list)
 
 		// Create default filetype filetype
 		if ((type = filetype_default_new(
-				 memory, list, "Opus 5 Filetype", "FTYPE", 12, "editfiletype", "dopus5:icons/filetype.info")))
+				 memory, list, "Opus 5 Filetype", "FTYPE", 12, "editfiletype", "DOpus5:Icons/filetype.info")))
 		{
 			// Recognition string for filetypes
 			lsprintf(type->recognition, "%lcOPUS%lc%lcTYPE", FTOP_MATCHFORM, FTOP_AND, FTOP_MATCHCHUNK);
@@ -265,7 +265,7 @@ void filetype_default_list(APTR memory, struct ListLock *main_list)
 
 		// Create default command filetype
 		if ((type = filetype_default_new(
-				 memory, list, "Opus 5 Command", "CMD", 16, "runcommand", "dopus5:icons/command.info")))
+				 memory, list, "Opus 5 Command", "CMD", 16, "runcommand", "DOpus5:Icons/command.info")))
 		{
 			// Recognition string for command
 			lsprintf(type->recognition,
@@ -286,7 +286,7 @@ void filetype_default_list(APTR memory, struct ListLock *main_list)
 #ifndef __AROS__
 		// Create default module filetype (no function, recognition only)
 		if ((type =
-				 filetype_default_new(memory, list, "Opus 5 Module 68k", "MODULE", 21, 0, "dopus5:icons/module.info")))
+				 filetype_default_new(memory, list, "Opus 5 Module 68k", "MODULE", 21, 0, "DOpus5:Icons/module.info")))
 		{
 			// Recognition string for modules
 			lsprintf(type->recognition, "%lc*.module%lc%lc$000003f3", FTOP_MATCHNAME, FTOP_AND, FTOP_MATCH);
@@ -294,14 +294,14 @@ void filetype_default_list(APTR memory, struct ListLock *main_list)
 #endif
 
 		if ((type =
-				 filetype_default_new(memory, list, "Opus 5 Module ELF", "MODULE", 21, 0, "dopus5:icons/module.info")))
+				 filetype_default_new(memory, list, "Opus 5 Module ELF", "MODULE", 21, 0, "DOpus5:Icons/module.info")))
 		{
 			// Recognition string for modules
 			lsprintf(type->recognition, "%lc*.module%lc%lc$7f454c46", FTOP_MATCHNAME, FTOP_AND, FTOP_MATCH);
 		}
 
 		// Create default rexx module filetype (no function, recognition only)
-		if ((type = filetype_default_new(memory, list, "Opus 5 Module", "MODULE", 14, 0, "dopus5:icons/module.info")))
+		if ((type = filetype_default_new(memory, list, "Opus 5 Module", "MODULE", 14, 0, "DOpus5:Icons/module.info")))
 		{
 			// Recognition string for modules
 			lsprintf(type->recognition, "%lc*.dopus5%lc%lc/*", FTOP_MATCHNAME, FTOP_AND, FTOP_MATCH);

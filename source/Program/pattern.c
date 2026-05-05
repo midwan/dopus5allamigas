@@ -836,7 +836,7 @@ BOOL pattern_check_random(PatternData *data, char *name)
 	}
 
 	// See what the last random picture was
-	lsprintf(buf, "dopus5:system/rnd.%ld", data->prefs.wbp_Which);
+	lsprintf(buf, "DOpus5:System/rnd.%ld", data->prefs.wbp_Which);
 	if ((file = OpenBuf(buf, MODE_OLDFILE, 512)))
 	{
 		ReadBufLine(file, buf + 64, 256);

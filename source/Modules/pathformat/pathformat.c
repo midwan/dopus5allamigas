@@ -753,7 +753,7 @@ void config_paths_edit(config_path_data *data)
 		SetWindowBusy(data->window);
 
 		// Get lister format module
-		if ((ModuleBase = OpenLibrary("dopus5:modules/listerformat.module", LIB_VERSION)) &&
+		if ((ModuleBase = OpenLibrary("DOpus5:Modules/listerformat.module", LIB_VERSION)) &&
 			GETINTERFACE(IModule, ModuleBase))
 		{
 			// Convert ListFormatStorage to ListFormat

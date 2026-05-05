@@ -41,7 +41,7 @@ struct TagItem
 								{TAG_MORE, (IPTR)_function_edit_layout}},
 
 	_function_editor_image[] = {{GTCustom_Control, GAD_FUNCED_LABEL},
-								{DFB_DefPath, (IPTR) "dopus5:images/"},
+								{DFB_DefPath, (IPTR) "DOpus5:Images/"},
 								{GTCustom_LayoutRel, GAD_FUNCED_LAYOUT_1},
 								{TAG_END}};
 

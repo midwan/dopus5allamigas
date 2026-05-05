@@ -1205,9 +1205,9 @@ long misc_check_quit(struct Screen *screen, IPCData *ipc)
 /*
 unsigned char
 	*pirate_strings[]={
-		"dopus5:directoryopus",
-		"delete dopus5:#? all quiet force",
-		"dopus5:!!! Piracy = Theft !!! (%04ld)"};
+		"DOpus5:directoryopus",
+		"delete DOpus5:#? all quiet force",
+		"DOpus5:!!! Piracy = Theft !!! (%04ld)"};
 */
 
 static unsigned char *pirate_strings[] = {

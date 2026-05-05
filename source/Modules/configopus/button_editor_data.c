@@ -49,7 +49,7 @@ const struct TagItem
 							  {TAG_MORE, (IPTR)_button_editor_function_layout}},
 
 	_button_editor_image[] = {{GTCustom_Control, GAD_BUTTONED_LABEL},
-							  {DFB_DefPath, (IPTR) "dopus5:images/"},
+							  {DFB_DefPath, (IPTR) "DOpus5:Images/"},
 							  {TAG_MORE, (IPTR)_button_editor_function_layout}};
 
 // Button editor objects

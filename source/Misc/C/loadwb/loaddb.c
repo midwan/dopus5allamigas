@@ -91,7 +91,7 @@ int main(int argc, char **arg_string)
 		if (FindPort("Directory Opus"))
 		{
 			// Open library
-			if ((DOpusBase = OpenLibrary("dopus5:libs/dopus5.library", LIB_VERSION)))
+			if ((DOpusBase = OpenLibrary("DOpus5:Libs/dopus5.library", LIB_VERSION)))
 			{
 #ifdef __amigaos4__
 				IDOpus = (struct DOpusIFace *)GetInterface(DOpusBase, "main", 1, NULL);
@@ -191,7 +191,7 @@ int main(int argc, char **arg_string)
 			UnLock(lock);
 
 			// Open library
-			// if ((DOpusBase=OpenLibrary("dopus5:libs/dopus5.library",0)))
+			// if ((DOpusBase=OpenLibrary("DOpus5:Libs/dopus5.library",0)))
 			{
 				/*#ifdef __amigaos4__
 				IDOpus = (struct DOpusIFace *)GetInterface(DOpusBase, "main", 1, NULL);

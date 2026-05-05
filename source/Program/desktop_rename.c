@@ -41,7 +41,7 @@ void icon_rename(IPCData *ipc, BackdropInfo *info, BackdropObject *icon)
 		group = (GroupData *)IPCDATA(info->ipc);
 
 		// Build directory name
-		lsprintf(info->buffer, "dopus5:groups/%s", group->name);
+		lsprintf(info->buffer, "DOpus5:Groups/%s", group->name);
 
 		// Lock directory
 		if (!(lock = Lock(info->buffer, ACCESS_READ)))
