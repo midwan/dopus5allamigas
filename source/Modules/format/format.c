@@ -374,11 +374,14 @@ BOOL format_open(format_data *data, BOOL noactive)
 		DisableObject(data->list, GAD_FORMAT_FORMAT, TRUE);
 	}
 
-	// If <39, disable International and Caching
+	// If <39, disable International, Caching and Long File Names
+	// (LNFS implies International compare, so it can't work on
+	// pre-KS2 dos.library either)
 	if (((struct Library *)DOSBase)->lib_Version < 39)
 	{
 		DisableObject(data->list, GAD_FORMAT_INTERNATIONAL, TRUE);
 		DisableObject(data->list, GAD_FORMAT_CACHING, TRUE);
+		DisableObject(data->list, GAD_FORMAT_LNFS, TRUE);
 	}
 
 	// Set defaults
@@ -557,14 +560,17 @@ void show_device_info(format_data *data)
 	{
 		BOOL is_pfs = FALSE;
 
-		/* PFS\0..PFS\3: the standard four PFS / PFS3 dostypes. */
+		/* PFS\0..PFS\3: PFS variants in DOS\x ID space. */
 		if ((dos_type & 0xFFFFFFFCUL) == (ID_PFS_FLOPPY & 0xFFFFFFFCUL))
 			is_pfs = TRUE;
 
-		/* PDS\0..PDS\3: the four Direct-SCSI dostypes (only PDS\2/3
-		 * have ID_ defines in dopus5.h, but PDS\0/1 are valid too).
+		/* PDS\0..PDS\3: Direct-SCSI variants. dopus5.h only declares
+		 * PDS\2/PDS\3 (ID_PFS2_SC_DISK / ID_PFS3_SC_DISK), but the
+		 * masked compare also covers any PDS\0/PDS\1 a setup might
+		 * use; deriving the base from ID_PFS3_SC_DISK keeps this in
+		 * step with the header.
 		 */
-		else if ((dos_type & 0xFFFFFFFCUL) == 0x50445300UL)
+		else if ((dos_type & 0xFFFFFFFCUL) == (ID_PFS3_SC_DISK & 0xFFFFFFFCUL))
 			is_pfs = TRUE;
 
 		/* muPF: PFS3 multiuser. */
@@ -589,21 +595,18 @@ void show_device_info(format_data *data)
 	// Display status
 	SetGadgetValue(data->list, GAD_FORMAT_STATUS, (IPTR)info_buf);
 
-	// If this isn't a standard dos disk, disable FFS, etc
+	// If this isn't a standard dos disk, disable FFS, etc.
+	// Also lock FFS/International/Caching whenever LNFS is on, since
+	// LNFS implies FFS+International and excludes Directory Caching.
 	{
-		BOOL not_dos = (BOOL)((dos_type & ID_DOS_DISK) != ID_DOS_DISK);
-		BOOL lnfs_on = (BOOL)GetGadgetValue(data->list, GAD_FORMAT_LNFS);
-		BOOL cache_on = (BOOL)GetGadgetValue(data->list, GAD_FORMAT_CACHING);
+		BOOL not_dos = (dos_type & ID_DOS_DISK) != ID_DOS_DISK;
+		BOOL lnfs_on = GetGadgetValue(data->list, GAD_FORMAT_LNFS);
+		BOOL cache_on = GetGadgetValue(data->list, GAD_FORMAT_CACHING);
 
-		// LNFS is only valid for standard DOS disks
 		DisableObject(data->list, GAD_FORMAT_LNFS, not_dos);
-
-		// FFS/Caching are locked when LNFS is active
-		DisableObject(data->list, GAD_FORMAT_FFS, (BOOL)(not_dos || lnfs_on));
-		DisableObject(data->list, GAD_FORMAT_CACHING, (BOOL)(not_dos || lnfs_on));
-		DisableObject(data->list,
-					  GAD_FORMAT_INTERNATIONAL,
-					  (BOOL)(not_dos || cache_on || lnfs_on));
+		DisableObject(data->list, GAD_FORMAT_FFS, not_dos || lnfs_on);
+		DisableObject(data->list, GAD_FORMAT_CACHING, not_dos || lnfs_on);
+		DisableObject(data->list, GAD_FORMAT_INTERNATIONAL, not_dos || cache_on || lnfs_on);
 	}
 
 	// Disable install if no bootblock entry in table
