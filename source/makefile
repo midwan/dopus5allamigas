@@ -136,25 +136,25 @@ all : program library modules commands
 program:
 	@echo " "
 	@echo "<<<<<<<<<<<<<<<<<< program >>>>>>>>>>>>>>>>>>"
-	@$(MAKE) -C Program -f makefile.$(PLATFORM)
+	@$(MAKE) -C Program -f makefile.$(PLATFORM) arch=$(arch)
 
 .PHONY : library
 library:
 	@echo " "
 	@echo "<<<<<<<<<<<<<<<<<< library >>>>>>>>>>>>>>>>>>"
-	@$(MAKE) -C Library -f makefile.$(PLATFORM)
+	@$(MAKE) -C Library -f makefile.$(PLATFORM) arch=$(arch)
 
 .PHONY : modules
 modules:
 	@echo " "
 	@echo "<<<<<<<<<<<<<<<<<< modules >>>>>>>>>>>>>>>>>>"
-	@$(MAKE) -C Modules $(NAME)
+	@$(MAKE) -C Modules $(NAME) arch=$(arch)
 
 .PHONY : commands
 commands:
 	@echo " "
 	@echo "<<<<<<<<<<<<<<<<<< commands >>>>>>>>>>>>>>>>>"
-	@$(MAKE) -C Misc/C $(NAME)
+	@$(MAKE) -C Misc/C $(NAME) arch=$(arch)
 
 ###########################################################
 
@@ -171,25 +171,25 @@ cleanall : clean
 clean-program:
 	@echo " "
 	@echo "++++++++++++++ clean program +++++++++++++++"
-	@$(MAKE) -C Program -s -f makefile.$(PLATFORM) clean
+	@$(MAKE) -C Program -s -f makefile.$(PLATFORM) arch=$(arch) clean
 
 .PHONY : clean-library
 clean-library:
 	@echo " "
 	@echo "++++++++++++++ clean library +++++++++++++++"
-	@$(MAKE) -C Library -s -f makefile.$(PLATFORM) clean
+	@$(MAKE) -C Library -s -f makefile.$(PLATFORM) arch=$(arch) clean
 
 .PHONY : clean-modules
 clean-modules:
 	@echo " "
 	@echo "++++++++++++++ clean modules +++++++++++++++"
-	@$(MAKE) -C Modules -s $(NAME) clean
+	@$(MAKE) -C Modules -s $(NAME) clean arch=$(arch)
 
 .PHONY : clean-commands
 clean-commands:
 	@echo " "
 	@echo "++++++++++++++ clean commands ++++++++++++++"
-	@$(MAKE) -C Misc/C -s $(NAME) clean
+	@$(MAKE) -C Misc/C -s $(NAME) clean arch=$(arch)
 
 ###########################################################
 
@@ -198,6 +198,15 @@ release: all release-package
 
 .PHONY : release-package
 release-package:
+	@if [ ! -f bin.$(NAME)/dopus5.library ]; then \
+		echo ""; \
+		echo "*** Error: bin.$(NAME)/dopus5.library is missing."; \
+		echo "*** Run 'make $(NAME) all' first, then 'make $(NAME) release-package'."; \
+		echo "*** If only a different bin.<arch>-aros/ got populated, the matching"; \
+		echo "*** cross-compiler is probably not installed and the build silently"; \
+		echo "*** fell back to the host toolchain."; \
+		exit 1; \
+	fi
 	@echo " "
 	@echo ">>>>>Creating release archive: Dopus5$(VERSION)$(NAME)$(TYPE).lha"
 	@$(REMOVE) $(RELEASE_DIR)

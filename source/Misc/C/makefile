@@ -76,19 +76,19 @@ all: dopusrt loaddb viewfont
 dopusrt:
 	@echo " "
 	@echo "================== dopusrt ================="
-	@$(MAKE) --no-print-directory -C dopusrt -f makefile.$(PLATFORM)
+	@$(MAKE) --no-print-directory -C dopusrt -f makefile.$(PLATFORM) arch=$(arch)
 
 .PHONY : loaddb
 loaddb:
 	@echo " "
 	@echo "================== loaddb =================="
-	@$(MAKE) --no-print-directory -C loadwb -f makefile.$(PLATFORM)
+	@$(MAKE) --no-print-directory -C loadwb -f makefile.$(PLATFORM) arch=$(arch)
 
 .PHONY : viewfont
 viewfont:
 	@echo " "
 	@echo "================= viewfont ================="
-	@$(MAKE) --no-print-directory -C ViewFont -f makefile.$(PLATFORM)
+	@$(MAKE) --no-print-directory -C ViewFont -f makefile.$(PLATFORM) arch=$(arch)
 
 
 ###########################################################
@@ -101,19 +101,19 @@ clean: clean-dopusrt clean-loaddb clean-viewfont
 clean-dopusrt:
 	@echo " "
 	@echo "--------------- clean dopusrt --------------"
-	@$(MAKE) --no-print-directory -C dopusrt -f makefile.$(PLATFORM) clean
+	@$(MAKE) --no-print-directory -C dopusrt -f makefile.$(PLATFORM) arch=$(arch) clean
 	
 .PHONY : clean-loaddb
 clean-loaddb:
 	@echo " "
 	@echo "--------------- clean loaddb ---------------"
-	@$(MAKE) --no-print-directory -C loadwb -f makefile.$(PLATFORM) clean
+	@$(MAKE) --no-print-directory -C loadwb -f makefile.$(PLATFORM) arch=$(arch) clean
 
 .PHONY : clean-viewfont
 clean-viewfont:
 	@echo " "
 	@echo "-------------- clean viewfont --------------"
-	@$(MAKE) --no-print-directory -C ViewFont -f makefile.$(PLATFORM) clean
+	@$(MAKE) --no-print-directory -C ViewFont -f makefile.$(PLATFORM) arch=$(arch) clean
 
 
 ###########################################################
