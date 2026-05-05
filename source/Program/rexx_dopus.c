@@ -195,8 +195,31 @@ BOOL rexx_dopus_cmd(struct RexxMsg *msg, short command, char *args)
 	case RXCMD_VERSION: {
 		extern short version_num;
 
-		// Build version string
-		lsprintf(result, "5 %ld", version_num);
+		// Build version string.
+		//
+		// The documented format is "<version> <revision>". That worked while
+		// the revision stayed <= 99, but once we started shipping 5.100 the
+		// shipped ARexx scripts (and the old Nudel CDOpus/DOpusFuncs tools)
+		// broke, because they do:
+		//
+		//     dopus version
+		//     translate(result, '.', ' ') < 5.1218
+		//
+		// ARexx parses "5.100" as the decimal 5.1 (trailing-zero drop), so
+		// 5.100 wrongly failed the "requires 5.5 or greater" gate. For
+		// revisions >= 100 we clamp the reported revision at 99 and expose
+		// the real revision as a third component, e.g. "5 99 100". That:
+		//   - makes translate(result, '.', ' ') produce "5.99.100", which
+		//     ARexx treats as a non-numeric string, falls back to string
+		//     comparison, and "5.99.100" > "5.1218" so the gate passes.
+		//   - still makes the left-padded decimal form that CDOpus-style
+		//     tools build ("99...") compare greater than the required
+		//     "1200000000" threshold, so those also pass.
+		//   - keeps the real revision visible as the third token.
+		if (version_num >= 100)
+			lsprintf(result, "5 99 %ld", version_num);
+		else
+			lsprintf(result, "5 %ld", version_num);
 	}
 	break;
 
@@ -717,8 +740,12 @@ BOOL rexx_dopus_cmd(struct RexxMsg *msg, short command, char *args)
 		case RXCMD_VERSION: {
 			extern short version_num;
 
-			// Build version string
-			lsprintf(result, "5 %ld", version_num);
+			// See the main RXCMD_VERSION handler above for why revisions
+			// >= 100 report as "5 99 <rev>" instead of "5 <rev>".
+			if (version_num >= 100)
+				lsprintf(result, "5 99 %ld", version_num);
+			else
+				lsprintf(result, "5 %ld", version_num);
 		}
 		break;
 
