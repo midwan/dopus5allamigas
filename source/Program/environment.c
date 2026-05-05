@@ -32,6 +32,92 @@ For more information on Directory Opus for Windows please see:
 
 static int write_env_string(APTR, char *, ULONG);
 
+// Internal flag for environment_save: filter out paths recorded in
+// env_drop_banks instead of writing them back to the layout. Only
+// honoured when ENVSAVE_LAYOUT is unset (the dropped-paths filter
+// lives inside the non-snapshot bank loop; an ENVSAVE_LAYOUT save
+// writes the live GUI state, where missing entries are already
+// absent).
+#define ENVSAVE_DROP_MISSING_BANKS (1 << 2)
+
+// List of bank paths the user opted to remove from the environment file
+// after they were detected as missing during environment_open. Consumed
+// by the next environment_save call (with ENVSAVE_DROP_MISSING_BANKS).
+//
+// Keys are stored as the raw, unfixed `ButtonBankNode->ln_Name` from
+// the on-disk env file so env_drop_banks_contains can match exactly
+// the same string when environment_save re-reads the file. Both sides
+// must keep using ln_Name and not the resolved path produced by
+// environment_fix_open_button_path.
+struct EnvDropBankNode
+{
+	struct MinNode node;
+	char path[256];
+};
+
+static struct MinList env_drop_banks;
+static BOOL env_drop_banks_inited = FALSE;
+
+static void env_drop_banks_ensure_init(void)
+{
+	if (!env_drop_banks_inited)
+	{
+		NewList((struct List *)&env_drop_banks);
+		env_drop_banks_inited = TRUE;
+	}
+}
+
+static void env_drop_banks_add(const char *path)
+{
+	struct EnvDropBankNode *node;
+
+	env_drop_banks_ensure_init();
+
+	if (!path || !path[0])
+		return;
+
+	if ((node = AllocVec(sizeof(struct EnvDropBankNode), MEMF_CLEAR)))
+	{
+		stccpy(node->path, (char *)path, sizeof(node->path));
+		AddTail((struct List *)&env_drop_banks, (struct Node *)node);
+	}
+}
+
+static BOOL env_drop_banks_contains(const char *path)
+{
+	struct EnvDropBankNode *node;
+
+	env_drop_banks_ensure_init();
+
+	if (!path)
+		return FALSE;
+
+	for (node = (struct EnvDropBankNode *)env_drop_banks.mlh_Head; node->node.mln_Succ;
+		 node = (struct EnvDropBankNode *)node->node.mln_Succ)
+	{
+		if (stricmp(node->path, (char *)path) == 0)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+static BOOL env_drop_banks_empty(void)
+{
+	env_drop_banks_ensure_init();
+	return IsListEmpty((struct List *)&env_drop_banks);
+}
+
+static void env_drop_banks_clear(void)
+{
+	struct EnvDropBankNode *node;
+
+	env_drop_banks_ensure_init();
+
+	while ((node = (struct EnvDropBankNode *)RemHead((struct List *)&env_drop_banks)))
+		FreeVec(node);
+}
+
 // Allocate a new environment structure
 Cfg_Environment *environment_new(void)
 {
@@ -439,12 +525,31 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 			stccpy(button_path, button->node.ln_Name, sizeof(button_path));
 			environment_fix_open_button_path(button_path);
 
-			// Create button bank from this node
-			if ((but = buttons_new(button_path, 0, &button->pos, 0, button->flags | BUTTONF_FAIL)))
+			// File still on disk? Try to open the bank.
+			if (environment_path_exists(button_path))
 			{
-				// Set icon position
-				but->icon_pos_x = button->icon_pos_x;
-				but->icon_pos_y = button->icon_pos_y;
+				// Create button bank from this node
+				if ((but = buttons_new(button_path, 0, &button->pos, 0, button->flags | BUTTONF_FAIL)))
+				{
+					// Set icon position
+					but->icon_pos_x = button->icon_pos_x;
+					but->icon_pos_y = button->icon_pos_y;
+				}
+			}
+			else
+			{
+				// The bank file referenced by the layout is gone.
+				// Ask the user whether to drop the entry from the
+				// environment so the next save no longer carries it.
+				if (SimpleRequestTags(NULL,
+									  dopus_name,
+									  (char *)"Remove|Keep",
+									  (char *)"Button bank '%s'\ncould not be opened.\n"
+											  "Remove from environment?",
+									  (IPTR)button->node.ln_Name))
+				{
+					env_drop_banks_add(button->node.ln_Name);
+				}
 			}
 
 			// Free this node, get next
@@ -466,8 +571,25 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 			stccpy(button_path, button->node.ln_Name, sizeof(button_path));
 			environment_fix_open_button_path(button_path);
 
-			// Create new start menu
-			start_new(button_path, 0, 0, button->pos.Left, button->pos.Top);
+			if (environment_path_exists(button_path))
+			{
+				// Create new start menu
+				start_new(button_path, 0, 0, button->pos.Left, button->pos.Top);
+			}
+			else
+			{
+				// Same treatment as missing button banks: ask the
+				// user whether to drop the entry from the layout.
+				if (SimpleRequestTags(NULL,
+									  dopus_name,
+									  (char *)"Remove|Keep",
+									  (char *)"Start menu '%s'\ncould not be opened.\n"
+											  "Remove from environment?",
+									  (IPTR)button->node.ln_Name))
+				{
+					env_drop_banks_add(button->node.ln_Name);
+				}
+			}
 
 			// Free this node, get next
 			Remove((struct Node *)button);
@@ -601,6 +723,19 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 
 	// Initialise sound events
 	InitSoundEvents(TRUE);
+
+	// User asked to drop one or more missing button banks during the
+	// load? Persist the change so the next save does not bring them
+	// back. The save itself filters the list using env_drop_banks.
+	// Only clear the list on a successful save - if the save failed
+	// (e.g. env->path empty, or disk error) we want the next load to
+	// still know which entries the user wanted gone, rather than
+	// silently consuming the choice.
+	if (!env_drop_banks_empty())
+	{
+		if (environment_save(env, env->path, ENVSAVE_DROP_MISSING_BANKS, 0) == 0)
+			env_drop_banks_clear();
+	}
 
 	return success;
 }
@@ -796,6 +931,16 @@ int environment_save(Cfg_Environment *env, char *name, short snapshot, CFG_ENVR 
 				struct IBox pos_be;
 #endif
 
+				// Caller asked us to drop banks the user marked as
+				// missing during the most recent environment_open.
+				if ((snapshot & ENVSAVE_DROP_MISSING_BANKS) &&
+					env_drop_banks_contains(button->node.ln_Name))
+				{
+					Remove((struct Node *)button);
+					button = next;
+					continue;
+				}
+
 				// Write bank header
 				if (!(IFFPushChunk(iff, ID_BANK)))
 					break;
@@ -846,6 +991,15 @@ int environment_save(Cfg_Environment *env, char *name, short snapshot, CFG_ENVR 
 #ifdef __AROS__
 				struct IBox pos_be;
 #endif
+
+				// Same skip logic as the BANK loop above.
+				if ((snapshot & ENVSAVE_DROP_MISSING_BANKS) &&
+					env_drop_banks_contains(button->node.ln_Name))
+				{
+					Remove((struct Node *)button);
+					button = next;
+					continue;
+				}
 
 				// Write bank header
 				if (!(IFFPushChunk(iff, ID_STRT)))
