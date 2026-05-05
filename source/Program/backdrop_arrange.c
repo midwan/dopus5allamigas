@@ -764,23 +764,44 @@ void backdrop_sort_objects(BackdropInfo *info, short type, BOOL align)
 			// Sort by type
 			else if (type == BSORT_TYPE)
 			{
-				Cfg_Filetype *type1, *type2;
-				short res;
+				short t1, t2;
 
-				// Get filetypes
-				type1 = backdrop_get_filetype(info, object);
-				type2 = backdrop_get_filetype(info, sort_object);
+				// Primary key: match Workbench's "Sort By Type" so users get
+				// the familiar DIRS / TOOLS / PROJECTS grouping (issue #26
+				// follow-up). The DiskObject->do_Type values (WBDISK=1,
+				// WBDRAWER=2, WBTOOL=3, WBPROJECT=4, WBGARBAGE=5, ...) sort
+				// numerically into exactly that order. Icon-less objects
+				// fall through to the existing filetype-name comparison.
+				t1 = object->icon ? object->icon->do_Type : 0;
+				t2 = sort_object->icon ? sort_object->icon->do_Type : 0;
 
-				// Got filetypes?
-				if (type1 && type2)
+				if (t1 < t2)
+					break;
+
+				// Same icon category (or no icon either side): keep the
+				// previous behaviour and order by filetype name.
+				if (t1 == t2)
 				{
-					if ((res = stricmp(type1->type.name, type2->type.name)) < 0)
-						break;
-					else if (res == 0)
+					Cfg_Filetype *type1, *type2;
+					short res;
+
+					// Get filetypes
+					type1 = backdrop_get_filetype(info, object);
+					type2 = backdrop_get_filetype(info, sort_object);
+
+					// Got filetypes?
+					if (type1 && type2)
+					{
+						if ((res = stricmp(type1->type.name, type2->type.name)) < 0)
+							break;
+						else if (res == 0)
+							sort_type = BSORT_NAME;
+					}
+					else
 						sort_type = BSORT_NAME;
 				}
-				else
-					sort_type = BSORT_NAME;
+				// t1 > t2: object's category sorts after sort_object's;
+				// don't break and don't fall through to name comparison.
 			}
 
 			// Sort by name?
