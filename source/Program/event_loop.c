@@ -387,6 +387,11 @@ void event_loop()
 				// Open display
 				if (!GUI->window)
 					display_open(ipc_msg->flags);
+
+				// If the load that triggered this reopen flagged
+				// any missing button banks, prompt the user about
+				// them now (display is up).
+				environment_resolve_missing_banks(environment, GUI->window);
 				break;
 
 			// Get screen data

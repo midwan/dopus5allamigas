@@ -40,82 +40,107 @@ static int write_env_string(APTR, char *, ULONG);
 // absent).
 #define ENVSAVE_DROP_MISSING_BANKS (1 << 2)
 
-// List of bank paths the user opted to remove from the environment file
-// after they were detected as missing during environment_open. Consumed
-// by the next environment_save call (with ENVSAVE_DROP_MISSING_BANKS).
+// Module-private bookkeeping for the "remove missing button banks"
+// feature, split into two lists:
 //
-// Keys are stored as the raw, unfixed `ButtonBankNode->ln_Name` from
-// the on-disk env file so env_drop_banks_contains can match exactly
-// the same string when environment_save re-reads the file. Both sides
-// must keep using ln_Name and not the resolved path produced by
-// environment_fix_open_button_path.
-struct EnvDropBankNode
+//  - env_missing_banks  filled by environment_open when a BANK/STRT
+//                       entry's file is gone. Owned by the most recent
+//                       open; cleared at the start of every load and
+//                       drained by environment_resolve_missing_banks.
+//
+//  - env_drop_banks     populated by environment_resolve_missing_banks
+//                       from the user's "Remove" answers, then handed
+//                       to environment_save with the
+//                       ENVSAVE_DROP_MISSING_BANKS flag so the rewritten
+//                       env file no longer carries those entries.
+//
+// Both lists key paths as the raw `ButtonBankNode->ln_Name` from the
+// env file (not the resolved path produced by
+// environment_fix_open_button_path) so environment_save can match
+// the exact string it re-reads from disk. Both lists are cleared at
+// the start of every environment_open / environment_resolve_missing_banks
+// pair so a save failure for layout A never bleeds into layout B.
+// Kind of entry an EnvBankPathNode refers to, so the resolve prompt
+// can use the right wording.
+#define ENV_KIND_BANK 0	   // BANK chunk - normal button bank
+#define ENV_KIND_START 1   // STRT chunk - start menu
+
+struct EnvBankPathNode
 {
 	struct MinNode node;
+	UBYTE kind;
 	char path[256];
 };
 
+// Both lists are owned by the most recent environment_open / paired
+// environment_resolve_missing_banks call. They are first touched on
+// the main task during early startup (main.c calls environment_open
+// before environment_proc is spawned), so the lazy init below does
+// not need a lock.
+static struct MinList env_missing_banks;
 static struct MinList env_drop_banks;
-static BOOL env_drop_banks_inited = FALSE;
+static BOOL env_bank_lists_inited = FALSE;
 
-static void env_drop_banks_ensure_init(void)
+static void env_bank_lists_ensure_init(void)
 {
-	if (!env_drop_banks_inited)
+	if (!env_bank_lists_inited)
 	{
+		NewList((struct List *)&env_missing_banks);
 		NewList((struct List *)&env_drop_banks);
-		env_drop_banks_inited = TRUE;
+		env_bank_lists_inited = TRUE;
 	}
 }
 
-static void env_drop_banks_add(const char *path)
+static void env_bank_list_add(struct MinList *list, const char *path, UBYTE kind)
 {
-	struct EnvDropBankNode *node;
+	struct EnvBankPathNode *node;
 
-	env_drop_banks_ensure_init();
+	env_bank_lists_ensure_init();
 
 	if (!path || !path[0])
 		return;
 
-	if ((node = AllocVec(sizeof(struct EnvDropBankNode), MEMF_CLEAR)))
+	if ((node = AllocVec(sizeof(struct EnvBankPathNode), MEMF_CLEAR)))
 	{
+		node->kind = kind;
 		stccpy(node->path, (char *)path, sizeof(node->path));
-		AddTail((struct List *)&env_drop_banks, (struct Node *)node);
+		AddTail((struct List *)list, (struct Node *)node);
 	}
+}
+
+static void env_bank_list_clear(struct MinList *list)
+{
+	struct EnvBankPathNode *node;
+
+	env_bank_lists_ensure_init();
+
+	while ((node = (struct EnvBankPathNode *)RemHead((struct List *)list)))
+		FreeVec(node);
+}
+
+static BOOL env_bank_list_empty(struct MinList *list)
+{
+	env_bank_lists_ensure_init();
+	return IsListEmpty((struct List *)list);
 }
 
 static BOOL env_drop_banks_contains(const char *path)
 {
-	struct EnvDropBankNode *node;
+	struct EnvBankPathNode *node;
 
-	env_drop_banks_ensure_init();
+	env_bank_lists_ensure_init();
 
 	if (!path)
 		return FALSE;
 
-	for (node = (struct EnvDropBankNode *)env_drop_banks.mlh_Head; node->node.mln_Succ;
-		 node = (struct EnvDropBankNode *)node->node.mln_Succ)
+	for (node = (struct EnvBankPathNode *)env_drop_banks.mlh_Head; node->node.mln_Succ;
+		 node = (struct EnvBankPathNode *)node->node.mln_Succ)
 	{
 		if (stricmp(node->path, (char *)path) == 0)
 			return TRUE;
 	}
 
 	return FALSE;
-}
-
-static BOOL env_drop_banks_empty(void)
-{
-	env_drop_banks_ensure_init();
-	return IsListEmpty((struct List *)&env_drop_banks);
-}
-
-static void env_drop_banks_clear(void)
-{
-	struct EnvDropBankNode *node;
-
-	env_drop_banks_ensure_init();
-
-	while ((node = (struct EnvDropBankNode *)RemHead((struct List *)&env_drop_banks)))
-		FreeVec(node);
 }
 
 // Allocate a new environment structure
@@ -416,6 +441,13 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 	BOOL success;
 	short progress = 1;
 
+	// Discard any unresolved missing-bank state from a previous load
+	// so it can never be applied to a different env file. Both lists
+	// are owned by this open / its paired environment_resolve_missing_banks
+	// call.
+	env_bank_list_clear(&env_missing_banks);
+	env_bank_list_clear(&env_drop_banks);
+
 	// Free volatile memory
 	ClearMemHandle(env->volatile_memory);
 
@@ -538,18 +570,13 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 			}
 			else
 			{
-				// The bank file referenced by the layout is gone.
-				// Ask the user whether to drop the entry from the
-				// environment so the next save no longer carries it.
-				if (SimpleRequestTags(NULL,
-									  dopus_name,
-									  (char *)"Remove|Keep",
-									  (char *)"Button bank '%s'\ncould not be opened.\n"
-											  "Remove from environment?",
-									  (IPTR)button->node.ln_Name))
-				{
-					env_drop_banks_add(button->node.ln_Name);
-				}
+				// The bank file is gone. Record the original
+				// path; environment_resolve_missing_banks will
+				// prompt the user once the display is up - the
+				// SimpleRequest at this point in startup would
+				// land on Workbench (no DOpus screen yet) and
+				// is easy to miss.
+				env_bank_list_add(&env_missing_banks, button->node.ln_Name, ENV_KIND_BANK);
 			}
 
 			// Free this node, get next
@@ -578,17 +605,8 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 			}
 			else
 			{
-				// Same treatment as missing button banks: ask the
-				// user whether to drop the entry from the layout.
-				if (SimpleRequestTags(NULL,
-									  dopus_name,
-									  (char *)"Remove|Keep",
-									  (char *)"Start menu '%s'\ncould not be opened.\n"
-											  "Remove from environment?",
-									  (IPTR)button->node.ln_Name))
-				{
-					env_drop_banks_add(button->node.ln_Name);
-				}
+				// Same deferred handling as button banks above.
+				env_bank_list_add(&env_missing_banks, button->node.ln_Name, ENV_KIND_START);
 			}
 
 			// Free this node, get next
@@ -724,20 +742,70 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 	// Initialise sound events
 	InitSoundEvents(TRUE);
 
-	// User asked to drop one or more missing button banks during the
-	// load? Persist the change so the next save does not bring them
-	// back. The save itself filters the list using env_drop_banks.
-	// Only clear the list on a successful save - if the save failed
-	// (e.g. env->path empty, or disk error) we want the next load to
-	// still know which entries the user wanted gone, rather than
-	// silently consuming the choice.
-	if (!env_drop_banks_empty())
+	// Any missing BANK/STRT entries that were collected above are
+	// drained later by environment_resolve_missing_banks once the
+	// caller has a usable parent screen for the requesters. We do
+	// nothing else here: a startup-time SimpleRequest with no DOpus
+	// screen yet was unreliable in earlier builds.
+	return success;
+}
+
+// Prompt the user about each BANK/STRT entry that environment_open
+// found missing on disk, and rewrite the env file without the ones
+// they chose to remove. Caller is responsible for invoking this at a
+// point where requesters can be displayed (i.e. after the DOpus
+// screen is open). Calling it when there is nothing to resolve is
+// cheap.
+//
+// `parent` is the window the requester anchors to. NULL falls back to
+// the default public screen, which is fine for the layout-load path
+// where the DOpus window is up; for the very first startup load the
+// caller passes GUI->window once the display is initialised.
+//
+// We deliberately don't clear env_missing_banks at entry: the whole
+// point of this function is to drain the list environment_open just
+// populated. env_drop_banks, on the other hand, is cleared up-front
+// so a previous load whose follow-up save failed cannot bleed its
+// removals into a different env file (Codex review).
+void environment_resolve_missing_banks(Cfg_Environment *env, struct Window *parent)
+{
+	struct EnvBankPathNode *node;
+
+	env_bank_lists_ensure_init();
+
+	env_bank_list_clear(&env_drop_banks);
+
+	if (env_bank_list_empty(&env_missing_banks))
+		return;
+
+	// Drain the missing list into a Remove/Keep prompt per entry.
+	while ((node = (struct EnvBankPathNode *)RemHead((struct List *)&env_missing_banks)))
 	{
-		if (environment_save(env, env->path, ENVSAVE_DROP_MISSING_BANKS, 0) == 0)
-			env_drop_banks_clear();
+		const char *fmt = (node->kind == ENV_KIND_START)
+							  ? "Start menu '%s'\ncould not be opened.\n"
+								"Remove from environment?"
+							  : "Button bank '%s'\ncould not be opened.\n"
+								"Remove from environment?";
+
+		if (SimpleRequestTags(parent,
+							  dopus_name,
+							  (char *)"Remove|Keep",
+							  (char *)fmt,
+							  (IPTR)node->path))
+		{
+			env_bank_list_add(&env_drop_banks, node->path, node->kind);
+		}
+
+		FreeVec(node);
 	}
 
-	return success;
+	// Persist the chosen removals. On save failure leave the drop
+	// list empty anyway: the env file is unchanged so the next load
+	// will detect the same entries again and re-prompt.
+	if (!env_bank_list_empty(&env_drop_banks))
+		environment_save(env, env->path, ENVSAVE_DROP_MISSING_BANKS, 0);
+
+	env_bank_list_clear(&env_drop_banks);
 }
 
 // Save an environment
@@ -1565,9 +1633,14 @@ IPC_EntryCode(environment_proc)
 	// Send goodbye
 	IPC_Goodbye(ipc, &main_ipc, 0);
 
-	// Send change/reopen status to main process
+	// Send change/reopen status to main process. The OPEN_DISPLAY
+	// command is synchronous (matches the CLOSE_DISPLAY at the top
+	// of this branch) so a back-to-back layout load cannot start
+	// another environment_open while the main task still has this
+	// load's missing-bank list to drain in
+	// environment_resolve_missing_banks.
 	if (reopen)
-		IPC_Command(&main_ipc, MAINCMD_OPEN_DISPLAY, DSPOPENF_DESKTOP, 0, 0, 0);
+		IPC_Command(&main_ipc, MAINCMD_OPEN_DISPLAY, DSPOPENF_DESKTOP, 0, 0, (struct MsgPort *)-1);
 	else if (change_flags[0] || change_flags[1])
 		send_main_reset_cmd(change_flags[0], change_flags[1], 0);
 
