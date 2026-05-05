@@ -391,37 +391,37 @@ void RemoveTemp(struct xoData *data)
 void LaunchCommand(struct xoData *data, char *cmd, char *name, char *qual)
 {
 	DOpusCallbackInfo *infoptr = &data->hook;
-	ULONG sigMask, cmdSig, timeoutTicks;
 
+	/* Dispatch the command asynchronously.
+	 *
+	 * We used to send "command wait ..." here, which blocked this task until
+	 * the launched command completed. For view commands (Read/Play/Show/...)
+	 * and DoubleClick that frequently means blocking until the user closes a
+	 * viewer, leaving the lister stuck in the "busy" state (see issue #27).
+	 *
+	 * A later attempt wrapped an async "command ..." call in a Wait()/Delay()
+	 * loop on data->mp, but that port only receives trap messages from DOpus -
+	 * the command itself never signals completion there - so Wait() blocked
+	 * forever (never reaching the decrement path) and any trap events that did
+	 * arrive were silently consumed instead of being handled by the main event
+	 * loop, leaving the lister permanently busy.
+	 *
+	 * The temp trap removal and the brief busy toggle are still useful to
+	 * avoid re-entering the same handler while DOpus dispatches the command,
+	 * so keep those, but drop the broken wait entirely and let DOpus run the
+	 * command in the background. */
 	sprintf(data->buf, "lister set %s busy on wait", data->lists);
 	DC_CALL4(infoptr, dc_SendCommand, DC_REGA0, IPCDATA(data->ipc), DC_REGA1, data->buf, DC_REGA2, NULL, DC_REGD0, 0);
+
 	sprintf(data->buf, "dopus remtrap %s %s", cmd, data->mp_name);
 	DC_CALL4(infoptr, dc_SendCommand, DC_REGA0, IPCDATA(data->ipc), DC_REGA1, data->buf, DC_REGA2, NULL, DC_REGD0, 0);
 
 	sprintf(data->buf, "command %s %s %s", cmd, qual, name);
-	sigMask = 1L << data->mp->mp_SigBit;
-	timeoutTicks = 30;
-
 	DC_CALL4(infoptr, dc_SendCommand, DC_REGA0, IPCDATA(data->ipc), DC_REGA1, data->buf, DC_REGA2, NULL, DC_REGD0, 0);
-
-	while (timeoutTicks > 0)
-	{
-		cmdSig = Wait(sigMask | SIGBREAKF_CTRL_C);
-		if (cmdSig & sigMask)
-		{
-			struct Message *msg;
-			while ((msg = GetMsg(data->mp)))
-				ReplyMsg(msg);
-			break;
-		}
-		if (cmdSig & SIGBREAKF_CTRL_C)
-			break;
-		timeoutTicks--;
-		Delay(50);
-	}
 
 	sprintf(data->buf, "dopus addtrap %s %s", cmd, data->mp_name);
 	DC_CALL4(infoptr, dc_SendCommand, DC_REGA0, IPCDATA(data->ipc), DC_REGA1, data->buf, DC_REGA2, NULL, DC_REGD0, 0);
+
 	sprintf(data->buf, "lister set %s busy off wait", data->lists);
 	DC_CALL4(infoptr, dc_SendCommand, DC_REGA0, IPCDATA(data->ipc), DC_REGA1, data->buf, DC_REGA2, NULL, DC_REGD0, 0);
 }
