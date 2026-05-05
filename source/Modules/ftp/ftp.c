@@ -885,7 +885,7 @@ static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 					return (-1);
 
 				default:
-					D(bug("Epsv failed returns %ld\n", epsvreply));
+					D(bug("Epsv failed returns %ld\n", (long)epsvreply));
 				}
 			}
 
@@ -940,7 +940,7 @@ static int opendataconn(struct opusftp_globals *ogp, struct ftp_info *info)
 					return (-1);
 
 				default:
-					D(bug("Pasv failed returns %ld\n", pasvreply));
+					D(bug("Pasv failed returns %ld\n", (long)pasvreply));
 					bad_pasv = TRUE;
 				}
 			}
@@ -1812,7 +1812,7 @@ int list(struct ftp_info *info,
 
 				if (updateret <= 0)
 				{
-					D(bug("** list update %ld\n", updateret));
+					D(bug("** list update %ld\n", (long)updateret));
 					retval = updateret;
 				}
 			}
@@ -2200,7 +2200,7 @@ int connect_host(struct ftp_info *info, int (*updatefn)(void *, int, char *), vo
 		{
 			// Connect the control socket to the FTP server
 			// D(bug( "--> connect()\n" ));
-			D(bug("** control connect(0x%08lx)\n", remote_addr.sin_addr.s_addr));
+			D(bug("** control connect(0x%08lx)\n", (unsigned long)remote_addr.sin_addr.s_addr));
 
 			if (connect(info->fi_cs, (struct sockaddr *)&remote_addr, sizeof(remote_addr)) >= 0)
 			{
@@ -2210,7 +2210,7 @@ int connect_host(struct ftp_info *info, int (*updatefn)(void *, int, char *), vo
 				if (getsockname(info->fi_cs, (struct sockaddr *)&info->fi_addr, &len) >= 0)
 				{
 					int tos = IPTOS_LOWDELAY;
-					D(bug("  conhost: %lx\n", info->fi_addr.sin_addr));
+					D(bug("  conhost: %lx\n", (unsigned long)info->fi_addr.sin_addr.s_addr));
 
 					// Control connection is somewhat interactive, so quick response
 					// is desired

@@ -797,10 +797,10 @@ static int handle_ipc_msg(struct opusftp_globals *og, struct main_event_data *me
 							msg = 0;
 						}
 						else
-							D(bug("** add/cmd node 0x%lx not found\n"));
+							D(bug("** add/cmd node 0x%lx not found\n", (unsigned long)handle));
 					}
 					else
-						D(bug("** add/cmd can't get handle from func handle 0x%lx\n", fm->fm_function_handle));
+						D(bug("** add/cmd can't get handle from func handle 0x%lx\n", (unsigned long)fm->fm_function_handle));
 				}
 			}
 
@@ -1456,7 +1456,7 @@ static int opus_dropfrom(struct opusftp_globals *og, struct RexxMsg *rxmsg, int 
 
 				// Some new setting?
 				default:
-					D(bug("** unknown desktop setting %ld\n", result));
+					D(bug("** unknown desktop setting %ld\n", (long)result));
 					break;
 				}
 			}
@@ -1802,13 +1802,13 @@ static int trap_abort(struct opusftp_globals *og, struct RexxMsg *rxmsg, int arg
 			// Signal another task, or this lister's task?
 			if (node->fn_signaltask)
 			{
-				D(bug("*** SENDING SIGNAL (0x%08lx -> 0x%08lx) ***\n", node->fn_ipc->proc, node->fn_signaltask));
+				D(bug("*** SENDING SIGNAL (0x%08lx -> 0x%08lx) ***\n", (unsigned long)node->fn_ipc->proc, (unsigned long)node->fn_signaltask));
 				Signal(node->fn_signaltask, node->fn_ftp.fi_abortsignals);
 				//	retval = 1;
 			}
 			//	else
 			{
-				D(bug("*** SENDING SIGNAL (0x%08lx) ***\n", node->fn_ipc->proc));
+				D(bug("*** SENDING SIGNAL (0x%08lx) ***\n", (unsigned long)node->fn_ipc->proc));
 				Signal((struct Task *)node->fn_ipc->proc, node->fn_ftp.fi_abortsignals);
 				retval = 1;
 			}
@@ -2216,7 +2216,7 @@ static int trap_delete(struct opusftp_globals *og, struct RexxMsg *rxmsg, int ar
 						else if (ei.ei_type == -4)
 							ei.ei_type = -3;
 						else
-							D(bug("** ExamineEntry bad type %ld\n", ei.ei_type));
+							D(bug("** ExamineEntry bad type %ld\n", (long)ei.ei_type));
 
 						if (ei.ei_type >= 0)
 							++fm->fm_dircount;
@@ -3016,7 +3016,7 @@ static int handle_notify(struct opusftp_globals *og, struct MsgPort *nfyport)
 			free_address_book(og);
 		}
 		else
-			D(bug("** notify UNEXPECTED 0x%lx\n", nmsg->dn_Type));
+			D(bug("** notify UNEXPECTED 0x%lx\n", (unsigned long)nmsg->dn_Type));
 
 		ReplyFreeMsg(nmsg);
 	}
@@ -3319,7 +3319,7 @@ void dopus_ftp(void)
 								ipc_list_signal(&og->og_listerlist, 1);
 							}
 
-							D(bug("** ABORT %ld listers...\n", og->og_listercount));
+							D(bug("** ABORT %ld listers...\n", (long)og->og_listercount));
 
 							IPC_ListQuit(&med.med_tasklist, mldata->mld_ftp_ipc, 0, FALSE);
 

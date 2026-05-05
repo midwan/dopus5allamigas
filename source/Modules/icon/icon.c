@@ -1852,7 +1852,7 @@ BOOL icon_edit(icon_data *data)
 									goto breakout;
 					}
 					else
-						D(bug("** Icon module: Unexpected notify %lx\n", nmsg->dn_Type));
+						D(bug("** Icon module: Unexpected notify %lx\n", (unsigned long)nmsg->dn_Type));
 
 					ReplyFreeMsg(nmsg);
 				}
@@ -2135,7 +2135,7 @@ short icon_info(icon_data *data, char *name, struct Node *next)
 			while ((nmsg = (DOpusNotify *)GetMsg(data->notify_port)))
 			{
 				if (nmsg->dn_Type != DN_APP_WINDOW_LIST)
-					D(bug("** Icon module: Ignoring notify %lx\n", nmsg->dn_Type));
+					D(bug("** Icon module: Ignoring notify %lx\n", (unsigned long)nmsg->dn_Type));
 
 				ReplyFreeMsg(nmsg);
 			}

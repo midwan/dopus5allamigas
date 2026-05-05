@@ -821,7 +821,7 @@ static int hook_copy_pre(struct hook_rec_data *hc,
 
 					replace_option = replace_requester(hc, replace_flags, srcent, dstent);
 
-					D(bug("** replace option %ld\n", replace_option));
+					D(bug("** replace option %ld\n", (long)replace_option));
 				}
 
 				FreeVec(dstent);
@@ -840,7 +840,7 @@ static int hook_copy_pre(struct hook_rec_data *hc,
 
 				replace_option = replace_requester(hc, replace_flags, srcent, dstent);
 
-				D(bug("** B replace option %ld\n", replace_option));
+				D(bug("** B replace option %ld\n", (long)replace_option));
 
 				FreeVec(dstent);
 			}
@@ -856,7 +856,7 @@ static int hook_copy_pre(struct hook_rec_data *hc,
 			hc->hc_misc_bytes = dstent->ei_size;
 
 			replace_option = replace_requester(hc, replace_flags, srcent, dstent);
-			D(bug("** C replace option %ld\n", replace_option));
+			D(bug("** C replace option %ld\n", (long)replace_option));
 		}
 	}
 

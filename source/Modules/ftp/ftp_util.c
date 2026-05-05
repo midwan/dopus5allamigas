@@ -562,7 +562,7 @@ int unix_line_to_entryinfo(struct entry_info *entry, const char *line, ULONG fla
 		break;
 	}
 
-	D(bug("type %ld ", entry->ei_type));
+	D(bug("type %ld ", (long)entry->ei_type));
 
 	entry->ei_prot = FIBF_READ | FIBF_WRITE | FIBF_EXECUTE | FIBF_DELETE;
 

@@ -2609,10 +2609,10 @@ BOOL LIBFUNC L_WB_Remove_Patch(REG(a6, struct MyLibrary *libbase))
 				// Get library
 				if ((libptr = wb_get_patchbase(wb_patches[patch].type, (struct LibData *)libbase->ml_UserData)))
 				{
-					D(bug("waiting for the usecount (%d) to be zero (patch type %d at LVO %d)\n",
+					D(bug("waiting for the usecount (%d) to be zero (patch type %d at LVO %ld)\n",
 						  usecount[patch],
 						  wb_patches[patch].type,
-						  wb_patches[patch].offset));
+						  (long)wb_patches[patch].offset));
 					while (usecount[patch] != 0)
 						Delay(1);
 					Forbid();
