@@ -66,6 +66,7 @@
 #define MSG_INSTALLING_DISK 1032
 #define MSG_FORMAT_DESC 1033
 #define MSG_FORMAT_LNFS 1034
+#define MSG_FORMAT_FS_PFS3 1035
 
 #endif /* CATCOMP_NUMBERS */
 
@@ -109,6 +110,7 @@
 #define MSG_INSTALLING_DISK_STR "Installing Bootblock..."
 #define MSG_FORMAT_DESC_STR "Format disks"
 #define MSG_FORMAT_LNFS_STR "_Long File Names"
+#define MSG_FORMAT_FS_PFS3_STR "Personal File System 3"
 
 #endif /* CATCOMP_STRINGS */
 
@@ -160,6 +162,7 @@ static const struct CatCompArrayType CatCompArray[] =
     {MSG_INSTALLING_DISK,(STRPTR)MSG_INSTALLING_DISK_STR},
     {MSG_FORMAT_DESC,(STRPTR)MSG_FORMAT_DESC_STR},
     {MSG_FORMAT_LNFS,(STRPTR)MSG_FORMAT_LNFS_STR},
+    {MSG_FORMAT_FS_PFS3,(STRPTR)MSG_FORMAT_FS_PFS3_STR},
 };
 
 #endif /* CATCOMP_ARRAY */
@@ -239,7 +242,9 @@ static const char CatCompBlock[] =
     "\x00\x00\x04\x09\x00\x0E"
     MSG_FORMAT_DESC_STR "\x00\x00"
     "\x00\x00\x04\x0A\x00\x12"
-    MSG_FORMAT_LNFS_STR "\x00"
+    MSG_FORMAT_LNFS_STR "\x00\x00"
+    "\x00\x00\x04\x0B\x00\x18"
+    MSG_FORMAT_FS_PFS3_STR "\x00\x00"
 };
 
 #endif /* CATCOMP_BLOCK */

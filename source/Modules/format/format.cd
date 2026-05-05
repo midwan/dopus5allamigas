@@ -107,3 +107,6 @@ Format disks
 MSG_FORMAT_LNFS (//)
 _Long File Names
 ;
+MSG_FORMAT_FS_PFS3 (//)
+Personal File System 3
+;

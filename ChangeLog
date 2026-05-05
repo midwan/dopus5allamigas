@@ -1,4 +1,4 @@
-[dopus5allamigas next] format.module: Long File Names (FFS-LNFS) support
+[dopus5allamigas next] format.module: LNFS support and PFS3 awareness
 Program remains at 5.100. format.module ships in v73r5.
 
 Format / FFS-LNFS:
@@ -15,6 +15,14 @@ Format / FFS-LNFS:
   listview height grows in step so it still aligns with the bottom
   checkbox.
 - Resolves #46.
+
+Format / PFS3:
+- When a PFS3-family volume (DOS type PFS\3, PDS\3, or muPF) is
+  selected in the device list, append "(Personal File System 3)" to
+  the status bar. The dialog otherwise behaves as before - all
+  FFS-specific checkboxes stay greyed out and the format goes through
+  Format() with the volume's existing PFS3 DOS type, which is what
+  the PFS3 filesystem expects.
 2026-05-05 by Dimitris Panokostas <midwan@gmail.com>
 
 [dopus5allamigas next] FTP SFTP support

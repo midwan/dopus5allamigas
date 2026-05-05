@@ -494,7 +494,7 @@ void show_device_info(format_data *data)
 	Att_Node *node;
 	struct DosList *dl;
 	char name_buf[32], *ptr;
-	char info_buf[80];
+	char info_buf[120];
 	unsigned long dos_type = ID_DOS_DISK, table_size = 0;
 
 	// Get selected node
@@ -546,6 +546,23 @@ void show_device_info(format_data *data)
 
 	// Unlock dos list
 	UnLockDosList(LDF_DEVICES | LDF_READ);
+
+	// Identify PFS3-family volumes in the status text so the user knows
+	// they are re-formatting a PFS3 partition rather than a plain DOS one.
+	if (info_buf[0] &&
+		(dos_type == ID_PFS3_DISK || dos_type == ID_PFS3_SC_DISK || dos_type == ID_PFS3_MULTI))
+	{
+		char *fs_name = GetString(locale, MSG_FORMAT_FS_PFS3);
+		int cur_len = strlen(info_buf);
+		int suffix_len = strlen(fs_name) + 4; /* " (" + name + ")" + NUL */
+
+		if ((long)(cur_len + suffix_len) < (long)sizeof(info_buf))
+		{
+			strcat(info_buf, " (");
+			strcat(info_buf, fs_name);
+			strcat(info_buf, ")");
+		}
+	}
 
 	// Display status
 	SetGadgetValue(data->list, GAD_FORMAT_STATUS, (IPTR)info_buf);
