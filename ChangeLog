@@ -1,4 +1,4 @@
-[dopus5allamigas next] format.module: LNFS support and PFS3 awareness
+[dopus5allamigas next] format.module: LNFS support and PFS awareness
 Program remains at 5.100. format.module ships in v73r5.
 
 Format / FFS-LNFS:
@@ -16,13 +16,17 @@ Format / FFS-LNFS:
   checkbox.
 - Resolves #46.
 
-Format / PFS3:
-- When a PFS3-family volume (DOS type PFS\3, PDS\3, or muPF) is
-  selected in the device list, append "(Personal File System 3)" to
-  the status bar. The dialog otherwise behaves as before - all
-  FFS-specific checkboxes stay greyed out and the format goes through
-  Format() with the volume's existing PFS3 DOS type, which is what
-  the PFS3 filesystem expects.
+Format / PFS:
+- When a PFS-family volume (any DOS type in the PFS\x, PDS\x, or muPF
+  ranges, where the PFS3 filesystem is what's actually mounted) is
+  selected in the device list, append "(Personal File System)" to the
+  status bar. The dialog otherwise behaves as before - all FFS-specific
+  checkboxes stay greyed out and the format goes through Format() with
+  the volume's existing DOS type, which is what the PFS3 filesystem
+  expects. The check covers PFS\0..PFS\3, PDS\0..PDS\3 and muPF since
+  the PFS3 filesystem can serve any of those depending on which
+  features (deldir, large file, multiuser) the partition was set up
+  with.
 2026-05-05 by Dimitris Panokostas <midwan@gmail.com>
 
 [dopus5allamigas next] FTP SFTP support

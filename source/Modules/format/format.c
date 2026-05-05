@@ -547,20 +547,42 @@ void show_device_info(format_data *data)
 	// Unlock dos list
 	UnLockDosList(LDF_DEVICES | LDF_READ);
 
-	// Identify PFS3-family volumes in the status text so the user knows
-	// they are re-formatting a PFS3 partition rather than a plain DOS one.
-	if (info_buf[0] &&
-		(dos_type == ID_PFS3_DISK || dos_type == ID_PFS3_SC_DISK || dos_type == ID_PFS3_MULTI))
+	// Identify PFS-family volumes in the status text so the user knows
+	// they are re-formatting a PFS partition rather than a plain DOS
+	// one. The PFS3 filesystem itself can serve any of these DOS types
+	// depending on which features (deldir, large file, multiuser) the
+	// partition was set up with, so match the whole family rather than
+	// just the PFS\3 / PDS\3 / muPF triple.
+	if (info_buf[0])
 	{
-		char *fs_name = GetString(locale, MSG_FORMAT_FS_PFS3);
-		int cur_len = strlen(info_buf);
-		int suffix_len = strlen(fs_name) + 4; /* " (" + name + ")" + NUL */
+		BOOL is_pfs = FALSE;
 
-		if ((long)(cur_len + suffix_len) < (long)sizeof(info_buf))
+		/* PFS\0..PFS\3: the standard four PFS / PFS3 dostypes. */
+		if ((dos_type & 0xFFFFFFFCUL) == (ID_PFS_FLOPPY & 0xFFFFFFFCUL))
+			is_pfs = TRUE;
+
+		/* PDS\0..PDS\3: the four Direct-SCSI dostypes (only PDS\2/3
+		 * have ID_ defines in dopus5.h, but PDS\0/1 are valid too).
+		 */
+		else if ((dos_type & 0xFFFFFFFCUL) == 0x50445300UL)
+			is_pfs = TRUE;
+
+		/* muPF: PFS3 multiuser. */
+		else if (dos_type == ID_PFS3_MULTI)
+			is_pfs = TRUE;
+
+		if (is_pfs)
 		{
-			strcat(info_buf, " (");
-			strcat(info_buf, fs_name);
-			strcat(info_buf, ")");
+			char *fs_name = GetString(locale, MSG_FORMAT_FS_PFS);
+			int cur_len = strlen(info_buf);
+			int suffix_len = strlen(fs_name) + 4; /* " (" + name + ")" + NUL */
+
+			if ((long)(cur_len + suffix_len) < (long)sizeof(info_buf))
+			{
+				strcat(info_buf, " (");
+				strcat(info_buf, fs_name);
+				strcat(info_buf, ")");
+			}
 		}
 	}
 
