@@ -212,12 +212,16 @@ struct DiskObject *LIBFUNC L_GetCachedDiskObject(REG(a0, char *name),
 	{
 		icon = NULL;
 
-		// old method with no remap.
-		// icon=GetIconTags(name,ICONGETA_FailIfUnavailable,TRUE,ICONGETA_RemapIcon,FALSE,TAG_DONE);
-
+		// Return only real icons here. Setting ICONGETA_FailIfUnavailable=FALSE
+		// would make icon.library hand back a filename-pattern deficon (e.g.
+		// env:sys/def_ascii) for any file without a real .info, which
+		// short-circuits GetProperIcon() and prevents DOpus filetype icons from
+		// ever being consulted in icon-view listers (issue #24).
+		// Deficons fallback for files without .info still happens via
+		// GetProperIcon() -> filetype_identify() -> GetCachedDiskObjectNew().
 		if (data->backfill_screen)
 			icon = GetIconTags(
-				name, ICONGETA_FailIfUnavailable, FALSE, ICONGETA_Screen, (IPTR)*data->backfill_screen, TAG_DONE);
+				name, ICONGETA_FailIfUnavailable, TRUE, ICONGETA_Screen, (IPTR)*data->backfill_screen, TAG_DONE);
 
 		return icon;
 	}
@@ -396,6 +400,28 @@ struct DiskObject *LIBFUNC L_GetCachedDiskObjectNew(REG(a0, char *name),
 	// Try for real icon
 	if (flags & GCDOFN_REAL_ICON && (icon = L_GetCachedDiskObject(name, 0, libbase)))
 		return icon;
+
+	// On modern icon.library, ask for the best icon for this name with deficons
+	// enabled - icon.library will look at the filename and contents and may
+	// return a filename-pattern deficon (e.g. env:sys/def_ascii for text,
+	// env:sys/def_module for *.MOD, ...) instead of a plain WBPROJECT default.
+	// This is the proper place for that fallback: only callers that have
+	// already failed to find a real icon AND a DOpus filetype icon end up
+	// here (see GetProperIcon()), so it never shadows DOpus filetype icons.
+	if (IconBase->lib_Version >= 44)
+	{
+		struct LibData *libdata = (struct LibData *)libbase->ml_UserData;
+
+		if (libdata->backfill_screen)
+		{
+			icon = GetIconTags(name,
+							   ICONGETA_FailIfUnavailable, FALSE,
+							   ICONGETA_Screen, (IPTR)*libdata->backfill_screen,
+							   TAG_DONE);
+			if (icon)
+				return icon;
+		}
+	}
 
 	// Lock object
 	if ((lock = Lock(name, ACCESS_READ)))
