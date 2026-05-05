@@ -1838,7 +1838,7 @@ void scripts_check_bank(lister_menu_data *data)
 	}
 
 	// Default name
-	strcpy(data->menu_name, "dopus5:buttons/scripts");
+	strcpy(data->menu_name, "dopus5:Buttons/Scripts");
 }
 
 // Fix colours in function list
