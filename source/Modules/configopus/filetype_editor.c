@@ -707,18 +707,47 @@ short filetypeed_receive_edit(filetype_ed_data *data, FunctionReturn *ret)
 	Cfg_Function *function = 0;
 	Cfg_Function *func_copy = 0;
 	BOOL no_func = 0, icon = 0;
-	func_node *fndata = 0;
 	short success = 0;
+
+	// Icon menu? (this is a bit kludgy)
+	if (ret->object_flags > 15)
+		icon = 1;
 
 	// Is the new function empty?
 	if (IsListEmpty((struct List *)&ret->function->instructions))
 		no_func = 1;
 
+	// Icon menu entries are identified by their label; if the user
+	// cleared it, the entry would be invisible in the listview but
+	// still saved to disk. Treat such an entry as empty so the old
+	// function gets removed instead. Match filetypeed_update_iconmenu's
+	// "first INST_LABEL wins" semantics so the predicate stays in
+	// sync with how the listview is populated.
+	else if (icon)
+	{
+		Cfg_Instruction *ins;
+		BOOL has_label = FALSE;
+
+		for (ins = (Cfg_Instruction *)ret->function->instructions.mlh_Head;
+			 ins->node.mln_Succ;
+			 ins = (Cfg_Instruction *)ins->node.mln_Succ)
+		{
+			if (ins->type == INST_LABEL)
+			{
+				has_label = (BOOL)(ins->string && ins->string[0]);
+				break;
+			}
+		}
+
+		if (!has_label)
+			no_func = 1;
+	}
+
 	// Try to copy the new function
 	if (no_func || (func_copy = CopyFunction(ret->function, 0, 0)))
 	{
-		// Icon menu? (this is a bit kludgy)
-		if (ret->object_flags > 15)
+		// Look up the function we are replacing
+		if (icon)
 		{
 			Att_Node *node;
 
@@ -734,8 +763,6 @@ short filetypeed_receive_edit(filetype_ed_data *data, FunctionReturn *ret)
 					break;
 				}
 			}
-
-			icon = 1;
 		}
 
 		// Otherwise, find the function we want to replace
@@ -763,10 +790,6 @@ short filetypeed_receive_edit(filetype_ed_data *data, FunctionReturn *ret)
 			Remove(&function->node);
 			FreeFunction(function);
 		}
-
-		// Store for icon menu
-		if (fndata)
-			fndata->func = func_copy;
 
 		success = (icon) ? 2 : 1;
 	}
@@ -867,7 +890,35 @@ void filetypeed_show_icon(filetype_ed_data *data)
 
 	// Valid icon?
 	if (!data->icon_image)
+	{
+		// An icon path is configured but the image could not be
+		// loaded - draw a "?" placeholder so the user knows the
+		// referenced file is missing rather than no icon being set.
+		if (data->type->icon_path && data->type->icon_path[0] &&
+			GetObjectRect(data->objlist, GAD_FILETYPEED_ICON_AREA, &bounds))
+		{
+			short text_width;
+
+			// Match the inset used by the icon-image draw below
+			// so the "?" stays clear of the recessed border.
+			bounds.MinX += 2;
+			bounds.MinY += 1;
+			bounds.MaxX -= 2;
+			bounds.MaxY -= 1;
+
+			text_width = TextLength(data->window->RPort, (char *)"?", 1);
+
+			SetAPen(data->window->RPort, DRAWINFO(data->window)->dri_Pens[TEXTPEN]);
+			SetDrMd(data->window->RPort, JAM1);
+			Move(data->window->RPort,
+				 bounds.MinX + (((bounds.MaxX - bounds.MinX) + 1 - text_width) >> 1),
+				 bounds.MinY +
+					 (((bounds.MaxY - bounds.MinY) + 1 - data->window->RPort->TxHeight) >> 1) +
+					 data->window->RPort->TxBaseline);
+			Text(data->window->RPort, (char *)"?", 1);
+		}
 		return;
+	}
 
 	// Get icon area
 	if (!(GetObjectRect(data->objlist, GAD_FILETYPEED_ICON_AREA, &bounds)))
