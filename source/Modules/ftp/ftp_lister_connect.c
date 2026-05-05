@@ -152,7 +152,7 @@ static int lister_connect(struct ftp_node *node,
 
 	lst_addabort(node, SIGBREAKF_CTRL_D, 0);
 
-	D(bug("lister_connect %s %ld\n", host, port));
+	D(bug("lister_connect %s %ld\n", host, (long)port));
 
 	retval = connect_host(&node->fn_ftp, startupfn, mu, host, port);
 
@@ -166,7 +166,7 @@ static int lister_connect(struct ftp_node *node,
 		lister_check_startup_msg(node);
 	}
 
-	D(bug("lister_connect returns %ld\n", retval));
+	D(bug("lister_connect returns %ld\n", (long)retval));
 
 	return retval;
 }
@@ -705,7 +705,7 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 			loginerr = lister_login(node, startupfn, mu, cld->cld_cm->cm_site.se_user, cld->cld_cm->cm_site.se_pass);
 
 			D(bug(
-				"lister_login of %s %s ->%ld\n", cld->cld_cm->cm_site.se_user, cld->cld_cm->cm_site.se_pass, loginerr));
+				"lister_login of %s %s ->%ld\n", cld->cld_cm->cm_site.se_user, cld->cld_cm->cm_site.se_pass, (long)loginerr));
 
 			// Login successful?
 			if (loginerr == 0)
@@ -943,7 +943,7 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 				// Can TIMEOUT
 				reply = connect_cwd(node, cwdfn, mu, node->fn_site.se_path);
 
-				D(bug("connect_cwd -> %ld\n", reply));
+				D(bug("connect_cwd -> %ld\n", (long)reply));
 
 				if (reply / 100 != COMPLETE)
 					need_query_path = 1;
@@ -1064,7 +1064,7 @@ static int lister_connect_and_login(struct opusftp_globals *og, struct connect_l
 				   FTP_HANDLE_VALUE(cld->cld_handle));
 	}
 
-	D(bug("lister_connect_and_login returns %ld\n", cld->cld_okay));
+	D(bug("lister_connect_and_login returns %ld\n", (long)cld->cld_okay));
 
 	return cld->cld_okay;
 }
@@ -1372,7 +1372,7 @@ static int opus_lostconn(struct opusftp_globals *og, struct ftp_node *ftpnode)
 	int retval = 0;
 
 #ifdef DEBUG
-	D(bug("opus_lostconn() - %ld  ", ftpnode->fn_ftp.fi_errno));
+	D(bug("opus_lostconn() - %ld  ", (long)ftpnode->fn_ftp.fi_errno));
 
 	ftpnode->fn_ftp.fi_errno &= ~FTPERR_XFER_MASK;
 

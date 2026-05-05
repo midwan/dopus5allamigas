@@ -231,7 +231,7 @@ static BOOL write_entry(BPTR cf, struct site_entry *e)
 
 	if (e->se_port != ftp_protocol_default_port(e->se_protocol))
 	{
-		sprintf(num, "%ld", e->se_port);  // se_port is LONG
+		sprintf(num, "%ld", (long)e->se_port);  // se_port is LONG
 		// stcul_d(num, e->se_port);
 		strcat(buf, "PORT ");
 		strcat(buf, num);

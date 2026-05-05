@@ -441,11 +441,11 @@ void get_dostype_string(ULONG disktype, char *buffer)
 	char c;
 
 	D(bug("disktype : %lx (%lx %lx %lx %lx)\n",
-		  disktype,
-		  (disktype >> 24) & 0xff,
-		  (disktype >> 16) & 0xff,
-		  (disktype >> 8) & 0xff,
-		  disktype & 0xff));
+		  (unsigned long)disktype,
+		  (unsigned long)((disktype >> 24) & 0xff),
+		  (unsigned long)((disktype >> 16) & 0xff),
+		  (unsigned long)((disktype >> 8) & 0xff),
+		  (unsigned long)(disktype & 0xff)));
 	// Go through lookup table
 	for (a = 0; disktype_lookup[a]; a += 2)
 	{

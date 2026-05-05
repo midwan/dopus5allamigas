@@ -2391,7 +2391,7 @@ static int lister_favour(struct ftp_node *ftpnode, IPCMessage *msg)
 			break;
 		}
 	default:
-		D(bug("** unknown favour %ld\n", fm->fm_ftp_command));
+		D(bug("** unknown favour %ld\n", (long)fm->fm_ftp_command));
 		msg->command = 0;
 		break;
 	}
@@ -3781,9 +3781,9 @@ static void lister_get_prog_stuff(struct ftp_node *node, IPTR *handle, int *type
 	if (!node || !handle || !type)
 	{
 		D(bug("** get prog stuff invalid args!\n"));
-		D(bug("node:   0x%lx\n", node));
-		D(bug("handle: 0x%lx\n", handle));
-		D(bug("type:   0x%lx\n", type));
+		D(bug("node:   0x%lx\n", (unsigned long)node));
+		D(bug("handle: 0x%lx\n", (unsigned long)handle));
+		D(bug("type:   0x%lx\n", (unsigned long)type));
 
 		if (!node)
 			return;

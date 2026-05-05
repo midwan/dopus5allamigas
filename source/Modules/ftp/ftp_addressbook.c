@@ -632,11 +632,11 @@ static void address_drag_arrange(struct display_globals *dg, int swap)
 		{
 			drop_item = (x << 16) | y;
 
-			D(bug("x %ld y %ld di %ld\n  ", x, y, drop_item));
+			D(bug("x %ld y %ld di %ld\n  ", (long)x, (long)y, (long)drop_item));
 
 			GetAttr(DLV_GetLine, GADGET(obj), &drop_item);
 
-			D(bug("di %ld\n  ", drop_item));
+			D(bug("di %ld\n  ", (long)drop_item));
 
 			// Item dragged onto itself?
 			if (dg->dg_drag_item == drop_item)
@@ -3390,7 +3390,7 @@ static struct window_params *show_addrbook(struct display_globals *dg, struct su
 			if (pos.Width < FTP_ADDRBOOK_MIN_SAVED_WIDTH || pos.Height < FTP_ADDRBOOK_MIN_SAVED_HEIGHT)
 				old_font_size = 0;
 
-			D(bug("font size %ld , old_font_size %ld\n", dg->dg_og->og_screen->RastPort.TxHeight, old_font_size));
+			D(bug("font size %ld , old_font_size %ld\n", (long)dg->dg_og->og_screen->RastPort.TxHeight, (long)old_font_size));
 
 			// Is font size the same?
 			if (dg->dg_og->og_screen->RastPort.TxHeight == old_font_size)

@@ -319,7 +319,7 @@ static int rec_retry_get(struct hook_rec_data *hc,
 									   destname,
 									   resume);
 
-		D(bug("** GET errno=%ld, actual=%lu\n", hc->hc_source->ep_ftpnode->fn_ftp.fi_errno, actual));
+		D(bug("** GET errno=%ld, actual=%lu\n", (long)hc->hc_source->ep_ftpnode->fn_ftp.fi_errno, (unsigned long)actual));
 
 		// Any errors?
 		switch (hc->hc_source->ep_ftpnode->fn_ftp.fi_errno & FTPERR_XFER_MASK)
@@ -343,7 +343,7 @@ static int rec_retry_get(struct hook_rec_data *hc,
 			// Do Copy options
 			options = hc->hc_source->ep_opts(hc->hc_source, OPTION_COPY);
 
-			D(bug("opts %lx\n", options));
+			D(bug("opts %lx\n", (unsigned long)options));
 
 			// Copy Date? (only possible on filesystem)
 			if (options & COPY_DATE)
@@ -469,7 +469,7 @@ static int rec_retry_put(struct hook_rec_data *hc, struct entry_info *entry, cha
 									   entry->ei_name,
 									   resume ? hc->hc_misc_bytes : 0);
 
-		D(bug("** PUT errno=%ld, actual=%lu\n", hc->hc_source->ep_ftpnode->fn_ftp.fi_errno, actual));
+		D(bug("** PUT errno=%ld, actual=%lu\n", (long)hc->hc_source->ep_ftpnode->fn_ftp.fi_errno, (unsigned long)actual));
 
 		// Any errors?
 		switch (hc->hc_dest->ep_ftpnode->fn_ftp.fi_errno & FTPERR_XFER_MASK)
@@ -599,7 +599,7 @@ static int rec_retry_getput(struct hook_rec_data *hc, struct entry_info *entry, 
 		else
 			actual = recursive_getput_via_temp(hc, entry, destname, resume);
 
-		D(bug("** getput actual 1 %ld\n", actual));
+		D(bug("** getput actual 1 %ld\n", (long)actual));
 
 		// Fix value of actual (getput returns special values)
 
@@ -622,7 +622,7 @@ static int rec_retry_getput(struct hook_rec_data *hc, struct entry_info *entry, 
 		else if (actual == REC_GETPUT_ERROR_END)
 			actual = entry->ei_size / 2;
 
-		D(bug("** getput actual 2 %ld\n", actual));
+		D(bug("** getput actual 2 %ld\n", (long)actual));
 
 		if (transfer_aborted)
 		{
@@ -1415,7 +1415,7 @@ int recursive_copy(struct hook_rec_data *hc,
 		break;
 	}
 
-	D(bug("** copy = %ld\n", retval));
+	D(bug("** copy = %ld\n", (long)retval));
 
 	// Only do the following if we jumped there specifically
 	goto free_locals;
@@ -1836,7 +1836,7 @@ int recursive_delete(struct hook_rec_data *hc, char *startdir, struct entry_info
 		break;
 
 	default:  // Shouldn't happen (so don't try to delete)
-		D(bug("** recursive_delete()\n   unexpected type %ld '%s'\n", entry->ei_type, entry->ei_name));
+		D(bug("** recursive_delete()\n   unexpected type %ld '%s'\n", (long)entry->ei_type, entry->ei_name));
 		retval = 0;
 		break;
 	}
@@ -2350,7 +2350,7 @@ int do_normal_rec_findfile(struct hook_rec_data *hc, struct findfile_locals *l, 
 						// retval = min(2,retval);
 						retval = l->subrv;
 
-					D(bug("** subrv %ld retval %ld\n", l->subrv, retval));
+					D(bug("** subrv %ld retval %ld\n", (long)l->subrv, (long)retval));
 				}
 				// CD source back up to original dir
 				hc->hc_source->ep_cdup(hc->hc_source);
@@ -2408,7 +2408,7 @@ int do_broken_rec_findfile(struct hook_rec_data *hc, struct findfile_locals *l, 
 						// retval = min(2,retval);
 						retval = l->subrv;
 
-					D(bug("** subrv %ld retval %ld\n", l->subrv, retval));
+					D(bug("** subrv %ld retval %ld\n", (long)l->subrv, (long)retval));
 				}
 			}
 			// Free entry list
@@ -2954,7 +2954,7 @@ int rec_ftp_mkdir(endpoint *ep, char *dirname)
 	else
 		retval = 3;
 
-	D(bug("** FTP MKDIR = %ld\n", retval));
+	D(bug("** FTP MKDIR = %ld\n", (long)retval));
 
 	return retval;
 }
@@ -3006,7 +3006,7 @@ int rec_filesys_mkdir(endpoint *ep, char *dirname)
 		}
 	}
 
-	D(bug("** FS MKDIR = %ld\n", retval));
+	D(bug("** FS MKDIR = %ld\n", (long)retval));
 
 	return retval;
 }
@@ -3111,7 +3111,7 @@ int rec_ftp_port(endpoint *ep, struct sockaddr_in *addr, ULONG flags)
 //
 int rec_filesys_port(endpoint *ep, struct sockaddr_in *addr, ULONG flags)
 {
-	D(bug("FS  PORT %lu:%lu\n", addr->sin_addr.s_addr, addr->sin_port));
+	D(bug("FS  PORT %lu:%lu\n", (unsigned long)addr->sin_addr.s_addr, (unsigned long)addr->sin_port));
 
 	return 0;
 }
@@ -3177,7 +3177,7 @@ int rec_ftp_rest(endpoint *ep, unsigned int offset)
 		// Ask the appropriate lister to do it for us
 		return rec_ask_lister_favour(FAVOUR_REST, ep, (void *)(IPTR)offset, 0);
 
-	D(bug("FTP REST %s\n", offset));
+	D(bug("FTP REST %lu\n", (unsigned long)offset));
 
 	if (ep->ep_ftpnode->fn_protocol == FTP_PROTOCOL_SFTP)
 		return offset == 0;
@@ -3190,7 +3190,7 @@ int rec_ftp_rest(endpoint *ep, unsigned int offset)
 //
 int rec_filesys_rest(endpoint *ep, unsigned int offset)
 {
-	D(bug("FS  REST %s\n", offset));
+	D(bug("FS  REST %lu\n", (unsigned long)offset));
 
 	return 0;
 }
