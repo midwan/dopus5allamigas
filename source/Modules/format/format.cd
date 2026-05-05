@@ -108,5 +108,5 @@ MSG_FORMAT_LNFS (//)
 _Long File Names
 ;
 MSG_FORMAT_FS_PFS (//)
-Personal File System
+PFS
 ;

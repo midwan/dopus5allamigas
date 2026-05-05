@@ -110,7 +110,7 @@
 #define MSG_INSTALLING_DISK_STR "Installing Bootblock..."
 #define MSG_FORMAT_DESC_STR "Format disks"
 #define MSG_FORMAT_LNFS_STR "_Long File Names"
-#define MSG_FORMAT_FS_PFS_STR "Personal File System"
+#define MSG_FORMAT_FS_PFS_STR "PFS"
 
 #endif /* CATCOMP_STRINGS */
 
@@ -243,8 +243,8 @@ static const char CatCompBlock[] =
     MSG_FORMAT_DESC_STR "\x00\x00"
     "\x00\x00\x04\x0A\x00\x12"
     MSG_FORMAT_LNFS_STR "\x00\x00"
-    "\x00\x00\x04\x0B\x00\x16"
-    MSG_FORMAT_FS_PFS_STR "\x00\x00"
+    "\x00\x00\x04\x0B\x00\x04"
+    MSG_FORMAT_FS_PFS_STR "\x00"
 };
 
 #endif /* CATCOMP_BLOCK */
