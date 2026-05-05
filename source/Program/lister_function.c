@@ -646,6 +646,17 @@ int lister_do_function(Lister *lister, IPTR func)
 		backdrop_cleanup(lister->backdrop_info, 0, 0);
 		break;
 
+	// Resize lister window so its content area fits the current icons.
+	// Only meaningful when the lister has a real, non-titlebarred window.
+	case MENU_LISTER_RESIZE_FIT:
+		if (lister_valid_window(lister))
+		{
+			lister_busy(lister, 1);
+			backdrop_resize_to_fit(lister->backdrop_info);
+			lister_unbusy(lister, 1);
+		}
+		break;
+
 	// Arrange in a special way
 	case MENU_LISTER_ARRANGE_NAME:
 	case MENU_LISTER_ARRANGE_TYPE:

@@ -296,6 +296,7 @@ void backdrop_info(BackdropInfo *, BOOL, BackdropObject *);
 void backdrop_snapshot(BackdropInfo *, BOOL, BOOL, BackdropObject *);
 void backdrop_select_all(BackdropInfo *, short);
 BOOL backdrop_cleanup(BackdropInfo *, short, UWORD);
+BOOL backdrop_resize_to_fit(BackdropInfo *);
 void backdrop_check_change(BackdropInfo *, BackdropObject *);
 void backdrop_get_leftouts(BackdropInfo *, BackdropObject *);
 BackdropObject *backdrop_leftout_new(BackdropInfo *, char *, char *, ULONG);

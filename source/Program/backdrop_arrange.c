@@ -51,6 +51,7 @@ BOOL backdrop_cleanup(BackdropInfo *info, short type, UWORD flags)
 {
 	struct Rectangle rect, *rect_ptr = 0;
 	BOOL align = 0;
+	short sort_type;
 
 	// Check list is not empty
 	if (IsListEmpty(&info->objects.list))
@@ -63,8 +64,17 @@ BOOL backdrop_cleanup(BackdropInfo *info, short type, UWORD flags)
 	// Lock backdrop list
 	lock_listlock(&info->objects, 1);
 
+	// Default ("Cleanup", type==BSORT_NORM) sorts by current position. The
+	// new row-fill layout walks icons row-major, so when we're going to use
+	// it (i.e. not aligning a selection rect) ask for horizontal weighting
+	// so icons that already shared a row stay together. The legacy align-
+	// in-rect path keeps vertical weighting.
+	sort_type = type;
+	if (!align && type == BSORT_NORM)
+		sort_type = BSORT_HORIZ;
+
 	// Sort objects according to type
-	backdrop_sort_objects(info, type, align);
+	backdrop_sort_objects(info, sort_type, align);
 
 	// Aligning?
 	if (align)
@@ -111,6 +121,209 @@ BOOL backdrop_cleanup(BackdropInfo *info, short type, UWORD flags)
 	return 0;
 }
 
+// Get image-only dimensions for an icon (no label, but borders included)
+// width  = icon image width incl. border (does not include text label)
+// height = icon image height incl. border (does not include text label)
+static void backdrop_icon_image_size(BackdropObject *object, short *width, short *height)
+{
+	short w, h;
+
+	// Base dimensions are the icon image rectangle (without border)
+	w = object->pos.Width;
+	h = object->pos.Height;
+
+	// Add border space if this icon uses one
+	if (backdrop_icon_border(object))
+	{
+		w += ICON_BORDER_X * 2;
+		h += ICON_BORDER_Y_TOP + ICON_BORDER_Y_BOTTOM - 2;
+	}
+
+	if (width)
+		*width = w;
+	if (height)
+		*height = h;
+}
+
+// Test whether a backdrop object should participate in cleanup placement.
+static BOOL backdrop_cleanup_eligible(BackdropObject *object, UWORD flags)
+{
+	if (object->flags & BDOF_LOCKED)
+		return FALSE;
+
+	// CHECK_POS mode only places icons that don't have a saved position yet
+	if ((flags & CLEANUPF_CHECK_POS) && !(object->flags & BDOF_NO_POSITION))
+		return FALSE;
+
+	return TRUE;
+}
+
+// New row-based, label-baseline-aligned cleanup. Mimics modern Workbench
+// cleanup: icons fill rows left-to-right (instead of columns top-to-bottom),
+// every cell shares the same width and height, and icon images are bottom-
+// aligned within the cell so all labels share a common Y baseline. Smaller
+// drawer icons therefore no longer push other labels around.
+static BOOL backdrop_cleanup_objects_grid(BackdropInfo *info, UWORD flags)
+{
+	BackdropObject *object;
+	long start_x, start_y, off_x, off_y;
+	long usable_width;
+	long space_x, space_y;
+	long row_top, current_x;
+	short icon_width = 0, icon_height = 0;
+	short cell_width = 0;
+	short cell_image_h = 0;
+	short cell_label_h = 0;
+	short cell_height;
+	BOOL any_label = FALSE;
+	BOOL ret = FALSE;
+
+	// Lock backdrop list for the duration of placement
+	lock_listlock(&info->objects, 0);
+
+	// Get drawing offset for collision tests in CHECK_POS mode
+	off_x = info->size.MinX - info->offset_x;
+	off_y = info->size.MinY - info->offset_y;
+
+	// Spacing between icons (account for screen ratio for X)
+	space_x = GUI->icon_space_x;
+	if (GUI->screen_info & SCRI_LORES)
+		space_x <<= 1;
+	space_y = GUI->icon_space_y;
+
+	// First pass: derive the global cell metrics from every eligible icon.
+	// Using a single grid (rather than per-row) gives the consistent column
+	// alignment the user expects from modern Workbench.
+	for (object = (BackdropObject *)info->objects.list.lh_Head; object->node.ln_Succ;
+		 object = (BackdropObject *)object->node.ln_Succ)
+	{
+		short obj_image_h;
+		short obj_label_h;
+
+		if (!backdrop_cleanup_eligible(object, flags))
+			continue;
+
+		// Full footprint (max of image and label widths + borders, full height)
+		backdrop_icon_size(info, object, &icon_width, &icon_height);
+		backdrop_icon_image_size(object, 0, &obj_image_h);
+
+		// Label height = remainder after subtracting image height and the
+		// label gap. Icons without a label contribute 0.
+		obj_label_h = 0;
+		if (!(object->flags & BDOF_NO_LABEL))
+		{
+			obj_label_h = icon_height - obj_image_h - ICON_LABEL_SPACE;
+			if (obj_label_h < 0)
+				obj_label_h = 0;
+			any_label = TRUE;
+		}
+
+		if (icon_width > cell_width)
+			cell_width = icon_width;
+		if (obj_image_h > cell_image_h)
+			cell_image_h = obj_image_h;
+		if (obj_label_h > cell_label_h)
+			cell_label_h = obj_label_h;
+	}
+
+	// No eligible icons? Nothing to do.
+	if (cell_width == 0 || cell_image_h == 0)
+	{
+		unlock_listlock(&info->objects);
+		return FALSE;
+	}
+
+	// Combined cell height: image band + (label gap + label band, if any
+	// icon actually carries a label).
+	cell_height = cell_image_h + (any_label ? ICON_LABEL_SPACE + cell_label_h : 0);
+
+	// Row width budget: visible area minus left/right start margin so we
+	// never push the rightmost icon past the edge. Snap onto the user's
+	// icon-grid afterwards.
+	start_x = CLEANUP_START_X;
+	start_y = CLEANUP_START_Y;
+	usable_width = RECTWIDTH(&info->size) - (CLEANUP_START_X * 2);
+	if (usable_width < cell_width)
+		usable_width = cell_width;	// at least one cell fits
+
+	// Second pass: place icons row-major, with bottom-aligned images.
+	current_x = start_x;
+	row_top = start_y;
+
+	for (object = (BackdropObject *)info->objects.list.lh_Head; object->node.ln_Succ;
+		 object = (BackdropObject *)object->node.ln_Succ)
+	{
+		short obj_image_h;
+
+		if (!backdrop_cleanup_eligible(object, flags))
+			continue;
+
+		// Wrap to the next row if this slot would overflow. We still place
+		// the very first icon in each row even if usable_width < cell_width
+		// (degenerate window).
+		if (current_x != start_x && current_x + cell_width > start_x + usable_width)
+		{
+			row_top += cell_height + space_y;
+			backdrop_check_grid(0, &row_top);
+			current_x = start_x;
+		}
+
+		// In CHECK_POS mode we mustn't trample existing icons. If we hit one,
+		// shunt right past it and re-try this icon on the next loop step.
+		if (flags & CLEANUPF_CHECK_POS)
+		{
+			struct Rectangle test_rect;
+			BackdropObject *blocker;
+
+			test_rect.MinX = current_x + off_x;
+			test_rect.MinY = row_top + off_y;
+			test_rect.MaxX = test_rect.MinX + cell_width - 1;
+			test_rect.MaxY = test_rect.MinY + cell_height - 1;
+
+			if ((blocker = backdrop_icon_in_rect(info, &test_rect)))
+			{
+				// Hop over the blocker; reuse the same icon next iteration
+				current_x = blocker->show_rect.MaxX - off_x + space_x + 1;
+				backdrop_check_grid(&current_x, 0);
+				object = (BackdropObject *)object->node.ln_Pred;
+				continue;
+			}
+		}
+
+		// This icon's image height (without label) - used for bottom-aligning.
+		backdrop_icon_image_size(object, 0, &obj_image_h);
+
+		// Centre the icon image horizontally inside the cell so columns line
+		// up regardless of individual icon image widths.
+		object->pos.Left = current_x + ((cell_width - object->pos.Width) >> 1);
+
+		// Bottom-align inside the image band: every icon's image bottom sits
+		// at row_top + cell_image_h, so the labels share a baseline below.
+		object->pos.Top = row_top + (cell_image_h - obj_image_h);
+
+		// Mark this icon as freshly placed; the third pass clears NO_POSITION.
+		object->flags |= BDOF_TEMP_FLAG;
+
+		// Advance to the next column slot
+		current_x += cell_width + space_x;
+		backdrop_check_grid(&current_x, 0);
+	}
+
+	// Third pass: clear the temp marker and the NO_POSITION flag.
+	for (object = (BackdropObject *)info->objects.list.lh_Head; object->node.ln_Succ;
+		 object = (BackdropObject *)object->node.ln_Succ)
+	{
+		if (object->flags & BDOF_TEMP_FLAG)
+		{
+			object->flags &= ~(BDOF_TEMP_FLAG | BDOF_NO_POSITION);
+			ret = TRUE;
+		}
+	}
+
+	unlock_listlock(&info->objects);
+	return ret;
+}
+
 // Cleanup backdrop objects
 BOOL backdrop_cleanup_objects(BackdropInfo *info, struct Rectangle *rect, UWORD flags)
 {
@@ -130,9 +343,10 @@ BOOL backdrop_cleanup_objects(BackdropInfo *info, struct Rectangle *rect, UWORD 
 	// No rectangle supplied?
 	if (!rect)
 	{
-		rect = &info->size;
-		start_x = CLEANUP_START_X;
-		start_y = CLEANUP_START_Y;
+		// Default cleanup goes through the modern row-fill / label-aligned
+		// layout. The legacy column-fill code below is reserved for the
+		// CTRL+CleanUp align-selection-rectangle case.
+		return backdrop_cleanup_objects_grid(info, flags);
 	}
 
 	// Otherwise, we're aligning
@@ -921,4 +1135,132 @@ void backdrop_lineup_objects(BackdropInfo *info)
 
 	// Show objects
 	backdrop_show_objects(info, BDSF_CLEAR | BDSF_RECALC);
+}
+
+// Resize the backdrop's window so its content area fits the bounding box of
+// every positioned (non-locked) icon. Used for the new "Resize to fit" menu
+// item; meant to be paired with a CleanUp so the layout is tidy first.
+// No-op for backdrop windows (the desktop spans the screen) and minimised
+// (titlebarred) listers.
+BOOL backdrop_resize_to_fit(BackdropInfo *info)
+{
+	BackdropObject *object;
+	struct Window *window;
+	struct Screen *screen;
+	long min_x, min_y, max_x, max_y;
+	long content_w, content_h;
+	long border_w, border_h;
+	long new_w, new_h;
+	long min_w, min_h;
+	long max_w, max_h;
+	BOOL has_icon = FALSE;
+
+	if (!info || !(window = info->window))
+		return FALSE;
+
+	// The desktop / backdrop window can't be resized (it's the screen).
+	if (window->Flags & WFLG_BACKDROP)
+		return FALSE;
+
+	// Titlebar-minimised listers must be restored first.
+	if (info->lister && (info->lister->more_flags & LISTERF_TITLEBARRED))
+		return FALSE;
+
+	screen = window->WScreen;
+
+	// Initialise bbox to first icon's full_size (sentinels avoid limits.h)
+	min_x = max_x = 0;
+	min_y = max_y = 0;
+
+	// Lock backdrop list while we walk it
+	lock_listlock(&info->objects, FALSE);
+
+	for (object = (BackdropObject *)info->objects.list.lh_Head; object->node.ln_Succ;
+		 object = (BackdropObject *)object->node.ln_Succ)
+	{
+		// Only count icons that have been placed - icons without a valid
+		// position would skew the bbox towards 0/0.
+		if (object->flags & BDOF_NO_POSITION)
+			continue;
+		if (!object->icon)
+			continue;
+
+		if (!has_icon)
+		{
+			min_x = object->full_size.MinX;
+			min_y = object->full_size.MinY;
+			max_x = object->full_size.MaxX;
+			max_y = object->full_size.MaxY;
+			has_icon = TRUE;
+		}
+		else
+		{
+			if (object->full_size.MinX < min_x)
+				min_x = object->full_size.MinX;
+			if (object->full_size.MinY < min_y)
+				min_y = object->full_size.MinY;
+			if (object->full_size.MaxX > max_x)
+				max_x = object->full_size.MaxX;
+			if (object->full_size.MaxY > max_y)
+				max_y = object->full_size.MaxY;
+		}
+	}
+
+	unlock_listlock(&info->objects);
+
+	if (!has_icon)
+		return FALSE;
+
+	// Required content area: from the leftmost/topmost icon back to 0 (the
+	// content origin) plus the bbox itself, plus a small visual margin so
+	// the rightmost/bottommost icon doesn't kiss the border.
+	if (min_x > 0)
+		min_x = 0;	  // content always starts at 0 in window-local coords
+	if (min_y > 0)
+		min_y = 0;
+
+	content_w = (max_x - min_x + 1) + CLEANUP_START_X;
+	content_h = (max_y - min_y + 1) + CLEANUP_START_Y;
+
+	// Convert content area to outer window dimensions
+	border_w = window->BorderLeft + window->BorderRight + info->left_border + info->right_border;
+	border_h = window->BorderTop + window->BorderBottom + info->top_border + info->bottom_border;
+
+	new_w = content_w + border_w;
+	new_h = content_h + border_h;
+
+	// Clamp to screen edges - we don't want to push the window off-screen.
+	if (screen)
+	{
+		max_w = screen->Width - window->LeftEdge;
+		max_h = screen->Height - window->TopEdge;
+		if (new_w > max_w)
+			new_w = max_w;
+		if (new_h > max_h)
+			new_h = max_h;
+	}
+
+	// Clamp to the lister's recorded minimums where we know them; for
+	// non-lister windows (groups) fall back to a sane floor.
+	if (info->lister && info->lister->win_limits.Left > 0)
+		min_w = info->lister->win_limits.Left;
+	else
+		min_w = 100;
+	if (info->lister && info->lister->win_limits.Top > 0)
+		min_h = info->lister->win_limits.Top;
+	else
+		min_h = 50;
+
+	if (new_w < min_w)
+		new_w = min_w;
+	if (new_h < min_h)
+		new_h = min_h;
+
+	// If nothing actually changes, skip the OS round-trip.
+	if (new_w == window->Width && new_h == window->Height)
+		return FALSE;
+
+	// Apply the new size; IDCMP_NEWSIZE will handle layout/refresh.
+	ChangeWindowBox(window, window->LeftEdge, window->TopEdge, (long)new_w, (long)new_h);
+	return TRUE;
 }

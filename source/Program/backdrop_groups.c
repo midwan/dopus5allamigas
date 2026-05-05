@@ -476,6 +476,15 @@ IPC_EntryCode(backdrop_group_handler, static)
 						// Do cleanup
 						backdrop_cleanup(group->info, BSORT_NAME + (((IPTR)msg->data) - MENU_LISTER_ARRANGE_NAME), 0);
 					}
+					// Resize-to-fit from popup menu
+					else if (msg->data == (APTR)MENU_LISTER_RESIZE_FIT)
+					{
+						if (group->window)
+							SetBusyPointer(group->window);
+						backdrop_resize_to_fit(group->info);
+						if (group->window)
+							ClearPointer(group->window);
+					}
 					break;
 				}
 
@@ -1287,6 +1296,13 @@ BOOL backdrop_group_do_function(GroupData *group, IPTR id, struct MenuItem *item
 		backdrop_cleanup(group->info, 0, 0);
 		break;
 
+	// Resize the group window to fit its icons (mirrors the lister command)
+	case MENU_LISTER_RESIZE_FIT:
+		SetBusyPointer(group->window);
+		backdrop_resize_to_fit(group->info);
+		ClearPointer(group->window);
+		break;
+
 	// Rename
 	case MENU_ICON_RENAME:
 	case MENU_ICON_DELETE: {
@@ -1418,6 +1434,8 @@ UWORD group_do_popup(GroupData *group)
 
 		// Add items
 		PopUpNewItem(menu, MSG_ICON_CLEANUP, MENU_ICON_CLEANUP, 0);
+		PopUpNewItem(menu, MSG_LISTER_RESIZE_FIT, MENU_LISTER_RESIZE_FIT,
+					 IsListEmpty(&group->info->objects.list) ? POPUPF_DISABLED : 0);
 
 		// Do popup
 		res = DoPopUpMenu(group->window, &menu->ph_Menu, NULL, MENUDOWN);

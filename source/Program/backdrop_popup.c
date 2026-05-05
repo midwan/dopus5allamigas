@@ -730,6 +730,7 @@ BOOL backdrop_popup(BackdropInfo *info, short x, short y, UWORD qual, long bpfla
 			case MENU_LISTER_RESTORE:
 			case MENU_LISTER_SNAPSHOT:
 			case MENU_ICON_CLEANUP:
+			case MENU_LISTER_RESIZE_FIT:
 			case MENU_ICON_SNAPSHOT_ALL:
 
 				// Do function
@@ -1437,6 +1438,19 @@ void popup_default_menu(BackdropInfo *info, PopUpHandle *menu, short *extnum)
 
 	// CleanUp
 	PopUpNewItem(menu, MSG_ICON_CLEANUP, MENU_ICON_CLEANUP, flags);
+
+	// Resize to fit (lister + group windows only - the desktop spans the
+	// whole screen so it makes no sense there). We piggyback the existing
+	// `flags` so it auto-disables in file-view listers, then add our own
+	// disable bit for backdrop windows / no-icon situations.
+	{
+		ULONG fit_flags = flags;
+		if (info->window && (info->window->Flags & WFLG_BACKDROP))
+			fit_flags |= POPUPF_DISABLED;
+		else if (IsListEmpty(&info->objects.list))
+			fit_flags |= POPUPF_DISABLED;
+		PopUpNewItem(menu, MSG_LISTER_RESIZE_FIT, MENU_LISTER_RESIZE_FIT, fit_flags);
+	}
 
 	// Separator
 	PopUpSeparator(menu);
