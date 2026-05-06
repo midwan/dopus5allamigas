@@ -1,3 +1,29 @@
+[dopus5allamigas next] Release archive: DOpus5 casing + restore drawer icon
+Program remains at 5.100.  No module version changes.
+
+Archive / build:
+- Repacked archive/basedata.lha: top-level Dopus5/ tree renamed to
+  DOpus5/ to match the canonical DOpus5: assign casing normalised
+  in source/ by #43.  All 260 file contents are byte-identical
+  (sha256-verified after extract); only the directory entries were
+  re-cased and the basedata is repacked with -lh5- and forward-
+  slash paths.
+- Restored the top-level DOpus5.info drawer icon, byte-identical to
+  the 2013 GPL release archive's Dopus5.info.  The icon went
+  missing when basedata.lha was repacked in 5c6f1b0 ("Fix AROS
+  x86_64 port issues") and never came back, leaving the unpacked
+  drawer iconless on the Workbench.
+- source/makefile release-package step renames the staged
+  directory + emitted archive: Dopus5_<rev>_<plat>(.lha) ->
+  DOpus5_<rev>_<plat>(.lha), and the lha command now archives the
+  DOpus5 root.
+- .github/workflows/makefile.yml upload-artifact name and the
+  release-action artifact globs follow the same Dopus5_* ->
+  DOpus5_* rename so per-platform artifacts and tagged releases
+  pick up the new filename.
+- Follow-up to #36 / #43.
+2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
+
 [dopus5allamigas next] Documentation refresh and historical-archive cleanup
 Program remains at 5.100.  No module version changes.
 

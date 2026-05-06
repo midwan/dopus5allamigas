@@ -98,8 +98,8 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: Dopus5_${{ matrix.platform.name }}${{ matrix.variant.suffix }}
-          path: releases/Dopus5_*_${{ matrix.platform.name }}*.lha
+          name: DOpus5_${{ matrix.platform.name }}${{ matrix.variant.suffix }}
+          path: releases/DOpus5_*_${{ matrix.platform.name }}*.lha
           if-no-files-found: error
 
   release:
@@ -119,7 +119,7 @@ jobs:
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "artifacts/Dopus5_*_os3.lha,artifacts/Dopus5_*_os4.lha,artifacts/Dopus5_*_mos.lha,artifacts/Dopus5_*_i386-aros.lha,artifacts/Dopus5_*_x86_64-aros.lha"
+          artifacts: "artifacts/DOpus5_*_os3.lha,artifacts/DOpus5_*_os4.lha,artifacts/DOpus5_*_mos.lha,artifacts/DOpus5_*_i386-aros.lha,artifacts/DOpus5_*_x86_64-aros.lha"
           generateReleaseNotes: true
           allowUpdates: true
         env:
