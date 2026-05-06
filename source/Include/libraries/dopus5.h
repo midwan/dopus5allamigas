@@ -117,8 +117,22 @@ enum {
 						  IFF Configuration Storage
  ****************************************************************************/
 
-#define ID_EPUS MAKE_ID('E', 'P', 'U', 'S')	 // Opus Environment FORM
-#define ID_OPUS MAKE_ID('O', 'P', 'U', 'S')	 // Opus FORM
+// Opus FORM ids.  Both identify a Directory Opus 5 IFF config file; the
+// difference is which on-disk struct schema is used:
+//   ID_OPUS  = legacy schema (CFG_ENVR/CFG_BTNW/CFG_LSTR pre-extension).
+//              Readers in config_open.c run a convert_*() migration to
+//              the current in-memory layout.  Settings, filetype lists,
+//              position-info, FTP address books, exported function files
+//              and clipboard copy/paste still write this id.
+//   ID_EPUS  = current schema (extended structs read directly via
+//              L_IFFReadChunkBytes).  Originally introduced for the
+//              environment file (hence the historical "E"); now also
+//              written by button banks (Buttons / Hotkeys / Start Menu)
+//              and the configopus environment converter.
+// File-type recognition rules that want to identify any DOpus 5 config
+// file should match FORM == OPUS *or* FORM == EPUS.
+#define ID_EPUS MAKE_ID('E', 'P', 'U', 'S')	 // Opus FORM (current schema)
+#define ID_OPUS MAKE_ID('O', 'P', 'U', 'S')	 // Opus FORM (legacy schema, migrated on read)
 #define ID_BTBK MAKE_ID('B', 'T', 'B', 'K')	 // Button bank to open
 #define ID_BANK MAKE_ID('B', 'A', 'N', 'K')	 // Button bank to open
 #define ID_BTNW MAKE_ID('B', 'T', 'N', 'W')	 // Button window

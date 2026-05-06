@@ -145,8 +145,14 @@ enum {
 						  IFF Configuration Storage
  ****************************************************************************/
 
-#define ID_EPUS MAKE_ID('E', 'P', 'U', 'S')	 // Opus Environment FORM
-#define ID_OPUS MAKE_ID('O', 'P', 'U', 'S')	 // Opus FORM
+// Opus FORM ids.  Both identify a Directory Opus 5 IFF config file; the
+// difference is which on-disk struct schema is used.  See the matching
+// block in libraries/dopus5.h for the full explanation.  TL;DR:
+//   ID_OPUS = legacy schema, reader migrates structs via convert_*().
+//   ID_EPUS = current schema, structs read directly.
+// Filetype recognition should match FORM == OPUS *or* FORM == EPUS.
+#define ID_EPUS MAKE_ID('E', 'P', 'U', 'S')	 // Opus FORM (current schema)
+#define ID_OPUS MAKE_ID('O', 'P', 'U', 'S')	 // Opus FORM (legacy schema, migrated on read)
 #define ID_BTBK MAKE_ID('B', 'T', 'B', 'K')	 // Button bank to open
 #define ID_BANK MAKE_ID('B', 'A', 'N', 'K')	 // Button bank to open
 #define ID_BTNW MAKE_ID('B', 'T', 'N', 'W')	 // Button window
