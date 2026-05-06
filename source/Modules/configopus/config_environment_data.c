@@ -602,6 +602,19 @@ const ObjectDef _config_environment_objects[] =
 						 GAD_ENVIRONMENT_HIDE_PADLOCK,
 						 _environment_relative_taglist},
 
+						// DOS patches: live folder updates (bound to dopus/DOSPatch
+						// ENVARC: var; behavioural toggle whose effect is most
+						// visible in lister auto-refresh, hence on this tab next
+						// to the other lister-display flags rather than Misc).
+						{OD_GADGET,
+						 CHECKBOX_KIND,
+						 {14, 10, 0, 1},
+						 {5, 36, 26, 6},
+						 MSG_ENVIRONMENT_DOS_PATCH,
+						 PLACETEXT_RIGHT,
+						 GAD_ENVIRONMENT_DOS_PATCH,
+						 _environment_relative_taglist},
+
 						{OD_END}},
 
 				_environment_options_gadgets[] =
@@ -1778,13 +1791,11 @@ const ObjectDef _config_environment_objects[] =
 				_environment_misc_gadgets[] =
 					{
 
-						// Misc title - moved to ypx 0 to reclaim 11 px of
-						// vertical real estate for the new DOS Patches row;
-						// see WB Emulation tab for the same trick (8baec90).
+						// Misc title
 						{OD_TEXT,
 						 TEXTPEN,
 						 {1, 0, 0, 0},
-						 {5, 0, 0, 0},
+						 {5, 11, 0, 0},
 						 MSG_SETTINGS_SUB_MISC_TITLE,
 						 0,
 						 0,
@@ -1794,7 +1805,7 @@ const ObjectDef _config_environment_objects[] =
 						{OD_GADGET,
 						 CHECKBOX_KIND,
 						 {4, 1, 0, 1},
-						 {5, 3, 26, 4},
+						 {5, 14, 26, 4},
 						 MSG_SETTINGS_MOUSE_HOOK,
 						 PLACETEXT_RIGHT,
 						 GAD_SETTINGS_MOUSE_HOOK,
@@ -1804,7 +1815,7 @@ const ObjectDef _config_environment_objects[] =
 						{OD_GADGET,
 						 CHECKBOX_KIND,
 						 {4, 2, 0, 1},
-						 {5, 8, 26, 4},
+						 {5, 19, 26, 4},
 						 MSG_SETTINGS_QUICK_QUIT,
 						 PLACETEXT_RIGHT,
 						 GAD_SETTINGS_QUICK_QUIT,
@@ -1814,7 +1825,7 @@ const ObjectDef _config_environment_objects[] =
 						{OD_GADGET,
 						 CHECKBOX_KIND,
 						 {4, 3, 0, 1},
-						 {5, 13, 26, 4},
+						 {5, 24, 26, 4},
 						 MSG_SETTINGS_EXTENDED_KEY,
 						 PLACETEXT_RIGHT,
 						 GAD_SETTINGS_EXTENDED_KEY,
@@ -1824,7 +1835,7 @@ const ObjectDef _config_environment_objects[] =
 						{OD_GADGET,
 						 CHECKBOX_KIND,
 						 {4, 4, 0, 1},
-						 {5, 18, 26, 4},
+						 {5, 29, 26, 4},
 						 MSG_SETTINGS_FILETYPE_SNIFFER,
 						 PLACETEXT_RIGHT,
 						 GAD_SETTINGS_FILETYPE_SNIFFER,
@@ -1834,27 +1845,17 @@ const ObjectDef _config_environment_objects[] =
 						{OD_GADGET,
 						 CHECKBOX_KIND,
 						 {4, 5, 0, 1},
-						 {5, 23, 26, 4},
+						 {5, 34, 26, 4},
 						 MSG_SETTINGS_THIN_BORDERS,
 						 PLACETEXT_RIGHT,
 						 GAD_SETTINGS_THIN_BORDERS,
 						 _environment_relative_taglist},
 
-						// DOS patches: live folder updates (bound to dopus/DOSPatch ENVARC: var)
-						{OD_GADGET,
-						 CHECKBOX_KIND,
-						 {4, 6, 0, 1},
-						 {5, 28, 34, 4},
-						 MSG_ENVIRONMENT_DOS_PATCH,
-						 PLACETEXT_RIGHT,
-						 GAD_ENVIRONMENT_DOS_PATCH,
-						 _environment_relative_taglist},
-
 						// Popup menu delay
 						{OD_GADGET,
 						 INTEGER_KIND,
-						 {4, 7, 5, 1},
-						 {5, 34, 8, 6},
+						 {4, 6, 5, 1},
+						 {5, 40, 8, 6},
 						 MSG_SETTINGS_POPUP_DELAY,
 						 PLACETEXT_RIGHT,
 						 GAD_SETTINGS_POPUP_DELAY,
@@ -1863,8 +1864,8 @@ const ObjectDef _config_environment_objects[] =
 						// Max open with
 						{OD_GADGET,
 						 INTEGER_KIND,
-						 {4, 8, 5, 1},
-						 {5, 42, 8, 6},
+						 {4, 7, 5, 1},
+						 {5, 48, 8, 6},
 						 MSG_SETTINGS_MAX_OPENWITH,
 						 PLACETEXT_RIGHT,
 						 GAD_SETTINGS_MAX_OPENWITH,
@@ -1873,8 +1874,8 @@ const ObjectDef _config_environment_objects[] =
 						// Mouse wheel scroll lines
 						{OD_GADGET,
 						 INTEGER_KIND,
-						 {4, 9, 5, 1},
-						 {5, 50, 8, 6},
+						 {4, 8, 5, 1},
+						 {5, 56, 8, 6},
 						 MSG_SETTINGS_WHEEL_SCROLL_LINES,
 						 PLACETEXT_RIGHT,
 						 GAD_SETTINGS_WHEEL_SCROLL_LINES,
@@ -1883,8 +1884,8 @@ const ObjectDef _config_environment_objects[] =
 						// Screen title
 						{OD_TEXT,
 						 TEXTPEN,
-						 {1, 10, 0, 0},
-						 {5, 61, 0, 0},
+						 {1, 9, 0, 0},
+						 {5, 67, 0, 0},
 						 MSG_ENVIRONMENT_SCREEN_TITLE,
 						 0,
 						 0,
@@ -1893,8 +1894,8 @@ const ObjectDef _config_environment_objects[] =
 						// Status text popup
 						{OD_GADGET,
 						 FILE_BUTTON_KIND,
-						 {4, 11, 0, 1},
-						 {5, 64, 28, 6},
+						 {4, 10, 0, 1},
+						 {5, 70, 28, 6},
 						 0,
 						 0,
 						 GAD_ENVIRONMENT_SCREEN_TITLE_LIST,
@@ -1903,8 +1904,8 @@ const ObjectDef _config_environment_objects[] =
 						// Screen title text
 						{OD_GADGET,
 						 STRING_KIND,
-						 {4, 11, SIZE_MAX_LESS - 2, 1},
-						 {33, 64, -8, 6},
+						 {4, 10, SIZE_MAX_LESS - 2, 1},
+						 {33, 70, -8, 6},
 						 0,
 						 0,
 						 GAD_ENVIRONMENT_SCREEN_TITLE,

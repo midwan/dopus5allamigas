@@ -5254,8 +5254,9 @@ options dialog is the source of truth):
 	dopus/ReturnOfBenify      - Environment editor / Icon Layout
 	dopus/WheelScrollLines    - Environment editor / Misc
 	dopus/NoBeeGees           - FTP module / Default FTP Options
-	dopus/DOSPatch            - Environment editor / Misc (live folder updates;
-	                            requires a DOpus restart to take effect)
+	dopus/DOSPatch            - Environment editor / Lister Display (live
+	                            folder updates; requires a DOpus restart
+	                            to take effect)
 
 Advanced / install-time only (no GUI - read at library init):
 

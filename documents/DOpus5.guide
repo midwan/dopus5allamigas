@@ -4236,7 +4236,7 @@ system.
        Installs DOS patches that let listers refresh automatically when
        another process changes the directory contents.  Also exposed as
        the "Live Folder Updates (DOS Patches)" checkbox on the
-       Environment / Miscellaneous tab; the GUI checkbox writes this
+       Environment / Lister Display tab; the GUI checkbox writes this
        same ENVARC: variable.  The patches install at dopus5.library
        open, so a toggle requires a DOpus restart to take effect.
 

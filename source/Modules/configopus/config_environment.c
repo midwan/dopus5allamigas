@@ -1859,6 +1859,9 @@ void _config_env_set(config_env_data *data, short option)
 		// Hide padlock gadget
 		SetGadgetValue(
 			data->option_list, GAD_ENVIRONMENT_HIDE_PADLOCK, data->config->lister_options & LISTEROPTF_NO_PADLOCK);
+
+		// Live folder updates / DOS patches (dopus/DOSPatch ENVARC: var)
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_DOS_PATCH, data->dos_patch_state);
 		break;
 
 	// Lister colours
@@ -2240,9 +2243,6 @@ void _config_env_set(config_env_data *data, short option)
 		SetGadgetValue(data->option_list, GAD_SETTINGS_POPUP_DELAY, (ULONG)data->config->settings.popup_delay);
 		SetGadgetValue(data->option_list, GAD_SETTINGS_MAX_OPENWITH, (ULONG)data->config->settings.max_openwith);
 		SetGadgetValue(data->option_list, GAD_SETTINGS_WHEEL_SCROLL_LINES, (ULONG)data->config->env_wheel_scroll_lines);
-
-		// Live folder updates / DOS patches (dopus/DOSPatch ENVARC: var)
-		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_DOS_PATCH, data->dos_patch_state);
 		break;
 
 	// Priority
@@ -2349,6 +2349,18 @@ void _config_env_store(config_env_data *data, short option)
 			data->config->lister_options |= LISTEROPTF_NO_PADLOCK;
 		else
 			data->config->lister_options &= ~LISTEROPTF_NO_PADLOCK;
+
+		// Live folder updates / DOS patches: only flag for write-back if the
+		// user actually changed the checkbox.  See success block at the
+		// bottom of L_Config_Environment for the SetVar/DeleteVar call.
+		{
+			BOOL want = (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_DOS_PATCH) != 0);
+			if (want != data->dos_patch_state)
+			{
+				data->dos_patch_state = want;
+				data->dos_patch_modified = TRUE;
+			}
+		}
 		break;
 
 	// Lister colours
@@ -2758,18 +2770,6 @@ void _config_env_store(config_env_data *data, short option)
 			if (val < 1)
 				val = 1;
 			data->config->env_wheel_scroll_lines = (UWORD)val;
-		}
-
-		// Live folder updates / DOS patches: only flag for write-back if the
-		// user actually changed the checkbox.  See success block at the
-		// bottom of L_Config_Environment for the SetVar/DeleteVar call.
-		{
-			BOOL want = (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_DOS_PATCH) != 0);
-			if (want != data->dos_patch_state)
-			{
-				data->dos_patch_state = want;
-				data->dos_patch_modified = TRUE;
-			}
 		}
 		break;
 
