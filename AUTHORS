@@ -4,7 +4,7 @@
  Original APL release version 5.82
  Copyright 1993-2012 Jonathan Potter & GP Software
  Copyright 2012-2013 DOPUS5 Open Source Team
- Copyright 2023-2026 Dimitris Panokostas (dopus5allamigas fork)
+ Copyright 2023-2026 Dimitris Panokostas (dopus5 fork)
  
  This program is free software; you can redistribute it and/or
  modify it under the terms of the AROS Public License version 1.1.
@@ -20,7 +20,8 @@
  For more information on Directory Opus for Windows please see:
  http://www.gpsoft.com.au
 
- Directory Opus 5 Support Site:  http://sf.net/p/dopus5allamigas/
+ Directory Opus 5 Support Site:  https://github.com/BlitterStudio/dopus5
+ (Historical project site:        https://sourceforge.net/p/dopus5allamigas/)
 
 ***************************************************************************/
 
@@ -45,7 +46,9 @@ Graphics Artwork:
 Initial help:
   - Jens Langner		<Jens.Langner@light-speed.de>
 
-dopus5allamigas fork — ongoing maintenance, modernization, and new features:
+dopus5 fork — ongoing maintenance, modernization, and new features:
   - Dimitris Panokostas	<midwan@gmail.com>
 
-The development of Directory Opus 5 is hosted by SourceForge http://www.sf.net/
+Active development is hosted on GitHub: https://github.com/BlitterStudio/dopus5
+(The historical SourceForge project lives at
+https://sourceforge.net/p/dopus5allamigas/ and is no longer updated.)
