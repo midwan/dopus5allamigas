@@ -1172,6 +1172,8 @@ void filetypeed_add_iconmenu(filetype_ed_data *data)
 	Cfg_Function *func;
 	Att_Node *node;
 	func_node *fndata;
+	Cfg_Instruction *label_ins;
+	char *default_label;
 
 	// Allocate a new function and data
 	if (!(func = NewFunction(0, FTYPE_LIST)) || !(fndata = AllocVec(sizeof(func_node), MEMF_CLEAR)))
@@ -1187,8 +1189,20 @@ void filetypeed_add_iconmenu(filetype_ed_data *data)
 	fndata->func = func;
 	func->function.flags2 |= FUNCF2_LABEL_FUNC;
 
+	// Pre-populate with a default label so the new entry has a name
+	// even if the user clicks Use without touching the Label gadget.
+	// filetypeed_receive_edit drops entries with an empty/missing
+	// INST_LABEL on save (matching update_iconmenu's listview rule),
+	// so without this default the new row would silently disappear
+	// the moment the function editor closes. The editor reads the
+	// label from this same INST_LABEL into its gadget, so the user
+	// can keep "Untitled", rename it, or clear it as they like.
+	default_label = (char *)GetString(Locale, MSG_UNTITLED);
+	if ((label_ins = NewInstruction(0, INST_LABEL, default_label)))
+		AddHead((struct List *)&func->instructions, (struct Node *)label_ins);
+
 	// Add to lister
-	if (!(node = Att_NewNode(data->icon_list, 0, (IPTR)fndata, 0)))
+	if (!(node = Att_NewNode(data->icon_list, default_label, (IPTR)fndata, 0)))
 	{
 		// Failed
 		FreeVec(fndata);
