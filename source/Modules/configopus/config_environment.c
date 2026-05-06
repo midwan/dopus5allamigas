@@ -62,6 +62,16 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 	CopyMem((char *)env->env, (char *)data->config, sizeof(CFG_ENVR));
 	data->env = env;
 
+	// Snapshot the dopus/DOSPatch ENVARC: var so the Misc panel checkbox
+	// reflects the current state.  The variable is read by libinit.c at
+	// dopus5.library open time (see LIBDF_DOS_PATCH); the GUI commits any
+	// change back to ENV: + ENVARC: in the success block below.
+	{
+		char buf[2];
+		data->dos_patch_state = (GetVar("dopus/DOSPatch", buf, sizeof(buf), GVF_GLOBAL_ONLY) > -1);
+		data->dos_patch_modified = FALSE;
+	}
+
 	// Initial palette table
 	data->palette_table = pen_table;
 	data->initial_pen_alloc = pen_alloc;
@@ -1515,6 +1525,23 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 
 		// Unlock configuration
 		FreeSemaphore(&env->lock);
+
+		// Live folder updates / DOS patches: persist the checkbox state to
+		// the dopus/DOSPatch ENVARC: variable, but only if the user actually
+		// changed it - otherwise we'd mass-write the var on every Use even
+		// when nothing about it had been touched.  Cancel skips this whole
+		// block (the Cancel branch above doesn't fall through here), which
+		// preserves the user's original ENV/ENVARC: state on rollback.
+		// Note: the var is read by libinit.c at dopus5.library open time;
+		// the patches won't install/uninstall live, so this requires a DOpus
+		// restart to take full effect.
+		if (data->dos_patch_modified)
+		{
+			if (data->dos_patch_state)
+				SetVar("dopus/DOSPatch", "1", -1, GVF_GLOBAL_ONLY | GVF_SAVE_VAR);
+			else
+				DeleteVar("dopus/DOSPatch", GVF_GLOBAL_ONLY | GVF_SAVE_VAR);
+		}
 	}
 #endif
 
@@ -2213,6 +2240,9 @@ void _config_env_set(config_env_data *data, short option)
 		SetGadgetValue(data->option_list, GAD_SETTINGS_POPUP_DELAY, (ULONG)data->config->settings.popup_delay);
 		SetGadgetValue(data->option_list, GAD_SETTINGS_MAX_OPENWITH, (ULONG)data->config->settings.max_openwith);
 		SetGadgetValue(data->option_list, GAD_SETTINGS_WHEEL_SCROLL_LINES, (ULONG)data->config->env_wheel_scroll_lines);
+
+		// Live folder updates / DOS patches (dopus/DOSPatch ENVARC: var)
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_DOS_PATCH, data->dos_patch_state);
 		break;
 
 	// Priority
@@ -2728,6 +2758,18 @@ void _config_env_store(config_env_data *data, short option)
 			if (val < 1)
 				val = 1;
 			data->config->env_wheel_scroll_lines = (UWORD)val;
+		}
+
+		// Live folder updates / DOS patches: only flag for write-back if the
+		// user actually changed the checkbox.  See success block at the
+		// bottom of L_Config_Environment for the SetVar/DeleteVar call.
+		{
+			BOOL want = (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_DOS_PATCH) != 0);
+			if (want != data->dos_patch_state)
+			{
+				data->dos_patch_state = want;
+				data->dos_patch_modified = TRUE;
+			}
 		}
 		break;
 

@@ -1838,11 +1838,21 @@ const ObjectDef _config_environment_objects[] =
 						 GAD_SETTINGS_THIN_BORDERS,
 						 _environment_relative_taglist},
 
+						// DOS patches: live folder updates (bound to dopus/DOSPatch ENVARC: var)
+						{OD_GADGET,
+						 CHECKBOX_KIND,
+						 {4, 6, 0, 1},
+						 {5, 39, 34, 4},
+						 MSG_ENVIRONMENT_DOS_PATCH,
+						 PLACETEXT_RIGHT,
+						 GAD_ENVIRONMENT_DOS_PATCH,
+						 _environment_relative_taglist},
+
 						// Popup menu delay
 						{OD_GADGET,
 						 INTEGER_KIND,
-						 {4, 6, 5, 1},
-						 {5, 40, 8, 6},
+						 {4, 7, 5, 1},
+						 {5, 45, 8, 6},
 						 MSG_SETTINGS_POPUP_DELAY,
 						 PLACETEXT_RIGHT,
 						 GAD_SETTINGS_POPUP_DELAY,
@@ -1851,8 +1861,8 @@ const ObjectDef _config_environment_objects[] =
 						// Max open with
 						{OD_GADGET,
 						 INTEGER_KIND,
-						 {4, 7, 5, 1},
-						 {5, 48, 8, 6},
+						 {4, 8, 5, 1},
+						 {5, 53, 8, 6},
 						 MSG_SETTINGS_MAX_OPENWITH,
 						 PLACETEXT_RIGHT,
 						 GAD_SETTINGS_MAX_OPENWITH,
@@ -1861,8 +1871,8 @@ const ObjectDef _config_environment_objects[] =
 						// Mouse wheel scroll lines
 						{OD_GADGET,
 						 INTEGER_KIND,
-						 {4, 8, 5, 1},
-						 {5, 56, 8, 6},
+						 {4, 9, 5, 1},
+						 {5, 61, 8, 6},
 						 MSG_SETTINGS_WHEEL_SCROLL_LINES,
 						 PLACETEXT_RIGHT,
 						 GAD_SETTINGS_WHEEL_SCROLL_LINES,
@@ -1871,8 +1881,8 @@ const ObjectDef _config_environment_objects[] =
 						// Screen title
 						{OD_TEXT,
 						 TEXTPEN,
-						 {1, 9, 0, 0},
-						 {5, 67, 0, 0},
+						 {1, 10, 0, 0},
+						 {5, 72, 0, 0},
 						 MSG_ENVIRONMENT_SCREEN_TITLE,
 						 0,
 						 0,
@@ -1881,8 +1891,8 @@ const ObjectDef _config_environment_objects[] =
 						// Status text popup
 						{OD_GADGET,
 						 FILE_BUTTON_KIND,
-						 {4, 10, 0, 1},
-						 {5, 70, 28, 6},
+						 {4, 11, 0, 1},
+						 {5, 75, 28, 6},
 						 0,
 						 0,
 						 GAD_ENVIRONMENT_SCREEN_TITLE_LIST,
@@ -1891,8 +1901,8 @@ const ObjectDef _config_environment_objects[] =
 						// Screen title text
 						{OD_GADGET,
 						 STRING_KIND,
-						 {4, 10, SIZE_MAX_LESS - 2, 1},
-						 {33, 70, -8, 6},
+						 {4, 11, SIZE_MAX_LESS - 2, 1},
+						 {33, 75, -8, 6},
 						 0,
 						 0,
 						 GAD_ENVIRONMENT_SCREEN_TITLE,

@@ -917,6 +917,9 @@ Prefer Datatypes for Showing Pictures
 MSG_SETTINGS_WHEEL_SCROLL_LINES (//)
 Mouse _Wheel Scroll Lines:
 ;
+MSG_ENVIRONMENT_DOS_PATCH (//)
+_Live Folder Updates (DOS Patches)
+;
 ;
 MSG_ENVIRONMENT_PICTURE_STRETCHED (//)
 Stretch Picture

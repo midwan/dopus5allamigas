@@ -106,6 +106,14 @@ typedef struct
 
 	struct MinList sound_list;
 	Att_List *script_list;
+
+	// Desired state of the dopus/DOSPatch ENV var for the open dialog.
+	// `dos_patch_state` mirrors the checkbox; `dos_patch_modified` is set
+	// by _config_env_store(MISC) when the user actually toggles it, so the
+	// success block at the bottom of L_Config_Environment writes/deletes
+	// the ENVARC: variable only when the user committed a change.
+	BOOL dos_patch_state;
+	BOOL dos_patch_modified;
 } config_env_data;
 #ifndef __amigaos3__
 	#pragma pack()
