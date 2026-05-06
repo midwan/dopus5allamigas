@@ -162,21 +162,20 @@ BPTR setup_config(struct opusftp_globals *ogp)
 		}
 	}
 
-	// Migration: import the legacy DOpus/NoBeeGees env var into the new
-	// oc_no_keep_alive bit whenever the saved bit is still 0.  Both paths
-	// above can leave the bit at 0 -- a brand-new install (set_config_to_default
-	// memset's the whole struct), and an existing saved config from a build
-	// before this bit existed (the slot was the previously-zeroed pad8 bit).
-	// Once the user explicitly saves the FTP options dialog with the box
-	// CHECKED, the bit becomes 1 in the saved config and this fallback no
-	// longer fires.  Users who set the env var historically and now want to
-	// turn the feature OFF should remove the env var (otherwise it will keep
-	// re-asserting on every launch -- documented in DOpus5.guide).
-	if (!oc->oc_no_keep_alive)
+	// One-shot migration: import the legacy DOpus/NoBeeGees env var into
+	// the new oc_no_keep_alive bit, then delete the var from both ENV:
+	// and ENVARC: so the migration runs exactly once per machine.
+	// Without the DeleteVar a user who turns the box OFF in the GUI and
+	// saves would still see it re-enabled on the next launch (the saved
+	// bit is back to 0, and the legacy env var would re-assert it).
 	{
 		char env;
 		if (GetVar("DOpus/NoBeeGees", &env, 1, GVF_GLOBAL_ONLY) != -1)
-			oc->oc_no_keep_alive = 1;
+		{
+			if (!oc->oc_no_keep_alive)
+				oc->oc_no_keep_alive = 1;
+			DeleteVar("DOpus/NoBeeGees", GVF_GLOBAL_ONLY | GVF_SAVE_VAR);
+		}
 	}
 
 	// Open log file
