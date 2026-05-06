@@ -1,13 +1,207 @@
-[dopus5allamigas next] OS3: add separate 68000 build + drop obsolete Documents drawer
-Program remains at 5.100.  No module version changes.
+[dopus5 5.101] Release summary
+Program bumps to 5.101, library and modules to v73r5, commands to
+v65r3.  This release consolidates the work landed since 5.100, plus
+the project rename from 'dopus5allamigas' to 'dopus5' at the
+repository / README level.
+
+New build targets:
+- New `make os3-68000` build variant for stock 68000-based hardware
+  (A500, A600, A1000, A2000, CDTV), alongside the existing
+  68020-60/68030-tuned `make os3` build that already serves A1200 /
+  A3000 / A4000 owners (issue #51).
+- New AROS i386 (ABIv0) and x86_64 (ABIv11) build packages, with
+  CI debug + release parity (PR #25 plus follow-ups).
+
+FTP / file transfer:
+- SFTP support backed by libssh2 (always on for OS3 / OS4 / MorphOS
+  via bundled libssh2 1.11.1, opt-in via `sftp=yes` for AROS).
+- End-to-end UTF-8 path handling for FTP / FTPS / SFTP via
+  codesets.library, with graceful degradation when the library is
+  absent (PR #34 plus four review rounds).
+- Robustness: bounded FTP-shutdown wait during quit, FTP lister
+  callbacks on AROS x86_64, address-book / connect-requester
+  protocol selector, sftp:// URL handling.
+
+format.module:
+- FFS-LNFS (DOS\7) support with a "Long File Names" checkbox that
+  implies FFS+International and locks out Directory Caching (issue
+  #46).
+- PFS-family detection in the status bar (PFS\0..3, PDS\0..3, muPF).
+
+Environment editor / configopus.module:
+- Promoted ten user-facing dopus/* env variables to GUI checkboxes
+  spread across the Environment editor: HidePadlock, WorkbenchTitle,
+  UseWBInfo, EnableShortcuts, ShowUseDatatypesFirst, IconSpaceX/Y,
+  IconGridX/Y, ReturnOfBenify, WheelScrollLines, NoBeeGees (issue
+  #49).
+- New "Icon Layout" tab for the four icon-arrangement controls plus
+  the Benify checkbox.
+- Surfaced the existing dopus/DOSPatch ENVARC: variable as a "Live
+  Folder Updates (DOS Patches)" checkbox.
+- ftp.module's NoBeeGees migration is one-shot now: imported on
+  first launch and then DeleteVar'd from ENV: / ENVARC:.
+- configopus: clean up ghost filetype data, surface missing icons,
+  prompt to drop missing button banks on layout load.
+
+File Type editor:
+- Icon-menu Up/Down + drag-reorder rework, with new entries
+  defaulting to "Untitled" and discarded fresh placeholders on
+  cancel (issue #48).
+
+Backdrop / icon mode:
+- Sort-by-type honours Workbench order (DIRS, TOOLS, PROJECTS);
+  icon-less entries no longer jumped ahead of typed icons (issue
+  #26).
+- Modern arrange polish: row-fill cleanup with label baseline +
+  Resize to Fit (PR #47, follow-up to issue #26).
+
+Library / dopus5.library:
+- L_PatchedOpen lazy-allocates its FIB + 512 path scratch buffer
+  only on the create branch; new shared dos_patch_memory pool
+  reduces heap traffic on bulk file operations (issue #49).
+- icon_cache: route system deficons through GetCachedDiskObjectNew
+  rather than hijacking GetCachedDiskObject (Filetype Editor icon
+  fallout fix).
+- Removed dead / easter-egg ENV reads, retired four obsolete
+  GUIF2_* defines.
+- One-shot config-backup files now use a friendly ".bak"
+  extension (was ".bac_5_90_cfg" since the 5.90-era schema
+  migration); existing legacy backups are folded into the new
+  scheme automatically on next save.
+
+LoadDB / display / off-screen dragging:
+- LoadDB: detach launched DOpus from caller's CLI streams so the
+  parent Shell window closes immediately after launch (issue #56,
+  CMD_REVISION 1 -> 3 across the cycle).
+- display.c: runtime intuition.library v45 check before passing
+  SA_OffScreenDragging, so binaries built against NDK3.2 don't push
+  an unrecognised tag on AmigaOS 3.1 (follow-up to #20 / #22).
+
+Release archive / packaging:
+- Top-level archive tree renamed Dopus5/ -> DOpus5/ to match the
+  canonical DOpus5: assign casing.
+- Restored top-level DOpus5.info drawer icon (was lost during the
+  AROS x86_64 archive repack in 5.100).
+- THIRD_PARTY_NOTICES.md now ships inside DOpus5/Help/ instead of
+  its own one-file drawer.
+- ARexx scripts shipped in basedata.lha unbroken on 5.100+ (LIB
+  version match), and Commands/Desktop/Groups runtime dirs added
+  back to the archive.
+- Default Lister Toolbar and Toolbar.default refreshed with a new
+  CacheList icon/label so the left-most button matches its action
+  (issue #65).
+
+Documentation:
+- Refreshed every per-tab Environment editor description in
+  DOpus5.guide; full @$VER bump and 2026 copyright extension
+  (issue #58).
+- Refreshed Format Requester for FFS-LNFS + PFS-family detection
+  and File Type Editor for the icon-menu Up/Down + drag rework.
+- Documented dopus/PopUpDelay, dopus/CommandLineLength and the
+  refreshed dopus/NoBeeGees migration note in the Variables
+  appendix.
+- Dropped historical-version manual archives (~17 MB across
+  documents/dopus5{,5,6,8}/, DOpus55.pdf, DOpus582.pdf) and 187
+  dangling "Manual Ref:" page-number footnotes that pointed at the
+  removed printed manual.
+
+AROS portability:
+- Fix AROS x86_64 FTP lister handles, AROS menu data IPTR casts,
+  AROS-converted image data writable mapping, AROS debug builds
+  and runtime init.
+- diskinfo: resolve PI at runtime to dodge an AROS x86_64
+  cross-compiler ICE under Rosetta.
+- ftp / diskinfo / icon / library: fix AROS x86_64 format-string
+  warnings.
+- makefile: harden AROS arch propagation and add a release-package
+  preflight that fails fast when the matching cross-compiler isn't
+  installed (silent host-toolchain fallback was masking errors).
+- Fix ARexx handler arguments on 64-bit AROS.
+
+Other fixes:
+- DOpus5: path casing normalised across hardcoded literals
+  (issue #36 / PR #43).
+- xadopus: unstick lister after view / doubleclick commands.
+- Lister free space display and Edit menu behaviour fix.
+- Button image fallback length guard.
+- DOpus 4 import: fix mapping buttons -> menus -> drives offset.
+- copy: read $VER strings without colon.
+
+Versioning notes:
+- Global LIB_REVISION moves 4 -> 5 for all libraries and modules.
+- ftp.module's local LIB_REVISION override (carried since the SFTP
+  landing) is removed; with the global at 5 the module aligns with
+  the rest at v73r5.
+- CMD_REVISION already advanced 1 -> 3 during the cycle for the
+  LoadDB CLI-detachment work; commands ship at v65r3.
+
+Detailed per-feature entries follow.
+2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
+
+[dopus5 5.101] config: rename .bac_5_90_cfg backup to .bak (+ migrate)
+Ships in 5.101.  dopus5.library at v73r5 (with the global
+LIB_REVISION 4 -> 5 bump for this release).
+
+Source / Library/config_open.c (do_backup):
+- Switched the one-shot config-backup extension from the historical
+  ".bac_5_90_cfg" (added during the 5.90 IFF schema migration) to
+  the friendlier ".bak".  Users editing a default toolbar / button
+  bank no longer see the long, opaque legacy filename appear next
+  to the bank in their lister.
+- Added a one-shot migration path: when do_backup runs and a
+  legacy ".bac_5_90_cfg" file is still sitting next to the live
+  config, it is folded into the new ".bak" scheme on the spot.
+  If a current ".bak" already exists (rare), the legacy file is
+  deleted so the user does not accumulate two stale backups for
+  the same config; otherwise the legacy file is renamed to ".bak"
+  so the original one-shot snapshot is preserved.
+- Behaviour unchanged otherwise: still one-shot per file (once
+  ".bak" exists do_backup is a no-op), still triggered from the
+  legacy-IFF read path in config_open.c and the "overwrite
+  existing file" branch in config_save.c.
+- Length budget for the source path stays at 238 chars so both the
+  4-char ".bak" and the 13-char ".bac_5_90_cfg" still fit safely
+  inside the 256-byte outname / legacy_outname buffers.
+2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
+
+[dopus5 5.101] basedata: refresh default Lister Toolbar (CacheList icon)
+Ships in 5.101.  Packaging-only change; no module version changes.
+
+archive/basedata.lha:
+- DOpus5/Buttons/Toolbar and DOpus5/Buttons/Toolbar.default refreshed
+  with a new default Lister toolbar.  Issue #65 flagged that the
+  left-most CacheList button used the Telephone icon (a leftover that
+  didn't fit the action); the new layout swaps it out for an
+  icon/label that matches the function.
+- Both Toolbar and Toolbar.default carry identical contents
+  (sha256-verified) so a fresh install plus the factory-reset
+  fallback path in source/Program/environment.c:environment_open_toolbar()
+  both pick up the new layout.  Uncompressed size shrinks slightly
+  (2738 -> 2734 bytes per file) as a side effect of the new icon
+  selection; no schema or behaviour change.
+- Repacked with the same lh5 / forward-slash-paths recipe used since
+  the 5.100 archive cleanup; the other 256 files in basedata.lha are
+  byte-identical to the previous archive (sha256-verified after
+  extract round-trip).
+- Existing users with a saved DOpus5:Buttons/Toolbar will keep their
+  customised version on upgrade; the new default only kicks in for
+  fresh installs or when the user deletes their saved Toolbar to
+  fall back to Toolbar.default.
+- Resolves #65.
+2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
+
+[dopus5 5.101] OS3: add separate 68000 build + drop obsolete Documents drawer
+Ships in 5.101.  No module version changes for this entry.
 
 Source / makefile, makefile.common, Modules/makefile, Misc/C/makefile,
 Library/makefile.os3, Program/makefile.os3, Modules/*/makefile.os3,
 Misc/C/*/makefile.os3, Modules/ftp/makefile.os3:
 - New `make os3-68000` target produces a plain 68000 binary (-m68000)
   alongside the existing 68020-60/68030-tuned `make os3` build, so users
-  on stock A500/A600/A1200 hardware (without an accelerator) can run
-  DOpus5 without needing the 020+ variant.  The release archive is
+  on stock 68000-based hardware (A500, A600, A1000, A2000, CDTV) can
+  run DOpus5 without needing the 020+ variant.  A1200 / A3000 / A4000
+  owners are still served by the regular `os3` build.  The release
+  archive is
   named DOpus5_<rev>_os3-68000.lha to keep both packages addressable
   side-by-side (issue #51).
 - Driven by a new `cpu` variable, exported from the top-level makefile
@@ -53,8 +247,8 @@ Source / makefile (release-package):
 - Resolves #51.
 2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
 
-[dopus5allamigas next] dopus5.h / dopus_config.h: document OPUS vs EPUS FORM ids
-Program remains at 5.100.  No module version changes.  Comment-only.
+[dopus5 5.101] dopus5.h / dopus_config.h: document OPUS vs EPUS FORM ids
+Ships in 5.101.  Comment-only change for this entry.
 
 Source / Include/libraries/dopus5.h, Program/dopus_config.h:
 - The ID_OPUS / ID_EPUS macros only had a single-line comment ("Opus
@@ -76,8 +270,9 @@ Source / Include/libraries/dopus5.h, Program/dopus_config.h:
 - Resolves #60.
 2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
 
-[dopus5allamigas next] LoadDB: detach launched DOpus from caller's CLI streams
-Program remains at 5.100.  LoadDB ships in v65r3.
+[dopus5 5.101] LoadDB: detach launched DOpus from caller's CLI streams
+Ships in 5.101.  LoadDB at v65r3 (CMD_REVISION bumped 2 -> 3 by this
+change during the cycle).
 
 Source / Misc/C/loadwb/loaddb.c:
 - launch_detached() now opens explicit NIL: filehandles for SYS_Input,
@@ -94,8 +289,9 @@ Source / Misc/C/loadwb/loaddb.c:
 - Resolves #56.
 2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
 
-[dopus5allamigas next] display.c: runtime version check for SA_OffScreenDragging
-Program remains at 5.100.  No module version changes.
+[dopus5 5.101] display.c: runtime version check for SA_OffScreenDragging
+Ships in 5.101.  Program-only fix; no module version changes for this
+entry.
 
 Source / display.c:
 - Off-screen window dragging on the DOpus custom screen (introduced
@@ -113,8 +309,9 @@ Source / display.c:
 - Follow-up to #20 / #22 based on rubicon2026's review feedback.
 2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
 
-[dopus5allamigas next] Release archive: DOpus5 casing + restore drawer icon
-Program remains at 5.100.  No module version changes.
+[dopus5 5.101] Release archive: DOpus5 casing + restore drawer icon
+Ships in 5.101.  Packaging-only change; no module version changes for
+this entry.
 
 Archive / build:
 - Repacked archive/basedata.lha: top-level Dopus5/ tree renamed to
@@ -139,8 +336,9 @@ Archive / build:
 - Follow-up to #36 / #43.
 2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
 
-[dopus5allamigas next] Documentation refresh and historical-archive cleanup
-Program remains at 5.100.  No module version changes.
+[dopus5 5.101] Documentation refresh and historical-archive cleanup
+Ships in 5.101.  Documentation-only; no module version changes for
+this entry.
 
 Documentation:
 - Refreshed every per-tab description in DOpus5.guide for the
@@ -187,10 +385,11 @@ Build:
 - Resolves #58.
 2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
 
-[dopus5allamigas next] Environment editor: legacy ENV variable cleanup and GUI promotion
-Program remains at 5.100.  dopus5.library bumps to v73r5;
-configopus.module, icon.module, show.module and ftp.module ship in
-v73r5.
+[dopus5 5.101] Environment editor: legacy ENV variable cleanup and GUI promotion
+Ships in 5.101.  dopus5.library, configopus.module, icon.module,
+show.module and ftp.module all at v73r5 (the global LIB_REVISION
+moves from 4 to 5 for this release, so all libraries and modules
+ship at v73r5).
 
 Environment editor / GUI promotions:
 - Promoted ten user-facing dopus/* env variables to GUI checkboxes
@@ -248,8 +447,9 @@ AROS / cross-platform:
 - Resolves #49.
 2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
 
-[dopus5allamigas next] format.module: LNFS support and PFS awareness
-Program remains at 5.100. format.module ships in v73r5.
+[dopus5 5.101] format.module: LNFS support and PFS awareness
+Ships in 5.101.  format.module at v73r5 (with the global
+LIB_REVISION 4 -> 5 bump for this release).
 
 Format / FFS-LNFS:
 - Add a "Long File Names" checkbox to the format dialog so volumes can
@@ -280,8 +480,11 @@ Format / PFS:
   status bar at typical Workbench fonts.
 2026-05-05 by Dimitris Panokostas <midwan@gmail.com>
 
-[dopus5allamigas next] FTP SFTP support
-Program remains at 5.100. ftp.module bumps to v73r5.
+[dopus5 5.101] FTP SFTP support
+Ships in 5.101.  ftp.module at v73r5.  (ftp.module previously
+carried a local LIB_REVISION override pinning it to 5; that override
+is removed for this release now that the global LIB_REVISION is
+also 5, so ftp.module aligns with the rest of the modules at v73r5.)
 
 FTP / SFTP:
 - Add SFTP support backed by libssh2, including directory listing,
