@@ -321,8 +321,14 @@ void LIBFUNC L_DefaultEnvironment(REG(a0, CFG_ENVR *env))
 	env->env_NewIconsFlags = ENVNIF_ENABLE;
 	env->env_NewIconsPrecision = 16;
 
+	// Icon layout (matches CLEANUP_SPACE_X/Y in backdrop.h; grid 1 = no grid)
+	env->env_icon_space_x = 7;
+	env->env_icon_space_y = 5;
+	env->env_icon_grid_x = 1;
+	env->env_icon_grid_y = 1;
+
 	// Set version
-	env->version = CONFIG_VERSION_13;
+	env->version = CONFIG_VERSION_14;
 
 	// Get default settings
 	L_DefaultSettings(&env->settings);
@@ -544,11 +550,41 @@ void LIBFUNC L_UpdateEnvironment(REG(a0, CFG_ENVR *env))
 			env->display_options |= DISPOPTF_USE_WBINFO;
 	}
 
+	// Pre-version 14: import desktop icon-layout vars and ReturnOfBenify into config.
+	// Old configs have these fields zeroed, so unconditionally fall back to defaults.
+	if (env->version < CONFIG_VERSION_14)
+	{
+		char buf[14];
+
+		if (GetVar("dopus/IconSpaceX", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+			env->env_icon_space_x = (UWORD)atoi(buf);
+		if (env->env_icon_space_x < 1)
+			env->env_icon_space_x = 7;
+
+		if (GetVar("dopus/IconSpaceY", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+			env->env_icon_space_y = (UWORD)atoi(buf);
+		if (env->env_icon_space_y < 1)
+			env->env_icon_space_y = 5;
+
+		if (GetVar("dopus/IconGridX", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+			env->env_icon_grid_x = (UWORD)atoi(buf);
+		if (env->env_icon_grid_x < 1)
+			env->env_icon_grid_x = 1;
+
+		if (GetVar("dopus/IconGridY", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+			env->env_icon_grid_y = (UWORD)atoi(buf);
+		if (env->env_icon_grid_y < 1)
+			env->env_icon_grid_y = 1;
+
+		if (GetVar("dopus/ReturnOfBenify", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0 && buf[0] != '0')
+			env->env_flags |= ENVF_BENIFY;
+	}
+
 	fix_list_format_display(&env->list_format);
 	fix_list_format_colours(&env->list_format, env->version < CONFIG_VERSION_12);
 
 	// Fix version
-	env->version = CONFIG_VERSION_13;
+	env->version = CONFIG_VERSION_14;
 
 	// Is themes path empty?
 	if (!env->themes_location[0])

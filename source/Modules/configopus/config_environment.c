@@ -2062,6 +2062,15 @@ void _config_env_set(config_env_data *data, short option)
 		}
 		break;
 
+	// Icon layout (was dopus/IconSpace*, dopus/IconGrid*, dopus/ReturnOfBenify env vars)
+	case ENVIRONMENT_ICON_LAYOUT:
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_SPACE_X, data->config->env_icon_space_x);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_SPACE_Y, data->config->env_icon_space_y);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_GRID_X, data->config->env_icon_grid_x);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_GRID_Y, data->config->env_icon_grid_y);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_BENIFY, data->config->env_flags & ENVF_BENIFY);
+		break;
+
 	// Icon colours
 	case ENVIRONMENT_ICON_COLOURS:
 
@@ -2543,6 +2552,29 @@ void _config_env_store(config_env_data *data, short option)
 			}
 		}
 		break;
+
+	// Icon layout
+	case ENVIRONMENT_ICON_LAYOUT: {
+		ULONG val;
+
+		val = GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_SPACE_X);
+		data->config->env_icon_space_x = (val < 1) ? 1 : (UWORD)val;
+
+		val = GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_SPACE_Y);
+		data->config->env_icon_space_y = (val < 1) ? 1 : (UWORD)val;
+
+		val = GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_GRID_X);
+		data->config->env_icon_grid_x = (val < 1) ? 1 : (UWORD)val;
+
+		val = GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_GRID_Y);
+		data->config->env_icon_grid_y = (val < 1) ? 1 : (UWORD)val;
+
+		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_BENIFY))
+			data->config->env_flags |= ENVF_BENIFY;
+		else
+			data->config->env_flags &= ~ENVF_BENIFY;
+		break;
+	}
 
 	// Icon colours
 	case ENVIRONMENT_ICON_COLOURS:

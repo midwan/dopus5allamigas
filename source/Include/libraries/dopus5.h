@@ -324,6 +324,7 @@ typedef struct
 #define ENVF_CHANGED (1 << 2)		  // Environment has changed
 #define ENVF_DESKTOP_FOLDER (1 << 3)  // Desktop folder popup
 #define ENVF_USE_PATHLIST (1 << 4)	  // Use path list
+#define ENVF_BENIFY (1 << 5)		  // Drop on Desktop saves position permanently (was dopus/ReturnOfBenify)
 
 #define ENVNIF_ENABLE (1 << 0)
 #define ENVNIF_DISCOURAGE (1 << 1)
@@ -2270,7 +2271,14 @@ typedef struct
 
 	unsigned char desktop_popup_default;
 
-	ULONG pad[17];	// Save recompilation
+	// Promoted from ENV: vars in CONFIG_VERSION_14 (issue #49). Steals 8 of
+	// pad[17]'s 68 reserved bytes so on-disk layout stays compatible.
+	UWORD env_icon_space_x;	 // Desktop icon X spacing (was dopus/IconSpaceX)
+	UWORD env_icon_space_y;	 // Desktop icon Y spacing (was dopus/IconSpaceY)
+	UWORD env_icon_grid_x;	 // Desktop icon X grid step, 1 = no grid
+	UWORD env_icon_grid_y;	 // Desktop icon Y grid step, 1 = no grid
+
+	ULONG pad[15];	// Save recompilation
 
 	char env_BackgroundPic[4][256];	 // Background pictures
 	UWORD env_BackgroundFlags[4];	 // Background flags

@@ -1059,7 +1059,7 @@ void startup_get_env(void)
 	// Clear flags
 	GUI->flags &= ~(GUIF_CLOCK | GUIF_SAVE_ICONS | GUIF_FILE_FILTER | GUIF_DEFPUBSCR | GUIF_VIEW_ICONS |
 					GUIF_ICON_ACTION | GUIF_SHOW_ALL);
-	GUI->flags2 &= ~(GUIF2_ENABLE_SHORTCUTS | GUIF2_BENIFY);
+	GUI->flags2 &= ~(GUIF2_ENABLE_SHORTCUTS);
 
 	// Main system variable
 	if (GetVar("dopus/dopus", GUI->work_buffer, sizeof(GUI->work_buffer), GVF_GLOBAL_ONLY) > 0)
@@ -1097,48 +1097,6 @@ void startup_get_env(void)
 		GUI->flags2 |= GUIF2_ENABLE_SHORTCUTS;
 	if (GetVar("dopus/WheelScrollLines", GUI->work_buffer, 4, GVF_GLOBAL_ONLY) > 0 && isdigit(GUI->work_buffer[0]))
 		GUI->wheel_lines = atoi(GUI->work_buffer);
-	if (GetVar("dopus/ReturnOfBenify", GUI->work_buffer, 2, GVF_GLOBAL_ONLY) > 0 && GUI->work_buffer[0] != '0')
-		GUI->flags2 |= GUIF2_BENIFY;
-
-	// Icon spacing
-	if (GetVar("dopus/IconSpaceX", GUI->work_buffer, 4, GVF_GLOBAL_ONLY) > 0)
-	{
-		GUI->icon_space_x = atoi(GUI->work_buffer);
-		if (GUI->icon_space_x < 1)
-			GUI->icon_space_x = 1;
-	}
-	else
-		GUI->icon_space_x = CLEANUP_SPACE_X;
-
-	// Icon spacing
-	if (GetVar("dopus/IconSpaceY", GUI->work_buffer, 4, GVF_GLOBAL_ONLY) > 0)
-	{
-		GUI->icon_space_y = atoi(GUI->work_buffer);
-		if (GUI->icon_space_y < 1)
-			GUI->icon_space_y = 1;
-	}
-	else
-		GUI->icon_space_y = CLEANUP_SPACE_Y;
-
-	// Icon grid
-	if (GetVar("dopus/IconGridX", GUI->work_buffer, 4, GVF_GLOBAL_ONLY) > 0)
-	{
-		GUI->icon_grid_x = atoi(GUI->work_buffer);
-		if (GUI->icon_grid_x < 1)
-			GUI->icon_grid_x = 1;
-	}
-	else
-		GUI->icon_grid_x = 1;
-
-	// Icon grid
-	if (GetVar("dopus/IconGridY", GUI->work_buffer, 4, GVF_GLOBAL_ONLY) > 0)
-	{
-		GUI->icon_grid_y = atoi(GUI->work_buffer);
-		if (GUI->icon_grid_y < 1)
-			GUI->icon_grid_y = 1;
-	}
-	else
-		GUI->icon_grid_y = 1;
 }
 
 // Initialise the ARexx handler and the commodity

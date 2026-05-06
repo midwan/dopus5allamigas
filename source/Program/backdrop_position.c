@@ -291,7 +291,7 @@ void backdrop_position_object(BackdropInfo *info,
 					first = incumbent;
 
 				// Shunt over to the right ready to try again
-				x = incumbent->show_rect.MaxX + GUI->icon_space_x - CLEANUP_START_X + 1;
+				x = incumbent->show_rect.MaxX + environment->env->env_icon_space_x - CLEANUP_START_X + 1;
 
 				// Check coordinates against grid
 				x -= pos_area->ip_Area.Left;
@@ -303,7 +303,7 @@ void backdrop_position_object(BackdropInfo *info,
 				{
 					// We need to move down
 					x = pos_area->ip_Area.Left;
-					y += ((first) ? RECTHEIGHT(&first->show_rect) : height) + GUI->icon_space_y - 1;
+					y += ((first) ? RECTHEIGHT(&first->show_rect) : height) + environment->env->env_icon_space_y - 1;
 
 					// Check coordinates against grid
 					y -= pos_area->ip_Area.Top;

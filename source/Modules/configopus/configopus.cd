@@ -887,6 +887,27 @@ _Suppress DOpus Title Bar Clock
 MSG_ENVIRONMENT_OPTIONS_USE_WBINFO (//)
 Use Workbench _Icon Information
 ;
+MSG_ENVIRONMENT_SUB_ICON_LAYOUT (//)
+Icon Layout
+;
+MSG_ENVIRONMENT_ICON_LAYOUT_TITLE (//)
+Desktop Icon Arrangement
+;
+MSG_ENVIRONMENT_ICON_SPACE_X (//)
+Icon Spacing _X:
+;
+MSG_ENVIRONMENT_ICON_SPACE_Y (//)
+Icon Spacing _Y:
+;
+MSG_ENVIRONMENT_ICON_GRID_X (//)
+Icon Grid X (1 = no grid):
+;
+MSG_ENVIRONMENT_ICON_GRID_Y (//)
+Icon Grid Y (1 = no grid):
+;
+MSG_ENVIRONMENT_BENIFY (//)
+_Drop on Desktop Saves Position
+;
 ;
 MSG_ENVIRONMENT_PICTURE_STRETCHED (//)
 Stretch Picture

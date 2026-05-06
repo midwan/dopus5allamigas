@@ -186,10 +186,10 @@ static BOOL backdrop_cleanup_objects_grid(BackdropInfo *info, UWORD flags)
 	off_y = info->size.MinY - info->offset_y;
 
 	// Spacing between icons (account for screen ratio for X)
-	space_x = GUI->icon_space_x;
+	space_x = environment->env->env_icon_space_x;
 	if (GUI->screen_info & SCRI_LORES)
 		space_x <<= 1;
-	space_y = GUI->icon_space_y;
+	space_y = environment->env->env_icon_space_y;
 
 	// First pass: derive the global cell metrics from every eligible icon.
 	// Using a single grid (rather than per-row) gives the consistent column
@@ -372,7 +372,7 @@ BOOL backdrop_cleanup_objects(BackdropInfo *info, struct Rectangle *rect, UWORD 
 	lock_listlock(&info->objects, 0);
 
 	// Get x space (for screen ratio)
-	space_x = GUI->icon_space_x;
+	space_x = environment->env->env_icon_space_x;
 	if (GUI->screen_info & SCRI_LORES)
 		space_x <<= 1;
 
@@ -455,7 +455,7 @@ BOOL backdrop_cleanup_objects(BackdropInfo *info, struct Rectangle *rect, UWORD 
 			else
 			{
 				// Check if icon will fit vertically
-				if (icon_top + icon_height > col_height + GUI->icon_space_y)
+				if (icon_top + icon_height > col_height + environment->env->env_icon_space_y)
 				{
 					// If this is the first icon in the column, squeeze it in anyway
 					if (col_width > 0 && !retry)
@@ -501,7 +501,7 @@ BOOL backdrop_cleanup_objects(BackdropInfo *info, struct Rectangle *rect, UWORD 
 						}
 						else
 						{
-							icon_top += icon_height + GUI->icon_space_y;
+							icon_top += icon_height + environment->env->env_icon_space_y;
 							backdrop_check_grid(0, &icon_top);
 						}
 
@@ -532,7 +532,7 @@ BOOL backdrop_cleanup_objects(BackdropInfo *info, struct Rectangle *rect, UWORD 
 					object->pos.Top = icon_top;
 
 					// Increment top position
-					icon_top += icon_height + GUI->icon_space_y;
+					icon_top += icon_height + environment->env->env_icon_space_y;
 
 					// Check coordinates against grid
 					backdrop_check_grid(0, &icon_top);
@@ -624,7 +624,7 @@ BOOL backdrop_cleanup_objects(BackdropInfo *info, struct Rectangle *rect, UWORD 
 			if (vert)
 			{
 				// Bump column/row position
-				icon_top += col_height + GUI->icon_space_y;
+				icon_top += col_height + environment->env->env_icon_space_y;
 			}
 
 			// Horizontal
@@ -1123,10 +1123,10 @@ void backdrop_show_rect(BackdropInfo *info, BackdropObject *object, short x, sho
 // Check grid coordinates
 void backdrop_check_grid(long *x, long *y)
 {
-	if (x && GUI->icon_grid_x > 1 && *x > 0)
-		*x = ((*x + GUI->icon_grid_x - 1) / GUI->icon_grid_x) * GUI->icon_grid_x;
-	if (y && GUI->icon_grid_y > 1 && *y > 0)
-		*y = ((*y + GUI->icon_grid_y - 1) / GUI->icon_grid_y) * GUI->icon_grid_y;
+	if (x && environment->env->env_icon_grid_x > 1 && *x > 0)
+		*x = ((*x + environment->env->env_icon_grid_x - 1) / environment->env->env_icon_grid_x) * environment->env->env_icon_grid_x;
+	if (y && environment->env->env_icon_grid_y > 1 && *y > 0)
+		*y = ((*y + environment->env->env_icon_grid_y - 1) / environment->env->env_icon_grid_y) * environment->env->env_icon_grid_y;
 }
 
 // Line-up backdrop objects
@@ -1155,8 +1155,8 @@ void backdrop_lineup_objects(BackdropInfo *info)
 		backdrop_check_grid(&x, &y);
 
 		// Shift position
-		x -= GUI->icon_grid_x - CLEANUP_START_X;
-		y -= GUI->icon_grid_y - CLEANUP_START_Y;
+		x -= environment->env->env_icon_grid_x - CLEANUP_START_X;
+		y -= environment->env->env_icon_grid_y - CLEANUP_START_Y;
 
 		// Store new position
 		object->pos.Left = x;
