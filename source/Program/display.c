@@ -112,14 +112,23 @@ BOOL display_open(long flags)
 			0,
 			SA_LikeWorkbench,
 			TRUE,
+			/* Enable AmigaOS 3.1.4+ (intuition.library v45+) off-screen window
+			 * dragging when the running system supports it.  The compile-time
+			 * #if guards ensure we only emit a known tag if the SDK defines it;
+			 * the runtime lib_Version >= 45 check then keeps OS3.1 (v40) and
+			 * any other older Intuition from receiving an unrecognised tag.
+			 * The canonical NDK 3.2 / OS4 / MorphOS / AROS spelling is
+			 * SA_OffScreenDragging.  The other two spellings below are
+			 * defensive fallbacks for any third-party SDK that ever picked
+			 * a different casing; they do not appear in the official headers. */
 #if defined(SA_OffscreenDragging)
-			SA_OffscreenDragging,
+			(((struct Library *)IntuitionBase)->lib_Version >= 45) ? SA_OffscreenDragging : TAG_IGNORE,
 			TRUE,
 #elif defined(SA_OFFSCREENDRAGGING)
-			SA_OFFSCREENDRAGGING,
+			(((struct Library *)IntuitionBase)->lib_Version >= 45) ? SA_OFFSCREENDRAGGING : TAG_IGNORE,
 			TRUE,
 #elif defined(SA_OffScreenDragging)
-			SA_OffScreenDragging,
+			(((struct Library *)IntuitionBase)->lib_Version >= 45) ? SA_OffScreenDragging : TAG_IGNORE,
 			TRUE,
 #endif
 			SA_Width,

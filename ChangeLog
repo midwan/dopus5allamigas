@@ -1,3 +1,22 @@
+[dopus5allamigas next] display.c: runtime version check for SA_OffScreenDragging
+Program remains at 5.100.  No module version changes.
+
+Source / display.c:
+- Off-screen window dragging on the DOpus custom screen (introduced
+  in #22) now also runtime-checks intuition.library lib_Version >=
+  45 before passing SA_OffScreenDragging to OpenScreenTags.  The
+  compile-time #if guards already kept the binary from emitting a
+  tag the SDK does not know about, but on AmigaOS 3.1 (intuition
+  v40) a binary built against NDK3.2 was still pushing an
+  unrecognised tag at runtime.  When the running Intuition is
+  older than v45, the tag is now replaced with TAG_IGNORE so the
+  whole tag pair is skipped.  v45+ (3.1.4) and v47+ (3.2.x), plus
+  any future 3.x release with v48+, continue to receive
+  SA_OffScreenDragging = TRUE.  OS4, MorphOS and AROS already
+  carry intuition.library >= 45 so the check is harmless there.
+- Follow-up to #20 / #22 based on rubicon2026's review feedback.
+2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
+
 [dopus5allamigas next] Release archive: DOpus5 casing + restore drawer icon
 Program remains at 5.100.  No module version changes.
 
