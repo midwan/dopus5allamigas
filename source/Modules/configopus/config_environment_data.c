@@ -677,6 +677,26 @@ const ObjectDef _config_environment_objects[] =
 						 GAD_ENVIRONMENT_OPTIONS_USE_WBINFO,
 						 _environment_relative_taglist},
 
+						// Enable extra desktop popup keyboard shortcuts
+						{OD_GADGET,
+						 CHECKBOX_KIND,
+						 {4, 11, 0, 1},
+						 {5, 59, 26, 4},
+						 MSG_ENVIRONMENT_OPTIONS_ENABLE_SHORTCUTS,
+						 PLACETEXT_RIGHT,
+						 GAD_ENVIRONMENT_OPTIONS_ENABLE_SHORTCUTS,
+						 _environment_relative_taglist},
+
+						// Show: prefer datatypes IFF over the built-in IFF reader
+						{OD_GADGET,
+						 CHECKBOX_KIND,
+						 {4, 12, 0, 1},
+						 {5, 64, 26, 4},
+						 MSG_ENVIRONMENT_OPTIONS_SHOW_DT_FIRST,
+						 PLACETEXT_RIGHT,
+						 GAD_ENVIRONMENT_OPTIONS_SHOW_DT_FIRST,
+						 _environment_relative_taglist},
+
 						{OD_END}},
 
 				// Output window
@@ -1838,11 +1858,21 @@ const ObjectDef _config_environment_objects[] =
 						 GAD_SETTINGS_MAX_OPENWITH,
 						 _environment_max_openwith_taglist},
 
+						// Mouse wheel scroll lines
+						{OD_GADGET,
+						 INTEGER_KIND,
+						 {4, 8, 5, 1},
+						 {5, 56, 8, 6},
+						 MSG_SETTINGS_WHEEL_SCROLL_LINES,
+						 PLACETEXT_RIGHT,
+						 GAD_SETTINGS_WHEEL_SCROLL_LINES,
+						 _environment_icon_int_tags},
+
 						// Screen title
 						{OD_TEXT,
 						 TEXTPEN,
-						 {1, 8, 0, 0},
-						 {5, 61, 0, 0},
+						 {1, 9, 0, 0},
+						 {5, 67, 0, 0},
 						 MSG_ENVIRONMENT_SCREEN_TITLE,
 						 0,
 						 0,
@@ -1851,8 +1881,8 @@ const ObjectDef _config_environment_objects[] =
 						// Status text popup
 						{OD_GADGET,
 						 FILE_BUTTON_KIND,
-						 {4, 9, 0, 1},
-						 {5, 64, 28, 6},
+						 {4, 10, 0, 1},
+						 {5, 70, 28, 6},
 						 0,
 						 0,
 						 GAD_ENVIRONMENT_SCREEN_TITLE_LIST,
@@ -1861,8 +1891,8 @@ const ObjectDef _config_environment_objects[] =
 						// Screen title text
 						{OD_GADGET,
 						 STRING_KIND,
-						 {4, 9, SIZE_MAX_LESS - 2, 1},
-						 {33, 64, -8, 6},
+						 {4, 10, SIZE_MAX_LESS - 2, 1},
+						 {33, 70, -8, 6},
 						 0,
 						 0,
 						 GAD_ENVIRONMENT_SCREEN_TITLE,

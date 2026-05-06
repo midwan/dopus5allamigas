@@ -722,9 +722,6 @@ void startup_init_gui()
 
 	// Default CX priority
 	GUI->cx_pri = 100;
-
-	// Default scroll lines
-	GUI->wheel_lines = 3;
 }
 
 // Process arguments
@@ -1059,7 +1056,6 @@ void startup_get_env(void)
 	// Clear flags
 	GUI->flags &= ~(GUIF_CLOCK | GUIF_SAVE_ICONS | GUIF_FILE_FILTER | GUIF_DEFPUBSCR | GUIF_VIEW_ICONS |
 					GUIF_ICON_ACTION | GUIF_SHOW_ALL);
-	GUI->flags2 &= ~(GUIF2_ENABLE_SHORTCUTS);
 
 	// Main system variable
 	if (GetVar("dopus/dopus", GUI->work_buffer, sizeof(GUI->work_buffer), GVF_GLOBAL_ONLY) > 0)
@@ -1092,11 +1088,6 @@ void startup_get_env(void)
 		if (strstr(GUI->work_buffer, "-showall-"))
 			GUI->flags |= GUIF_SHOW_ALL;
 	}
-
-	if (GetVar("dopus/EnableShortcuts", GUI->work_buffer, 2, GVF_GLOBAL_ONLY) > 0 && GUI->work_buffer[0] != '0')
-		GUI->flags2 |= GUIF2_ENABLE_SHORTCUTS;
-	if (GetVar("dopus/WheelScrollLines", GUI->work_buffer, 4, GVF_GLOBAL_ONLY) > 0 && isdigit(GUI->work_buffer[0]))
-		GUI->wheel_lines = atoi(GUI->work_buffer);
 }
 
 // Initialise the ARexx handler and the commodity

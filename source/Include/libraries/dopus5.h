@@ -325,6 +325,7 @@ typedef struct
 #define ENVF_DESKTOP_FOLDER (1 << 3)  // Desktop folder popup
 #define ENVF_USE_PATHLIST (1 << 4)	  // Use path list
 #define ENVF_BENIFY (1 << 5)		  // Drop on Desktop saves position permanently (was dopus/ReturnOfBenify)
+#define ENVF_ENABLE_SHORTCUTS (1 << 6) // Extra desktop popup keyboard shortcuts (was dopus/EnableShortcuts)
 
 #define ENVNIF_ENABLE (1 << 0)
 #define ENVNIF_DISCOURAGE (1 << 1)
@@ -387,9 +388,13 @@ enum {
 #define DISPOPTF_SHOW_WBLEFTOUTS (1 << 12)	// show workbench's leftout icons from the .backdrop files
 #define DISPOPTF_WB_TITLE (1 << 13)			// Suppress DOpus title-bar clock so WB-style patches can use it
 #define DISPOPTF_USE_WBINFO (1 << 14)		// Route Information requests through OS WBInfo() (e.g. SwazInfo / RAWBInfo)
+#define DISPOPTF_SHOW_DATATYPES_FIRST (1 << 15)	// show.module: prefer datatypes IFF over its built-in IFF reader
 
 // icon.module mod_data flags (passed in d1 to Module_Entry)
 #define ICON_USE_WBINFO_FLAG (1 << 16)		// Caller wants icon.module to defer to WBInfo()
+
+// show.module mod_data flags (passed in d1 to Module_Entry)
+#define SHOW_DATATYPES_FIRST_FLAG (1 << 16)	// Caller wants show.module to try datatypes first
 
 // lister options
 #define LISTEROPTF_DEVICES (1 << 0)	   // Device list in new lister
@@ -2278,7 +2283,11 @@ typedef struct
 	UWORD env_icon_grid_x;	 // Desktop icon X grid step, 1 = no grid
 	UWORD env_icon_grid_y;	 // Desktop icon Y grid step, 1 = no grid
 
-	ULONG pad[15];	// Save recompilation
+	// Promoted in CONFIG_VERSION_15.
+	UWORD env_wheel_scroll_lines;  // Mouse wheel lines per notch (was dopus/WheelScrollLines)
+	UWORD env_pad_15;			   // Pad to keep ULONG alignment
+
+	ULONG pad[14];	// Save recompilation
 
 	char env_BackgroundPic[4][256];	 // Background pictures
 	UWORD env_BackgroundFlags[4];	 // Background flags

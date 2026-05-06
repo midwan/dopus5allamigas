@@ -36,7 +36,6 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 	struct Node *node;
 	static unsigned short __chip null_pointer[6];
 	short quit_flag = 0;
-	char buf[8];
 	BOOL dt_first = 0;
 
 	// Allocate data
@@ -62,10 +61,11 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 	// Store IPC pointer
 	data->ipc = ipc;
 
-	// Environment variable?
-	if ((GetVar("dopus/ShowUseDatatypesFirst", buf, 4, GVF_GLOBAL_ONLY)) > 0)
+	// Use datatypes first?  The user's preference is now passed in via
+	// the caller (DISPOPTF_SHOW_DATATYPES_FIRST -> SHOW_DATATYPES_FIRST_FLAG
+	// bit on mod_data).
+	if (mod_data & SHOW_DATATYPES_FIRST_FLAG)
 	{
-		// Use datatypes first
 		dt_first = 1;
 	}
 

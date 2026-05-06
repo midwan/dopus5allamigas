@@ -908,6 +908,15 @@ Icon Grid Y (1 = no grid):
 MSG_ENVIRONMENT_BENIFY (//)
 _Drop on Desktop Saves Position
 ;
+MSG_ENVIRONMENT_OPTIONS_ENABLE_SHORTCUTS (//)
+Enable Desktop _Keyboard Shortcuts
+;
+MSG_ENVIRONMENT_OPTIONS_SHOW_DT_FIRST (//)
+Prefer Datatypes for Showing Pictures
+;
+MSG_SETTINGS_WHEEL_SCROLL_LINES (//)
+Mouse _Wheel Scroll Lines:
+;
 ;
 MSG_ENVIRONMENT_PICTURE_STRETCHED (//)
 Stretch Picture

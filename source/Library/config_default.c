@@ -327,8 +327,11 @@ void LIBFUNC L_DefaultEnvironment(REG(a0, CFG_ENVR *env))
 	env->env_icon_grid_x = 1;
 	env->env_icon_grid_y = 1;
 
+	// Mouse wheel scroll lines (matches the legacy startup default)
+	env->env_wheel_scroll_lines = 3;
+
 	// Set version
-	env->version = CONFIG_VERSION_14;
+	env->version = CONFIG_VERSION_15;
 
 	// Get default settings
 	L_DefaultSettings(&env->settings);
@@ -580,11 +583,29 @@ void LIBFUNC L_UpdateEnvironment(REG(a0, CFG_ENVR *env))
 			env->env_flags |= ENVF_BENIFY;
 	}
 
+	// Pre-version 15: import WheelScrollLines, EnableShortcuts and ShowUseDatatypesFirst.
+	if (env->version < CONFIG_VERSION_15)
+	{
+		char buf[14];
+
+		if (GetVar("dopus/WheelScrollLines", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+			env->env_wheel_scroll_lines = (UWORD)atoi(buf);
+		if (env->env_wheel_scroll_lines < 1)
+			env->env_wheel_scroll_lines = 3;
+
+		if (GetVar("dopus/EnableShortcuts", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0 && buf[0] != '0')
+			env->env_flags |= ENVF_ENABLE_SHORTCUTS;
+
+		// Legacy ShowUseDatatypesFirst used `> 0` (any value enables) -- preserve that
+		if (GetVar("dopus/ShowUseDatatypesFirst", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+			env->display_options |= DISPOPTF_SHOW_DATATYPES_FIRST;
+	}
+
 	fix_list_format_display(&env->list_format);
 	fix_list_format_colours(&env->list_format, env->version < CONFIG_VERSION_12);
 
 	// Fix version
-	env->version = CONFIG_VERSION_14;
+	env->version = CONFIG_VERSION_15;
 
 	// Is themes path empty?
 	if (!env->themes_location[0])

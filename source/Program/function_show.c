@@ -335,9 +335,11 @@ DOPUS_FUNC(function_show)
 		)
 		{
 			Att_Node *node;
+			ULONG show_flags =
+				(environment->env->display_options & DISPOPTF_SHOW_DATATYPES_FIRST) ? SHOW_DATATYPES_FIRST_FLAG : 0;
 
 			// Show files
-			ret = Module_Entry((struct List *)list, GUI->screen_pointer, handle->ipc, &main_ipc, 0, 0);
+			ret = Module_Entry((struct List *)list, GUI->screen_pointer, handle->ipc, &main_ipc, 0, show_flags);
 
 // Close show module
 #ifdef __amigaos4__

@@ -1883,6 +1883,12 @@ void _config_env_set(config_env_data *data, short option)
 		SetGadgetValue(data->option_list,
 					   GAD_ENVIRONMENT_OPTIONS_USE_WBINFO,
 					   data->config->display_options & DISPOPTF_USE_WBINFO);
+		SetGadgetValue(data->option_list,
+					   GAD_ENVIRONMENT_OPTIONS_ENABLE_SHORTCUTS,
+					   data->config->env_flags & ENVF_ENABLE_SHORTCUTS);
+		SetGadgetValue(data->option_list,
+					   GAD_ENVIRONMENT_OPTIONS_SHOW_DT_FIRST,
+					   data->config->display_options & DISPOPTF_SHOW_DATATYPES_FIRST);
 		break;
 
 	// Pictures
@@ -2206,6 +2212,7 @@ void _config_env_set(config_env_data *data, short option)
 		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_SCREEN_TITLE, (IPTR)data->config->scr_title_text);
 		SetGadgetValue(data->option_list, GAD_SETTINGS_POPUP_DELAY, (ULONG)data->config->settings.popup_delay);
 		SetGadgetValue(data->option_list, GAD_SETTINGS_MAX_OPENWITH, (ULONG)data->config->settings.max_openwith);
+		SetGadgetValue(data->option_list, GAD_SETTINGS_WHEEL_SCROLL_LINES, (ULONG)data->config->env_wheel_scroll_lines);
 		break;
 
 	// Priority
@@ -2329,7 +2336,8 @@ void _config_env_store(config_env_data *data, short option)
 		// Reset flags
 		data->config->display_options &= ~(DISPOPTF_SHOW_APPICONS | DISPOPTF_SHIFT_APPICONS | DISPOPTF_SHOW_TOOLS |
 										   DISPOPTF_HIDE_BAD | DISPOPTF_SHOW_WBLEFTOUTS | DISPOPTF_WB_TITLE |
-										   DISPOPTF_USE_WBINFO);
+										   DISPOPTF_USE_WBINFO | DISPOPTF_SHOW_DATATYPES_FIRST);
+		data->config->env_flags &= ~ENVF_ENABLE_SHORTCUTS;
 
 		// Workbench patches
 		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_APPICONS))
@@ -2346,6 +2354,10 @@ void _config_env_store(config_env_data *data, short option)
 			data->config->display_options |= DISPOPTF_WB_TITLE;
 		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_USE_WBINFO))
 			data->config->display_options |= DISPOPTF_USE_WBINFO;
+		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_ENABLE_SHORTCUTS))
+			data->config->env_flags |= ENVF_ENABLE_SHORTCUTS;
+		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_SHOW_DT_FIRST))
+			data->config->display_options |= DISPOPTF_SHOW_DATATYPES_FIRST;
 		break;
 
 	// Pictures
@@ -2694,6 +2706,10 @@ void _config_env_store(config_env_data *data, short option)
 			   sizeof(data->config->scr_title_text));
 		data->config->settings.popup_delay = GetGadgetValue(data->option_list, GAD_SETTINGS_POPUP_DELAY);
 		data->config->settings.max_openwith = GetGadgetValue(data->option_list, GAD_SETTINGS_MAX_OPENWITH);
+		{
+			ULONG val = GetGadgetValue(data->option_list, GAD_SETTINGS_WHEEL_SCROLL_LINES);
+			data->config->env_wheel_scroll_lines = (val < 1) ? 1 : (UWORD)val;
+		}
 		break;
 
 	// Priority
