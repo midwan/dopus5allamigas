@@ -521,7 +521,7 @@ void FiletypeEditor(void)
 					// Get full name
 					NameFromLock(msg->am_ArgList[0].wa_Lock, name, 256);
 					if (msg->am_ArgList[0].wa_Name && *msg->am_ArgList[0].wa_Name)
-						AddPart(name, msg->am_ArgList[0].wa_Name, 256);
+						AddPart(name, (STRPTR)msg->am_ArgList[0].wa_Name, 256);
 
 					// Add .info
 					if ((len = strlen(name)) < 6 || stricmp(name + len - 5, ".info") != 0)
@@ -692,7 +692,7 @@ void filetypeed_edit_action(filetype_ed_data *data, short action, char *name)
 		startup->object_flags = action;
 
 		// Build title
-		lsprintf(startup->title, "%s : %s", data->type->type.name, name);
+		lsprintf(startup->title, "%s : %s", (IPTR)data->type->type.name, (IPTR)name);
 
 		// Launch editor
 		if ((IPC_Launch(&data->proc_list,
@@ -727,7 +727,7 @@ short filetypeed_receive_edit(filetype_ed_data *data, FunctionReturn *ret)
 		icon = 1;
 
 	// Is the new function empty?
-	if (IsListEmpty((struct List *)&ret->function->instructions))
+	if (IsMinListEmpty(&ret->function->instructions))
 		no_func = 1;
 
 	// Icon menu entries are identified by their label; if the user
@@ -881,8 +881,9 @@ void filetypeed_receive_class(filetype_ed_data *data, Cfg_Filetype *type)
 	data->type->recognition = 0;
 
 	// Allocate new recognition
-	if (type->recognition && (data->type->recognition = AllocMemH(0, strlen(type->recognition) + 1)))
-		strcpy(data->type->recognition, type->recognition);
+	if (type->recognition &&
+		(data->type->recognition = AllocMemH(0, strlen((char *)type->recognition) + 1)))
+		strcpy((char *)data->type->recognition, (char *)type->recognition);
 
 	// Set new window title
 	if (data->window)
@@ -895,8 +896,10 @@ void filetypeed_receive_class(filetype_ed_data *data, Cfg_Filetype *type)
 void filetypeed_show_icon(filetype_ed_data *data)
 {
 	struct Rectangle bounds;
+#ifndef USE_DRAWICONSTATE
 	struct TagItem tags[2];
 	ImageRemap remap;
+#endif
 
 	// Clear icon area
 	SetGadgetValue(data->objlist, GAD_FILETYPEED_ICON_AREA, 0);
@@ -1004,7 +1007,10 @@ BOOL filetypeed_pick_icon(filetype_ed_data *data)
 		if ((ptr = strstr(data->type->icon_path, ":")))
 		{
 			strcpy(path, data->type->icon_path);
-			if ((ptr = FilePart(path)))
+			/* FilePart returns CONST_STRPTR on AOS4; we know `path`
+			 * is non-const (it's our local buffer) so the cast is
+			 * safe and silences the discarded-qualifier warning. */
+			if ((ptr = (char *)FilePart(path)))
 			{
 				strcpy(file, ptr);
 				*ptr = 0;
@@ -1015,8 +1021,14 @@ BOOL filetypeed_pick_icon(filetype_ed_data *data)
 	if (!path[0])
 		strcpy(path, "DOpus5:");
 
-	// Build pattern
-	ParsePatternNoCase("#?.info", pattern, 18);
+	// Build pattern. ParsePatternNoCase's buffer arg is STRPTR (char*)
+	// on AOS3/AOS4 but UBYTE* on MorphOS, so use the matching cast on
+	// each target to keep all toolchains warning-clean.
+#ifdef __MORPHOS__
+	ParsePatternNoCase("#?.info", (UBYTE *)pattern, 18);
+#else
+	ParsePatternNoCase("#?.info", (STRPTR)pattern, 18);
+#endif
 
 	// Display requester
 	if (AslRequestTags(DATA(data->window)->request,
@@ -1258,7 +1270,10 @@ void filetypeed_edit_iconmenu(filetype_ed_data *data, Att_Node *node)
 		startup->flags |= FUNCEDF_LABEL;
 
 		// Build title
-		lsprintf(startup->title, "%s : %s", data->type->type.name, GetString(Locale, MSG_ICON_MENU));
+		lsprintf(startup->title,
+				 "%s : %s",
+				 (IPTR)data->type->type.name,
+				 (IPTR)GetString(Locale, MSG_ICON_MENU));
 
 		// Launch editor
 		if ((IPC_Launch(&data->proc_list,
@@ -1289,7 +1304,7 @@ BOOL filetypeed_check_iconmenu(filetype_ed_data *data, Att_Node *node, BOOL del)
 	fndata = (func_node *)node->data;
 
 	// Invalid function?
-	if (del || !fndata->func || IsListEmpty((struct List *)&fndata->func->instructions))
+	if (del || !fndata->func || IsMinListEmpty(&fndata->func->instructions))
 	{
 		// Detach list from listview
 		SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, (APTR)~0);
@@ -1410,7 +1425,8 @@ BOOL filetypeed_end_drag(filetype_ed_data *data, BOOL ok)
 	// Drop on our window?
 	if (window == data->window)
 	{
-		long top, item;
+		long item;
+		IPTR top = 0;
 		GL_Object *lister;
 
 		// Convert to window coordinates
@@ -1422,11 +1438,11 @@ BOOL filetypeed_end_drag(filetype_ed_data *data, BOOL ok)
 		if (!(CheckObjectArea(lister, data->drag.drag_x, data->drag.drag_y)))
 			return 0;
 
-		// Get top item
-		GetAttr(DLV_Top, (Object *)GADGET(lister), (ULONG *)&top);
+		// Get top item (GetAttr writes through an IPTR* on AOS4/AROS)
+		GetAttr(DLV_Top, (Object *)GADGET(lister), &top);
 
 		// Get item we dropped over
-		item = UDivMod32((data->drag.drag_y - lister->dims.Top), data->window->RPort->TxHeight) + top;
+		item = UDivMod32((data->drag.drag_y - lister->dims.Top), data->window->RPort->TxHeight) + (long)top;
 
 		// Valid item?
 		if (item >= 0 && item < Att_NodeCount(data->icon_list) && item != drag_item)

@@ -152,6 +152,14 @@
 	#define DOPUS_VARIADIC_IPTR(...) __VA_ARGS__
 #endif
 
+/* IsListEmpty equivalent for struct MinList; using IsListEmpty with a
+ * (struct List *) cast triggers -Wstrict-aliasing on GCC even though
+ * the layout matches. This macro accesses the MinList fields directly
+ * so the strict-aliasing rules stay clean. */
+#ifndef IsMinListEmpty
+	#define IsMinListEmpty(l) ((l)->mlh_TailPred == (struct MinNode *)(l))
+#endif
+
 /* Replacement functions for functions not available in some SDKs/GCCs */
 #if !defined(__MORPHOS__) && !defined(__AROS__)
 	#undef stccpy
