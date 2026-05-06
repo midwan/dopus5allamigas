@@ -388,6 +388,19 @@ void FiletypeEditor(void)
 						if (filetypeed_check_iconmenu(data, data->last_icon, TRUE))
 							change_flag = 1;
 						break;
+
+					// Move icon menu entry up or down
+					case GAD_FILETYPES_UP_ICON_MENU:
+					case GAD_FILETYPES_DOWN_ICON_MENU:
+
+						// Need a selection
+						if (!data->last_icon)
+							break;
+
+						// Move it
+						if (filetypeed_move_iconmenu(data, gadget->GadgetID == GAD_FILETYPES_UP_ICON_MENU))
+							change_flag = 1;
+						break;
 					}
 					break;
 
@@ -508,7 +521,7 @@ void FiletypeEditor(void)
 					// Get full name
 					NameFromLock(msg->am_ArgList[0].wa_Lock, name, 256);
 					if (msg->am_ArgList[0].wa_Name && *msg->am_ArgList[0].wa_Name)
-						AddPart(name, msg->am_ArgList[0].wa_Name, 256);
+						AddPart(name, (STRPTR)msg->am_ArgList[0].wa_Name, 256);
 
 					// Add .info
 					if ((len = strlen(name)) < 6 || stricmp(name + len - 5, ".info") != 0)
@@ -679,7 +692,7 @@ void filetypeed_edit_action(filetype_ed_data *data, short action, char *name)
 		startup->object_flags = action;
 
 		// Build title
-		lsprintf(startup->title, "%s : %s", data->type->type.name, name);
+		lsprintf(startup->title, "%s : %s", (IPTR)data->type->type.name, (IPTR)name);
 
 		// Launch editor
 		if ((IPC_Launch(&data->proc_list,
@@ -714,7 +727,7 @@ short filetypeed_receive_edit(filetype_ed_data *data, FunctionReturn *ret)
 		icon = 1;
 
 	// Is the new function empty?
-	if (IsListEmpty((struct List *)&ret->function->instructions))
+	if (IsMinListEmpty(&ret->function->instructions))
 		no_func = 1;
 
 	// Icon menu entries are identified by their label; if the user
@@ -775,6 +788,13 @@ short filetypeed_receive_edit(filetype_ed_data *data, FunctionReturn *ret)
 			// Fix type
 			if (!icon)
 				func_copy->function.func_type = ret->object_flags;
+
+			// The user accepted this entry via Use, so it is no
+			// longer a placeholder. CopyFunction propagates flags2
+			// verbatim, so the bit was inherited from the original;
+			// clear it now so check_iconmenu / a later save path
+			// never see a "needs cleanup" marker on a real entry.
+			func_copy->function.flags2 &= ~FUNCF2_PLACEHOLDER;
 
 			// Add to list, in same position if applicable
 			if (function)
@@ -868,8 +888,9 @@ void filetypeed_receive_class(filetype_ed_data *data, Cfg_Filetype *type)
 	data->type->recognition = 0;
 
 	// Allocate new recognition
-	if (type->recognition && (data->type->recognition = AllocMemH(0, strlen(type->recognition) + 1)))
-		strcpy(data->type->recognition, type->recognition);
+	if (type->recognition &&
+		(data->type->recognition = AllocMemH(0, strlen((char *)type->recognition) + 1)))
+		strcpy((char *)data->type->recognition, (char *)type->recognition);
 
 	// Set new window title
 	if (data->window)
@@ -882,8 +903,10 @@ void filetypeed_receive_class(filetype_ed_data *data, Cfg_Filetype *type)
 void filetypeed_show_icon(filetype_ed_data *data)
 {
 	struct Rectangle bounds;
+#ifndef USE_DRAWICONSTATE
 	struct TagItem tags[2];
 	ImageRemap remap;
+#endif
 
 	// Clear icon area
 	SetGadgetValue(data->objlist, GAD_FILETYPEED_ICON_AREA, 0);
@@ -991,7 +1014,10 @@ BOOL filetypeed_pick_icon(filetype_ed_data *data)
 		if ((ptr = strstr(data->type->icon_path, ":")))
 		{
 			strcpy(path, data->type->icon_path);
-			if ((ptr = FilePart(path)))
+			/* FilePart returns CONST_STRPTR on AOS4; we know `path`
+			 * is non-const (it's our local buffer) so the cast is
+			 * safe and silences the discarded-qualifier warning. */
+			if ((ptr = (char *)FilePart(path)))
 			{
 				strcpy(file, ptr);
 				*ptr = 0;
@@ -1002,8 +1028,14 @@ BOOL filetypeed_pick_icon(filetype_ed_data *data)
 	if (!path[0])
 		strcpy(path, "DOpus5:");
 
-	// Build pattern
-	ParsePatternNoCase("#?.info", pattern, 18);
+	// Build pattern. ParsePatternNoCase's buffer arg is STRPTR (char*)
+	// on AOS3/AOS4 but UBYTE* on MorphOS, so use the matching cast on
+	// each target to keep all toolchains warning-clean.
+#ifdef __MORPHOS__
+	ParsePatternNoCase("#?.info", (UBYTE *)pattern, 18);
+#else
+	ParsePatternNoCase("#?.info", (STRPTR)pattern, 18);
+#endif
 
 	// Display requester
 	if (AslRequestTags(DATA(data->window)->request,
@@ -1159,6 +1191,8 @@ void filetypeed_add_iconmenu(filetype_ed_data *data)
 	Cfg_Function *func;
 	Att_Node *node;
 	func_node *fndata;
+	Cfg_Instruction *label_ins;
+	CONST_STRPTR default_label;
 
 	// Allocate a new function and data
 	if (!(func = NewFunction(0, FTYPE_LIST)) || !(fndata = AllocVec(sizeof(func_node), MEMF_CLEAR)))
@@ -1170,12 +1204,29 @@ void filetypeed_add_iconmenu(filetype_ed_data *data)
 	// Detach list from listview
 	SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, (APTR)~0);
 
-	// Fill out data
+	// Fill out data, marking the function as a placeholder so the
+	// IPC_GOODBYE handler (via filetypeed_check_iconmenu) can drop
+	// the row if the user cancels the editor instead of clicking
+	// Use. See FUNCF2_PLACEHOLDER's comment in config_filetypes.h
+	// for why the flag lives on the Cfg_Function rather than on
+	// func_node. filetypeed_receive_edit clears the bit when the
+	// user accepts the entry via Use.
 	fndata->func = func;
-	func->function.flags2 |= FUNCF2_LABEL_FUNC;
+	func->function.flags2 |= FUNCF2_LABEL_FUNC | FUNCF2_PLACEHOLDER;
+
+	// Pre-populate with a default label so the new entry has a name
+	// even if the user clicks Use without touching the Label gadget.
+	// filetypeed_receive_edit would otherwise drop the entry on save
+	// (it requires a non-empty INST_LABEL, matching update_iconmenu's
+	// listview rule). The editor reads this same INST_LABEL into its
+	// Label gadget, so the user can keep "Untitled", rename it, or
+	// clear it as they like.
+	default_label = GetString(Locale, MSG_UNTITLED);
+	if ((label_ins = NewInstruction(0, INST_LABEL, (char *)default_label)))
+		AddHead((struct List *)&func->instructions, (struct Node *)label_ins);
 
 	// Add to lister
-	if (!(node = Att_NewNode(data->icon_list, 0, (IPTR)fndata, 0)))
+	if (!(node = Att_NewNode(data->icon_list, (char *)default_label, (IPTR)fndata, 0)))
 	{
 		// Failed
 		FreeVec(fndata);
@@ -1231,7 +1282,10 @@ void filetypeed_edit_iconmenu(filetype_ed_data *data, Att_Node *node)
 		startup->flags |= FUNCEDF_LABEL;
 
 		// Build title
-		lsprintf(startup->title, "%s : %s", data->type->type.name, GetString(Locale, MSG_ICON_MENU));
+		lsprintf(startup->title,
+				 "%s : %s",
+				 (IPTR)data->type->type.name,
+				 (IPTR)GetString(Locale, MSG_ICON_MENU));
 
 		// Launch editor
 		if ((IPC_Launch(&data->proc_list,
@@ -1261,8 +1315,16 @@ BOOL filetypeed_check_iconmenu(filetype_ed_data *data, Att_Node *node, BOOL del)
 	// Get data pointer
 	fndata = (func_node *)node->data;
 
-	// Invalid function?
-	if (del || !fndata->func || IsListEmpty((struct List *)&fndata->func->instructions))
+	// Invalid / placeholder function?
+	// - del: explicit delete request
+	// - !fndata->func / empty instructions: no real content
+	// - FUNCF2_PLACEHOLDER: a fresh row created by Add that the user
+	//   cancelled out of. Its instructions list still contains the
+	//   seeded INST_LABEL, so the IsMinListEmpty test alone would
+	//   miss it. The bit is cleared in receive_edit when Use is
+	//   clicked, so accepted rows are never treated as placeholders.
+	if (del || !fndata->func || IsMinListEmpty(&fndata->func->instructions) ||
+		(fndata->func->function.flags2 & FUNCF2_PLACEHOLDER))
 	{
 		// Detach list from listview
 		SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, (APTR)~0);
@@ -1293,6 +1355,59 @@ BOOL filetypeed_check_iconmenu(filetype_ed_data *data, Att_Node *node, BOOL del)
 	}
 
 	return 0;
+}
+
+// Move the selected icon menu entry up or down by one position
+BOOL filetypeed_move_iconmenu(filetype_ed_data *data, BOOL up)
+{
+	Att_Node *neighbour, *anchor;
+	Cfg_Function *cur_func, *neighbour_func;
+	short pos;
+
+	// Need a selection
+	if (!data->last_icon)
+		return 0;
+
+	// Find the neighbour we're swapping past
+	if (up)
+		neighbour = (Att_Node *)data->last_icon->node.ln_Pred;
+	else
+		neighbour = (Att_Node *)data->last_icon->node.ln_Succ;
+
+	// Already at the boundary? (head/tail sentinel reached)
+	if (!neighbour || (up ? !neighbour->node.ln_Pred : !neighbour->node.ln_Succ))
+		return 0;
+
+	cur_func = ((func_node *)data->last_icon->data)->func;
+	neighbour_func = ((func_node *)neighbour->data)->func;
+
+	// Detach list from listview
+	SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, (APTR)~0);
+
+	// Reposition icon node next to its neighbour using insert-before
+	// semantics. Att_PosNode places the node before "anchor".
+	anchor = up ? neighbour : (Att_Node *)neighbour->node.ln_Succ;
+	Att_PosNode(data->icon_list, data->last_icon, anchor);
+
+	// Move the corresponding label function the same way in the
+	// filetype's full function list (which also contains action
+	// functions; only the relative order of label functions matters
+	// for the icon menu).
+	Remove((struct Node *)cur_func);
+	if (up)
+		Insert(&data->type->function_list, (struct Node *)cur_func, neighbour_func->node.ln_Pred);
+	else
+		Insert(&data->type->function_list, (struct Node *)cur_func, (struct Node *)neighbour_func);
+
+	// Reattach list and keep focus on the moved entry. Cache the
+	// node-number lookup so we don't pay for two O(n) walks here.
+	SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, data->icon_list);
+	pos = Att_FindNodeNumber(data->icon_list, data->last_icon);
+	SetGadgetValue(data->objlist, GAD_FILETYPES_ICON_MENU, pos);
+
+	// Refresh enable/disable state for the new selection position
+	filetypeed_sel_icon(data, pos);
+	return 1;
 }
 
 // End drag
@@ -1333,7 +1448,8 @@ BOOL filetypeed_end_drag(filetype_ed_data *data, BOOL ok)
 	// Drop on our window?
 	if (window == data->window)
 	{
-		long top, item;
+		long item;
+		IPTR top = 0;
 		GL_Object *lister;
 
 		// Convert to window coordinates
@@ -1345,36 +1461,58 @@ BOOL filetypeed_end_drag(filetype_ed_data *data, BOOL ok)
 		if (!(CheckObjectArea(lister, data->drag.drag_x, data->drag.drag_y)))
 			return 0;
 
-		// Get top item
-		GetAttr(DLV_Top, (Object *)GADGET(lister), (ULONG *)&top);
+		// Get top item (GetAttr writes through an IPTR* on AOS4/AROS)
+		GetAttr(DLV_Top, (Object *)GADGET(lister), &top);
 
 		// Get item we dropped over
-		item = UDivMod32((data->drag.drag_y - lister->dims.Top), data->window->RPort->TxHeight) + top;
+		item = UDivMod32((data->drag.drag_y - lister->dims.Top), data->window->RPort->TxHeight) + (long)top;
 
 		// Valid item?
 		if (item >= 0 && item < Att_NodeCount(data->icon_list) && item != drag_item)
 		{
-			Att_Node *node1, *node2;
+			Att_Node *target, *dragged;
 
 			// Get the two nodes
-			if ((node1 = Att_FindNode(data->icon_list, item)) && (node2 = Att_FindNode(data->icon_list, drag_item)))
+			if ((target = Att_FindNode(data->icon_list, item)) &&
+				(dragged = Att_FindNode(data->icon_list, drag_item)))
 			{
+				Cfg_Function *target_func = ((func_node *)target->data)->func;
+				Cfg_Function *dragged_func = ((func_node *)dragged->data)->func;
+				BOOL drag_down = (BOOL)(drag_item < item);
+				Att_Node *anchor;
+
 				// Detach list from listview
 				SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, (APTR)~0);
 
-				// Swap the nodes
-				SwapListNodes((struct List *)data->icon_list, (struct Node *)node1, (struct Node *)node2);
+				// Insert-at-target semantics: dragging downward drops the
+				// node just after the target; dragging upward drops it
+				// just before the target. So the dropped item ends up
+				// visually where the user released it.
+				anchor = drag_down ? (Att_Node *)target->node.ln_Succ : target;
+				Att_PosNode(data->icon_list, dragged, anchor);
 
-				// Swap functions
-				SwapListNodes((struct List *)&data->type->function_list,
-							  (struct Node *)((func_node *)node1->data)->func,
-							  (struct Node *)((func_node *)node2->data)->func);
+				// Mirror the move in the filetype's full function list
+				// (which contains action functions interleaved with
+				// label functions; only the relative order of label
+				// functions matters for the icon menu).
+				Remove((struct Node *)dragged_func);
+				if (drag_down)
+					Insert(&data->type->function_list,
+						   (struct Node *)dragged_func,
+						   (struct Node *)target_func);
+				else
+					Insert(&data->type->function_list,
+						   (struct Node *)dragged_func,
+						   target_func->node.ln_Pred);
 
-				// Attach list
+				// Attach list and keep the focus on the moved entry
+				// (one node-number lookup, used twice).
 				SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, data->icon_list);
-
-				// Set no selection
-				filetypeed_no_iconsel(data);
+				{
+					short pos = Att_FindNodeNumber(data->icon_list, dragged);
+					SetGadgetValue(data->objlist, GAD_FILETYPES_ICON_MENU, pos);
+					filetypeed_sel_icon(data, pos);
+				}
 				ret = 1;
 			}
 		}
@@ -1529,9 +1667,11 @@ void filetypeed_no_iconsel(filetype_ed_data *data)
 	SetGadgetValue(data->objlist, GAD_FILETYPES_ICON_MENU, (ULONG)-1);
 	data->last_icon = 0;
 
-	// Disable edit/delete buttons
+	// Disable edit/delete/move buttons
 	DisableObject(data->objlist, GAD_FILETYPES_EDIT_ICON_MENU, TRUE);
 	DisableObject(data->objlist, GAD_FILETYPES_DEL_ICON_MENU, TRUE);
+	DisableObject(data->objlist, GAD_FILETYPES_UP_ICON_MENU, TRUE);
+	DisableObject(data->objlist, GAD_FILETYPES_DOWN_ICON_MENU, TRUE);
 }
 
 // Given a button
@@ -1605,12 +1745,11 @@ BOOL filetypeed_get_button(filetype_ed_data *data, Cfg_Button *button, Point *po
 				// New node?
 				if (node)
 				{
-					// Select this node
-					SetGadgetValue(data->objlist, GAD_FILETYPES_ICON_MENU, Att_FindNodeNumber(data->icon_list, node));
-
-					// Enable edit/delete buttons
-					DisableObject(data->objlist, GAD_FILETYPES_EDIT_ICON_MENU, FALSE);
-					DisableObject(data->objlist, GAD_FILETYPES_DEL_ICON_MENU, FALSE);
+					// Select this node and refresh edit/delete/move
+					// buttons (one node-number lookup, used twice).
+					short pos = Att_FindNodeNumber(data->icon_list, node);
+					SetGadgetValue(data->objlist, GAD_FILETYPES_ICON_MENU, pos);
+					filetypeed_sel_icon(data, pos);
 				}
 			}
 
@@ -1664,6 +1803,7 @@ BOOL filetypeed_del_action(filetype_ed_data *data, short action)
 BOOL filetypeed_sel_icon(filetype_ed_data *data, short item)
 {
 	Att_Node *node;
+	BOOL at_top, at_bottom;
 
 	// Get selected node
 	if (!(node = Att_FindNode(data->icon_list, item)))
@@ -1672,6 +1812,15 @@ BOOL filetypeed_sel_icon(filetype_ed_data *data, short item)
 	// Enable edit/delete buttons
 	DisableObject(data->objlist, GAD_FILETYPES_EDIT_ICON_MENU, FALSE);
 	DisableObject(data->objlist, GAD_FILETYPES_DEL_ICON_MENU, FALSE);
+
+	// Up is meaningful only when there's a node before us; Down only
+	// when there's a node after us. Sentinel ln_Pred / ln_Succ point at
+	// the list head/tail anchor (themselves valid Node structs whose
+	// own ln_Pred / ln_Succ are NULL), so test that to detect ends.
+	at_top = !node->node.ln_Pred || !node->node.ln_Pred->ln_Pred;
+	at_bottom = !node->node.ln_Succ || !node->node.ln_Succ->ln_Succ;
+	DisableObject(data->objlist, GAD_FILETYPES_UP_ICON_MENU, at_top);
+	DisableObject(data->objlist, GAD_FILETYPES_DOWN_ICON_MENU, at_bottom);
 
 	// Store pointer
 	data->last_icon = node;
