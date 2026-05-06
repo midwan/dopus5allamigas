@@ -11,6 +11,10 @@ New build targets:
   A3000 / A4000 owners (issue #51).
 - New AROS i386 (ABIv0) and x86_64 (ABIv11) build packages, with
   CI debug + release parity (PR #25 plus follow-ups).
+- xadopus.module on AROS is no longer a hard skip: AROS users with
+  xadmaster.library headers installed locally (e.g. AROS One) can
+  now opt in via `make i386-aros xadopus=yes`, mirroring the
+  existing `sftp=yes` pattern.
 
 FTP / file transfer:
 - SFTP support backed by libssh2 (always on for OS3 / OS4 / MorphOS
@@ -136,6 +140,41 @@ Versioning notes:
   LoadDB CLI-detachment work; commands ship at v65r3.
 
 Detailed per-feature entries follow.
+2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
+
+[dopus5 5.101] modules: gate xadopus on AROS behind xadopus=yes opt-in
+Ships in 5.101.  Makefile-only change; no module version changes.
+
+Source / Modules/makefile:
+- Pre-5.101 the AROS path unconditionally dropped xadopus from the
+  modules list, with no documentation as to why.  The actual reason
+  is that the standard AROS toolchain Docker images
+  (midwan/aros-compiler:i386-aros / x86_64-aros) do not ship the
+  xadmaster.library headers (proto/xadmaster.h, libraries/xad/*),
+  so a CI build for AROS would fail to compile xadopus.module.
+- AROS distributions like AROS One DO include xadmaster, and
+  xadopus.module compiles cleanly on those systems - so the blanket
+  exclusion was punishing the on-target users to keep the headerless
+  CI green.
+- Replaced the unconditional `ifneq ($(PLATFORM), aros)` skip with
+  an opt-in `xadopus=yes` flag, mirroring the existing `sftp=yes`
+  pattern used for SFTP on AROS:
+
+      make i386-aros release debug=no xadopus=yes
+      make x86_64-aros release debug=no xadopus=yes
+
+  Default behaviour on AROS is unchanged ('xadopus' skipped, CI
+  builds keep working without xadmaster); AROS users with
+  xadmaster headers installed locally now have a documented opt-in
+  that produces the module in the release archive.
+- Added a comment block to Modules/makefile explaining the why so
+  the gate's reasoning survives the next refactor.
+- README.md grows a new "xadopus.module on AROS" subsection in
+  the Building section, describing the opt-in and what the
+  expected error message looks like when xadmaster headers are
+  missing.
+- All other platforms (os3, os3-68000, os4, mos) continue to build
+  xadopus unconditionally - their toolchains include xadmaster.
 2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
 
 [dopus5 5.101] config: rename .bac_5_90_cfg backup to .bak (+ migrate)
