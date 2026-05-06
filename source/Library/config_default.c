@@ -561,31 +561,45 @@ void LIBFUNC L_UpdateEnvironment(REG(a0, CFG_ENVR *env))
 
 		// Legacy semantics: an explicit env value clamps to a minimum of 1;
 		// only an absent env var falls back to the historical defaults (7/5).
+		// (atoi() can return a negative number for "-3"; clamp BEFORE the
+		// UWORD cast or the signedness flip would store 65533.)
 		if (GetVar("dopus/IconSpaceX", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
 		{
-			env->env_icon_space_x = (UWORD)atoi(buf);
-			if (env->env_icon_space_x < 1)
-				env->env_icon_space_x = 1;
+			int v = atoi(buf);
+			if (v < 1)
+				v = 1;
+			env->env_icon_space_x = (UWORD)v;
 		}
 		if (env->env_icon_space_x < 1)
 			env->env_icon_space_x = 7;
 
 		if (GetVar("dopus/IconSpaceY", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
 		{
-			env->env_icon_space_y = (UWORD)atoi(buf);
-			if (env->env_icon_space_y < 1)
-				env->env_icon_space_y = 1;
+			int v = atoi(buf);
+			if (v < 1)
+				v = 1;
+			env->env_icon_space_y = (UWORD)v;
 		}
 		if (env->env_icon_space_y < 1)
 			env->env_icon_space_y = 5;
 
 		if (GetVar("dopus/IconGridX", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
-			env->env_icon_grid_x = (UWORD)atoi(buf);
+		{
+			int v = atoi(buf);
+			if (v < 1)
+				v = 1;
+			env->env_icon_grid_x = (UWORD)v;
+		}
 		if (env->env_icon_grid_x < 1)
 			env->env_icon_grid_x = 1;
 
 		if (GetVar("dopus/IconGridY", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
-			env->env_icon_grid_y = (UWORD)atoi(buf);
+		{
+			int v = atoi(buf);
+			if (v < 1)
+				v = 1;
+			env->env_icon_grid_y = (UWORD)v;
+		}
 		if (env->env_icon_grid_y < 1)
 			env->env_icon_grid_y = 1;
 
@@ -599,7 +613,12 @@ void LIBFUNC L_UpdateEnvironment(REG(a0, CFG_ENVR *env))
 		char buf[14];
 
 		if (GetVar("dopus/WheelScrollLines", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
-			env->env_wheel_scroll_lines = (UWORD)atoi(buf);
+		{
+			int v = atoi(buf);
+			if (v < 1)
+				v = 1;
+			env->env_wheel_scroll_lines = (UWORD)v;
+		}
 		if (env->env_wheel_scroll_lines < 1)
 			env->env_wheel_scroll_lines = 3;
 

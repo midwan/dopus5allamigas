@@ -151,8 +151,6 @@ BPTR setup_config(struct opusftp_globals *ogp)
 
 	if (!get_global_options(ogp))
 	{
-		char env;
-
 		set_config_to_default(oc);
 
 		// check for old config and read if there
@@ -162,11 +160,21 @@ BPTR setup_config(struct opusftp_globals *ogp)
 			UnLock(lock);
 			read_old_config(oc);
 		}
+	}
 
-		// Migration: if the legacy DOpus/NoBeeGees env var is set, enable
-		// "Disable Stayin' Alive Pings" by default. Only fires when there's
-		// no saved FTP config yet, so once the user saves the addressbook
-		// the GUI checkbox becomes the source of truth.
+	// Migration: import the legacy DOpus/NoBeeGees env var into the new
+	// oc_no_keep_alive bit whenever the saved bit is still 0.  Both paths
+	// above can leave the bit at 0 -- a brand-new install (set_config_to_default
+	// memset's the whole struct), and an existing saved config from a build
+	// before this bit existed (the slot was the previously-zeroed pad8 bit).
+	// Once the user explicitly saves the FTP options dialog with the box
+	// CHECKED, the bit becomes 1 in the saved config and this fallback no
+	// longer fires.  Users who set the env var historically and now want to
+	// turn the feature OFF should remove the env var (otherwise it will keep
+	// re-asserting on every launch -- documented in DOpus5.guide).
+	if (!oc->oc_no_keep_alive)
+	{
+		char env;
 		if (GetVar("DOpus/NoBeeGees", &env, 1, GVF_GLOBAL_ONLY) != -1)
 			oc->oc_no_keep_alive = 1;
 	}

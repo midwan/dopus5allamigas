@@ -2567,19 +2567,30 @@ void _config_env_store(config_env_data *data, short option)
 
 	// Icon layout
 	case ENVIRONMENT_ICON_LAYOUT: {
-		ULONG val;
+		// Read into signed LONG and clamp BEFORE casting to UWORD: an
+		// INTEGER_KIND gadget without GTCustom_MinMax accepts negative input,
+		// and (val < 1) on an unsigned val would silently keep the wrap.
+		LONG val;
 
-		val = GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_SPACE_X);
-		data->config->env_icon_space_x = (val < 1) ? 1 : (UWORD)val;
+		val = (LONG)GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_SPACE_X);
+		if (val < 1)
+			val = 1;
+		data->config->env_icon_space_x = (UWORD)val;
 
-		val = GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_SPACE_Y);
-		data->config->env_icon_space_y = (val < 1) ? 1 : (UWORD)val;
+		val = (LONG)GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_SPACE_Y);
+		if (val < 1)
+			val = 1;
+		data->config->env_icon_space_y = (UWORD)val;
 
-		val = GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_GRID_X);
-		data->config->env_icon_grid_x = (val < 1) ? 1 : (UWORD)val;
+		val = (LONG)GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_GRID_X);
+		if (val < 1)
+			val = 1;
+		data->config->env_icon_grid_x = (UWORD)val;
 
-		val = GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_GRID_Y);
-		data->config->env_icon_grid_y = (val < 1) ? 1 : (UWORD)val;
+		val = (LONG)GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_GRID_Y);
+		if (val < 1)
+			val = 1;
+		data->config->env_icon_grid_y = (UWORD)val;
 
 		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_BENIFY))
 			data->config->env_flags |= ENVF_BENIFY;
@@ -2707,8 +2718,11 @@ void _config_env_store(config_env_data *data, short option)
 		data->config->settings.popup_delay = GetGadgetValue(data->option_list, GAD_SETTINGS_POPUP_DELAY);
 		data->config->settings.max_openwith = GetGadgetValue(data->option_list, GAD_SETTINGS_MAX_OPENWITH);
 		{
-			ULONG val = GetGadgetValue(data->option_list, GAD_SETTINGS_WHEEL_SCROLL_LINES);
-			data->config->env_wheel_scroll_lines = (val < 1) ? 1 : (UWORD)val;
+			// Signed clamp before UWORD cast (see Icon Layout above).
+			LONG val = (LONG)GetGadgetValue(data->option_list, GAD_SETTINGS_WHEEL_SCROLL_LINES);
+			if (val < 1)
+				val = 1;
+			data->config->env_wheel_scroll_lines = (UWORD)val;
 		}
 		break;
 

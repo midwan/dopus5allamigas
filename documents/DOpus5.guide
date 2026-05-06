@@ -4203,6 +4203,12 @@ system.
        Now: FTP module -> Default FTP Options ->
        "Disable Stayin' Alive Pings".
 
+       Note: because the FTP config has no version field, the env var
+       is consulted whenever the GUI checkbox is OFF -- so if you used
+       to set the env var and now want to turn the feature off, also
+       UNSET dopus/NoBeeGees (`unsetenv DOpus/NoBeeGees`) or it will
+       keep re-asserting on each launch.
+
  -----------------------------------------------------------------------------
 
        @{b}Advanced / install-time variables that remain ENV:-only.  These

@@ -426,6 +426,13 @@ short convert_config(ConfigStuff *cstuff, short convert, char *basename)
 
 			for (i = 0; i < 4; i++)
 				env->env_BackgroundBorderColour[i] = AROS_LONG2BE(env->env_BackgroundBorderColour[i]);
+
+			// The five UWORDs promoted from ENV: vars in CONFIG_VERSION_14/15
+			// (env_icon_space_x/y, env_icon_grid_x/y, env_wheel_scroll_lines)
+			// are not initialised by convert_env, so they're already zero
+			// (which is byte-swap invariant).  No swap call needed today, but
+			// if a future convert_env starts populating them, they'd need
+			// AROS_WORD2BE just like the fields above.
 #endif
 
 			// Build filename
