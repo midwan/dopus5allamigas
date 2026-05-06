@@ -62,13 +62,18 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 	CopyMem((char *)env->env, (char *)data->config, sizeof(CFG_ENVR));
 	data->env = env;
 
-	// Snapshot the dopus/DOSPatch ENVARC: var so the Misc panel checkbox
-	// reflects the current state.  The variable is read by libinit.c at
-	// dopus5.library open time (see LIBDF_DOS_PATCH); the GUI commits any
-	// change back to ENV: + ENVARC: in the success block below.
+	// Snapshot the dopus/DOSPatch ENVARC: var so the Lister Display
+	// checkbox reflects the current state.  The variable is read by
+	// libinit.c at dopus5.library open time (see LIBDF_DOS_PATCH); the
+	// GUI commits any change back to ENV: + ENVARC: in the success block
+	// below.  initial+state both start at the loaded value; modified is
+	// flipped by _config_env_store when the new state diverges from
+	// initial (so toggle-on-then-off doesn't dirty the var pointlessly).
 	{
-		char buf[2];
-		data->dos_patch_state = (GetVar("dopus/DOSPatch", buf, sizeof(buf), GVF_GLOBAL_ONLY) > -1);
+		char buf[1];
+		BOOL set = (GetVar("dopus/DOSPatch", buf, sizeof(buf), GVF_GLOBAL_ONLY) > -1);
+		data->dos_patch_initial = set;
+		data->dos_patch_state = set;
 		data->dos_patch_modified = FALSE;
 	}
 
@@ -2350,16 +2355,17 @@ void _config_env_store(config_env_data *data, short option)
 		else
 			data->config->lister_options &= ~LISTEROPTF_NO_PADLOCK;
 
-		// Live folder updates / DOS patches: only flag for write-back if the
-		// user actually changed the checkbox.  See success block at the
-		// bottom of L_Config_Environment for the SetVar/DeleteVar call.
+		// Live folder updates / DOS patches: track current state and only
+		// flag for write-back if the *net* change vs. the dialog-open
+		// snapshot is non-zero.  Comparing against dos_patch_initial
+		// (rather than the previous dos_patch_state) avoids a redundant
+		// ENVARC: write when the user toggles ON then OFF, or vice versa.
+		// See the success block at the bottom of L_Config_Environment for
+		// the SetVar/DeleteVar call.
 		{
 			BOOL want = (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_DOS_PATCH) != 0);
-			if (want != data->dos_patch_state)
-			{
-				data->dos_patch_state = want;
-				data->dos_patch_modified = TRUE;
-			}
+			data->dos_patch_state = want;
+			data->dos_patch_modified = (want != data->dos_patch_initial);
 		}
 		break;
 

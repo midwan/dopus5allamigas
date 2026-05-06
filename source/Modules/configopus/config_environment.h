@@ -108,10 +108,15 @@ typedef struct
 	Att_List *script_list;
 
 	// Desired state of the dopus/DOSPatch ENV var for the open dialog.
-	// `dos_patch_state` mirrors the checkbox; `dos_patch_modified` is set
-	// by _config_env_store(MISC) when the user actually toggles it, so the
+	// `dos_patch_initial` is captured at dialog open from the current
+	// ENVARC: state; `dos_patch_state` mirrors the checkbox; the stored
+	// state is committed by _config_env_store(LISTER_DISPLAY) which sets
+	// `dos_patch_modified` only when the new state differs from the
+	// initial snapshot - so a user who toggles ON then OFF (or vice
+	// versa) and saves doesn't trigger a redundant ENVARC: write.  The
 	// success block at the bottom of L_Config_Environment writes/deletes
-	// the ENVARC: variable only when the user committed a change.
+	// the ENVARC: variable only when modified is set.
+	BOOL dos_patch_initial;
 	BOOL dos_patch_state;
 	BOOL dos_patch_modified;
 } config_env_data;
