@@ -915,6 +915,14 @@ int environment_save(Cfg_Environment *env, char *name, short snapshot, CFG_ENVR 
 			env_be->version = AROS_WORD2BE(env_be->version);
 			env_be->desktop_flags = AROS_LONG2BE(env_be->desktop_flags);
 
+			// Promoted ENV: vars from issue #49 (CONFIG_VERSION_14/15) -- byte-swap so
+			// configs are portable between AROS and big-endian targets.
+			env_be->env_icon_space_x = AROS_WORD2BE(env_be->env_icon_space_x);
+			env_be->env_icon_space_y = AROS_WORD2BE(env_be->env_icon_space_y);
+			env_be->env_icon_grid_x = AROS_WORD2BE(env_be->env_icon_grid_x);
+			env_be->env_icon_grid_y = AROS_WORD2BE(env_be->env_icon_grid_y);
+			env_be->env_wheel_scroll_lines = AROS_WORD2BE(env_be->env_wheel_scroll_lines);
+
 			for (i = 0; i < 4; i++)
 				env_be->env_BackgroundFlags[i] = AROS_WORD2BE(env_be->env_BackgroundFlags[i]);
 

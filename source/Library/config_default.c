@@ -559,13 +559,23 @@ void LIBFUNC L_UpdateEnvironment(REG(a0, CFG_ENVR *env))
 	{
 		char buf[14];
 
+		// Legacy semantics: an explicit env value clamps to a minimum of 1;
+		// only an absent env var falls back to the historical defaults (7/5).
 		if (GetVar("dopus/IconSpaceX", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+		{
 			env->env_icon_space_x = (UWORD)atoi(buf);
+			if (env->env_icon_space_x < 1)
+				env->env_icon_space_x = 1;
+		}
 		if (env->env_icon_space_x < 1)
 			env->env_icon_space_x = 7;
 
 		if (GetVar("dopus/IconSpaceY", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+		{
 			env->env_icon_space_y = (UWORD)atoi(buf);
+			if (env->env_icon_space_y < 1)
+				env->env_icon_space_y = 1;
+		}
 		if (env->env_icon_space_y < 1)
 			env->env_icon_space_y = 5;
 

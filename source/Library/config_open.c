@@ -1478,6 +1478,14 @@ BOOL LIBFUNC L_OpenEnvironment(REG(a0, char *name), REG(a1, struct OpenEnvironme
 				data->env.version = AROS_BE2WORD(data->env.version);
 				data->env.desktop_flags = AROS_BE2LONG(data->env.desktop_flags);
 
+				// Promoted ENV: vars from issue #49 (CONFIG_VERSION_14/15) -- byte-swap so
+				// configs are portable between AROS and big-endian targets.
+				data->env.env_icon_space_x = AROS_BE2WORD(data->env.env_icon_space_x);
+				data->env.env_icon_space_y = AROS_BE2WORD(data->env.env_icon_space_y);
+				data->env.env_icon_grid_x = AROS_BE2WORD(data->env.env_icon_grid_x);
+				data->env.env_icon_grid_y = AROS_BE2WORD(data->env.env_icon_grid_y);
+				data->env.env_wheel_scroll_lines = AROS_BE2WORD(data->env.env_wheel_scroll_lines);
+
 				for (i = 0; i < 4; i++)
 					data->env.env_BackgroundFlags[i] = AROS_BE2WORD(data->env.env_BackgroundFlags[i]);
 

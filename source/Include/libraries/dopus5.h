@@ -390,11 +390,11 @@ enum {
 #define DISPOPTF_USE_WBINFO (1 << 14)		// Route Information requests through OS WBInfo() (e.g. SwazInfo / RAWBInfo)
 #define DISPOPTF_SHOW_DATATYPES_FIRST (1 << 15)	// show.module: prefer datatypes IFF over its built-in IFF reader
 
-// icon.module mod_data flags (passed in d1 to Module_Entry)
-#define ICON_USE_WBINFO_FLAG (1 << 16)		// Caller wants icon.module to defer to WBInfo()
-
-// show.module mod_data flags (passed in d1 to Module_Entry)
-#define SHOW_DATATYPES_FIRST_FLAG (1 << 16)	// Caller wants show.module to try datatypes first
+// Module mod_data flags (passed in d1 to Module_Entry).  Each module owns its
+// own d1 namespace, so different modules can reuse the same bit for unrelated
+// per-module options without conflict.
+#define ICON_USE_WBINFO_FLAG (1 << 16)		// icon.module: caller wants it to defer to WBInfo()
+#define SHOW_DATATYPES_FIRST_FLAG (1 << 16)	// show.module: caller wants it to try datatypes first
 
 // lister options
 #define LISTEROPTF_DEVICES (1 << 0)	   // Device list in new lister

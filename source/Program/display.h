@@ -139,7 +139,7 @@ typedef struct
 
 	long cx_pri;  // CX priority
 
-	long wheel_lines;  // Wheel scroll lines
+	long wheel_lines;  // Obsolete since CONFIG_VERSION_15: now CFG_ENVR.env_wheel_scroll_lines (#49)
 
 	ULONG pad0[15];
 
@@ -289,10 +289,10 @@ typedef struct
 	struct NotifyRequest *desktop_notify;  // Font prefs notification
 
 	long command_line_length;
-	short icon_space_x;
-	short icon_space_y;
-	short icon_grid_x;
-	short icon_grid_y;
+	short icon_space_x;	 // Obsolete since CONFIG_VERSION_14: now CFG_ENVR.env_icon_space_x (#49)
+	short icon_space_y;	 // Obsolete since CONFIG_VERSION_14: now CFG_ENVR.env_icon_space_y (#49)
+	short icon_grid_x;	 // Obsolete since CONFIG_VERSION_14: now CFG_ENVR.env_icon_grid_x (#49)
+	short icon_grid_y;	 // Obsolete since CONFIG_VERSION_14: now CFG_ENVR.env_icon_grid_y (#49)
 
 	char env_BackgroundPic[4][256];		  // Background pictures
 	UWORD env_BackgroundFlags[4];		  // Background flags
@@ -340,13 +340,13 @@ typedef struct
 #define GUIF_LISTER_COOKIE (1 << 31)  // Done lister cookie
 
 #define GUIF2_ICONPOS (1 << 0)			 // Doing icon positioning
-#define GUIF2_WB_TITLE (1 << 1)			 // Pretend to be Workbench for screen title
-#define GUIF2_ENABLE_SHORTCUTS (1 << 3)	 // Enable shortcuts
+#define GUIF2_WB_TITLE (1 << 1)			 // Obsolete since CONFIG_VERSION_13: now DISPOPTF_WB_TITLE (#49)
+#define GUIF2_ENABLE_SHORTCUTS (1 << 3)	 // Obsolete since CONFIG_VERSION_15: now ENVF_ENABLE_SHORTCUTS (#49)
 #define GUIF2_NO_SCREENFRONT (1 << 5)	 // Don't bring screen to front
 #define GUIF2_BACKFILL_SET (1 << 7)		 // Set backfill
-#define GUIF2_NO_PADLOCK (1 << 8)		 // Hide padlock gadget
+#define GUIF2_NO_PADLOCK (1 << 8)		 // Obsolete since CONFIG_VERSION_13: now LISTEROPTF_NO_PADLOCK (#49)
 #define GUIF2_KEY_FINDER (1 << 9)		 // Key Finder active
-#define GUIF2_BENIFY (1 << 10)			 // Benify mode
+#define GUIF2_BENIFY (1 << 10)			 // Obsolete since CONFIG_VERSION_14: now ENVF_BENIFY (#49)
 
 extern GUI_Glue *GUI;
 
