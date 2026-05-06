@@ -3,7 +3,7 @@
 # Copyright 2012-2013 DOPUS5 Open Source Team
 # Copyright 2023-2026 Dimitris Panokostas
 
-# Main Dopus5 makefile
+# Main DOpus5 makefile
 
 ###########################################################
 # Enter debug=no on "Make" command line to disable debug output.
@@ -74,7 +74,7 @@ endif
 ###########################################################
 # Sets archive type & version.
 # REVISION is derived from PROG_REVISION in Include/dopus/version.h so the
-# release archive filename (Dopus5_<REV>_<platform>.lha) always matches the
+# release archive filename (DOpus5_<REV>_<platform>.lha) always matches the
 # binary's reported version. Bumping the version.h value is the only step.
 REVISION := $(shell awk '/^\#define[ \t]+PROG_REVISION/ {print $$3; exit}' Include/dopus/version.h)
 ifeq ($(debug), no)
@@ -115,8 +115,8 @@ endif
 ###########################################################
 # Sets base archive to use for releases
 BASEARC := basedata.lha
-RELEASE_DIR := Dopus5.$(NAME)
-RELEASE_ROOT := $(RELEASE_DIR)/Dopus5
+RELEASE_DIR := DOpus5.$(NAME)
+RELEASE_ROOT := $(RELEASE_DIR)/DOpus5
 RELEASE_ARCDEST := $(abspath $(ARCDEST))
 ###########################################################
 # Commands
@@ -208,7 +208,7 @@ release-package:
 		exit 1; \
 	fi
 	@echo " "
-	@echo ">>>>>Creating release archive: Dopus5$(VERSION)$(NAME)$(TYPE).lha"
+	@echo ">>>>>Creating release archive: DOpus5$(VERSION)$(NAME)$(TYPE).lha"
 	@$(REMOVE) $(RELEASE_DIR)
 	@$(MAKEDIR) $(RELEASE_ROOT)/Libs
 	@$(MAKEDIR) $(RELEASE_ROOT)/Modules
@@ -238,8 +238,8 @@ ifeq ($(SYSTEM), linux)
 	@chmod +x $(RELEASE_ROOT)/DirectoryOpus $(RELEASE_ROOT)/Libs/dopus5.library $(RELEASE_ROOT)/Modules/*.module \
 		$(RELEASE_ROOT)/C/DOpusRT5 $(RELEASE_ROOT)/C/LoadDB $(RELEASE_ROOT)/C/viewfont
 endif
-	@$(COPY) ../archive/$(BASEARC) $(DEST)Dopus5$(VERSION)$(NAME)$(TYPE).lha
-	@cd $(RELEASE_DIR) && $(LHA) $(RELEASE_ARCDEST)/Dopus5$(VERSION)$(NAME)$(TYPE).lha Dopus5
+	@$(COPY) ../archive/$(BASEARC) $(DEST)DOpus5$(VERSION)$(NAME)$(TYPE).lha
+	@cd $(RELEASE_DIR) && $(LHA) $(RELEASE_ARCDEST)/DOpus5$(VERSION)$(NAME)$(TYPE).lha DOpus5
 	@$(REMOVE) $(RELEASE_DIR)
 	@echo ">>>>>Release date:" $(shell $(DATE) "+%m/%d/%Y")
 
