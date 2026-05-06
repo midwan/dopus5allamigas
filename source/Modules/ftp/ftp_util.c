@@ -755,13 +755,7 @@ int unix_line_to_entryinfo(struct entry_info *entry, const char *line, ULONG fla
 	// Should allow entries which begin with space characters to work.
 	// Note that this makes assumptions about how many spaces will be
 	// between the date, year/time, and filename fields.
-
-	/************************************************************
-	* was using env var. changed to flag config option
-
-	if	(GetVar( "DOpus/ftp_fred_hack", &env, 1, 0 ) != -1)
-
-	**************************************************************/
+	// (Previously toggled via DOpus/ftp_fred_hack env var; now a per-site flag.)
 
 	if (flags & UI_SPECIAL_DIR)
 		p += fred_hack;

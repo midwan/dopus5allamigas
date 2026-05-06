@@ -1093,21 +1093,6 @@ void startup_get_env(void)
 			GUI->flags |= GUIF_SHOW_ALL;
 	}
 
-	GetVar("dopus/HardDiskCompression", GUI->work_buffer, 2, GVF_GLOBAL_ONLY);
-	GetVar("dopus/SchindlersList", GUI->work_buffer, 2, GVF_GLOBAL_ONLY);
-
-	// Get environment variables
-	if (GetVar("dopus/TuEsUnTeapot", GUI->work_buffer, 2, GVF_GLOBAL_ONLY) > 0)
-	{
-		global_requester("Please do not set this variable again.");
-		DeleteVar("dopus/TuEsUnTeapot", GVF_GLOBAL_ONLY);
-	}
-	if (GetVar("dopus/JeTePlumeraiLaTete", GUI->work_buffer, 2, GVF_GLOBAL_ONLY) > 0)
-	{
-		global_requester("Why do you want feathers in your head?");
-		DeleteVar("dopus/JeTePlumeraiLaTete", GVF_GLOBAL_ONLY);
-	}
-
 	if (GetVar("dopus/WorkbenchTitle", GUI->work_buffer, 2, GVF_GLOBAL_ONLY) > 0 && GUI->work_buffer[0] != '0')
 		GUI->flags2 |= GUIF2_WB_TITLE;
 	if (GetVar("dopus/EnableShortcuts", GUI->work_buffer, 2, GVF_GLOBAL_ONLY) > 0 && GUI->work_buffer[0] != '0')
@@ -1119,9 +1104,6 @@ void startup_get_env(void)
 	if (GetVar("dopus/ReturnOfBenify", GUI->work_buffer, 2, GVF_GLOBAL_ONLY) > 0 && GUI->work_buffer[0] != '0')
 		GUI->flags2 |= GUIF2_BENIFY;
 
-	GetVar("dopus/JavaVM", GUI->work_buffer, 2, GVF_GLOBAL_ONLY);
-	GetVar("dopus/CPUTurboMode", GUI->work_buffer, 2, GVF_GLOBAL_ONLY);
-
 	// Icon spacing
 	if (GetVar("dopus/IconSpaceX", GUI->work_buffer, 4, GVF_GLOBAL_ONLY) > 0)
 	{
@@ -1131,8 +1113,6 @@ void startup_get_env(void)
 	}
 	else
 		GUI->icon_space_x = CLEANUP_SPACE_X;
-
-	GetVar("dopus/ColdChiselMode", GUI->work_buffer, 2, GVF_GLOBAL_ONLY);
 
 	// Icon spacing
 	if (GetVar("dopus/IconSpaceY", GUI->work_buffer, 4, GVF_GLOBAL_ONLY) > 0)
@@ -1163,9 +1143,6 @@ void startup_get_env(void)
 	}
 	else
 		GUI->icon_grid_y = 1;
-
-	GetVar("dopus/DigitalConvergence", GUI->work_buffer, 2, GVF_GLOBAL_ONLY);
-	GetVar("dopus/PPCEnabled", GUI->work_buffer, 2, GVF_GLOBAL_ONLY);
 }
 
 // Initialise the ARexx handler and the commodity
