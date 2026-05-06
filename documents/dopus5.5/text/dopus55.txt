@@ -5254,12 +5254,13 @@ options dialog is the source of truth):
 	dopus/ReturnOfBenify      - Environment editor / Icon Layout
 	dopus/WheelScrollLines    - Environment editor / Misc
 	dopus/NoBeeGees           - FTP module / Default FTP Options
+	dopus/DOSPatch            - Environment editor / Misc (live folder updates;
+	                            requires a DOpus restart to take effect)
 
 Advanced / install-time only (no GUI - read at library init):
 
 	dopus/3DLook         - SysiHack-compatible 3D gadget look
 	dopus/OuEstLeMinibar - disable requester stippling
-	dopus/DOSPatch       - install DOS patches for live lister refresh
 	dopus/NoSysPatch     - safe-mode: skip all system-library patches
 	dopus/PatchWBInfo    - install global WBInfo() patch
 	dopus/FiletypeCache=N - enable filetype-recognition cache (min 10)
