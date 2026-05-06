@@ -11,6 +11,9 @@ export debug
 ###########################################################
 # Export arch to select the AROS architecture
 export arch
+# Export cpu to select OS3 CPU variant (currently only cpu=68000 is honoured;
+# the default OS3 build targets 68020-60 with 68030 tuning).
+export cpu
 PYTHON ?= python3
 ###########################################################
 # Example Commands:
@@ -25,15 +28,27 @@ PYTHON ?= python3
 # Compiles debug version of dopus5 components for OS3 & creates
 # release archive.
 
+# make os3-68000 release debug=no
+# Compiles normal version of dopus5 for plain 68000 OS3 systems &
+# creates release archive (DOpus5_<rev>_os3-68000.lha).
+
 # make x86_64-aros release debug=no
 # Compiles normal version of dopus5 components for x86_64-AROS & creates
 # release archive.
 ###########################################################
 # Read platform arguments from the "Make" command line:
-# Acceptable platform arguments are os3, os4, mos, i386-aros or x86_64-aros.
+# Acceptable platform arguments are os3, os3-68000, os4, mos,
+# i386-aros or x86_64-aros.
+#
+# Order matters: check os3-68000 BEFORE os3 because `os3` is a
+# substring of `os3-68000` and findstring would otherwise match both.
 PLATFORM:= none
 NAME:=
-ifeq ($(findstring os3, $(MAKECMDGOALS)),os3)
+ifeq ($(findstring os3-68000, $(MAKECMDGOALS)),os3-68000)
+	PLATFORM:= os3
+	cpu:= 68000
+	NAME:= os3-68000 $(NAME)
+else ifeq ($(findstring os3, $(MAKECMDGOALS)),os3)
 	PLATFORM:= os3
 	NAME:= $(PLATFORM) $(NAME)
 endif
@@ -59,12 +74,12 @@ NAME := $(strip $(NAME))
 
 # Generate error if no platform entered on "Make" command line.
 ifeq ($(PLATFORM), none)
-$(error Error: Enter a platform (os3, os4, mos, i386-aros or x86_64-aros).)
+$(error Error: Enter a platform (os3, os3-68000, os4, mos, i386-aros or x86_64-aros).)
 endif
 
 #Generate error if multiple platforms entered on "Make" command line.
 ifneq ($(words $(NAME)), 1)
-$(error Error: Enter only 1 platform (os3, os4, mos, i386-aros or x86_64-aros).)
+$(error Error: Enter only 1 platform (os3, os3-68000, os4, mos, i386-aros or x86_64-aros).)
 endif
 
 # Compile all if only a platform is entered on "Make" command line.
@@ -214,7 +229,6 @@ release-package:
 	@$(MAKEDIR) $(RELEASE_ROOT)/Modules
 	@$(MAKEDIR) $(RELEASE_ROOT)/C
 	@$(MAKEDIR) $(RELEASE_ROOT)/Help
-	@$(MAKEDIR) $(RELEASE_ROOT)/Documents
 	@$(MAKEDIR) $(DEST)
 ifeq ($(PLATFORM), os4)
 	@$(MAKEDIR) $(RELEASE_ROOT)/WBStartup
@@ -228,7 +242,7 @@ endif
 	@$(COPY) bin.$(NAME)/LoadDB $(RELEASE_ROOT)/C
 	@$(COPY) bin.$(NAME)/viewfont $(RELEASE_ROOT)/C
 	@$(COPY) ../documents/*.guide $(RELEASE_ROOT)/Help
-	@$(COPY) ../THIRD_PARTY_NOTICES.md $(RELEASE_ROOT)/Documents
+	@$(COPY) ../THIRD_PARTY_NOTICES.md $(RELEASE_ROOT)/Help
 ifeq ($(log), yes)
 	@$(COPY) ../ChangeLog $(RELEASE_ROOT)
 endif
@@ -258,10 +272,11 @@ clean-release: cleanall
 # commands when entered as a goal for "make"
 # on the command line (like: make os3).
 
-.PHONY : os3 os4 mos aros i386-aros x86_64-aros
+.PHONY : os3 os3-68000 os4 mos aros i386-aros x86_64-aros
 i386-aros: mos
 x86_64-aros: mos
 os3: mos
+os3-68000: mos
 os4: mos
 aros: mos
 mos:

@@ -2,9 +2,9 @@ include makefile.objs
 include ../module.common
 
 # NAME is assigned in makefile.objs
-DESTDIR  := ../../bin.os3
+DESTDIR  := ../../bin.os3$(OS3_SUFFIX)
 TARGET   := $(DESTDIR)/$(NAME)
-OBJDIR  := .objects/os3
+OBJDIR  := .objects/os3$(OS3_SUFFIX)
 
 REMOVE = rm -f
 MAKEDIR := mkdir -p

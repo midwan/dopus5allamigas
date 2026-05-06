@@ -2,6 +2,7 @@
 */.qtc_clangd/*
 *.o
 */bin.os3/*
+*/bin.os3-68000/*
 */bin.os4/*
 */bin.mos/*
 */bin.i386-aros/*

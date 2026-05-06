@@ -23,7 +23,19 @@ else
 	LIBS += -ldebug
 endif
 
-OPTIONS  := -m68020-60 -mtune=68030 -flto -fshort-enums -D__amigaos3__ -D__USE_SYSBASE -D__NO_NET_API -DUSE_64BIT -DCOMPDATE=$(NEWDATE)
+# CPU target. Default OS3 build targets 68020-60 with 68030 tuning.
+# Set cpu=68000 (e.g. via `make os3-68000`) for a plain 68000 binary.
+# OS3_SUFFIX is appended to bin/object directories so 68000 and default
+# builds can coexist without polluting each other's outputs.
+ifeq ($(cpu), 68000)
+	CPUFLAGS   := -m68000
+	OS3_SUFFIX := -68000
+else
+	CPUFLAGS   := -m68020-60 -mtune=68030
+	OS3_SUFFIX :=
+endif
+
+OPTIONS  := $(CPUFLAGS) -flto -fshort-enums -D__amigaos3__ -D__USE_SYSBASE -D__NO_NET_API -DUSE_64BIT -DCOMPDATE=$(NEWDATE)
 INCLUDES := -I./../ -Iinit/../ -I$(SOURCE_TOP) -I$(SOURCE_TOP)/Include $(OS3_INCLUDE)
 LDFLAGS  := $(OPTIONS) $(DEBUGSYM) -noixemul
 #
