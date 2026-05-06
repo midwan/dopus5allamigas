@@ -31,27 +31,6 @@ jobs:
           make -C source/Modules/ftp -f makefile.tests test
           make -C source/Modules/ftp -f makefile.tests test-libssh2
 
-  sftp-build:
-    needs: ftp-tests
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - { name: os3, image: "sacredbanana/amiga-compiler:m68k-amigaos", ftp_makefile: "makefile.os3", ftp_flags: "" }
-          - { name: os3-68000, image: "sacredbanana/amiga-compiler:m68k-amigaos", ftp_makefile: "makefile.os3", ftp_flags: "cpu=68000" }
-          - { name: os4, image: "sacredbanana/amiga-compiler:ppc-amigaos", ftp_makefile: "makefile.os4", ftp_flags: "" }
-          - { name: mos, image: "sacredbanana/amiga-compiler:ppc-morphos", ftp_makefile: "makefile.mos", ftp_flags: "" }
-
-    name: sftp-build-${{ matrix.platform.name }}
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Build FTP module with SFTP (${{ matrix.platform.name }})
-        run: |
-          docker run --rm -v ${{ github.workspace }}:/work ${{ matrix.platform.image }} sh -c "cd /work/source/Modules/ftp && make -f ${{ matrix.platform.ftp_makefile }} clean ${{ matrix.platform.ftp_flags }} && make -f ${{ matrix.platform.ftp_makefile }} sftp=yes ${{ matrix.platform.ftp_flags }}"
-
   aros-debug-build:
     needs: ftp-tests
     runs-on: ubuntu-latest
@@ -105,7 +84,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    needs: [build, sftp-build, aros-debug-build]
+    needs: [build, aros-debug-build]
     runs-on: ubuntu-latest
     permissions:
       contents: write

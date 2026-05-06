@@ -39,10 +39,16 @@ Source / makefile (release-package):
   its own one-file drawer.
 
 .github/workflows/makefile.yml:
-- Added os3-68000 to the build matrix (debug + release) and the
-  sftp-build matrix so the new variant has full CI parity with os3.
-  The os3-68000 release archive is also picked up by the release-action
-  glob list on tag pushes.
+- Added os3-68000 to the build matrix (debug + release) so the new
+  variant has full CI parity with os3.  The os3-68000 release archive
+  is also picked up by the release-action glob list on tag pushes.
+- Dropped the redundant `sftp-build` job.  It was added back when SFTP
+  was opt-in (sftp=yes flag); since `makefile.sftp` now hardcodes
+  `sftp := yes`, the main `build` matrix already compiles the FTP
+  module with -DFTP_SFTP_BACKEND_LIBSSH2 and links against the
+  bundled libssh2 for os3 / os3-68000 / os4 / mos.  AROS still has
+  SFTP gated behind `sftp=yes` in makefile.aros and was never part
+  of `sftp-build` either.
 
 - Resolves #51.
 2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
