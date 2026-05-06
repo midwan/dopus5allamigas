@@ -1,3 +1,26 @@
+[dopus5allamigas next] dopus5.h / dopus_config.h: document OPUS vs EPUS FORM ids
+Program remains at 5.100.  No module version changes.  Comment-only.
+
+Source / Include/libraries/dopus5.h, Program/dopus_config.h:
+- The ID_OPUS / ID_EPUS macros only had a single-line comment ("Opus
+  FORM" / "Opus Environment FORM") that no longer reflected reality:
+  ID_EPUS is also written by button banks (Buttons / Hotkeys / Start
+  Menu) and the configopus environment converter, not just the
+  Environment file.  Anyone trying to write a Filetype recognition
+  rule (issue #60) had no way to tell from the headers that DOpus 5
+  config files come in two flavours.
+- Both headers now spell out that ID_OPUS == legacy schema (the
+  convert_env / convert_button_window / convert_open_lister
+  migrations in config_open.c kick in on read) and ID_EPUS ==
+  current schema (read straight via L_IFFReadChunkBytes).  The
+  long-form block lives in libraries/dopus5.h; dopus_config.h has
+  a TL;DR plus a pointer to it.
+- Each macro line still has its original short trailing comment,
+  updated to "Opus FORM (current schema)" / "Opus FORM (legacy
+  schema, migrated on read)" so casual greps still see what's what.
+- Resolves #60.
+2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
+
 [dopus5allamigas next] LoadDB: detach launched DOpus from caller's CLI streams
 Program remains at 5.100.  LoadDB ships in v65r3.
 
