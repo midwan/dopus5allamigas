@@ -789,6 +789,13 @@ short filetypeed_receive_edit(filetype_ed_data *data, FunctionReturn *ret)
 			if (!icon)
 				func_copy->function.func_type = ret->object_flags;
 
+			// The user accepted this entry via Use, so it is no
+			// longer a placeholder. CopyFunction propagates flags2
+			// verbatim, so the bit was inherited from the original;
+			// clear it now so check_iconmenu / a later save path
+			// never see a "needs cleanup" marker on a real entry.
+			func_copy->function.flags2 &= ~FUNCF2_PLACEHOLDER;
+
 			// Add to list, in same position if applicable
 			if (function)
 				Insert(&data->type->function_list, &func_copy->node, &function->node);
@@ -1185,7 +1192,7 @@ void filetypeed_add_iconmenu(filetype_ed_data *data)
 	Att_Node *node;
 	func_node *fndata;
 	Cfg_Instruction *label_ins;
-	char *default_label;
+	CONST_STRPTR default_label;
 
 	// Allocate a new function and data
 	if (!(func = NewFunction(0, FTYPE_LIST)) || !(fndata = AllocVec(sizeof(func_node), MEMF_CLEAR)))
@@ -1197,33 +1204,29 @@ void filetypeed_add_iconmenu(filetype_ed_data *data)
 	// Detach list from listview
 	SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, (APTR)~0);
 
-	// Fill out data
+	// Fill out data, marking the function as a placeholder so the
+	// IPC_GOODBYE handler (via filetypeed_check_iconmenu) can drop
+	// the row if the user cancels the editor instead of clicking
+	// Use. See FUNCF2_PLACEHOLDER's comment in config_filetypes.h
+	// for why the flag lives on the Cfg_Function rather than on
+	// func_node. filetypeed_receive_edit clears the bit when the
+	// user accepts the entry via Use.
 	fndata->func = func;
-	func->function.flags2 |= FUNCF2_LABEL_FUNC;
-
-	// Mark this node as a freshly-created placeholder. If the user
-	// cancels the editor instead of clicking Use, the IPC_GOODBYE
-	// handler will see this flag via filetypeed_check_iconmenu and
-	// drop the row instead of leaving a stub behind. The flag is
-	// only meaningful before receive_edit runs; afterwards
-	// update_iconmenu rebuilds the icon_list and every node starts
-	// over with fresh = FALSE (AllocVec MEMF_CLEAR).
-	fndata->fresh = TRUE;
+	func->function.flags2 |= FUNCF2_LABEL_FUNC | FUNCF2_PLACEHOLDER;
 
 	// Pre-populate with a default label so the new entry has a name
 	// even if the user clicks Use without touching the Label gadget.
-	// filetypeed_receive_edit drops entries with an empty/missing
-	// INST_LABEL on save (matching update_iconmenu's listview rule),
-	// so without this default the new row would silently disappear
-	// the moment the function editor closes. The editor reads the
-	// label from this same INST_LABEL into its gadget, so the user
-	// can keep "Untitled", rename it, or clear it as they like.
-	default_label = (char *)GetString(Locale, MSG_UNTITLED);
-	if ((label_ins = NewInstruction(0, INST_LABEL, default_label)))
+	// filetypeed_receive_edit would otherwise drop the entry on save
+	// (it requires a non-empty INST_LABEL, matching update_iconmenu's
+	// listview rule). The editor reads this same INST_LABEL into its
+	// Label gadget, so the user can keep "Untitled", rename it, or
+	// clear it as they like.
+	default_label = GetString(Locale, MSG_UNTITLED);
+	if ((label_ins = NewInstruction(0, INST_LABEL, (char *)default_label)))
 		AddHead((struct List *)&func->instructions, (struct Node *)label_ins);
 
 	// Add to lister
-	if (!(node = Att_NewNode(data->icon_list, default_label, (IPTR)fndata, 0)))
+	if (!(node = Att_NewNode(data->icon_list, (char *)default_label, (IPTR)fndata, 0)))
 	{
 		// Failed
 		FreeVec(fndata);
@@ -1315,10 +1318,13 @@ BOOL filetypeed_check_iconmenu(filetype_ed_data *data, Att_Node *node, BOOL del)
 	// Invalid / placeholder function?
 	// - del: explicit delete request
 	// - !fndata->func / empty instructions: no real content
-	// - fresh: placeholder from Add that the user cancelled out of
-	//   (its instructions list contains only the seeded INST_LABEL,
-	//   so the IsMinListEmpty test alone wouldn't catch it).
-	if (del || !fndata->func || IsMinListEmpty(&fndata->func->instructions) || fndata->fresh)
+	// - FUNCF2_PLACEHOLDER: a fresh row created by Add that the user
+	//   cancelled out of. Its instructions list still contains the
+	//   seeded INST_LABEL, so the IsMinListEmpty test alone would
+	//   miss it. The bit is cleared in receive_edit when Use is
+	//   clicked, so accepted rows are never treated as placeholders.
+	if (del || !fndata->func || IsMinListEmpty(&fndata->func->instructions) ||
+		(fndata->func->function.flags2 & FUNCF2_PLACEHOLDER))
 	{
 		// Detach list from listview
 		SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, (APTR)~0);
@@ -1356,6 +1362,7 @@ BOOL filetypeed_move_iconmenu(filetype_ed_data *data, BOOL up)
 {
 	Att_Node *neighbour, *anchor;
 	Cfg_Function *cur_func, *neighbour_func;
+	short pos;
 
 	// Need a selection
 	if (!data->last_icon)
@@ -1392,12 +1399,14 @@ BOOL filetypeed_move_iconmenu(filetype_ed_data *data, BOOL up)
 	else
 		Insert(&data->type->function_list, (struct Node *)cur_func, (struct Node *)neighbour_func);
 
-	// Reattach list and keep focus on the moved entry
+	// Reattach list and keep focus on the moved entry. Cache the
+	// node-number lookup so we don't pay for two O(n) walks here.
 	SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, data->icon_list);
-	SetGadgetValue(data->objlist, GAD_FILETYPES_ICON_MENU, Att_FindNodeNumber(data->icon_list, data->last_icon));
+	pos = Att_FindNodeNumber(data->icon_list, data->last_icon);
+	SetGadgetValue(data->objlist, GAD_FILETYPES_ICON_MENU, pos);
 
 	// Refresh enable/disable state for the new selection position
-	filetypeed_sel_icon(data, Att_FindNodeNumber(data->icon_list, data->last_icon));
+	filetypeed_sel_icon(data, pos);
 	return 1;
 }
 
@@ -1497,11 +1506,13 @@ BOOL filetypeed_end_drag(filetype_ed_data *data, BOOL ok)
 						   target_func->node.ln_Pred);
 
 				// Attach list and keep the focus on the moved entry
+				// (one node-number lookup, used twice).
 				SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, data->icon_list);
-				SetGadgetValue(data->objlist,
-							   GAD_FILETYPES_ICON_MENU,
-							   Att_FindNodeNumber(data->icon_list, dragged));
-				filetypeed_sel_icon(data, Att_FindNodeNumber(data->icon_list, dragged));
+				{
+					short pos = Att_FindNodeNumber(data->icon_list, dragged);
+					SetGadgetValue(data->objlist, GAD_FILETYPES_ICON_MENU, pos);
+					filetypeed_sel_icon(data, pos);
+				}
 				ret = 1;
 			}
 		}
@@ -1734,9 +1745,11 @@ BOOL filetypeed_get_button(filetype_ed_data *data, Cfg_Button *button, Point *po
 				// New node?
 				if (node)
 				{
-					// Select this node and refresh edit/delete/move buttons
-					SetGadgetValue(data->objlist, GAD_FILETYPES_ICON_MENU, Att_FindNodeNumber(data->icon_list, node));
-					filetypeed_sel_icon(data, Att_FindNodeNumber(data->icon_list, node));
+					// Select this node and refresh edit/delete/move
+					// buttons (one node-number lookup, used twice).
+					short pos = Att_FindNodeNumber(data->icon_list, node);
+					SetGadgetValue(data->objlist, GAD_FILETYPES_ICON_MENU, pos);
+					filetypeed_sel_icon(data, pos);
 				}
 			}
 
@@ -1804,8 +1817,8 @@ BOOL filetypeed_sel_icon(filetype_ed_data *data, short item)
 	// when there's a node after us. Sentinel ln_Pred / ln_Succ point at
 	// the list head/tail anchor (themselves valid Node structs whose
 	// own ln_Pred / ln_Succ are NULL), so test that to detect ends.
-	at_top = (BOOL)(!node->node.ln_Pred || !node->node.ln_Pred->ln_Pred);
-	at_bottom = (BOOL)(!node->node.ln_Succ || !node->node.ln_Succ->ln_Succ);
+	at_top = !node->node.ln_Pred || !node->node.ln_Pred->ln_Pred;
+	at_bottom = !node->node.ln_Succ || !node->node.ln_Succ->ln_Succ;
 	DisableObject(data->objlist, GAD_FILETYPES_UP_ICON_MENU, at_top);
 	DisableObject(data->objlist, GAD_FILETYPES_DOWN_ICON_MENU, at_bottom);
 

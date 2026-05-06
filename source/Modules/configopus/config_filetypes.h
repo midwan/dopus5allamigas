@@ -189,8 +189,26 @@ typedef struct
 {
 	Cfg_Function *func;
 	IPCData *editor;
-	BOOL fresh;	 // Placeholder created by Add, not yet accepted via Use
 } func_node;
+
+/* Internal flag bit set on a Cfg_Function created by
+ * filetypeed_add_iconmenu to mark it as a not-yet-accepted placeholder.
+ * filetypeed_check_iconmenu treats functions carrying this bit as needing
+ * cleanup (so an Add-then-Cancel round-trip discards the row even when
+ * the seeded INST_LABEL keeps the instructions list non-empty).
+ *
+ * The bit lives on Cfg_Function rather than func_node because update_iconmenu
+ * recreates every func_node from scratch via AllocVec(MEMF_CLEAR) — any
+ * func_node-side flag would get wiped whenever a parallel placeholder
+ * triggered a rebuild. The Cfg_Function survives that rebuild, so the
+ * marker survives with it.
+ *
+ * filetypeed_receive_edit clears the bit on the func_copy that replaces
+ * the placeholder, so it never reaches a save path; the existing
+ * FUNCF2_ORIGINAL / FUNCF2_FREE_FUNCTION public defines establish the
+ * precedent of using high flags2 bits for transient module-private state.
+ */
+#define FUNCF2_PLACEHOLDER (1 << 29)
 
 void filetype_read_list(APTR, struct List *);
 void filetype_build_list(config_filetypes_data *);
