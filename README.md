@@ -23,6 +23,7 @@ work.
   - [Per-platform make targets](#per-platform-make-targets)
   - [Release archives](#release-archives)
   - [SFTP support](#sftp-support)
+  - [xadopus.module on AROS](#xadopusmodule-on-aros)
 - [Testing](#testing)
 - [Project status](#project-status)
 - [License and trademarks](#license-and-trademarks)
@@ -115,6 +116,29 @@ The FTP module supports SFTP via [libssh2](https://libssh2.org/).
   make i386-aros sftp=yes
   make x86_64-aros sftp=yes
   ```
+
+### xadopus.module on AROS
+
+`xadopus.module` (archive-as-folder support via xadmaster.library) is
+built unconditionally on AmigaOS 3 / AmigaOS 4 / MorphOS, where the
+toolchain ships the required `proto/xadmaster.h` headers.
+
+The standard AROS toolchain Docker images (`midwan/aros-compiler:*`)
+do **not** include those headers, so the module is **skipped** by
+default on AROS to keep CI green. Distributions like **AROS One**
+ship `xadmaster.library` and its headers, so users on those systems
+can opt in:
+
+```sh
+cd source
+make i386-aros release debug=no xadopus=yes
+make x86_64-aros release debug=no xadopus=yes
+```
+
+If the headers aren't installed locally the build fails with
+`fatal error: proto/xadmaster.h: No such file or directory`, which
+is the expected outcome — install xadmaster's developer headers,
+or omit `xadopus=yes`.
 
 Consult `source/makefile`, `source/makefile.common` and the per-platform /
 per-module makefiles for the full list of targets and options.
