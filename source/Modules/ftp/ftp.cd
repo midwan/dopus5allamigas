@@ -779,6 +779,9 @@ Enable Log
 MSG_FTP_LOG_DEBUG (//)
 Enable Debug
 ;
+MSG_FTP_NO_KEEP_ALIVE (//)
+Disable Stayin' Alive _Pings
+;
 MSG_FTP_GLOBAL (//)
 Global
 ;

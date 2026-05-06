@@ -2246,14 +2246,9 @@ void lister_getput(struct ftp_node *thisnode, IPCMessage *msg)
 				hc.hc_ored_ftp_flags = srcnode->fn_ftp.fi_flags | destnode->fn_ftp.fi_flags;
 				hc.hc_anded_ftp_flags = srcnode->fn_ftp.fi_flags & destnode->fn_ftp.fi_flags;
 
-				{
-					// char env;
-
-					// if	(GetVar( "DOpus/ftp_broken_list", &env, 1, 0 ) != -1)
-
-					if (srcnode->fn_site.se_env->e_recursive_special)
-						hc.hc_recur_flags |= RECURF_BROKEN_LS;
-				}
+				// (Previously toggled via DOpus/ftp_broken_list env var; now a per-site flag.)
+				if (srcnode->fn_site.se_env->e_recursive_special)
+					hc.hc_recur_flags |= RECURF_BROKEN_LS;
 
 				if (confirm_commence == 2)
 					hc.hc_recur_flags |= RECURF_NORECUR;

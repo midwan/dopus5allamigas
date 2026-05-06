@@ -1900,6 +1900,7 @@ static void display_options_gadgets(struct window_params *wp)
 		SetGadgetValue(objlist, GAD_ENV_LOG_FILE, (IPTR)tmp_oc->oc_logname);
 		SetGadgetValue(objlist, GAD_ENV_LOG_ENABLE, tmp_oc->oc_enable_log);
 		SetGadgetValue(objlist, GAD_ENV_DEBUG, tmp_oc->oc_log_debug);
+		SetGadgetValue(objlist, GAD_ENV_NO_KEEP_ALIVE, tmp_oc->oc_no_keep_alive);
 
 		SetGadgetValue(objlist, GAD_ENV_ADDR_AUTO, tmp_oc->oc_addr_auto);
 		SetGadgetValue(objlist, GAD_ENV_ADDR_DC, tmp_oc->oc_addr_dc);
@@ -2070,6 +2071,7 @@ static void store_options_gadgets(struct window_params *wp)
 		strcpy(tmp_oc->oc_logname, (char *)GetGadgetValue(objlist, GAD_ENV_LOG_FILE));
 		tmp_oc->oc_enable_log = GetGadgetValue(objlist, GAD_ENV_LOG_ENABLE);
 		tmp_oc->oc_log_debug = GetGadgetValue(objlist, GAD_ENV_DEBUG);
+		tmp_oc->oc_no_keep_alive = GetGadgetValue(objlist, GAD_ENV_NO_KEEP_ALIVE);
 
 		tmp_oc->oc_addr_auto = GetGadgetValue(objlist, GAD_ENV_ADDR_AUTO);
 		tmp_oc->oc_addr_dc = GetGadgetValue(objlist, GAD_ENV_ADDR_DC);

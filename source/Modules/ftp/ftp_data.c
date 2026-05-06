@@ -714,24 +714,34 @@ ObjectDef ftp_options_objects[] =
 				   GAD_ENV_DEBUG,
 				   ftp_relative_taglist},
 
+				  // Disable Stayin' Alive pings (was DOpus/NoBeeGees env var)
+				  {OD_GADGET,
+				   CHECKBOX_KIND,
+				   {LEFT_EDGE_GAD, 4, 0, 1},
+				   {4, 20, 26, CHECKBOX_HGT},
+				   MSG_FTP_NO_KEEP_ALIVE,
+				   PLACETEXT_RIGHT,
+				   GAD_ENV_NO_KEEP_ALIVE,
+				   ftp_relative_taglist},
+
 				  // Log file
 				  {OD_GADGET,
 				   STRING_KIND,
-				   {LEFT_EDGE_GAD, 4, SIZE_MAX_LESS - 1, 1},
-				   {4, 20, -4, STRHGT},
+				   {LEFT_EDGE_GAD, 5, SIZE_MAX_LESS - 1, 1},
+				   {4, 28, -4, STRHGT},
 				   MSG_LOG_FILE,
 				   0,
 				   GAD_ENV_LOG_FILE,
 				   ftp_options_log_tags},
 
 				  // addr name
-				  {OD_TEXT, TEXTPEN, {2, 6, 0, 1}, {4, 28, 0, 0}, MSG_FTP_ADDR_NAME, 0, 0, ftp_relative_taglist},
+				  {OD_TEXT, TEXTPEN, {2, 7, 0, 1}, {4, 36, 0, 0}, MSG_FTP_ADDR_NAME, 0, 0, ftp_relative_taglist},
 
 				  //  address book double-click edit/connect
 				  {OD_GADGET,
 				   CYCLE_KIND,
-				   {LEFT_EDGE_GAD, 6, 10, 1},
-				   {4, 28, 24, 6},
+				   {LEFT_EDGE_GAD, 7, 10, 1},
+				   {4, 36, 24, 6},
 				   MSG_ADR_DC,
 				   PLACETEXT_RIGHT,
 				   GAD_ENV_ADDR_DC,
@@ -740,8 +750,8 @@ ObjectDef ftp_options_objects[] =
 				  // auto close
 				  {OD_GADGET,
 				   CHECKBOX_KIND,
-				   {LEFT_EDGE_GAD, 7, 0, 1},
-				   {4, 34 + 4, 26, CHECKBOX_HGT},
+				   {LEFT_EDGE_GAD, 8, 0, 1},
+				   {4, 42 + 4, 26, CHECKBOX_HGT},
 				   MSG_AUTO_CLOSE,
 				   PLACETEXT_RIGHT,
 				   GAD_ENV_ADDR_AUTO,
@@ -750,8 +760,8 @@ ObjectDef ftp_options_objects[] =
 				  // Anonymous password
 				  {OD_GADGET,
 				   STRING_KIND,
-				   {LEFT_EDGE_GAD, 9, SIZE_MAX_LESS - 1, 1},
-				   {4, 36 + 4, -4, STRHGT},
+				   {LEFT_EDGE_GAD, 10, SIZE_MAX_LESS - 1, 1},
+				   {4, 44 + 4, -4, STRHGT},
 				   MSG_ANON_PASS,
 				   0,
 				   GAD_ENV_ANON_PASSWORD,

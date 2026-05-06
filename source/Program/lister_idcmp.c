@@ -293,7 +293,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 				else
 				{
 					msg->Code = KEY_CURSORUP;
-					scroll_line = GUI->wheel_lines;
+					scroll_line = environment->env->env_wheel_scroll_lines;
 				}
 			}
 			else if (msg->Code == 0x7b)
@@ -305,7 +305,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 				else
 				{
 					msg->Code = KEY_CURSORDOWN;
-					scroll_line = GUI->wheel_lines;
+					scroll_line = environment->env->env_wheel_scroll_lines;
 				}
 			}
 

@@ -45,6 +45,11 @@ For more information on Directory Opus for Windows please see:
 void icon_drop_44(icon_data *data, int x, int y);
 BOOL icon_save_44(icon_data *data, char *save_name, BOOL err);
 
+// Low bit of mod_data: 0=remap, 1=no-remap.  ICON_USE_WBINFO_FLAG (1<<16, in
+// libraries/dopus5.h) tells us the user opted into OS WBInfo() in the GUI.
+// 0x96604497 is a special sentinel passed by the WBInfo() patch path to
+// prevent infinite recursion; it has bit 16 clear so naturally disables WBInfo
+// for that call.
 #define ICON_REMAP 0
 #define ICON_NO_REMAP 1
 
@@ -62,7 +67,6 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 	struct Node *node;
 	struct Process *proc;
 	APTR wsave;
-	char buf[4];
 	struct Message *msg;
 
 	// Allocate data
@@ -99,8 +103,9 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 			data->dropmenu.locale = locale;
 			data->dropmenu.flags = POPUPMF_STICKY;
 
-			// Want to remap?
-			if (mod_data == ICON_REMAP)
+			// Want to remap?  Test only the low bit so additional flags
+			// (e.g. ICON_USE_WBINFO_FLAG) don't disturb the existing logic.
+			if (!(mod_data & ICON_NO_REMAP))
 				data->remap = 1;
 
 			// Initialise menu items
@@ -191,9 +196,12 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 			data->dropmenu_items[IDM_TOOLTYPES].id = MENU_COPY_TOOLTYPES;
 			data->dropmenu_items[IDM_TOOLTYPES].flags = POPUPF_LOCALE;
 
-			// Use Workbench.library info routine?
+			// Use Workbench.library info routine?  The 0x96604497 magic comes
+			// from wb.c's WBInfo() patch and explicitly opts out so we don't
+			// recurse.  The user's preference is now passed in via the caller
+			// (DISPOPTF_USE_WBINFO -> ICON_USE_WBINFO_FLAG bit on mod_data).
 			if (mod_data != 0x96604497 && WorkbenchBase && WorkbenchBase->lib_Version >= 39 &&
-				(GetVar("dopus/UseWBInfo", buf, 2, GVF_GLOBAL_ONLY)) > 0)
+				(mod_data & ICON_USE_WBINFO_FLAG))
 				data->wb_info = 1;
 
 			// Set up editor

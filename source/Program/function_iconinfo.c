@@ -73,12 +73,12 @@ DOPUS_FUNC(function_iconinfo)
 	}
 
 	// Do IconInfo
-	ret = Module_Entry((struct List *)list,
-					   GUI->screen_pointer,
-					   handle->ipc,
-					   &main_ipc,
-					   0,
-					   (environment->env->desktop_flags & DESKTOPF_NO_REMAP) ? 1 : 0);
+	{
+		ULONG flags = (environment->env->desktop_flags & DESKTOPF_NO_REMAP) ? 1 : 0;
+		if (environment->env->display_options & DISPOPTF_USE_WBINFO)
+			flags |= ICON_USE_WBINFO_FLAG;
+		ret = Module_Entry((struct List *)list, GUI->screen_pointer, handle->ipc, &main_ipc, 0, flags);
+	}
 
 	// Go through list of files
 	for (node = (Att_Node *)list->list.lh_Head; node->node.ln_Succ; node = (Att_Node *)node->node.ln_Succ)

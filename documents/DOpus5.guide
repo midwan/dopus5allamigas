@@ -4150,8 +4150,73 @@ system.
 
  -----------------------------------------------------------------------------
 
-       @{b}The variables below are the only ones available for the user's use.
-             @{bg shine} PLEASE DO NOT use them unless there is a genuine need. @{bg background}@{ub}
+       @{b}The variables below were originally configured via ENV: but have
+             since been promoted to the GUI.  They are imported once on
+             the first launch with a build that supports them; after that
+             the corresponding setting in the Environment editor (or, for
+             NoBeeGees, the FTP options dialog) is the source of truth. @{ub}
+
+ -----------------------------------------------------------------------------
+
+@{b}@{fg shine}@{bg text} dopus/HidePadlock @{bg background}@{fg text}@{ub}
+
+       Now: Environment editor -> Lister Options ->
+       "Hide Padlock In Lister Title".
+
+@{b}@{fg shine}@{bg text} dopus/WorkbenchTitle @{bg background}@{fg text}@{ub}
+
+       Now: Environment editor -> WB Emulation ->
+       "Suppress DOpus Title Bar Clock".
+
+@{b}@{fg shine}@{bg text} dopus/UseWBInfo @{bg background}@{fg text}@{ub}
+
+       Now: Environment editor -> WB Emulation ->
+       "Use Workbench Icon Information".
+
+@{b}@{fg shine}@{bg text} dopus/EnableShortcuts @{bg background}@{fg text}@{ub}
+
+       Now: Environment editor -> WB Emulation ->
+       "Enable Desktop Keyboard Shortcuts".
+
+@{b}@{fg shine}@{bg text} dopus/ShowUseDatatypesFirst @{bg background}@{fg text}@{ub}
+
+       Now: Environment editor -> WB Emulation ->
+       "Prefer Datatypes for Showing Pictures".
+
+@{b}@{fg shine}@{bg text} dopus/IconSpaceX / dopus/IconSpaceY @{bg background}@{fg text}@{ub}
+@{b}@{fg shine}@{bg text} dopus/IconGridX  / dopus/IconGridY  @{bg background}@{fg text}@{ub}
+
+       Now: Environment editor -> Icon Layout.
+
+@{b}@{fg shine}@{bg text} dopus/ReturnOfBenify @{bg background}@{fg text}@{ub}
+
+       Now: Environment editor -> Icon Layout ->
+       "Drop on Desktop Saves Position".
+
+@{b}@{fg shine}@{bg text} dopus/WheelScrollLines @{bg background}@{fg text}@{ub}
+
+       Now: Environment editor -> Misc ->
+       "Mouse Wheel Scroll Lines".
+
+@{b}@{fg shine}@{bg text} dopus/NoBeeGees @{bg background}@{fg text}@{ub}
+
+       Now: FTP module -> Default FTP Options ->
+       "Disable Stayin' Alive Pings".
+
+       Note: because the FTP config has no version field, the env var
+       is consulted on every launch whenever the GUI checkbox is OFF.
+       If you set DOpus/NoBeeGees historically and now want the feature
+       OFF, remove the env var (`unsetenv DOpus/NoBeeGees`) to make the
+       GUI authoritative -- otherwise the env var takes precedence on
+       each launch and the box re-checks itself.
+
+ -----------------------------------------------------------------------------
+
+       @{b}Advanced / install-time variables that remain ENV:-only.  These
+             are read once at library init or main startup and cannot
+             be sensibly toggled at runtime, so they don't appear in
+             the GUI. @{bg shine} PLEASE DO NOT use them unless there is
+             a genuine need. @{bg background}@{ub}
 
  -----------------------------------------------------------------------------
 
@@ -4161,74 +4226,43 @@ system.
 
        Manual Ref: 5.5 - 251
 
-@{b}@{fg shine}@{bg text} dopus/HidePadlock @{bg background}@{fg text}@{ub}
+@{b}@{fg shine}@{bg text} dopus/OuEstLeMinibar @{bg background}@{fg text}@{ub}
 
-       Hides the padlock gadget normally displayed on lister titlebars for
-       those that don't need this facility.
+       Disables the stippled fill pattern in DOpus requesters.
+       Cosmetic; rarely needed.
 
-       Manual Ref: 5.5 - 43
-                   5.8 - 19, 54
+@{b}@{fg shine}@{bg text} dopus/DOSPatch @{bg background}@{fg text}@{ub}
 
-@{b}@{fg shine}@{bg text} dopus/IconGridX @{bg background}@{fg text}@{ub}
-@{b}@{fg shine}@{bg text} dopus/IconGridY @{bg background}@{fg text}@{ub}
+       Installs DOS patches that let listers refresh automatically when
+       another process changes the directory contents.  Also exposed as
+       the "Live Folder Updates (DOS Patches)" checkbox on the
+       Environment / Lister Display tab; the GUI checkbox writes this
+       same ENVARC: variable.  The patches install at dopus5.library
+       open, so a toggle requires a DOpus restart to take effect.
 
-       Set these variables to make DOpus align icons to a grid
-       when positioning them automatically (the default is 1
-       for both which means no grid).
+@{b}@{fg shine}@{bg text} dopus/NoSysPatch @{bg background}@{fg text}@{ub}
 
-@{b}@{fg shine}@{bg text} dopus/IconSpaceX @{bg background}@{fg text}@{ub}
-@{b}@{fg shine}@{bg text} dopus/IconSpaceY @{bg background}@{fg text}@{ub}
+       Skips ALL system-library patching during library init.  A
+       diagnostic / safe-mode switch when DOpus's patches conflict
+       with another tool.
 
-       Set these variables to change the default spacing between
-       icons (the default is x=3, y=5)
+@{b}@{fg shine}@{bg text} dopus/PatchWBInfo @{bg background}@{fg text}@{ub}
 
-@{b}@{fg shine}@{bg text} dopus/NoBeeGees @{bg background}@{fg text}@{ub}
+       When set to 1, patches the global Workbench WBInfo() so any caller
+       (not just DOpus) is routed through icon.module's Information
+       handler.  This is a stronger form of the per-module
+       "Use Workbench Icon Information" GUI option.
 
-       Turns off the "Stayin' Alive" feature of the FTP module.
+@{b}@{fg shine}@{bg text} dopus/FiletypeCache @{bg background}@{fg text}@{ub}
 
-       Manual Ref: 5.81 readme
-
-@{b}@{fg shine}@{bg text} dopus/ReturnOfBenify @{bg background}@{fg text}@{ub}
-
-       When set to 1, causes icons dropped on the Desktop to create a
-       left-out to have their dropped position saved as the permanent
-       position rather than the default of temporary.
-
-       Manual Ref: 5.81 readme
-
-@{b}@{fg shine}@{bg text} dopus/ShowUseDatatypesFirst @{bg background}@{fg text}@{ub}
-
-       Causes the Show command to use IFF datatypes in preference to it's
-       own internal IFF code.
-
-       Manual Ref: 5.5 - 125, 251
+       Decimal value: maximum number of entries in the filetype-recognition
+       cache, clamped to a minimum of 10.  Setting this to any positive
+       integer enables the cache.
 
 @{b}@{fg shine}@{bg text} dopus/StartupNumbers @{bg background}@{fg text}@{ub}
 
-       Used for bug hunting.
-
-@{b}@{fg shine}@{bg text} dopus/UseWBInfo @{bg background}@{fg text}@{ub}
-
-       Causes DOpus to call the OS WBInfo() routine instead of it's own
-       internal Icon Information routine.
-
-       Manual Ref: 5.5 - 111, 251
-
-@{b}@{fg shine}@{bg text} dopus/WheelScrollLines @{bg background}@{fg text}@{ub}
-
-       For the support of Wheel Mice, controls the number of lines each wheel
-       turn corresponds to, (default: 3).
-
-       Manual Ref: 5.81 readme
-
-@{b}@{fg shine}@{bg text} dopus/WorkbenchTitle @{bg background}@{fg text}@{ub}
-
-       When set to 1 DOpus will not generate it's own titlebar clock/memory
-       display.  This allows you to use programs which patch the WB titlebar
-       to provide extra information, (eg. MCP).  But do yourself a favour and
-       buy Magellan-II instead.
-
-       Manual Ref: 5.8 - 54
+       When set to a non-zero value, shows the file count / size in the
+       startup splash window.  Used for bug hunting.
 
 @endnode
 

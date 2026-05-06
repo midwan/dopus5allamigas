@@ -162,6 +162,22 @@ BPTR setup_config(struct opusftp_globals *ogp)
 		}
 	}
 
+	// One-shot migration: import the legacy DOpus/NoBeeGees env var into
+	// the new oc_no_keep_alive bit, then delete the var from both ENV:
+	// and ENVARC: so the migration runs exactly once per machine.
+	// Without the DeleteVar a user who turns the box OFF in the GUI and
+	// saves would still see it re-enabled on the next launch (the saved
+	// bit is back to 0, and the legacy env var would re-assert it).
+	{
+		char env;
+		if (GetVar("DOpus/NoBeeGees", &env, 1, GVF_GLOBAL_ONLY) != -1)
+		{
+			if (!oc->oc_no_keep_alive)
+				oc->oc_no_keep_alive = 1;
+			DeleteVar("DOpus/NoBeeGees", GVF_GLOBAL_ONLY | GVF_SAVE_VAR);
+		}
+	}
+
 	// Open log file
 	if (*oc->oc_logname && oc->oc_enable_log)
 	{

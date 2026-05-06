@@ -150,6 +150,9 @@ const static struct TagItem
 	// Command line length
 	_environment_cll_tags[] = {{GTIN_MaxChars, 4}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
+	// Icon spacing/grid (small unsigned integers, max 4 digits is plenty)
+	_environment_icon_int_tags[] = {{GTIN_MaxChars, 4}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
+
 	// Status bar text
 	_environment_status_taglist[] = {{GTST_MaxChars, 80}, {TAG_MORE, (IPTR)_environment_relative_taglist}},
 
@@ -589,6 +592,29 @@ const ObjectDef _config_environment_objects[] =
 						 GAD_ENVIRONMENT_FIELD_TITLES,
 						 _environment_relative_taglist},
 
+						// Hide padlock gadget
+						{OD_GADGET,
+						 CHECKBOX_KIND,
+						 {14, 9, 0, 1},
+						 {5, 28, 26, 6},
+						 MSG_ENVIRONMENT_HIDE_PADLOCK,
+						 PLACETEXT_RIGHT,
+						 GAD_ENVIRONMENT_HIDE_PADLOCK,
+						 _environment_relative_taglist},
+
+						// DOS patches: live folder updates (bound to dopus/DOSPatch
+						// ENVARC: var; behavioural toggle whose effect is most
+						// visible in lister auto-refresh, hence on this tab next
+						// to the other lister-display flags rather than Misc).
+						{OD_GADGET,
+						 CHECKBOX_KIND,
+						 {14, 10, 0, 1},
+						 {5, 36, 26, 6},
+						 MSG_ENVIRONMENT_DOS_PATCH,
+						 PLACETEXT_RIGHT,
+						 GAD_ENVIRONMENT_DOS_PATCH,
+						 _environment_relative_taglist},
+
 						{OD_END}},
 
 				_environment_options_gadgets[] =
@@ -597,8 +623,8 @@ const ObjectDef _config_environment_objects[] =
 						// Workbench patches
 						{OD_TEXT,
 						 TEXTPEN,
-						 {1, 3, 0, 1},
-						 {5, 20, 0, 0},
+						 {1, 1, 0, 1},
+						 {5, 0, 0, 0},
 						 MSG_ENVIRONMENT_PATCH_OPTIONS,
 						 0,
 						 0,
@@ -607,8 +633,8 @@ const ObjectDef _config_environment_objects[] =
 						// Display AppIcons
 						{OD_GADGET,
 						 CHECKBOX_KIND,
-						 {4, 4, 0, 1},
-						 {5, 24, 26, 4},
+						 {4, 2, 0, 1},
+						 {5, 4, 26, 4},
 						 MSG_ENVIRONMENT_OPTIONS_APPICONS,
 						 PLACETEXT_RIGHT,
 						 GAD_ENVIRONMENT_OPTIONS_APPICONS,
@@ -617,8 +643,8 @@ const ObjectDef _config_environment_objects[] =
 						// Display AppMenuItems
 						{OD_GADGET,
 						 CHECKBOX_KIND,
-						 {4, 5, 0, 1},
-						 {5, 29, 26, 4},
+						 {4, 3, 0, 1},
+						 {5, 9, 26, 4},
 						 MSG_ENVIRONMENT_OPTIONS_APPMENU,
 						 PLACETEXT_RIGHT,
 						 GAD_ENVIRONMENT_OPTIONS_APPMENU,
@@ -627,8 +653,8 @@ const ObjectDef _config_environment_objects[] =
 						// Convert AppIcons to Tools menu
 						{OD_GADGET,
 						 CHECKBOX_KIND,
-						 {4, 6, 0, 1},
-						 {5, 34, 26, 4},
+						 {4, 4, 0, 1},
+						 {5, 14, 26, 4},
 						 MSG_ENVIRONMENT_OPTIONS_APPTOOLS,
 						 PLACETEXT_RIGHT,
 						 GAD_ENVIRONMENT_OPTIONS_APPTOOLS,
@@ -637,8 +663,8 @@ const ObjectDef _config_environment_objects[] =
 						// Hide bad disks
 						{OD_GADGET,
 						 CHECKBOX_KIND,
-						 {4, 7, 0, 1},
-						 {5, 39, 26, 4},
+						 {4, 5, 0, 1},
+						 {5, 19, 26, 4},
 						 MSG_ENVIRONMENT_OPTIONS_HIDEBAD,
 						 PLACETEXT_RIGHT,
 						 GAD_ENVIRONMENT_OPTIONS_HIDEBAD,
@@ -647,11 +673,51 @@ const ObjectDef _config_environment_objects[] =
 						// Show WB leftouts
 						{OD_GADGET,
 						 CHECKBOX_KIND,
-						 {4, 8, 0, 1},
-						 {5, 44, 26, 4},
+						 {4, 6, 0, 1},
+						 {5, 24, 26, 4},
 						 MSG_ENVIRONMENT_OPTIONS_SHOW_WBLEFTOUTS,
 						 PLACETEXT_RIGHT,
 						 GAD_ENVIRONMENT_OPTIONS_SHOW_WBLEFTOUTS,
+						 _environment_relative_taglist},
+
+						// Suppress DOpus title bar clock (lets WB-style patches use it)
+						{OD_GADGET,
+						 CHECKBOX_KIND,
+						 {4, 7, 0, 1},
+						 {5, 29, 26, 4},
+						 MSG_ENVIRONMENT_OPTIONS_WB_TITLE,
+						 PLACETEXT_RIGHT,
+						 GAD_ENVIRONMENT_OPTIONS_WB_TITLE,
+						 _environment_relative_taglist},
+
+						// Use Workbench Information (route through WBInfo() for SwazInfo / RAWBInfo)
+						{OD_GADGET,
+						 CHECKBOX_KIND,
+						 {4, 8, 0, 1},
+						 {5, 34, 26, 4},
+						 MSG_ENVIRONMENT_OPTIONS_USE_WBINFO,
+						 PLACETEXT_RIGHT,
+						 GAD_ENVIRONMENT_OPTIONS_USE_WBINFO,
+						 _environment_relative_taglist},
+
+						// Enable extra desktop popup keyboard shortcuts
+						{OD_GADGET,
+						 CHECKBOX_KIND,
+						 {4, 9, 0, 1},
+						 {5, 39, 26, 4},
+						 MSG_ENVIRONMENT_OPTIONS_ENABLE_SHORTCUTS,
+						 PLACETEXT_RIGHT,
+						 GAD_ENVIRONMENT_OPTIONS_ENABLE_SHORTCUTS,
+						 _environment_relative_taglist},
+
+						// Show: prefer datatypes IFF over the built-in IFF reader
+						{OD_GADGET,
+						 CHECKBOX_KIND,
+						 {4, 10, 0, 1},
+						 {5, 44, 26, 4},
+						 MSG_ENVIRONMENT_OPTIONS_SHOW_DT_FIRST,
+						 PLACETEXT_RIGHT,
+						 GAD_ENVIRONMENT_OPTIONS_SHOW_DT_FIRST,
 						 _environment_relative_taglist},
 
 						{OD_END}},
@@ -1013,6 +1079,72 @@ const ObjectDef _config_environment_objects[] =
 			 PLACETEXT_ABOVE,
 			 GAD_ENVIRONMENT_ICON_SETTINGS,
 			 _environment_icon_settings_taglist},
+
+			{OD_END}},
+
+				// Icon layout (was dopus/IconSpace*, dopus/IconGrid* and dopus/ReturnOfBenify env vars)
+	_environment_icon_layout[] =
+		{
+
+			// Page title
+			{OD_TEXT,
+			 TEXTPEN,
+			 {1, 1, 0, 1},
+			 {5, 0, 0, 0},
+			 MSG_ENVIRONMENT_ICON_LAYOUT_TITLE,
+			 0,
+			 0,
+			 _environment_relative_taglist},
+
+			// Icon spacing X
+			{OD_GADGET,
+			 INTEGER_KIND,
+			 {16, 3, 6, 1},
+			 {2, 14, 8, 6},
+			 MSG_ENVIRONMENT_ICON_SPACE_X,
+			 PLACETEXT_LEFT,
+			 GAD_ENVIRONMENT_ICON_SPACE_X,
+			 _environment_icon_int_tags},
+
+			// Icon spacing Y
+			{OD_GADGET,
+			 INTEGER_KIND,
+			 {16, 4, 6, 1},
+			 {2, 22, 8, 6},
+			 MSG_ENVIRONMENT_ICON_SPACE_Y,
+			 PLACETEXT_LEFT,
+			 GAD_ENVIRONMENT_ICON_SPACE_Y,
+			 _environment_icon_int_tags},
+
+			// Icon grid X (1 = no grid)
+			{OD_GADGET,
+			 INTEGER_KIND,
+			 {16, 6, 6, 1},
+			 {2, 36, 8, 6},
+			 MSG_ENVIRONMENT_ICON_GRID_X,
+			 PLACETEXT_LEFT,
+			 GAD_ENVIRONMENT_ICON_GRID_X,
+			 _environment_icon_int_tags},
+
+			// Icon grid Y (1 = no grid)
+			{OD_GADGET,
+			 INTEGER_KIND,
+			 {16, 7, 6, 1},
+			 {2, 44, 8, 6},
+			 MSG_ENVIRONMENT_ICON_GRID_Y,
+			 PLACETEXT_LEFT,
+			 GAD_ENVIRONMENT_ICON_GRID_Y,
+			 _environment_icon_int_tags},
+
+			// Drop on desktop saves position permanently
+			{OD_GADGET,
+			 CHECKBOX_KIND,
+			 {4, 9, 0, 1},
+			 {5, 58, 26, 4},
+			 MSG_ENVIRONMENT_BENIFY,
+			 PLACETEXT_RIGHT,
+			 GAD_ENVIRONMENT_BENIFY,
+			 _environment_relative_taglist},
 
 			{OD_END}},
 
@@ -1739,11 +1871,21 @@ const ObjectDef _config_environment_objects[] =
 						 GAD_SETTINGS_MAX_OPENWITH,
 						 _environment_max_openwith_taglist},
 
+						// Mouse wheel scroll lines
+						{OD_GADGET,
+						 INTEGER_KIND,
+						 {4, 8, 5, 1},
+						 {5, 56, 8, 6},
+						 MSG_SETTINGS_WHEEL_SCROLL_LINES,
+						 PLACETEXT_RIGHT,
+						 GAD_SETTINGS_WHEEL_SCROLL_LINES,
+						 _environment_icon_int_tags},
+
 						// Screen title
 						{OD_TEXT,
 						 TEXTPEN,
-						 {1, 8, 0, 0},
-						 {5, 61, 0, 0},
+						 {1, 9, 0, 0},
+						 {5, 67, 0, 0},
 						 MSG_ENVIRONMENT_SCREEN_TITLE,
 						 0,
 						 0,
@@ -1752,8 +1894,8 @@ const ObjectDef _config_environment_objects[] =
 						// Status text popup
 						{OD_GADGET,
 						 FILE_BUTTON_KIND,
-						 {4, 9, 0, 1},
-						 {5, 64, 28, 6},
+						 {4, 10, 0, 1},
+						 {5, 70, 28, 6},
 						 0,
 						 0,
 						 GAD_ENVIRONMENT_SCREEN_TITLE_LIST,
@@ -1762,8 +1904,8 @@ const ObjectDef _config_environment_objects[] =
 						// Screen title text
 						{OD_GADGET,
 						 STRING_KIND,
-						 {4, 9, SIZE_MAX_LESS - 2, 1},
-						 {33, 64, -8, 6},
+						 {4, 10, SIZE_MAX_LESS - 2, 1},
+						 {33, 70, -8, 6},
 						 0,
 						 0,
 						 GAD_ENVIRONMENT_SCREEN_TITLE,
@@ -1996,6 +2138,7 @@ const SubOptionHandle _environment_options[] = {
 	{ENVIRONMENT_LISTER_SIZE, MSG_ENVIRONMENT_SUB_LISTER_DEFAULT, _environment_listersize},
 	{ENVIRONMENT_DESKTOP, MSG_ENVIRONMENT_SUB_DESKTOP, _environment_desktop},
 	{ENVIRONMENT_ICONS, MSG_ENVIRONMENT_SUB_ICONS, _environment_icons},
+	{ENVIRONMENT_ICON_LAYOUT, MSG_ENVIRONMENT_SUB_ICON_LAYOUT, _environment_icon_layout},
 	{ENVIRONMENT_LISTER_COLOURS, MSG_ENVIRONMENT_SUB_LISTER_COLOURS, _environment_listercolours},
 	{ENVIRONMENT_ICON_COLOURS, MSG_ENVIRONMENT_SUB_ICON_COLOURS, _environment_icon_colours},
 	{ENVIRONMENT_PICTURES, MSG_ENVIRONMENT_SUB_PICTURES, _environment_pictures},

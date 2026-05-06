@@ -62,6 +62,21 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 	CopyMem((char *)env->env, (char *)data->config, sizeof(CFG_ENVR));
 	data->env = env;
 
+	// Snapshot the dopus/DOSPatch ENVARC: var so the Lister Display
+	// checkbox reflects the current state.  The variable is read by
+	// libinit.c at dopus5.library open time (see LIBDF_DOS_PATCH); the
+	// GUI commits any change back to ENV: + ENVARC: in the success block
+	// below.  initial+state both start at the loaded value; modified is
+	// flipped by _config_env_store when the new state diverges from
+	// initial (so toggle-on-then-off doesn't dirty the var pointlessly).
+	{
+		char buf[1];
+		BOOL set = (GetVar("dopus/DOSPatch", buf, sizeof(buf), GVF_GLOBAL_ONLY) > -1);
+		data->dos_patch_initial = set;
+		data->dos_patch_state = set;
+		data->dos_patch_modified = FALSE;
+	}
+
 	// Initial palette table
 	data->palette_table = pen_table;
 	data->initial_pen_alloc = pen_alloc;
@@ -1515,6 +1530,23 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 
 		// Unlock configuration
 		FreeSemaphore(&env->lock);
+
+		// Live folder updates / DOS patches: persist the checkbox state to
+		// the dopus/DOSPatch ENVARC: variable, but only if the user actually
+		// changed it - otherwise we'd mass-write the var on every Use even
+		// when nothing about it had been touched.  Cancel skips this whole
+		// block (the Cancel branch above doesn't fall through here), which
+		// preserves the user's original ENV/ENVARC: state on rollback.
+		// Note: the var is read by libinit.c at dopus5.library open time;
+		// the patches won't install/uninstall live, so this requires a DOpus
+		// restart to take full effect.
+		if (data->dos_patch_modified)
+		{
+			if (data->dos_patch_state)
+				SetVar("dopus/DOSPatch", "1", -1, GVF_GLOBAL_ONLY | GVF_SAVE_VAR);
+			else
+				DeleteVar("dopus/DOSPatch", GVF_GLOBAL_ONLY | GVF_SAVE_VAR);
+		}
 	}
 #endif
 
@@ -1828,6 +1860,13 @@ void _config_env_set(config_env_data *data, short option)
 		// Field titles
 		SetGadgetValue(
 			data->option_list, GAD_ENVIRONMENT_FIELD_TITLES, data->config->lister_options & LISTEROPTF_TITLES);
+
+		// Hide padlock gadget
+		SetGadgetValue(
+			data->option_list, GAD_ENVIRONMENT_HIDE_PADLOCK, data->config->lister_options & LISTEROPTF_NO_PADLOCK);
+
+		// Live folder updates / DOS patches (dopus/DOSPatch ENVARC: var)
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_DOS_PATCH, data->dos_patch_state);
 		break;
 
 	// Lister colours
@@ -1877,6 +1916,18 @@ void _config_env_set(config_env_data *data, short option)
 		SetGadgetValue(data->option_list,
 					   GAD_ENVIRONMENT_OPTIONS_SHOW_WBLEFTOUTS,
 					   data->config->display_options & DISPOPTF_SHOW_WBLEFTOUTS);
+		SetGadgetValue(data->option_list,
+					   GAD_ENVIRONMENT_OPTIONS_WB_TITLE,
+					   data->config->display_options & DISPOPTF_WB_TITLE);
+		SetGadgetValue(data->option_list,
+					   GAD_ENVIRONMENT_OPTIONS_USE_WBINFO,
+					   data->config->display_options & DISPOPTF_USE_WBINFO);
+		SetGadgetValue(data->option_list,
+					   GAD_ENVIRONMENT_OPTIONS_ENABLE_SHORTCUTS,
+					   data->config->env_flags & ENVF_ENABLE_SHORTCUTS);
+		SetGadgetValue(data->option_list,
+					   GAD_ENVIRONMENT_OPTIONS_SHOW_DT_FIRST,
+					   data->config->display_options & DISPOPTF_SHOW_DATATYPES_FIRST);
 		break;
 
 	// Pictures
@@ -2052,6 +2103,15 @@ void _config_env_set(config_env_data *data, short option)
 		}
 		break;
 
+	// Icon layout (was dopus/IconSpace*, dopus/IconGrid*, dopus/ReturnOfBenify env vars)
+	case ENVIRONMENT_ICON_LAYOUT:
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_SPACE_X, data->config->env_icon_space_x);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_SPACE_Y, data->config->env_icon_space_y);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_GRID_X, data->config->env_icon_grid_x);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_GRID_Y, data->config->env_icon_grid_y);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_BENIFY, data->config->env_flags & ENVF_BENIFY);
+		break;
+
 	// Icon colours
 	case ENVIRONMENT_ICON_COLOURS:
 
@@ -2187,6 +2247,7 @@ void _config_env_set(config_env_data *data, short option)
 		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_SCREEN_TITLE, (IPTR)data->config->scr_title_text);
 		SetGadgetValue(data->option_list, GAD_SETTINGS_POPUP_DELAY, (ULONG)data->config->settings.popup_delay);
 		SetGadgetValue(data->option_list, GAD_SETTINGS_MAX_OPENWITH, (ULONG)data->config->settings.max_openwith);
+		SetGadgetValue(data->option_list, GAD_SETTINGS_WHEEL_SCROLL_LINES, (ULONG)data->config->env_wheel_scroll_lines);
 		break;
 
 	// Priority
@@ -2287,6 +2348,25 @@ void _config_env_store(config_env_data *data, short option)
 			data->config->lister_options |= LISTEROPTF_TITLES;
 		else
 			data->config->lister_options &= ~LISTEROPTF_TITLES;
+
+		// Hide padlock gadget
+		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_HIDE_PADLOCK))
+			data->config->lister_options |= LISTEROPTF_NO_PADLOCK;
+		else
+			data->config->lister_options &= ~LISTEROPTF_NO_PADLOCK;
+
+		// Live folder updates / DOS patches: track current state and only
+		// flag for write-back if the *net* change vs. the dialog-open
+		// snapshot is non-zero.  Comparing against dos_patch_initial
+		// (rather than the previous dos_patch_state) avoids a redundant
+		// ENVARC: write when the user toggles ON then OFF, or vice versa.
+		// See the success block at the bottom of L_Config_Environment for
+		// the SetVar/DeleteVar call.
+		{
+			BOOL want = (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_DOS_PATCH) != 0);
+			data->dos_patch_state = want;
+			data->dos_patch_modified = (want != data->dos_patch_initial);
+		}
 		break;
 
 	// Lister colours
@@ -2309,7 +2389,9 @@ void _config_env_store(config_env_data *data, short option)
 
 		// Reset flags
 		data->config->display_options &= ~(DISPOPTF_SHOW_APPICONS | DISPOPTF_SHIFT_APPICONS | DISPOPTF_SHOW_TOOLS |
-										   DISPOPTF_HIDE_BAD | DISPOPTF_SHOW_WBLEFTOUTS);
+										   DISPOPTF_HIDE_BAD | DISPOPTF_SHOW_WBLEFTOUTS | DISPOPTF_WB_TITLE |
+										   DISPOPTF_USE_WBINFO | DISPOPTF_SHOW_DATATYPES_FIRST);
+		data->config->env_flags &= ~ENVF_ENABLE_SHORTCUTS;
 
 		// Workbench patches
 		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_APPICONS))
@@ -2322,6 +2404,14 @@ void _config_env_store(config_env_data *data, short option)
 			data->config->display_options |= DISPOPTF_HIDE_BAD;
 		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_SHOW_WBLEFTOUTS))
 			data->config->display_options |= DISPOPTF_SHOW_WBLEFTOUTS;
+		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_WB_TITLE))
+			data->config->display_options |= DISPOPTF_WB_TITLE;
+		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_USE_WBINFO))
+			data->config->display_options |= DISPOPTF_USE_WBINFO;
+		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_ENABLE_SHORTCUTS))
+			data->config->env_flags |= ENVF_ENABLE_SHORTCUTS;
+		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_SHOW_DT_FIRST))
+			data->config->display_options |= DISPOPTF_SHOW_DATATYPES_FIRST;
 		break;
 
 	// Pictures
@@ -2523,6 +2613,45 @@ void _config_env_store(config_env_data *data, short option)
 		}
 		break;
 
+	// Icon layout
+	case ENVIRONMENT_ICON_LAYOUT: {
+		// Read into signed LONG and clamp BEFORE casting to UWORD: an
+		// INTEGER_KIND gadget without GTCustom_MinMax accepts negative input,
+		// and (val < 1) on an unsigned val would silently keep the wrap.
+		// Note: the (LONG) truncation of GetGadgetValue's IPTR is safe because
+		// GTIN_MaxChars=4 in _environment_icon_int_tags constrains values to
+		// [-9999, 9999] -- well within int32 range.  If max-chars ever grows
+		// beyond 9, switch to (IPTR)/intptr_t to avoid losing the sign bit on
+		// x86_64-aros where IPTR is 64-bit.
+		LONG val;
+
+		val = (LONG)GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_SPACE_X);
+		if (val < 1)
+			val = 1;
+		data->config->env_icon_space_x = (UWORD)val;
+
+		val = (LONG)GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_SPACE_Y);
+		if (val < 1)
+			val = 1;
+		data->config->env_icon_space_y = (UWORD)val;
+
+		val = (LONG)GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_GRID_X);
+		if (val < 1)
+			val = 1;
+		data->config->env_icon_grid_x = (UWORD)val;
+
+		val = (LONG)GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_GRID_Y);
+		if (val < 1)
+			val = 1;
+		data->config->env_icon_grid_y = (UWORD)val;
+
+		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_BENIFY))
+			data->config->env_flags |= ENVF_BENIFY;
+		else
+			data->config->env_flags &= ~ENVF_BENIFY;
+		break;
+	}
+
 	// Icon colours
 	case ENVIRONMENT_ICON_COLOURS:
 
@@ -2641,6 +2770,13 @@ void _config_env_store(config_env_data *data, short option)
 			   sizeof(data->config->scr_title_text));
 		data->config->settings.popup_delay = GetGadgetValue(data->option_list, GAD_SETTINGS_POPUP_DELAY);
 		data->config->settings.max_openwith = GetGadgetValue(data->option_list, GAD_SETTINGS_MAX_OPENWITH);
+		{
+			// Signed clamp before UWORD cast (see Icon Layout above).
+			LONG val = (LONG)GetGadgetValue(data->option_list, GAD_SETTINGS_WHEEL_SCROLL_LINES);
+			if (val < 1)
+				val = 1;
+			data->config->env_wheel_scroll_lines = (UWORD)val;
+		}
 		break;
 
 	// Priority

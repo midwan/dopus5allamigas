@@ -39,6 +39,9 @@ For more information on Directory Opus for Windows please see:
 #define CONFIG_VERSION_10 10
 #define CONFIG_VERSION_11 11
 #define CONFIG_VERSION_12 12
+#define CONFIG_VERSION_13 13
+#define CONFIG_VERSION_14 14
+#define CONFIG_VERSION_15 15
 
 // Sort format
 typedef struct
@@ -461,7 +464,24 @@ typedef struct
 
 	unsigned char desktop_popup_default;
 
-	ULONG pad[17];	// Save recompilation
+	// Promoted from ENV: vars in CONFIG_VERSION_14 (issue #49). Steals 8 of
+	// pad[17]'s 68 reserved bytes so on-disk layout stays compatible.
+	// IMPORTANT: if you ever grow CFG_ENVR past its current 72-byte footprint
+	// you must memset(0) the destination before L_IFFReadChunkBytes in
+	// config_open.c -- the IFF reader does NOT zero-fill the trailing buffer
+	// when the on-disk chunk is shorter than sizeof(CFG_ENVR), and the
+	// version-gated migrations in config_default.c rely on the new fields
+	// being zero in pre-v14 configs.
+	UWORD env_icon_space_x;	 // Desktop icon X spacing (was dopus/IconSpaceX)
+	UWORD env_icon_space_y;	 // Desktop icon Y spacing (was dopus/IconSpaceY)
+	UWORD env_icon_grid_x;	 // Desktop icon X grid step, 1 = no grid
+	UWORD env_icon_grid_y;	 // Desktop icon Y grid step, 1 = no grid
+
+	// Promoted in CONFIG_VERSION_15.
+	UWORD env_wheel_scroll_lines;  // Mouse wheel lines per notch (was dopus/WheelScrollLines)
+	UWORD env_pad_15;			   // Pad to keep ULONG alignment
+
+	ULONG pad[14];	// Save recompilation
 
 	char env_BackgroundPic[4][256];	 // Background pictures
 	UWORD env_BackgroundFlags[4];	 // Background flags
@@ -496,6 +516,8 @@ typedef struct
 #define ENVF_CHANGED (1 << 2)		  // Environment has changed
 #define ENVF_DESKTOP_FOLDER (1 << 3)  // Desktop folder popup
 #define ENVF_USE_PATHLIST (1 << 4)	  // Use path list
+#define ENVF_BENIFY (1 << 5)		  // Drop on Desktop saves position permanently (was dopus/ReturnOfBenify)
+#define ENVF_ENABLE_SHORTCUTS (1 << 6) // Extra desktop popup keyboard shortcuts (was dopus/EnableShortcuts)
 
 #define ENVNIF_ENABLE (1 << 0)
 #define ENVNIF_DISCOURAGE (1 << 1)
@@ -556,6 +578,9 @@ enum {
 #define DISPOPTF_REALTIME_SCROLL (1 << 10)	// Real-time icon scrolling
 #define DISPOPTF_THIN_BORDERS (1 << 11)		// Thin borders
 #define DISPOPTF_SHOW_WBLEFTOUTS (1 << 12)	// show workbench's leftout icons from the .backdrop files
+#define DISPOPTF_WB_TITLE (1 << 13)			// Suppress DOpus title-bar clock so WB-style patches can use it
+#define DISPOPTF_USE_WBINFO (1 << 14)		// Route Information requests through OS WBInfo() (e.g. SwazInfo / RAWBInfo)
+#define DISPOPTF_SHOW_DATATYPES_FIRST (1 << 15)	// show.module: prefer datatypes IFF over its built-in IFF reader
 
 // lister options
 #define LISTEROPTF_DEVICES (1 << 0)	   // Device list in new lister
@@ -571,6 +596,8 @@ enum {
 #define LISTEROPTF_SUBDROP (1 << 9)			 // Drop into sub-directories
 #define LISTEROPTF_NOACTIVESELECT (1 << 10)	 // No file select on window activation
 #define LISTEROPTF_VOSTY_ZOOM (1 << 11)		 // Ben Vost zoom mode
+#define LISTEROPTF_FULL_PATH (1 << 12)		 // Show full path in lister title
+#define LISTEROPTF_NO_PADLOCK (1 << 13)		 // Hide padlock gadget from lister title bars
 
 // desktop flags
 #define DESKTOPF_DISTINCT (1 << 0)		  // Distinct icon positions

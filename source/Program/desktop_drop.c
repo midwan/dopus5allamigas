@@ -146,7 +146,7 @@ void desktop_drop(BackdropInfo *info, DOpusAppMessage *msg, UWORD qual)
 				BackdropObject *icon;
 
 				// Permanent?
-				if (GUI->flags2 & GUIF2_BENIFY)
+				if (environment->env->env_flags & ENVF_BENIFY)
 					perm = 1;
 
 				// Get position

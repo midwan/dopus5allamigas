@@ -1643,7 +1643,7 @@ MatchHandle *popup_build_icon_menu(BackdropInfo *info,
 				PopUpNewItem(menu, MSG_ICON_LEAVE_OUT_MENU, MENU_ICON_LEAVE_OUT, 0);
 
 				// Short cut
-				if (GUI->flags2 & GUIF2_ENABLE_SHORTCUTS && (filename || !templeft))
+				if (environment->env->env_flags & ENVF_ENABLE_SHORTCUTS && (filename || !templeft))
 				{
 					PopUpNewItem(menu, MSG_ICONS_SHORTCUT_MENU, MENU_ICON_SHORTCUT, 0);
 					PopUpSeparator(menu);

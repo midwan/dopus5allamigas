@@ -278,6 +278,7 @@ modify it under the terms of the AROS Public License version 1.1.
 #define MSG_SET_CUSTOM 1230
 #define MSG_LOG_ENABLE 1231
 #define MSG_FTP_LOG_DEBUG 1232
+#define MSG_FTP_NO_KEEP_ALIVE 1346
 #define MSG_FTP_GLOBAL 1233
 #define MSG_FTP_GLOBAL_SETTINGS 1234
 #define MSG_FTP_PASSIVE_TRANSFER 1235
@@ -633,6 +634,7 @@ modify it under the terms of the AROS Public License version 1.1.
 #define MSG_SET_CUSTOM_STR "Set Custo_m"
 #define MSG_LOG_ENABLE_STR "Enable Log"
 #define MSG_FTP_LOG_DEBUG_STR "Enable Debug"
+#define MSG_FTP_NO_KEEP_ALIVE_STR "Disable Stayin' Alive _Pings"
 #define MSG_FTP_GLOBAL_STR "Global"
 #define MSG_FTP_GLOBAL_SETTINGS_STR "Global Settings"
 #define MSG_FTP_PASSIVE_TRANSFER_STR "Passive Transfers"
@@ -996,6 +998,7 @@ static const struct CatCompArrayType CatCompArray[] =
     {MSG_SET_CUSTOM,(STRPTR)MSG_SET_CUSTOM_STR},
     {MSG_LOG_ENABLE,(STRPTR)MSG_LOG_ENABLE_STR},
     {MSG_FTP_LOG_DEBUG,(STRPTR)MSG_FTP_LOG_DEBUG_STR},
+    {MSG_FTP_NO_KEEP_ALIVE,(STRPTR)MSG_FTP_NO_KEEP_ALIVE_STR},
     {MSG_FTP_GLOBAL,(STRPTR)MSG_FTP_GLOBAL_STR},
     {MSG_FTP_GLOBAL_SETTINGS,(STRPTR)MSG_FTP_GLOBAL_SETTINGS_STR},
     {MSG_FTP_PASSIVE_TRANSFER,(STRPTR)MSG_FTP_PASSIVE_TRANSFER_STR},
@@ -1587,6 +1590,8 @@ static const char CatCompBlock[] =
     MSG_LOG_ENABLE_STR "\x00\x00"
     "\x00\x00\x04\xD0\x00\x0E"
     MSG_FTP_LOG_DEBUG_STR "\x00\x00"
+    "\x00\x00\x05\x42\x00\x1E"
+    MSG_FTP_NO_KEEP_ALIVE_STR "\x00\x00"
     "\x00\x00\x04\xD1\x00\x08"
     MSG_FTP_GLOBAL_STR "\x00\x00"
     "\x00\x00\x04\xD2\x00\x10"

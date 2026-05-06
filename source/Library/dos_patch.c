@@ -110,7 +110,7 @@ PATCHED_1(BPTR, LIBFUNC L_PatchedCreateDir, d1, char *, name)
 			L_SendNotifyMsg(DN_DOS_ACTION, 0, DNF_DOS_CREATEDIR, 0, (char *)(fib + 1), fib, libbase);
 
 			// Free info block
-			FreeVec(fib);
+			L_FreeMemH(fib);
 		}
 
 		atomic_dec(&usecount[WB_PATCH_CREATEDIR]);
@@ -302,7 +302,7 @@ PATCHED_2(BOOL, LIBFUNC L_PatchedSetFileDate, d1, char *, name, d2, struct DateS
 				L_SendNotifyMsg(DN_DOS_ACTION, 0, DNF_DOS_SETFILEDATE, 0, (char *)(fib + 1), fib, libbase);
 
 				// Free info block
-				FreeVec(fib);
+				L_FreeMemH(fib);
 			}
 
 			// Unlock file
@@ -401,7 +401,7 @@ PATCHED_2(BOOL, LIBFUNC L_PatchedSetComment, d1, char *, name, d2, char *, comme
 				L_SendNotifyMsg(DN_DOS_ACTION, 0, DNF_DOS_SETCOMMENT, 0, (char *)(fib + 1), fib, libbase);
 
 				// Free info block
-				FreeVec(fib);
+				L_FreeMemH(fib);
 			}
 
 			// Unlock file
@@ -498,7 +498,7 @@ PATCHED_2(BOOL, LIBFUNC L_PatchedSetProtection, d1, char *, name, d2, ULONG, mas
 				L_SendNotifyMsg(DN_DOS_ACTION, 0, DNF_DOS_SETPROTECTION, 0, (char *)(fib + 1), fib, libbase);
 
 				// Free info block
-				FreeVec(fib);
+				L_FreeMemH(fib);
 			}
 
 			// Unlock file
@@ -599,7 +599,7 @@ PATCHED_2(BOOL, LIBFUNC L_PatchedRename, d1, char *, oldname, d2, char *, newnam
 		{
 			// Unlock and free fib
 			if (fib)
-				FreeVec(fib);
+				L_FreeMemH(fib);
 			if (lock)
 				UnLock(lock);
 			atomic_dec(&usecount[WB_PATCH_RENAME]);
@@ -638,7 +638,7 @@ PATCHED_2(BOOL, LIBFUNC L_PatchedRename, d1, char *, oldname, d2, char *, newnam
 		}
 
 		// Free info block and lock
-		FreeVec(fib);
+		L_FreeMemH(fib);
 		UnLock(lock);
 
 		// Fix requesters
@@ -740,7 +740,6 @@ PATCHED_2(BPTR, LIBFUNC L_PatchedOpen, d1, char *, name, d2, LONG, accessMode)
 	{
 		struct LibData *data;
 		struct MyLibrary *libbase;
-		struct FileInfoBlock *fib;
 		BPTR file, lock;
 		BOOL create = FALSE;
 		APTR wsave = (APTR)-1;
@@ -811,13 +810,6 @@ PATCHED_2(BPTR, LIBFUNC L_PatchedOpen, d1, char *, name, d2, LONG, accessMode)
 			return file;
 		}
 
-		// Allocate FileInfoBlock and buffer
-		if (!(fib = AllocVec(sizeof(struct FileInfoBlock) + 512, MEMF_CLEAR)))
-		{
-			atomic_dec(&usecount[WB_PATCH_OPEN]);
-			return file;
-		}
-
 		// Disable requesters
 		if (task)
 			task->pr_WindowPtr = (APTR)-1;
@@ -843,29 +835,41 @@ PATCHED_2(BPTR, LIBFUNC L_PatchedOpen, d1, char *, name, d2, LONG, accessMode)
 				ReleaseSemaphore(&data->file_list.lock);
 			}
 
-			// If this was a create operation, we need to send a message now
+			// If this was a create operation, we need to send a message now.
+			// The FIB+512 path scratch buffer is only allocated on this hot
+			// branch - opening for read (the common case) skips the alloc
+			// entirely.  Comes from the shared dos_patch_memory pool so all
+			// the dos_patch.c FIB scratch traffic flows through one arena.
 			if (create)
 			{
-				// Get buffer pointer
-				char *path = (char *)(fib + 1);
+				struct FileInfoBlock *fib;
 
-				// Get full path of parent, and terminate it
-				L_DevNameFromLockDopus(lock, path, 512, libbase);
-				AddPart(path, "", 512);
-
-				// Got path?
-				if (*path)
+				if ((fib = L_AllocMemH(data->dos_patch_memory, sizeof(struct FileInfoBlock) + 512)))
 				{
-					// Examine the new file
-#ifdef USE_64BIT
-					if (L_ExamineHandle64(file, (FileInfoBlock64 *)fib))
-#else
-					if (ExamineFH(file, fib))
-#endif
+					// Get buffer pointer
+					char *path = (char *)(fib + 1);
+
+					// Get full path of parent, and terminate it
+					L_DevNameFromLockDopus(lock, path, 512, libbase);
+					AddPart(path, "", 512);
+
+					// Got path?
+					if (*path)
 					{
-						// Send notification
-						L_SendNotifyMsg(DN_DOS_ACTION, 0, DNF_DOS_CREATE, 0, path, fib, libbase);
+						// Examine the new file
+#ifdef USE_64BIT
+						if (L_ExamineHandle64(file, (FileInfoBlock64 *)fib))
+#else
+						if (ExamineFH(file, fib))
+#endif
+						{
+							// Send notification
+							L_SendNotifyMsg(DN_DOS_ACTION, 0, DNF_DOS_CREATE, 0, path, fib, libbase);
+						}
 					}
+
+					// Free fib
+					L_FreeMemH(fib);
 				}
 			}
 
@@ -873,9 +877,6 @@ PATCHED_2(BPTR, LIBFUNC L_PatchedOpen, d1, char *, name, d2, LONG, accessMode)
 			if (!handle)
 				UnLock(lock);
 		}
-
-		// Free fib
-		FreeVec(fib);
 
 		// Fix requesters
 		if (task)
@@ -967,8 +968,8 @@ PATCHED_1(BOOL, LIBFUNC L_PatchedClose, d1, BPTR, file)
 							task = NULL;
 					}
 
-					// Allocate FileInfoBlock and buffer
-					if ((fib = AllocVec(sizeof(struct FileInfoBlock) + 512, MEMF_CLEAR)))
+					// Allocate FileInfoBlock and buffer from the shared pool
+					if ((fib = L_AllocMemH(data->dos_patch_memory, sizeof(struct FileInfoBlock) + 512)))
 					{
 						char *path = (char *)(fib + 1);
 
@@ -992,7 +993,7 @@ PATCHED_1(BOOL, LIBFUNC L_PatchedClose, d1, BPTR, file)
 						}
 
 						// Free fib
-						FreeVec(fib);
+						L_FreeMemH(fib);
 					}
 
 					// Fix requesters
@@ -1111,7 +1112,12 @@ LONG LIBFUNC L_OriginalWrite(REG(d1, BPTR file),
 
 /******************************************************************************/
 
-// Get information on a filelock
+// Get information on a filelock.
+//
+// Allocates a FileInfoBlock + 512-byte path scratch buffer from the
+// dos_patch_memory pool (LibData.dos_patch_memory).  Caller frees with
+// L_FreeMemH() once it's done sending notifications.  L_AllocMemH falls back
+// to a plain AllocMem if the pool wasn't created (e.g., low-memory libinit).
 struct FileInfoBlock *dospatch_fib(BPTR lock, struct MyLibrary *libbase, BOOL req)
 {
 	struct FileInfoBlock *fib = NULL;
@@ -1142,7 +1148,7 @@ struct FileInfoBlock *dospatch_fib(BPTR lock, struct MyLibrary *libbase, BOOL re
 	if ((parent = ParentDir(lock)))
 	{
 		// Get FileInfoBlock and a buffer
-		if ((fib = AllocVec(sizeof(struct FileInfoBlock) + 512, MEMF_CLEAR)))
+		if ((fib = L_AllocMemH(data->dos_patch_memory, sizeof(struct FileInfoBlock) + 512)))
 		{
 			char *buf;
 
@@ -1169,7 +1175,7 @@ struct FileInfoBlock *dospatch_fib(BPTR lock, struct MyLibrary *libbase, BOOL re
 		// Not ok?
 		if (!ok)
 		{
-			FreeVec(fib);
+			L_FreeMemH(fib);
 			fib = NULL;
 		}
 

@@ -560,6 +560,11 @@ IPC_EntryCode(misc_proc)
 				if (startup->command == MENU_ICON_INFO && environment->env->desktop_flags & DESKTOPF_NO_REMAP)
 					flags = 1;
 
+				// Pass UseWBInfo preference to icon.module (ignored by diskinfo.module)
+				if (startup->command == MENU_ICON_INFO &&
+					(environment->env->display_options & DISPOPTF_USE_WBINFO))
+					flags |= ICON_USE_WBINFO_FLAG;
+
 				// Show info
 				Module_Entry(&list, startup->window->WScreen, ipc, &main_ipc, 0, flags);
 #ifdef __amigaos4__
@@ -895,11 +900,14 @@ IPC_EntryCode(misc_proc)
 			// Get show module
 			if ((ModuleBase = OpenModule("show.module")))
 			{
+				ULONG show_flags = (environment->env->display_options & DISPOPTF_SHOW_DATATYPES_FIRST)
+									   ? SHOW_DATATYPES_FIRST_FLAG
+									   : 0;
 #ifdef __amigaos4__
 				if ((IModule = (struct ModuleIFace *)GetInterface(ModuleBase, "main", 1, NULL)))
 #endif
 					// Show picture
-					Module_Entry(&list, 0, ipc, &main_ipc, 666, 0);
+					Module_Entry(&list, 0, ipc, &main_ipc, 666, show_flags);
 
 #ifdef __amigaos4__
 				DropInterface((struct Interface *)IModule);
@@ -939,7 +947,16 @@ IPC_EntryCode(misc_proc)
 
 				// Or flags for icon module
 				else if (startup->command == FUNC_ICONINFO)
+				{
 					flags = (environment->env->desktop_flags & DESKTOPF_NO_REMAP) ? 1 : 0;
+					if (environment->env->display_options & DISPOPTF_USE_WBINFO)
+						flags |= ICON_USE_WBINFO_FLAG;
+				}
+
+				// Or flags for show module
+				else if (startup->command == FUNC_SHOW &&
+						 (environment->env->display_options & DISPOPTF_SHOW_DATATYPES_FIRST))
+					flags |= SHOW_DATATYPES_FIRST_FLAG;
 
 				// Play?
 				if (startup->command == FUNC_PLAY || startup->command == FUNC_PLAY_QUIET ||

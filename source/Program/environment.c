@@ -915,6 +915,18 @@ int environment_save(Cfg_Environment *env, char *name, short snapshot, CFG_ENVR 
 			env_be->version = AROS_WORD2BE(env_be->version);
 			env_be->desktop_flags = AROS_LONG2BE(env_be->desktop_flags);
 
+			// Promoted ENV: vars from issue #49 (CONFIG_VERSION_14/15) -- byte-swap so
+			// configs are portable between AROS and big-endian targets.  env_pad_15
+			// gets the swap proactively: it's currently always zero (byte-swap
+			// invariant), but if anyone repurposes the slot for a real UWORD value
+			// the swap is already in place rather than waiting for a corruption bug.
+			env_be->env_icon_space_x = AROS_WORD2BE(env_be->env_icon_space_x);
+			env_be->env_icon_space_y = AROS_WORD2BE(env_be->env_icon_space_y);
+			env_be->env_icon_grid_x = AROS_WORD2BE(env_be->env_icon_grid_x);
+			env_be->env_icon_grid_y = AROS_WORD2BE(env_be->env_icon_grid_y);
+			env_be->env_wheel_scroll_lines = AROS_WORD2BE(env_be->env_wheel_scroll_lines);
+			env_be->env_pad_15 = AROS_WORD2BE(env_be->env_pad_15);
+
 			for (i = 0; i < 4; i++)
 				env_be->env_BackgroundFlags[i] = AROS_WORD2BE(env_be->env_BackgroundFlags[i]);
 

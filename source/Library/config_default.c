@@ -321,8 +321,17 @@ void LIBFUNC L_DefaultEnvironment(REG(a0, CFG_ENVR *env))
 	env->env_NewIconsFlags = ENVNIF_ENABLE;
 	env->env_NewIconsPrecision = 16;
 
+	// Icon layout (matches CLEANUP_SPACE_X/Y in backdrop.h; grid 1 = no grid)
+	env->env_icon_space_x = 7;
+	env->env_icon_space_y = 5;
+	env->env_icon_grid_x = 1;
+	env->env_icon_grid_y = 1;
+
+	// Mouse wheel scroll lines (matches the legacy startup default)
+	env->env_wheel_scroll_lines = 3;
+
 	// Set version
-	env->version = CONFIG_VERSION_12;
+	env->version = CONFIG_VERSION_15;
 
 	// Get default settings
 	L_DefaultSettings(&env->settings);
@@ -527,11 +536,105 @@ void LIBFUNC L_UpdateEnvironment(REG(a0, CFG_ENVR *env))
 		env->settings.max_filename = 30;
 	}
 
+	// Pre-version 13: import legacy ENV: flags into the config so users see
+	// their previous behaviour after upgrading. Empty values count as "off".
+	if (env->version < CONFIG_VERSION_13)
+	{
+		char buf[4];
+
+		if (GetVar("dopus/HidePadlock", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0 && buf[0] != '0')
+			env->lister_options |= LISTEROPTF_NO_PADLOCK;
+
+		if (GetVar("dopus/WorkbenchTitle", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0 && buf[0] != '0')
+			env->display_options |= DISPOPTF_WB_TITLE;
+
+		// Note: legacy UseWBInfo used `> 0` (any value enables) -- preserve that semantics
+		if (GetVar("dopus/UseWBInfo", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+			env->display_options |= DISPOPTF_USE_WBINFO;
+	}
+
+	// Pre-version 14: import desktop icon-layout vars and ReturnOfBenify into config.
+	// Old configs have these fields zeroed, so unconditionally fall back to defaults.
+	if (env->version < CONFIG_VERSION_14)
+	{
+		char buf[14];
+
+		// Legacy semantics: an explicit env value clamps to a minimum of 1;
+		// only an absent env var falls back to the historical defaults (7/5).
+		// (atoi() can return a negative number for "-3"; clamp BEFORE the
+		// UWORD cast or the signedness flip would store 65533.)
+		if (GetVar("dopus/IconSpaceX", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+		{
+			int v = atoi(buf);
+			if (v < 1)
+				v = 1;
+			env->env_icon_space_x = (UWORD)v;
+		}
+		if (env->env_icon_space_x < 1)
+			env->env_icon_space_x = 7;
+
+		if (GetVar("dopus/IconSpaceY", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+		{
+			int v = atoi(buf);
+			if (v < 1)
+				v = 1;
+			env->env_icon_space_y = (UWORD)v;
+		}
+		if (env->env_icon_space_y < 1)
+			env->env_icon_space_y = 5;
+
+		if (GetVar("dopus/IconGridX", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+		{
+			int v = atoi(buf);
+			if (v < 1)
+				v = 1;
+			env->env_icon_grid_x = (UWORD)v;
+		}
+		if (env->env_icon_grid_x < 1)
+			env->env_icon_grid_x = 1;
+
+		if (GetVar("dopus/IconGridY", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+		{
+			int v = atoi(buf);
+			if (v < 1)
+				v = 1;
+			env->env_icon_grid_y = (UWORD)v;
+		}
+		if (env->env_icon_grid_y < 1)
+			env->env_icon_grid_y = 1;
+
+		if (GetVar("dopus/ReturnOfBenify", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0 && buf[0] != '0')
+			env->env_flags |= ENVF_BENIFY;
+	}
+
+	// Pre-version 15: import WheelScrollLines, EnableShortcuts and ShowUseDatatypesFirst.
+	if (env->version < CONFIG_VERSION_15)
+	{
+		char buf[14];
+
+		if (GetVar("dopus/WheelScrollLines", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+		{
+			int v = atoi(buf);
+			if (v < 1)
+				v = 1;
+			env->env_wheel_scroll_lines = (UWORD)v;
+		}
+		if (env->env_wheel_scroll_lines < 1)
+			env->env_wheel_scroll_lines = 3;
+
+		if (GetVar("dopus/EnableShortcuts", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0 && buf[0] != '0')
+			env->env_flags |= ENVF_ENABLE_SHORTCUTS;
+
+		// Legacy ShowUseDatatypesFirst used `> 0` (any value enables) -- preserve that
+		if (GetVar("dopus/ShowUseDatatypesFirst", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+			env->display_options |= DISPOPTF_SHOW_DATATYPES_FIRST;
+	}
+
 	fix_list_format_display(&env->list_format);
 	fix_list_format_colours(&env->list_format, env->version < CONFIG_VERSION_12);
 
 	// Fix version
-	env->version = CONFIG_VERSION_12;
+	env->version = CONFIG_VERSION_15;
 
 	// Is themes path empty?
 	if (!env->themes_location[0])
