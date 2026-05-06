@@ -190,6 +190,12 @@ struct LibData
 	APTR dos_list_memory;
 	struct SignalSemaphore dos_lock;
 
+	// Pool for FIB+512 scratch buffers used by the patched DOS functions
+	// (CreateDir, SetFileDate, SetComment, SetProtection, Rename) via
+	// dospatch_fib().  Avoids hitting the OS heap on every patched call
+	// when the LIBDF_DOS_PATCH flag is set.  See dos_patch.c.
+	APTR dos_patch_memory;
+
 	// struct Library		*new_icon_base;
 	ULONG pad5;
 

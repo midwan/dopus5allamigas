@@ -1343,6 +1343,12 @@ int UserLibInit(REG(a6, struct MyLibrary *libbase))
 	// Create some memory handles
 	data->memory = L_NewMemHandle(sizeof(IPCMessage) << 5, sizeof(IPCMessage) << 4, MEMF_CLEAR | MEMF_PUBLIC);
 	data->dos_list_memory = L_NewMemHandle(1024, 512, MEMF_CLEAR);
+	// Scratch pool for dos_patch.c (FIB + 512-byte path buffer = ~764 bytes
+	// per call).  Puddle holds ~5 allocations; threshold is set so they all
+	// flow through the pool rather than direct AllocMem.  MEMF_PUBLIC flips
+	// on the pool's internal semaphore since patched DOS functions can run
+	// concurrently from any task.
+	data->dos_patch_memory = L_NewMemHandle(4096, 1024, MEMF_CLEAR | MEMF_PUBLIC);
 
 	// Memory handle for a bit of chip memory
 	// chip_memory=L_NewMemHandle(4096,2048,MEMF_CLEAR|MEMF_CHIP|MEMF_PUBLIC);
@@ -1490,6 +1496,7 @@ void UserLibCleanup(REG(a6, struct MyLibrary *libbase))
 		// Free memory
 		L_FreeMemHandle(data->memory);
 		L_FreeMemHandle(data->dos_list_memory);
+		L_FreeMemHandle(data->dos_patch_memory);
 
 		// Close timer
 		if (data->TimerBase)
