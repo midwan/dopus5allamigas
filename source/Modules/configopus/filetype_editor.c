@@ -1201,6 +1201,15 @@ void filetypeed_add_iconmenu(filetype_ed_data *data)
 	fndata->func = func;
 	func->function.flags2 |= FUNCF2_LABEL_FUNC;
 
+	// Mark this node as a freshly-created placeholder. If the user
+	// cancels the editor instead of clicking Use, the IPC_GOODBYE
+	// handler will see this flag via filetypeed_check_iconmenu and
+	// drop the row instead of leaving a stub behind. The flag is
+	// only meaningful before receive_edit runs; afterwards
+	// update_iconmenu rebuilds the icon_list and every node starts
+	// over with fresh = FALSE (AllocVec MEMF_CLEAR).
+	fndata->fresh = TRUE;
+
 	// Pre-populate with a default label so the new entry has a name
 	// even if the user clicks Use without touching the Label gadget.
 	// filetypeed_receive_edit drops entries with an empty/missing
@@ -1303,8 +1312,13 @@ BOOL filetypeed_check_iconmenu(filetype_ed_data *data, Att_Node *node, BOOL del)
 	// Get data pointer
 	fndata = (func_node *)node->data;
 
-	// Invalid function?
-	if (del || !fndata->func || IsMinListEmpty(&fndata->func->instructions))
+	// Invalid / placeholder function?
+	// - del: explicit delete request
+	// - !fndata->func / empty instructions: no real content
+	// - fresh: placeholder from Add that the user cancelled out of
+	//   (its instructions list contains only the seeded INST_LABEL,
+	//   so the IsMinListEmpty test alone wouldn't catch it).
+	if (del || !fndata->func || IsMinListEmpty(&fndata->func->instructions) || fndata->fresh)
 	{
 		// Detach list from listview
 		SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, (APTR)~0);

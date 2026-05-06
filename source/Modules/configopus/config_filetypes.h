@@ -189,6 +189,7 @@ typedef struct
 {
 	Cfg_Function *func;
 	IPCData *editor;
+	BOOL fresh;	 // Placeholder created by Add, not yet accepted via Use
 } func_node;
 
 void filetype_read_list(APTR, struct List *);
