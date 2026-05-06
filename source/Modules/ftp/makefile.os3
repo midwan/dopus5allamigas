@@ -9,11 +9,14 @@ include ../module.common
 LIBS := $(filter-out -lamiga,$(LIBS)) -lamisslstubs -lamiga
 
 CROSS_ROOT ?= /opt/m68k-amigaos
-SFTP_TARGET := m68k-amigaos
+# Match the dopus5 CPU target so the bundled libssh2 stays in sync, and
+# isolate the libssh2 prefix dir (third_party/libssh2/build/<target>/) so
+# 68020-60 and 68000 builds don't clobber each other's intermediate output.
+SFTP_TARGET := m68k-amigaos$(OS3_SUFFIX)
 SFTP_DEP_CC := m68k-amigaos-gcc
 SFTP_DEP_AR := m68k-amigaos-ar
 SFTP_DEP_RANLIB := m68k-amigaos-ranlib
-SFTP_DEP_CFLAGS := --std=gnu99 -m68020-60 -mtune=68030 -Os -fomit-frame-pointer -noixemul
+SFTP_DEP_CFLAGS := --std=gnu99 $(CPUFLAGS) -Os -fomit-frame-pointer -noixemul
 SFTP_DEP_CPPFLAGS := -I$(CROSS_ROOT)/usr/include -D__USE_INLINE__
 SFTP_DEP_LIBS := -lamisslstubs -lamisslauto -L$(CROSS_ROOT)/usr/lib -lz
 include makefile.sftp
@@ -22,9 +25,9 @@ SHELL:= sh
 NEWDATE  := $(shell date +%d.%m.%Y)
 
 # NAME is assigned in makefile.objs
-DESTDIR  := ../../bin.os3
+DESTDIR  := ../../bin.os3$(OS3_SUFFIX)
 TARGET   := $(DESTDIR)/$(NAME)
-OBJDIR  := .objects/os3
+OBJDIR  := .objects/os3$(OS3_SUFFIX)
 
 REMOVE = rm -f
 MAKEDIR := mkdir -p

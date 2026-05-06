@@ -5,9 +5,9 @@ SHELL:= sh
 NEWDATE  := $(shell date +%d.%m.%Y)
 
 NAME := dopus5.library
-DESTDIR  := ../bin.os3
+DESTDIR  := ../bin.os3$(OS3_SUFFIX)
 TARGET   := $(DESTDIR)/$(NAME)
-OBJDIR  := .objects/os3
+OBJDIR  := .objects/os3$(OS3_SUFFIX)
 
 LDFLAGS  += -nostartfiles
 

@@ -1,3 +1,51 @@
+[dopus5allamigas next] OS3: add separate 68000 build + drop obsolete Documents drawer
+Program remains at 5.100.  No module version changes.
+
+Source / makefile, makefile.common, Modules/makefile, Misc/C/makefile,
+Library/makefile.os3, Program/makefile.os3, Modules/*/makefile.os3,
+Misc/C/*/makefile.os3, Modules/ftp/makefile.os3:
+- New `make os3-68000` target produces a plain 68000 binary (-m68000)
+  alongside the existing 68020-60/68030-tuned `make os3` build, so users
+  on stock A500/A600/A1200 hardware (without an accelerator) can run
+  DOpus5 without needing the 020+ variant.  The release archive is
+  named DOpus5_<rev>_os3-68000.lha to keep both packages addressable
+  side-by-side (issue #51).
+- Driven by a new `cpu` variable, exported from the top-level makefile
+  and consumed by makefile.common, which now picks CPUFLAGS
+  conditionally (cpu=68000 -> -m68000; default -> -m68020-60 -mtune=68030)
+  and also exposes OS3_SUFFIX so each makefile.os3 writes to
+  bin.os3$(OS3_SUFFIX) and .objects/os3$(OS3_SUFFIX) without clobbering
+  the default OS3 build's outputs.
+- The bundled libssh2 in Modules/ftp uses the same CPUFLAGS and a
+  per-CPU SFTP_TARGET ("m68k-amigaos$(OS3_SUFFIX)") so its prefix dir
+  (third_party/libssh2/build/<target>/) is also isolated between the
+  two CPU variants.
+- The os3-68000 detection comes BEFORE the os3 detection in every
+  platform-detect block (top makefile, Modules/makefile, Misc/C/makefile)
+  because findstring(os3, ...) would otherwise also match os3-68000.
+- .gitignore: ignore the new bin.os3-68000 output dir.
+
+archive/basedata.lha:
+- Dropped the DOpus5/Documents/ drawer (the leftover .info icons for
+  DOpus55.pdf / DOpus582.pdf, which themselves were removed long ago)
+  and the orphan DOpus5/Documents.info drawer icon.  All user-facing
+  documentation already lives under DOpus5/Help/ as AmigaGuide.
+
+Source / makefile (release-package):
+- Stopped creating the empty DOpus5/Documents/ drawer in the release
+  staging tree and stopped copying THIRD_PARTY_NOTICES.md into it.  The
+  notice still lives at the repo root for binary distributors that need
+  it; it just no longer ships inside the .lha.
+
+.github/workflows/makefile.yml:
+- Added os3-68000 to the build matrix (debug + release) and the
+  sftp-build matrix so the new variant has full CI parity with os3.
+  The os3-68000 release archive is also picked up by the release-action
+  glob list on tag pushes.
+
+- Resolves #51.
+2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
+
 [dopus5allamigas next] dopus5.h / dopus_config.h: document OPUS vs EPUS FORM ids
 Program remains at 5.100.  No module version changes.  Comment-only.
 

@@ -39,6 +39,7 @@ jobs:
       matrix:
         platform:
           - { name: os3, image: "sacredbanana/amiga-compiler:m68k-amigaos", ftp_makefile: "makefile.os3", ftp_flags: "" }
+          - { name: os3-68000, image: "sacredbanana/amiga-compiler:m68k-amigaos", ftp_makefile: "makefile.os3", ftp_flags: "cpu=68000" }
           - { name: os4, image: "sacredbanana/amiga-compiler:ppc-amigaos", ftp_makefile: "makefile.os4", ftp_flags: "" }
           - { name: mos, image: "sacredbanana/amiga-compiler:ppc-morphos", ftp_makefile: "makefile.mos", ftp_flags: "" }
 
@@ -78,6 +79,7 @@ jobs:
       matrix:
         platform:
           - { name: os3, image: "sacredbanana/amiga-compiler:m68k-amigaos", package_image: "sacredbanana/amiga-compiler:m68k-amigaos" }
+          - { name: os3-68000, image: "sacredbanana/amiga-compiler:m68k-amigaos", package_image: "sacredbanana/amiga-compiler:m68k-amigaos" }
           - { name: os4, image: "sacredbanana/amiga-compiler:ppc-amigaos", package_image: "sacredbanana/amiga-compiler:ppc-amigaos" }
           - { name: mos, image: "sacredbanana/amiga-compiler:ppc-morphos", package_image: "sacredbanana/amiga-compiler:ppc-morphos" }
           - { name: i386-aros, image: "midwan/aros-compiler:i386-aros", package_image: "sacredbanana/amiga-compiler:m68k-amigaos" }
@@ -119,7 +121,7 @@ jobs:
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "artifacts/DOpus5_*_os3.lha,artifacts/DOpus5_*_os4.lha,artifacts/DOpus5_*_mos.lha,artifacts/DOpus5_*_i386-aros.lha,artifacts/DOpus5_*_x86_64-aros.lha"
+          artifacts: "artifacts/DOpus5_*_os3.lha,artifacts/DOpus5_*_os3-68000.lha,artifacts/DOpus5_*_os4.lha,artifacts/DOpus5_*_mos.lha,artifacts/DOpus5_*_i386-aros.lha,artifacts/DOpus5_*_x86_64-aros.lha"
           generateReleaseNotes: true
           allowUpdates: true
         env:
