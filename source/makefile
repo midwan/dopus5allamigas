@@ -242,6 +242,7 @@ endif
 	@$(COPY) bin.$(NAME)/LoadDB $(RELEASE_ROOT)/C
 	@$(COPY) bin.$(NAME)/viewfont $(RELEASE_ROOT)/C
 	@$(COPY) ../documents/*.guide $(RELEASE_ROOT)/Help
+	@$(COPY) ../THIRD_PARTY_NOTICES.md $(RELEASE_ROOT)/Help
 ifeq ($(log), yes)
 	@$(COPY) ../ChangeLog $(RELEASE_ROOT)
 endif

@@ -33,9 +33,10 @@ archive/basedata.lha:
 
 Source / makefile (release-package):
 - Stopped creating the empty DOpus5/Documents/ drawer in the release
-  staging tree and stopped copying THIRD_PARTY_NOTICES.md into it.  The
-  notice still lives at the repo root for binary distributors that need
-  it; it just no longer ships inside the .lha.
+  staging tree.  THIRD_PARTY_NOTICES.md still ships inside the .lha
+  (binary distributors need it for license compliance), but it now
+  lives next to the AmigaGuide files in DOpus5/Help/ instead of having
+  its own one-file drawer.
 
 .github/workflows/makefile.yml:
 - Added os3-68000 to the build matrix (debug + release) and the
