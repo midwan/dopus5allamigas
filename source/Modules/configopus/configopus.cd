@@ -900,10 +900,10 @@ MSG_ENVIRONMENT_ICON_SPACE_Y (//)
 Icon Spacing _Y:
 ;
 MSG_ENVIRONMENT_ICON_GRID_X (//)
-Icon Grid X (1 = no grid):
+Icon Grid X:
 ;
 MSG_ENVIRONMENT_ICON_GRID_Y (//)
-Icon Grid Y (1 = no grid):
+Icon Grid Y:
 ;
 MSG_ENVIRONMENT_BENIFY (//)
 _Drop on Desktop Saves Position

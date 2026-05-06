@@ -903,8 +903,8 @@
 	#define MSG_ENVIRONMENT_ICON_LAYOUT_TITLE_STR "Desktop Icon Arrangement"
 	#define MSG_ENVIRONMENT_ICON_SPACE_X_STR "Icon Spacing _X:"
 	#define MSG_ENVIRONMENT_ICON_SPACE_Y_STR "Icon Spacing _Y:"
-	#define MSG_ENVIRONMENT_ICON_GRID_X_STR "Icon Grid X (1 = no grid):"
-	#define MSG_ENVIRONMENT_ICON_GRID_Y_STR "Icon Grid Y (1 = no grid):"
+	#define MSG_ENVIRONMENT_ICON_GRID_X_STR "Icon Grid X:"
+	#define MSG_ENVIRONMENT_ICON_GRID_Y_STR "Icon Grid Y:"
 	#define MSG_ENVIRONMENT_BENIFY_STR "_Drop on Desktop Saves Position"
 	#define MSG_ENVIRONMENT_OPTIONS_ENABLE_SHORTCUTS_STR "Enable Desktop _Keyboard Shortcuts"
 	#define MSG_ENVIRONMENT_OPTIONS_SHOW_DT_FIRST_STR "Prefer Datatypes for Showing Pictures"
@@ -2373,9 +2373,9 @@ STATIC CONST UBYTE CatCompBlock[] = {"\x00\x00\x00\x01\x00\x04" MSG_OKAY_STR
 									 "\x00\x00"
 									 "\x00\x00\x59\xF6\x00\x12" MSG_ENVIRONMENT_ICON_SPACE_Y_STR
 									 "\x00\x00"
-									 "\x00\x00\x59\xF7\x00\x1C" MSG_ENVIRONMENT_ICON_GRID_X_STR
+									 "\x00\x00\x59\xF7\x00\x0E" MSG_ENVIRONMENT_ICON_GRID_X_STR
 									 "\x00\x00"
-									 "\x00\x00\x59\xF8\x00\x1C" MSG_ENVIRONMENT_ICON_GRID_Y_STR
+									 "\x00\x00\x59\xF8\x00\x0E" MSG_ENVIRONMENT_ICON_GRID_Y_STR
 									 "\x00\x00"
 									 "\x00\x00\x59\xF9\x00\x21" MSG_ENVIRONMENT_BENIFY_STR
 									 "\x00\x00"
