@@ -1,9 +1,9 @@
 @database dopus5
 @master dopus5.guide
-@$VER: Dopus5Guide 57.9 (12.5.2014)
+@$VER: Dopus5Guide 58.0 (6.5.2026)
 @author "Mark Anderson, Andrew Dunbar, Dr Greg Perry, Leo Davidson and Dave Clarke"
 @(c) "Directory Opus 5 Help Guide (c) GPSoftware 1999"
-@(c) "Directory Opus 5 Help Guide (c) DOPUS5 Open Source Team 2012-2014"
+@(c) "Directory Opus 5 Help Guide (c) DOPUS5 Open Source Team 2012-2026"
 @index Index
 
 @remark v57.5 - added sections on DOpus versions and Environment variables.
@@ -13,6 +13,15 @@
 @remark v57.7 - bit more highlighting of items, nothing really important...
 @remark v57.8 - forgot a couple of variables, (Player & NoBeeGees).
 @remark v57.9 - minor updates (copyright etc.) for open source.
+@remark v58.0 - issue #58 refresh: per-tab Environment editor pages now
+                describe every gadget, new Icon Layout tab documented,
+                Format Requester picks up FFS-LNFS + PFS3 detection,
+                File Type Editor picks up the icon-menu Up/Down +
+                drag-reorder rework, new "Live Folder Updates" entry
+                in Lister Display, missing button-bank prompts and
+                Workbench-order backdrop sort documented, dangling
+                "Manual Ref:" page-number footnotes dropped now that
+                the printed source manual is no longer in-tree.
 
 @node "Main" "dopus5.guide"
 Help Introduction for Directory Opus 5
@@ -83,6 +92,7 @@ that item and then press the help key before selecting it.
   @{" Environment, Desktop           " link "Environment - Desktop"}  @{" Environment, Directories       " link "Environment - Directories"}
   @{" Environment, Display           " link "Environment - Display"}  @{" Environment, Hide Method       " link "Environment - Hide Method"}
   @{" Environment, Icon Display      " link "Environment - Icon Display"}  @{" Environment, Icon Settings     " link "Environment - Icon Settings"}
+  @{" Environment, Icon Layout       " link "Environment - Icon Layout"}
   @{" Environment, Lister Colours    " link "Environment - Lister Colours"}  @{" Environment, Lister Default    " link "Environment - Lister Default"}
   @{" Environment, Lister Display    " link "Environment - Lister Display"}  @{" Environment, Lister Options    " link "Environment - Lister Options"}
   @{" Environment, Locale            " link "Environment - Locale"}  @{" Environment, Miscellaneous     " link "Environment - Miscellaneous"}
@@ -95,14 +105,14 @@ that item and then press the help key before selecting it.
   @{" FinishSection                  " link "FinishSection"}  @{" FixIcons                       " link "FixIcons"}
   @{" Flash                          " link "Flash"}  @{" Format                         " link "Format"}
   @{" Format Requester               " link "Format Requester"}  @{" FreeCaches                     " link "FreeCaches"}
-  @{" FTPAdd                         " link "FTPAdd"}  @{" FTPAddressbook                 " link "FTPAddressbook"}
+  @{" FTPAdd                         " link "FTPAdd"}  @{" FTPAddressBook                 " link "FTPAddressBook"}
   @{" FTPCommand                     " link "FTPCommand"}  @{" FTPConnect                     " link "FTPConnect"}
   @{" FTPOptions                     " link "FTPOptions"}  @{" FTPQuit                        " link "FTPQuit"}
   @{" FTPSetVar                      " link "FTPSetVar"}  @{" Function Editor                " link "Function Editor"}
   @{" GetSizes                       " link "GetSizes"}  @{" HexRead                        " link "HexRead"}
-  @{" Hide                           " link "Hide"}  @{" Hotkey Editor                  " link "Hotkey editor"}
+  @{" Hide                           " link "Hide"}  @{" Hotkey Editor                  " link "Hotkey Editor"}
   @{" Icon Popup, Close              " link "Icon Popup - Close"}  @{" Icon Popup, Custom             " link "Icon Popup - Custom"}
-  @{" Icon Popup, Open               " link "Icon Popup - Open"}  @{" Icon Popup, Open in New Lister " link "Icon Popup - Open in New Lister"}
+  @{" Icon Popup, Open               " link "Icon Popup - Open"}  @{" Icon Popup, Open in New Lister " link "Icon Popup - Open In New Lister"}
   @{" Icon Popup, Open With          " link "Icon Popup - Open With"}  @{" IconInfo                       " link "IconInfo"}
   @{" Icons, Arrange Icons           " link "Icons - Arrange Icons"}  @{" Icons, Cleanup                 " link "Icons - CleanUp"}
   @{" Icons, Copy                    " link "Icons - Copy"}  @{" Icons, Delete                  " link "Icons - Delete"}
@@ -178,18 +188,18 @@ Opus 5 supports the following internal commands:
 @{" CheckFit        " link "CheckFit"} @{" CleanUp         " link "CleanUp"} @{" ClearSizes      " link "ClearSizes"} @{" CLI             " link "CLI"}
 @{" CloseButtons    " link "CloseButtons"} @{" Comment         " link "Comment"} @{" Configure       " link "Configure"} @{" Confirm         " link "Confirm"}
 @{" ConvertTheme    " link "ConvertTheme"} @{" Copy            " link "Copy"} @{" CopyAs          " link "CopyAs"} @{" CreateFiletype  " link "CreateFiletype"}
-@{" DateStamp       " link "DateStamp"} @{" Delete          " link "Delete"} @{" DeviceList      " link "DeviceList"} @{" DiskCopy        " link "DiskCopy"}
+@{" DateStamp       " link "DateStamp"} @{" Delete          " link "Delete"} @{" DeviceList      " link "DeviceList"} @{" DiskCopy        " link "Diskcopy"}
 @{" DiskInfo        " link "DiskInfo"} @{" DoubleClick     " link "DoubleClick"} @{" DragNDrop       " link "DragNDrop"} @{" Duplicate       " link "Duplicate"}
 @{" Encrypt         " link "Encrypt"} @{" FindFile        " link "FindFile"} @{" FindFiletype    " link "FindFiletype"} @{" FinishSection   " link "FinishSection"}
 @{" FixIcons        " link "FixIcons"} @{" Flash           " link "Flash"} @{" Format          " link "Format"} @{" FreeCaches      " link "FreeCaches"}
-@{" FTPAdd          " link "FTPAdd"} @{" FTPAddressbook  " link "FTPAddressbook"} @{" FTPCommand      " link "FTPCommand"} @{" FTPConnect      " link "FTPConnect"}
+@{" FTPAdd          " link "FTPAdd"} @{" FTPAddressBook  " link "FTPAddressBook"} @{" FTPCommand      " link "FTPCommand"} @{" FTPConnect      " link "FTPConnect"}
 @{" FTPOptions      " link "FTPOptions"} @{" FTPQuit         " link "FTPQuit"} @{" FTPSetVar       " link "FTPSetVar"} @{" GetSizes        " link "GetSizes"}
 @{" HexRead         " link "HexRead"} @{" Hide            " link "Hide"} @{" IconInfo        " link "IconInfo"} @{" Join            " link "Join"}
 @{" LeaveOut        " link "LeaveOut"} @{" LoadButtons     " link "LoadButtons"} @{" LoadEnvironment " link "LoadEnvironment"} @{" LoadFonts       " link "LoadFonts"}
 @{" LoadTheme       " link "LoadTheme"} @{" MakeDir         " link "MakeDir"} @{" MakeLink        " link "MakeLink"} @{" MakeLinkAs      " link "MakeLinkAs"}
 @{" Move            " link "Move"} @{" MoveAs          " link "MoveAs"} @{" None            " link "None"} @{" Parent          " link "Parent"}
 @{" Play            " link "Play"} @{" Print           " link "Print"} @{" PrintDir        " link "PrintDir"} @{" Protect         " link "Protect"}
-@{" Quit            " link "Quit"} @{" Read            " link "Read"} @{" Rename          " link "Rename"} @{" ReSelect        " link "ReSelect"}
+@{" Quit            " link "Quit"} @{" Read            " link "Read"} @{" Rename          " link "Rename"} @{" ReSelect        " link "Reselect"}
 @{" Reveal          " link "Reveal"} @{" Root            " link "Root"} @{" Run             " link "Run"} @{" SaveTheme       " link "SaveTheme"}
 @{" ScanDir         " link "ScanDir"} @{" Search          " link "Search"} @{" Select          " link "Select"} @{" Set             " link "Set"}
 @{" SetAsBackground " link "SetAsBackground"} @{" Show            " link "Show"} @{" SmartRead       " link "SmartRead"} @{" Split           " link "Split"}
@@ -214,7 +224,6 @@ Default icons are used.
 
 This command operates on all files selected in all current @{" SRCE " link "Source"} listers.
 
-Manual Ref: 5.5 - 98, 143
 @endnode
 
 @node "Alarm" "Alarm"
@@ -226,7 +235,6 @@ has finished.
 
 See also @{" Beep " link "Beep"}, and @{" Flash " link "Flash"}.
 
-Manual Ref: 5.5 - 98
 @endnode
 
 @node "All" "All"
@@ -237,7 +245,6 @@ directory windows.
 
 See also @{" None " link "None"}, @{" Select " link "Select"}, @{" Reselect " link "Reselect"}, and @{" Toggle " link "Toggle"}.
 
-Manual Ref: 5.5 - 98
 @endnode
 
 @node "AnsiRead" "AnsiRead"
@@ -251,7 +258,6 @@ execute until the reader has closed.
 
 See also @{" HexRead " link "HexRead"}, @{" Read " link "Read"}, and @{" SmartRead " link "SmartRead"}.
 
-Manual Ref: 5.5 - 99
             5.8 - 106
 @endnode
 
@@ -260,7 +266,6 @@ Assign
 
 Use this command to add an assign to the current directory.
 
-Manual Ref: 5.5 - 99
 @endnode
 
 @node "Beep" "Beep"
@@ -271,7 +276,6 @@ could use this command to signify that a command has finished.
 
 See also @{" Alarm " link "Alarm"}, and @{" Flash " link "Flash"}.
 
-Manual Ref: 5.5 - 100
 @endnode
 
 @node "BuildTheme" "BuildTheme"
@@ -285,7 +289,6 @@ files in the D5Themes: directory.  When you have used the BuildTheme command,
 you can theoretically LHA both the theme file and the sub-directory and
 distribute it to other users.
 
-Manual Ref: 5.8 - 14
 @endnode
 
 @node "CacheList" "CacheList"
@@ -299,7 +302,6 @@ one by one.
 If there is no current @{" SRCE " link "Source"} lister, the command will open a new lister. If
 the "NEW" switch is specified, a new lister will always be opened.
 
-Manual Ref: 5.5 - 100
 @endnode
 
 @node "CheckFit" "CheckFit"
@@ -313,7 +315,6 @@ which will fit on the destination drive.
 CheckFit works between ALL @{" SRCE " link "Source"} directories to the first @{" DEST " link "Destination"} directory
 ONLY.
 
-Manual Ref: 5.5 - 100
 @endnode
 
 @node "CleanUp" "CleanUp"
@@ -324,7 +325,6 @@ or left-outs that no longer exist.  It will only do this if the volume they
 are on is available (this will stop it from removing entries for removable
 media).
 
-Manual Ref: 5.5 - 100
 @endnode
 
 @node "ClearSizes" "ClearSizes"
@@ -349,7 +349,6 @@ commands too. ARexx commands must be preceeded by a + symbol.
 
 Try entering 'help' in the CLI for more information.
 
-Manual Ref: 5.5 - 101
 @endnode
 
 @node "CloseButtons" "CloseButtons"
@@ -372,7 +371,6 @@ Start Menus.
 The ICONIFY switch will cause the button bank to be iconified rather than
 closed.
 
-Manual Ref: 5.8 - 61
 @endnode
 
 @node "Comment" "Comment"
@@ -383,7 +381,6 @@ to edit existing comments.  The maximum length of a comment is 79
 characters.  If any directories are selected to comment, the
 @{" Recursive Filter " link "Settings - Filter"} will be used to determine which files will be commented.
 
-Manual Ref: 5.5 - 101
 @endnode
 
 @node "Configure" "Configure"
@@ -392,7 +389,6 @@ Configure
 This command brings up the @{" List Format Editor " link "Lister Format"} for the current @{" SRCE " link "Source"}
 lister which allows you to change the format of the lister's display.
 
-Manual Ref: 5.5 - 101, 43
             5.8 - 106
 @endnode
 
@@ -404,7 +400,6 @@ confirm the continuation of the present action.  This command allows the
 implementation of a safety net, as would be associated with a delete
 command.
 
-Manual Ref: 5.5 - 101
 @endnode
 
 @node "ConvertTheme" "ConvertTheme"
@@ -423,7 +418,6 @@ NOTE: This command does not perform any actual conversion of file formats,
       You will get much better results if you first convert the files to
       native Amiga formats such as ILBM and 8SVX using third party programs.
 
-Manual Ref: 5.8 - 14, 15, 16
 @endnode
 
 @node "Copy" "Copy"
@@ -455,7 +449,6 @@ The NEWER switch is similar to the UPDATE switch except it will only copy
 files that either do not exist or which have a later datestamp than the
 existing file.
 
-Manual Ref: 5.8 - 62, 106
 @endnode
 
 @node "CopyAs" "CopyAs"
@@ -480,7 +473,6 @@ the same disk. This emulates the behaviour when dragging and dropping
 icons; within the same disk, the files are moved, when dropped on a
 different disk the files are copied.
 
-Manual Ref: 5.8 - 62, 106
 @endnode
 
 @node "CreateFiletype" "CreateFiletype"
@@ -490,7 +482,6 @@ This command invokes the @{" Filetype Creator " link "Filetype Creator"} request
 useful for automatically making filetypes for files if you do not know much
 about file formats.
 
-Manual Ref: 5.5 - 102, 153
 @endnode
 
 @node "DateStamp" "DateStamp"
@@ -512,7 +503,6 @@ requester.
 
 Choose 'Ok' or press return to set the datestamp one file at a time.
 
-Manual Ref: 5.5 - 102
 @endnode
 
 @node "Delete" "Delete"
@@ -530,7 +520,6 @@ The Delete command works on ALL @{" SRCE " link "Source"} listers in turn.
 
 The QUIET option suppresses warning requesters but not error requesters.
 
-Manual Ref: 5.5 - 103
 @endnode
 
 @node "DeviceList" "DeviceList"
@@ -553,7 +542,6 @@ assigns will not.
 By dropping a drawer icon onto the device list in icon mode you can make an
 assignment to that icon's path using the @{" Assign " link "Assign"} command.
 
-Manual Ref: 5.5 - 103
 @endnode
 
 @node "Diskcopy" "Diskcopy"
@@ -562,7 +550,6 @@ Diskcopy
 This command will bring up the Opus @{" Diskcopy Requester " link "Diskcopy Requester"} allowing you to
 select the source and destination drives and parameters for copying disks.
 
-Manual Ref: 5.5 - 104, 185
 @endnode
 
 @node "DiskInfo" "DiskInfo"
@@ -572,7 +559,6 @@ DiskInfo displays some information about the disk the active directory
 resides on, including space used and free, datestamp and number of errors on
 the disk.
 
-Manual Ref: 5.5 - 104
 @endnode
 
 @node "DoubleClick" "DoubleClick"
@@ -585,7 +571,6 @@ action as if you, for example, double-clicked on a file.
 You can use the ALT and CONTROL switches to have Opus execute the action
 as if the alt/control keys were held down.
 
-Manual Ref: 5.8 - 56
 @endnode
 
 @node "DragNDrop" "DragNDrop"
@@ -597,7 +582,6 @@ user for files of the selected type.
 You can use the ALT, and CONTROLswitches to have Opus execute the action as
 if the alt/control keys were held down.
 
-Manual Ref: 5.8 - 56
 @endnode
 
 @node "Duplicate" "Duplicate"
@@ -611,7 +595,6 @@ The Duplicate command works on ALL @{" SRCE " link "Source"} listers.
 
 The QUIET option suppresses warning requesters but not error requesters.
 
-Manual Ref: 5.5 - 104
 @endnode
 
 @node "Encrypt" "Encrypt"
@@ -634,7 +617,6 @@ This command operates on all files selected in all current @{" SRCE " link "Sour
 If the QUIET option is specified, no warning requesters will be displayed
 (error requesters still will though)
 
-Manual Ref: 5.5 - 105
 @endnode
 
 @node "FindFile" "FindFile"
@@ -653,7 +635,6 @@ entries will be highlighted.
 You can also select entire devices to search, using the @{" DEVICE LIST " link "DeviceList"}
 feature.
 
-Manual Ref: 5.5 - 106
             5.8 - 107
 @endnode
 
@@ -663,7 +644,6 @@ FindFiletype
 This command invokes the @{" Filetype Finder " link "Filetype Finder"} requester which can be used in
 finding, installing, and creating filetypes for the selected files.
 
-Manual Ref: 5.5 - 106, 152
 @endnode
 
 @node "FinishSection" "FinishSection"
@@ -673,7 +653,6 @@ The FinishSection command forces any preceding programs (AmigaDOS,
 Workbench, Batch or ARexx) to finish executing before carrying on to the
 next command.
 
-Manual Ref: 5.5 - 106
 @endnode
 
 @node "FixIcons" "FixIcons"
@@ -727,7 +706,6 @@ files, FixIcons will read the Disk.info file first and use the offsets
 within to adjust the positions of other selected icons in the root
 directory.
 
-Manual Ref: 5.8 - 63
 @endnode
 
 @node "Flash" "Flash"
@@ -741,7 +719,6 @@ You could use this command to signify that a command has finished.
 
 See also @{" Alarm " link "Alarm"}, and @{" Beep " link "Beep"}.
 
-Manual Ref: 5.5 - 107
 @endnode
 
 @node "Format" "Format"
@@ -751,7 +728,6 @@ This allows you to format a new disk.  Without arguments, the command will
 display the Opus @{" Format Requester " link "Format Requester"} allowing you to choose the disk to
 format and other parameters.
 
-Manual Ref: 5.5 - 67, 187
 @endnode
 
 @node "FreeCaches" "FreeCaches"
@@ -762,7 +738,6 @@ any that are currently displayed.  All unused memory will be deallocated.
 This is a good way to free memory quickly if you have lots of used buffers
 and are running a bit low on memory.
 
-Manual Ref: 5.5 - 107
 @endnode
 
 @node "FTPAdd" "FTPAdd"
@@ -775,7 +750,6 @@ connect requester and wish to use it again.
 The saved entry includes the connection type, so FTP, explicit FTPS, and SFTP
 connections can all be re-opened from the address book.
 
-Manual Ref: 5.8 - 106
 @endnode
 
 @node "FTPAddressBook" "FTPAddressBook"
@@ -856,7 +830,6 @@ The FTP module offers many extras such as site-to-site FTP and instant access
 by typing paths starting with "FTP://", "FTPS://", or "SFTP://" into listers.
 See your manual for further information.
 
-Manual Ref: 5.8 - 90, 104
 @endnode
 
 @node "FTPCommand" "FTPCommand"
@@ -871,7 +844,6 @@ The QUIET flag specifies that you do not wish to see the results.
 The LONG flag specifies that you wish to see the results and they may be
 longer than a single line.
 
-Manual Ref: 5.8 - 105
 @endnode
 
 @node "FTPConnect" "FTPConnect"
@@ -947,7 +919,6 @@ is refused until the saved entry is checked or removed.
   message "User name failed".  This error message can also appear if the
   remote site does do not support anonymous logins.
 
-Manual Ref: 5.8 - 103
 @endnode
 
 @node "FTPOptions" "FTPOptions"
@@ -958,7 +929,34 @@ This command displays the Options editor for the current SOURCE FTP lister.
 The DEFAULT keyword will display the default settings used by all FTP listers
 that don't have their own custom options set.
 
-Manual Ref: 5.8 - 93, 105
+The dialog has the following gadgets:
+
+  Hostname / Port / User / Password:
+    The address-book entry for the active connection.  Changes saved
+    here only affect this lister; choose DEFAULT/S above to edit the
+    bank-wide template.
+
+  Anonymous login:
+    Use anonymous + your e-mail (configured separately) as the login
+    credentials.
+
+  Passive Mode (PASV):
+    Force passive-mode data connections.  Useful behind NAT.
+
+  Disable Stayin' Alive Pings:
+    Suppresses the periodic NOOP keep-alive that DOpus sends to keep
+    the control connection open.  Replaces the legacy
+    DOpus/NoBeeGees env variable; see the Environment Variables
+    appendix for the migration story.
+
+  Connection (cycle gadget):
+    Selects the protocol: FTP, SFTP (SSH), or FTPS (SSL/TLS where
+    available).
+
+  Log to file / log filename:
+    Optional per-session log of the wire-level FTP/SFTP traffic, for
+    debugging.
+
 @endnode
 
 @node "FTPQuit" "FTPQuit"
@@ -970,7 +968,6 @@ If any FTP listers are currently busy transfering files, the transfers will
 not be aborted unless the FORCE switch is specified.  No new FTP connections
 will be allowed.
 
-Manual Ref: 5.8 - 106
 @endnode
 
 @node "FTPSetVar" "FTPSetVar"
@@ -1015,7 +1012,6 @@ FTPSetVar             VAR, VALUE/F
 
   FTPSetVar Timeout 60
 
-Manual Ref: 5.5 - 201
             5.8 - 105
 @endnode
 
@@ -1044,7 +1040,6 @@ had performed a GetSizes.
 
 GetSizes works on ALL @{" SRCE " link "Source"} listers in turn.
 
-Manual Ref: 5.5 - 107
             5.8 - 65, 107
 @endnode
 
@@ -1060,7 +1055,6 @@ execute until the reader has closed.
 
 See also @{" AnsiRead " link "AnsiRead"}, @{" Read " link "Read"}, and @{" SmartRead " link "SmartRead"}.
 
-Manual Ref: 5.5 - 108
             5.8 - 106
 @endnode
 
@@ -1071,7 +1065,6 @@ This command iconifies Directory Opus and deallocates as much memory as
 possible.  Directory Opus' appearance and the method used to re-enter it
 vary depending on the defined @{" Hide Method " link "Environment - Hide Method"}.
 
-Manual Ref: 5.5 - 109
 @endnode
 
 @node "IconInfo" "IconInfo"
@@ -1113,7 +1106,6 @@ the images is missing then these choices will be ghosted.
 Giving the "WAIT" switch will ensure that any later commands will not
 execute until the requester has closed.
 
-Manual Ref: 5.8 - 35, 65
 @endnode
 
 @node "Join" "Join"
@@ -1123,7 +1115,6 @@ The Join command can be used to concatenate two or more files into one
 larger file.  It displays a requester which allows you to add and remove
 files, and to specify the order they are concatenated in.
 
-Manual Ref: 5.5 - 111
 @endnode
 
 @node "LeaveOut" "LeaveOut"
@@ -1133,7 +1124,6 @@ Places the currently selected files on the Opus Main Window and leaves them
 out for easy access.  The command works on all selected files (and
 directories) in all current @{" SRCE " link "Source"} listers.
 
-Manual Ref: 5.5 - 111
 @endnode
 
 @node "LoadButtons" "LoadButtons"
@@ -1166,7 +1156,6 @@ StartMenu.
 @{fg shine}NOTE: The last two options, LABEL and IMAGE, should not be used.  Instead use
       the StartMenu's popup menu to select Appearance.@{fg text}
 
-Manual Ref: 5.8 - 65
 @endnode
 
 @node "LoadFonts" "LoadFonts"
@@ -1187,7 +1176,6 @@ If only a simple filename is given, each command searches in the appropriate
 Opus 5 path of DOpus5:Environment/ for the specified file.  If a full
 pathname is given, the command will use that pathname instead.
 
-Manual Ref: 5.5 - 112
 @endnode
 
 @node "LoadTheme" "LoadTheme"
@@ -1202,7 +1190,6 @@ The various APPLY.. switches allow you to choose what the theme will affect.
 For example, APPLYBACKGROUNDS will only load in new background images.
 Fonts, sounds and the palette will remain as they are.
 
-Manual Ref: 5.8 - 13
 @endnode
 
 @node "MakeDir" "MakeDir"
@@ -1231,7 +1218,6 @@ current lister.
 
 The MakeDir command works on the first @{" SRCE " link "Source"} directory ONLY.
 
-Manual Ref: 5.5 - 112
             5.8 - 107
 @endnode
 
@@ -1247,7 +1233,6 @@ the same superimposed arrow symbol as @{" left out icons " link "Icons - Leave O
 
 The QUIET option suppresses warning requesters but not error requesters.
 
-Manual Ref: 5.5 - 113
 @endnode
 
 @node "MakeLinkAs" "MakeLinkAs"
@@ -1260,7 +1245,6 @@ cards can be used with the naming.
 If the QUIET option is specified, no warning requesters will be displayed
 (error requesters still will though)
 
-Manual Ref: 5.5 - 113
 @endnode
 
 @node "Move" "Move"
@@ -1285,7 +1269,6 @@ moving it to a different device.
 
 Move acts on a single destination ONLY.
 
-Manual Ref: 5.5 - 114
 @endnode
 
 @node "MoveAs" "MoveAs"
@@ -1296,7 +1279,6 @@ entry a new name before it is moved.
 
 MoveAs acts on a single destination ONLY.
 
-Manual Ref: 5.5 - 114
 @endnode
 
 @node "None" "None"
@@ -1306,7 +1288,6 @@ The None button deselects all entries in all @{" SRCE " link "Source"} Listers.
 
 See also @{" All " link "All"}, @{" Select " link "Select"}, @{" Reselect " link "Reselect"}, and @{" Toggle " link "Toggle"}.
 
-Manual Ref: 5.5 - 114
 @endnode
 
 @node "Parent" "Parent"
@@ -1318,7 +1299,6 @@ the window's Buffer List, it will be displayed without re-reading it.
 
 This command acts on the first @{" SRCE " link "Source"} directory only.
 
-Manual Ref: 5.5 - 114, 47
 @endnode
 
 @node "Play" "Play"
@@ -1354,7 +1334,6 @@ programs (for example, the OctaMedPlayer and Delitracker) which do a much
 better job, but many users wanted the ability built-in as in Opus 4.  The
 PLAY command will now handle some of these formats, but not all.
 
-Manual Ref: 5.5 - 115
             5.8 - 66, 106
 @endnode
 
@@ -1368,7 +1347,6 @@ full control of Print formatting.
 Giving the "WAIT" switch will ensure that any later commands will not
 execute until the file has been printed.
 
-Manual Ref: 5.5 - 118, 189
             5.8  106
 @endnode
 
@@ -1383,7 +1361,6 @@ over print formatting.
 
 The command operates on the current @{" SRCE " link "Source"} lister ONLY.
 
-Manual Ref: 5.5 - 118, 189
 @endnode
 
 @node "Protect" "Protect"
@@ -1401,7 +1378,6 @@ used to determine which files will be affected.
 This command applies to all selected files in all the current @{" SRCE " link "Source"}
 listers.
 
-Manual Ref: 5.5 - 116
             5.8 - 107
 @endnode
 
@@ -1415,7 +1391,6 @@ such programs before Opus can fully close down.
 If the FORCE switch is specified you will not be asked for confirmation
 before quitting.
 
-Manual Ref: 5.5 - 118
 @endnode
 
 @node "Read" "Read"
@@ -1436,7 +1411,6 @@ execute until the reader has closed.
 
 See also @{" AnsiRead " link "AnsiRead"}, @{" HexRead " link "HexRead"}, and @{" SmartRead " link "SmartRead"}.
 
-Manual Ref: 5.5 - 118
             5.8 - 106
 @endnode
 
@@ -1470,7 +1444,6 @@ You can use the "NAME" and "NEWNAME" arguments to rename files in scripts.
 Both arguments can accept asterisk (*) wildcards, like the Rename
 requester itself.
 
-Manual Ref: 5.8 - 66
 @endnode
 
 @node "Reselect" "Reselect"
@@ -1482,7 +1455,6 @@ more.
 
 See also @{" All " link "All"}, @{" None " link "None"}, @{" Select " link "Select"}, and @{" Toggle " link "Toggle"}.
 
-Manual Ref: 5.5 - 119
 @endnode
 
 @node "Reveal" "Reveal"
@@ -1490,7 +1462,6 @@ Reveal
 
 This command causes Opus to deiconify if it has been iconified.
 
-Manual Ref: 5.5 - 120
 @endnode
 
 @node "Root" "Root"
@@ -1502,7 +1473,6 @@ parent directory is reread.
 
 This command acts on the first @{" SRCE " link "Source"} directory only.
 
-Manual Ref: 5.5 - 120
 @endnode
 
 @node "Run" "Run"
@@ -1513,7 +1483,6 @@ executable.  It is similar to double clicking on the file's icon, or running
 it from the CLI.  A requester will appear, asking for any arguments (should
 you require any).
 
-Manual Ref: 5.5 - 120
 @endnode
 
 @node "SaveTheme" "SaveTheme"
@@ -1528,7 +1497,6 @@ copy all the component files to D5Themes:.
 
 See also @{" BuildTheme " link "BuildTheme"} and @{" LoadTheme " link "LoadTheme"}.
 
-Manual Ref: 5.8 - 13, 66
 @endnode
 
 @node "ScanDir" "ScanDir"
@@ -1557,7 +1525,6 @@ give, leaving the file/dir selected.
 For example, 'ScanDir F2:Games/ CONTAINER' will read path F2: into a lister
 leaving the directory 'Games' selected.
 
-Manual Ref: 5.5 - 121
             5.8 - 107
 @endnode
 
@@ -1578,7 +1545,6 @@ feature that is described later.  If any directories are selected to search,
 the global @{" Recursive Filter " link "Settings - Filter"} will be used to determine which files will be
 searched.
 
-Manual Ref: 5.5 - 121
 @endnode
 
 @node "Select" "Select"
@@ -1600,7 +1566,6 @@ selection criteria, the requester will not be displayed.
 
 See also @{" All " link "All"}, @{" None " link "None"}, @{" Reselect " link "Reselect"}, and @{" Toggle " link "Toggle"}.
 
-Manual Ref: 5.5 - 122
 @endnode
 
 @node "Set" "Set"
@@ -1657,7 +1622,6 @@ or the operation of the current function:
   Set ToolBar <file>
     This allows you to specify which toolbar a lister should use.
 
-Manual Ref: 5.5 - 123
             5.8 - 66
 @endnode
 
@@ -1698,7 +1662,6 @@ switching application for Opus.
     be enforced if you have the 'Real-time icon scrolling' option enabled
     in @{" Environment, Icon Settings " link "Environment - Icon Settings"} and the window is scrollable.
 
-Manual Ref: 5.8 - 67
 @endnode
 
 @node "Show" "Show"
@@ -1741,7 +1704,6 @@ the usual warning first).
 Giving the "WAIT" switch will ensure that any later commands will not
 execute until all of the files have been viewed.
 
-Manual Ref: 5.5 - 124
             5.8 - 106
 @endnode
 
@@ -1758,7 +1720,6 @@ execute until the reader has closed.
 
 See also @{" AnsiRead " link "AnsiRead"}, @{" HexRead " link "HexRead"}, and @{" Read " link "Read"}.
 
-Manual Ref: 5.5 - 126
             5.8 - 106
 @endnode
 
@@ -1772,7 +1733,6 @@ CHUNK specifies the size in kilobytes of each part.
 STEM is the base name of the parts.  .001, .002, etc. will be added to the
 stem to form the filenames of the parts.
 
-Manual Ref: 5.5 - 126
 @endnode
 
 @node "StopSniffer" "StopSniffer"
@@ -1782,7 +1742,6 @@ This command sends a signal to the filetype sniffer process telling it to
 stop.  This is useful if Opus is collecting information from files or
 directories for a lister display, (for example: version).
 
-Manual Ref: 5.8 - 67
 @endnode
 
 @node "Toggle" "Toggle"
@@ -1794,7 +1753,6 @@ This acts on all @{" SRCE " link "Source"} directories.
 
 See also @{" All " link "All"}, @{" None " link "None"}, @{" Reselect " link "Reselect"}, and @{" Select " link "Select"}.
 
-Manual Ref: 5.5 - 127
 @endnode
 
 @node "User" "User"
@@ -1831,7 +1789,6 @@ While the User1 - User4 commands still work, they have been superseded by
 the @{" User " LINK "User"} command which provides up to ten user-definable filetype
 actions.
 
-Manual Ref: 5.5 - 127
 @endnode
 
 @node "User2" "User2"
@@ -1844,7 +1801,6 @@ While the User1 - User4 commands still work, they have been superseded by
 the @{" User " LINK "User"} command which provides up to ten user-definable filetype
 actions.
 
-Manual Ref: 5.5 - 127
 @endnode
 
 @node "User3" "User3"
@@ -1857,7 +1813,6 @@ While the User1 - User4 commands still work, they have been superseded by
 the @{" User " LINK "User"} command which provides up to ten user-definable filetype
 actions.
 
-Manual Ref: 5.5 - 127
 @endnode
 
 @node "User4" "User4"
@@ -1870,7 +1825,6 @@ While the User1 - User4 commands still work, they have been superseded by
 the @{" User " LINK "User"} command which provides up to ten user-definable filetype
 actions.
 
-Manual Ref: 5.5 - 127
 @endnode
 
 @node "Diskcopy Requester" "Diskcopy Requester"
@@ -1900,7 +1854,6 @@ Requester has the following fields -
 This function will not copy any protected software, or non-AmigaDOS format
 disks.
 
-Manual Ref: 5.5 - 185
 @endnode
 
 @node "Filetype Creator" "Filetype Creator"
@@ -1919,7 +1872,6 @@ custom popup menus, and more.
 The filetype creator may also be called by the @{" Filetype Finder " link "Filetype Finder"} if it can't
 find a matching filetype for a file.
 
-Manual Ref: 5.5 - 152
 @endnode
 
 @node "Filetype Finder" "Filetype Finder"
@@ -1947,7 +1899,6 @@ already set up, install a filetype from your DOpus5:Storage/Filetypes
 drawer, create a new filetype with the @{" Filetype Creator " link "Filetype Creator"}, edit the best
 installed matching filetype, or cancel the process altogether.
 
-Manual Ref: 5.5 - 152
 @endnode
 
 @node "Format Requester" "Format Requester"
@@ -1969,7 +1920,17 @@ requester are -
 
   Directory Caching:
     Directory caching mode will cause the directory reading speed to be
-    much faster.
+    much faster.  Mutually exclusive with Long File Names; turning
+    Caching on automatically forces International on and Long File
+    Names off.
+
+  Long File Names:
+    Selects the FFS-LNFS variant (DOS\7), which lifts the historical
+    30-character filename limit to 105 characters.  Implies Fast File
+    System and International Mode (Caching is automatically cleared
+    when this option is selected, and the FFS / International / Caching
+    gadgets become locked while LNFS is active).  When you re-open the
+    requester on an existing FFS-LNFS volume, this option is pre-ticked.
 
   Make Bootable:
     This button will 'Install' the disk with a standard AmigaDOS boot
@@ -1999,7 +1960,13 @@ requester are -
   Cancel:
     This button will abort without attempting a Format.
 
-Manual Ref: 5.5 - 187
+  PFS-family volumes:
+    PFS3 partitions (DOS types PFS\x, PDS\x, muPF in any combination)
+    are detected automatically: the status bar shows '(PFS)' next to
+    the volume size and the FFS / International / Caching / Long File
+    Names checkboxes are ghosted, since those choices are made by the
+    PFS3 filesystem itself rather than by the Format command.
+
 @endnode
 
 @node "Print Requester" "Print Requester"
@@ -2071,7 +2038,6 @@ Configuration...
     This button allows you to modify the appearance of all the
     printed text, except the headers and footers.
 
-Manual Ref: 5.5 - 189
 @endnode
 
 @node "Button" "Button"
@@ -2081,7 +2047,6 @@ has a custom function calling external programs.
 To edit this button, select @{" Edit " link "Button Bank Editor"} from the Buttons menu and double-click on
 the button.
 
-Manual Ref: 5.5 - 22, 95, 171
 @endnode
 
 @node "ToolbarButton" "ToolbarButton"
@@ -2091,7 +2056,6 @@ set or has a custom function calling external programs.
 To Edit this button, select @{" Edit Lister Toolbar " link "Lister - Edit Toolbar"} from the Listers menu,
 press right-amiga 1, or hold the alt key down and click on the button.
 
-Manual Ref: 5.5 - 46, 171
 @endnode
 
 @node "Toolbar Arrow" "Toolbar Arrow"
@@ -2105,7 +2069,6 @@ function set or has a custom function calling external programs.
 
 To @{" Edit " link "Menu Editor"} this entry, select @{" Edit Lister Menu " link "Lister - Edit Menu"} from the Lister menu.
 
-Manual Ref: 5.5 - 39, 61
 @endnode
 
 @node "UserMenu" "UserMenu"
@@ -2114,7 +2077,6 @@ function set or has a custom function calling external programs.
 
 To @{" Edit " link "Menu Editor"} this entry, select "User Menu" from the Settings menu.
 
-Manual Ref: 5.5 - 174
 @endnode
 
 @node "Desktop - Copy" "Desktop - Copy"
@@ -2155,7 +2117,6 @@ no effect.
 This toggle converts the Main Window to a special borderless window that is
 always behind all other windows on the screen.
 
-Manual Ref: 5.5 - 58
 @endnode
 
 @node "Project - Execute Command" "Menu Opus - Execute Command"
@@ -2174,7 +2135,6 @@ The CLI button causes a new @{" Opus Command Line Interface " link "CLI"} to be 
 This requester has a history of the last 20 commands you have entered.  Use
 the cursor up / cursor down keys to move through the history.
 
-Manual Ref: 5.5 - 58
 @endnode
 
 @node "Project - About" "Menu Opus - About"
@@ -2183,7 +2143,6 @@ Manual Ref: 5.5 - 58
 This command displays information about Directory Opus including the version
 number and your registration details.
 
-Manual Ref: 5.5 - 58
 @endnode
 
 @node "Project - Help" "Menu Opus - Help!"
@@ -2199,7 +2158,6 @@ This command iconifies Directory Opus and deallocates as much memory as
 possible.  Directory Opus' appearance and the method used to re-enter it
 vary depending on the defined @{" Hide Method " link "Environment - Hide Method"}.
 
-Manual Ref: 5.5 - 59
 @endnode
 
 @node "Project - KeyFinder" "Menu Opus - KeyFinder"
@@ -2217,7 +2175,6 @@ This command shuts down all open windows and quits Directory Opus.  If Opus
 has launched an associated task on the main window, you may be asked to quit
 such programs before Opus can fully close down.
 
-Manual Ref: 5.5 - 60
 @endnode
 
 @node "Lister - New" "Lister - New"
@@ -2229,7 +2186,6 @@ When the new lister opens it can optionally display the @{" Device List " link "
 The initial size and contents of the new lister is determined by the
 settings in the @{" Lister Options " link "Environment - Lister Options"}.
 
-Manual Ref: 5.5 - 60
 @endnode
 
 @node "Lister - Open Parent" "Lister - Open Parent"
@@ -2238,7 +2194,6 @@ Manual Ref: 5.5 - 60
 As in Workbench, this function causes the parent of the current source
 lister to be displayed in a new lister.
 
-Manual Ref: 5.5 - 60
 @endnode
 
 @node "Lister - Close" "Lister - Close"
@@ -2247,7 +2202,6 @@ Manual Ref: 5.5 - 60
 Closes the current active Lister.  Note that no warning is given, the
 currently active lister will close immediately.
 
-Manual Ref: 5.5 - 60
 @endnode
 
 @node "Lister - Close All" "Lister - Close All"
@@ -2255,7 +2209,6 @@ Manual Ref: 5.5 - 60
 
 This command @{" Closes " link "Lister - Close"} down all the open listers.
 
-Manual Ref: 5.5 - 60
 @endnode
 
 @node "Lister - Make Source" "Lister - Make Source"
@@ -2265,7 +2218,6 @@ When activated it makes the lister a @{" Source " link "Source"}.  The other lis
 cycle through to either @{" Destination " link "Destination"} or @{" Off " link "Lister - Off"} modes unless they are
 @{" Locked " link "Lister - Lock Source"}.
 
-Manual Ref: 5.5 - 60
 @endnode
 
 @node "Lister - Make Dest" "Lister - Make Dest"
@@ -2274,7 +2226,6 @@ Manual Ref: 5.5 - 60
 This makes the lister into a destination, this may also cycle other
 @{" Unlocked " link "Lister - Unlock"} listers into different modes.
 
-Manual Ref: 5.5 - 60
 @endnode
 
 @node "Lister - Off" "Lister - Off"
@@ -2283,7 +2234,6 @@ Manual Ref: 5.5 - 60
 This turns the mode of the active lister to off so that it is neither a
 @{" Source " link "Source"} nor a @{" Destination " link "Destination"}.
 
-Manual Ref: 5.5 - 60
 @endnode
 
 @node "Lister - Lock Source" "Lister - Lock Source"
@@ -2294,7 +2244,6 @@ the mode changing of other listers will not affect this lister's mode.  This
 lister can still have its mode changed with the @{" Make Dest " link "Lister - Make Dest"} and @{" Lock Dest " link "Lister - Lock Dest"}
 options.  The lister can be reverted to a normal mode by @{" Unlocking " link "Lister - Unlock"} it.
 
-Manual Ref: 5.5 - 60
 @endnode
 
 @node "Lister - Lock Dest" "Lister - Lock Dest"
@@ -2305,7 +2254,6 @@ locking, it is meant that any mode changing of other listers will not effect
 the mode of this lister.  The lister can now only have its mode changed by
 user action or by @{" Unlocking " link "Lister - Unlock"} it then it will change as normal.
 
-Manual Ref: 5.5 - 60
 @endnode
 
 @node "Lister - Unlock" "Lister - Unlock"
@@ -2314,7 +2262,6 @@ Manual Ref: 5.5 - 60
 This command will unlock the active lister if it is locked.  If you wish to
 unlock all the listers, @{" Unlock All " link "Lister - Unlock All"} would be a more suitable command.
 
-Manual Ref: 5.5 - 60
 @endnode
 
 @node "Lister - Unlock All" "Lister - Unlock All"
@@ -2322,7 +2269,6 @@ Manual Ref: 5.5 - 60
 
 This command @{" Unlocks " link "Lister - Unlock"} all the @{" Locked " link "Lister - Lock Source"} listers, not just the active one.
 
-Manual Ref: 5.5 - 61
 @endnode
 
 @node "Lister - Edit" "Lister - Edit"
@@ -2331,7 +2277,6 @@ Manual Ref: 5.5 - 61
 This brings up the @{" List Format Editor " link "Lister Format"} and allows you to change the format
 of the currently active lister's display.
 
-Manual Ref: 5.5 - 43, 61
 @endnode
 
 @node "Lister - Edit Toolbar" "Lister - Edit Toolbar"
@@ -2345,7 +2290,6 @@ Note that if you are using a toolbar other than the default, this will not
 be the toolbar which you will edit.  Only the default toolbar will be edited
 by this function.
 
-Manual Ref: 5.5 - 61, 182
 @endnode
 
 @node "Lister - Edit Menu" "Lister - Edit Menu"
@@ -2354,7 +2298,6 @@ Manual Ref: 5.5 - 61, 182
 This brings up the @{" Menu Editor " link "Menu Editor"} which allows you to customise the user
 popup menus in the toolbar.
 
-Manual Ref: 5.5 - 61, 174
 @endnode
 
 @node "Lister - Tile" "Lister - Tile"
@@ -2369,7 +2312,6 @@ The Cascade option cascades the displayed listers within the borders of the
 Opus Main Window.  If the main window is set as a backdrop, this will
 cascade the current listers over the full screen.
 
-Manual Ref: 5.5 - 61, 62
 @endnode
 
 @node "Lister - Snapshot" "Lister - Snapshot"
@@ -2378,7 +2320,6 @@ Manual Ref: 5.5 - 61, 62
 This snapshots the size and position of the currently active lister.  This
 function does not @{" Snapshot " link "Icons - Snapshot"} icons.
 
-Manual Ref: 5.5 - 62
 @endnode
 
 @node "Lister - UnSnapshot" "Lister - UnSnapshot"
@@ -2386,7 +2327,6 @@ Manual Ref: 5.5 - 62
 
 This command cancels the @{" Snapshot " link "Lister - Snapshot"} position of the selected lister.
 
-Manual Ref: 5.5 - 62
 @endnode
 
 @node "Lister - View As" "Lister - View As"
@@ -2400,7 +2340,6 @@ option, which is only available in Icon Mode and Icon Action Mode, Opus 5
 will display all the files and directories using pseudo-icons for those
 which do not have real icons, using filetype icons wherever possible.
 
-Manual Ref: 5.5 - 62
 @endnode
 
 @node "Lister - Filter" "Lister - Filter"
@@ -2447,7 +2386,6 @@ the option to lock the Lister window in a set position at a set size.
 As in Workbench, this function can be used to create a new drawer in the
 current lister.
 
-Manual Ref: 5.5 - 63
 @endnode
 
 @node "Icons - New Group" "Icons - New Group"
@@ -2455,7 +2393,6 @@ Manual Ref: 5.5 - 63
 
 This creates a new program group with the name that you specify.
 
-Manual Ref: 5.5 - 63
 @endnode
 
 @node "Icons - New Command" "Icons - New Command"
@@ -2503,7 +2440,6 @@ internal filetype definitions and action is taken accordingly.  If there is
 still no match, the @{" Filetype Finder " link "Filetype Finder"} or the @{" SmartRead " link "SmartRead"} command will be
 called depending on whether you have the @{" Filetype Sniffer " link "Environment - Miscellaneous"} option enabled.
 
-Manual Ref: 5.5 - 64
 @endnode
 
 @node "Icons - Information" "Icons - Information"
@@ -2513,7 +2449,6 @@ Displays status information about the selected icon.  It also allows you to
 edit the tooltypes and other information in an application icon.  See also
 the @{" IconInfo " link "IconInfo"} internal command.
 
-Manual Ref: 5.5 - 64
 @endnode
 
 @node "Icons - Snapshot" "Icons - Snapshot"
@@ -2525,7 +2460,6 @@ are Snapshotted or with the Window option where only the active window is
 Snapshotted or with the All option where both the active window and all the
 icons it contains are snapshotted.
 
-Manual Ref: 5.5 - 65
 @endnode
 
 @node "Icons - UnSnapshot" "Icons - UnSnapshot"
@@ -2533,7 +2467,6 @@ Manual Ref: 5.5 - 65
 
 This command cancels the @{" Snapshot " link "Icons - Snapshot"} position of the selected icon or icons.
 
-Manual Ref: 5.5 - 65
 @endnode
 
 @node "Icons - Leave Out" "Icons - Leave Out"
@@ -2544,7 +2477,6 @@ main Opus window for easy access.  Files and directories left out in this
 manner will appear in the main window next time you run Opus.  Left out
 icons can be identified by a small arrow image superimposed onto them.
 
-Manual Ref: 5.5 - 65
 @endnode
 
 @node "Icons - Put Away" "Icons - Put Away"
@@ -2553,7 +2485,6 @@ Manual Ref: 5.5 - 65
 Removes any selected icons which have been @{" Left Out " link "Icons - Leave Out"} on the Opus main
 window.
 
-Manual Ref: 5.5 - 66
 @endnode
 
 @node "Icons - Select All" "Icons - Select All"
@@ -2562,7 +2493,6 @@ Manual Ref: 5.5 - 66
 Selects all the entries in the active lister, or on the Opus 5 Main Window
 if no lister is currently active.
 
-Manual Ref: 5.5 - 66
 @endnode
 
 @node "Icons - CleanUp" "Icons - CleanUp"
@@ -2572,7 +2502,6 @@ This command attempts to adjust the positions of all the icons in the Opus
 Main Window and Icon windows to their optimal positions within the confines
 of their window's dimensions.
 
-Manual Ref: 5.5 - 66
 @endnode
 
 @node "Icons - Reset" "Icons - Reset"
@@ -2581,7 +2510,6 @@ Manual Ref: 5.5 - 66
 Resets all the icon positions to those currently stored in the icon itself
 from the last @{" Snapshot " link "Icons - Snapshot"} operation.
 
-Manual Ref: 5.5 - 66
 @endnode
 
 @node "Icons - Rename" "Icons - Rename"
@@ -2589,7 +2517,6 @@ Manual Ref: 5.5 - 66
 
 Provides the option to @{" Rename " link "Rename"} the selected icons.
 
-Manual Ref: 5.5 - 66
 @endnode
 
 @node "Icons - Delete" "Icons - Delete"
@@ -2599,7 +2526,6 @@ This function can be used to @{" Delete " link "Delete"} any selected files and 
 from the current lister.  It can also delete @{" program groups " link "Program Group"} from the main
 Opus 5 window, and group icons from within @{" program groups " link "Program Group"}.
 
-Manual Ref: 5.5 - 66
 @endnode
 
 @node "Icons - Format" "Icons - Format"
@@ -2607,7 +2533,6 @@ Manual Ref: 5.5 - 66
 
 This brings up the Opus @{" Format Requester " link "Format Requester"} and allows you to @{" Format " link "Format"} disks.
 
-Manual Ref: 5.5 - 67, 187
 @endnode
 
 @node "Icons - Disk Information" "Icons - Disk Information"
@@ -2617,7 +2542,6 @@ Displays some information about the disk the active directory resides on,
 including space used and free, @{" DateStamp " link "DateStamp"} and number of errors on the disk,
 if any.
 
-Manual Ref: 5.5 - 67
 @endnode
 
 @node "Icons - Copy" "Icons - Copy"
@@ -2650,6 +2574,14 @@ of arranging the icons by several methods:
   by Type
   by Size
   by Date
+
+When sorting "by Type", icons are grouped using the same do_Type
+classification as Workbench - drawers first, then tools, then
+projects (followed by garbage / unknown).  Within each category the
+icons keep the previous filetype-name + file-name ordering, so the
+groups themselves are still alphabetised.  This matches what users
+get from Workbench's own "Sort By Type" command.
+
 @endnode
 
 @node "Icon Popup - Open" "Icon Popup - Open"
@@ -2697,7 +2629,6 @@ button bank will have only one button.  The size of the button bank and
 the definitions for each button may be changed by calling the
 @{" Button Editor " link "Button Bank Editor"}.
 
-Manual Ref: 5.5 - 67
 @endnode
 
 @node "Buttons - New Text Buttons" "Buttons - New Text Buttons"
@@ -2708,7 +2639,6 @@ button bank will have only one button.  The size of the button bank and
 the definitions for each button may be changed by calling the
 @{" Button Editor " link "Button Bank Editor"}.
 
-Manual Ref: 5.5 - 67
 @endnode
 
 @node "Buttons - New Start Menu" "Buttons - New Start Menu"
@@ -2728,7 +2658,6 @@ Loads an old Button Bank from disk.  The loaded bank will appear on the
 screen in the position last saved with the button bank, or in the position
 it was in when you saved the environment settings.
 
-Manual Ref: 5.5 - 67
 @endnode
 
 @node "Buttons - Open Start Menu" "Buttons - Load Start Menu"
@@ -2738,7 +2667,6 @@ Loads an old Start Menu from disk.  The loaded Start Menu will appear on
 the screen in the position it was last saved in, or in the position
 it was in when you saved the environment settings.
 
-Manual Ref: 5.5 - 67
 @endnode
 
 @node "Buttons - Save" "Buttons - Save"
@@ -2747,7 +2675,6 @@ Manual Ref: 5.5 - 67
 Saves the selected Button Bank to disk using the name under which it was
 loaded.
 
-Manual Ref: 5.5 - 67
 @endnode
 
 @node "Buttons - Save As" "Buttons - Save As"
@@ -2762,7 +2689,6 @@ specify.
 
 This command closes an open Button Bank.
 
-Manual Ref: 5.5 - 67
 @endnode
 
 @node "Buttons - Edit" "Buttons - Edit"
@@ -2773,7 +2699,6 @@ definitions of all buttons in all Button Banks currently open.  You can
 readily edit several button banks at once.  Note that while the Button
 Editor is open the buttons cannot be used in the normal way.
 
-Manual Ref: 5.5 - 67, 171
 @endnode
 
 @node "Buttons - Iconify" "Buttons - Iconify"
@@ -2790,7 +2715,6 @@ double-click on the icon.
 This command toggles the display of a clock in the Opus main window title
 bar.
 
-Manual Ref: 5.5 - 68
 @endnode
 
 @node "Settings - Create Icons" "Settings - Create Icons"
@@ -2799,7 +2723,6 @@ Manual Ref: 5.5 - 68
 When Opus creates a new directory, this option toggles whether Opus will
 create the associated icon or '.info' file as well.
 
-Manual Ref: 5.5 - 68
 @endnode
 
 @node "Settings - Default PubScreen" "Settings - Default PubScreen"
@@ -2812,7 +2735,6 @@ of using the Workbench screen.  (Depending on the program!)
 
 This command is only valid when Opus is running on its own screen.
 
-Manual Ref: 5.5 - 68
 @endnode
 
 @node "Settings - Filter" "Settings - Recursive Filter"
@@ -2823,7 +2745,6 @@ prompts you for an optional file pattern whenever you execute a function
 which operates recursively on files within sub-directories.  If you enter a
 file pattern then only files matching that pattern will be operated upon.
 
-Manual Ref: 5.5 - 68
 @endnode
 
 @node "Settings - Filetypes" "Settings - Filetypes"
@@ -2833,7 +2754,6 @@ This button displays the @{" Filetype Manager " link "File Types"} which shows t
 Filetypes and allows you to edit the filetype definitions, events and
 actions.
 
-Manual Ref: 5.5 - 140
 @endnode
 
 @node "Settings - User Menu" "Settings - User Menu"
@@ -2843,7 +2763,6 @@ This button brings up the @{" Menu Editor " link "Menu Editor"} which allows you
 user menus.  You may have as many user menus as will fit after the Settings
 menus.
 
-Manual Ref: 5.5 - 174
 @endnode
 
 @node "Settings - Hotkeys" "Settings - Hotkeys"
@@ -2852,7 +2771,6 @@ Manual Ref: 5.5 - 174
 Brings up the @{" Hotkeys editor " link "Hotkey Editor"} which allows you to add and remove custom
 hotkeys from Opus 5.
 
-Manual Ref: 5.5 - 129
 @endnode
 
 @node "Settings - Scripts" "Settings - Scripts"
@@ -2861,7 +2779,6 @@ Manual Ref: 5.5 - 129
 Brings up the @{" Scripts Editor " link "Scripts Editor"} which allows you to attach standard Opus 5
 functions to a number of Opus 5 events.
 
-Manual Ref: 5.5 - 133
 @endnode
 
 @node "Settings - Icon Positioning" "Settings - Icon Positioning"
@@ -2879,7 +2796,6 @@ These areas are saved in the Environment file. Defined areas may
 optionally include Appicons, Disks, iconified Listers and  Buttons, Groups
 and any Left-outs icons including items in the Desktop Folder.
 
-Manual Ref: 5.8 - 33
 @endnode
 
 @node "Settings - Build Theme" "Settings - Build Theme"
@@ -2893,7 +2809,6 @@ files in the D5Themes: directory.  When you have used the BuildTheme command,
 you can theoretically LHA both the theme file and the sub-directory and
 distribute it to other users.
 
-Manual Ref: 5.8 - 14
 @endnode
 
 @node "Settings - Load Theme" "Settings - Load Theme"
@@ -2908,7 +2823,6 @@ appropriate options:
   Apply background picture settings
   Apply sound settings
 
-Manual Ref: 5.8 - 13
 @endnode
 
 @node "Settings - Save Theme" "Settings - Save Theme"
@@ -2918,7 +2832,6 @@ This menuitem will generate a .theme file in D5Themes: that contains the
 actual locations of the component files used in the theme.  Use while
 working on a theme, or to store multiple themes for your own use.
 
-Manual Ref: 5.8 - 13
 @endnode
 
 @node "Environment - Edit" "Settings - Environment"
@@ -2927,7 +2840,6 @@ Manual Ref: 5.8 - 13
 This command displays the @{" Environment Editor " link "Environment"} which allows you to change
 the visual display characteristics used by Opus 5.
 
-Manual Ref: 5.8 - 37
 @endnode
 
 @node "Settings - Load Environment" "Settings - Load Environment"
@@ -2950,7 +2862,13 @@ Environment under than name 'Default'.
 
 This command lets you save the current Desktop layout on demand.
 
-Manual Ref: 5.8 - 37
+If a saved layout references custom button banks that can't be found
+on disk when the layout is next loaded, DOpus prompts you with the
+list of missing files (rather than silently dropping them) so you
+can either re-locate them or accept the loss.  The prompt is
+deferred until the screen is fully open, so it doesn't show up as a
+splash-time requester behind the boot picture.
+
 @endnode
 
 @node "Menu Editor" "Menu Editor"
@@ -2970,7 +2888,6 @@ The menu editor has the following features:
   + to add an item.
   DEL to delete current item.
 
-Manual Ref: 5.5 - 174
             5.8 - 9
 @endnode
 
@@ -2983,7 +2900,6 @@ Without this, the hotkey can be used only when an Opus 5 window is active.
 However, if this is set the hotkey will be global and is accessible whether
 or not an Opus 5 window is active.
 
-Manual Ref: 5.5 - 129
 @endnode
 
 @node "Scripts Editor" "Scripts Editor"
@@ -3041,7 +2957,6 @@ Some good uses for scripts would be to open a new lister for 'Disk inserted'
 and display its contents, and to run the @{" Format " link "Format"} command for 'Bad disk
 inserted'.
 
-Manual Ref: 5.5 - 133
             5.8 - 58
 @endnode
 
@@ -3058,7 +2973,6 @@ remove gadgets.  The scripts consist of a group of match instructions linked
 together with logical 'and's and 'or's.  For any more detail on the File
 Class Editor please consult your Opus 5 manual.
 
-Manual Ref: 5.5 - 144
 @endnode
 
 @node "Config Convert" "Config Convert"
@@ -3098,7 +3012,6 @@ the button bank.  You can also make all of the buttons in a bank borderless,
 turn off the 'dog ears' for buttons with right and middle button functions,
 and make the button bank simple refresh if you wish.
 
-Manual Ref: 5.5 - 178
 @endnode
 
 @node "Button Editor" "Button Editor"
@@ -3109,7 +3022,6 @@ may be edited are the button's name or icon and its @{" Colours " link "Select C
 functions that are called for the left, right, and middle mouse buttons, and
 any popup menu functions it may have can also be @{" Edited " link "Function Editor"} from here.
 
-Manual Ref: 5.5 - 171
 @endnode
 
 @node "Function Editor" "Function Editor"
@@ -3132,7 +3044,6 @@ as per normal. To erase the hotkey field, press backspace twice.
 
 For any more details please refer to your Opus 5 Manual.
 
-Manual Ref: 5.5 - 157
 @endnode
 
 @node "Select Colours" "Select Colours"
@@ -3158,6 +3069,7 @@ Environment editor:
     @{" Display " link "Environment - Display"}
     @{" Hide Method " link "Environment - Hide Method"}
     @{" Icon Display " link "Environment - Icon Display"}
+    @{" Icon Layout " link "Environment - Icon Layout"}
     @{" Icon Settings " link "Environment - Icon Settings"}
     @{" Lister Colours " link "Environment - Lister Colours"}
     @{" Lister Default " link "Environment - Lister Default"}
@@ -3171,7 +3083,6 @@ Environment editor:
     @{" Sound Events " link "Environment - Sound Events"}
     @{" WB Emulation " link "Environment - WB Emulation"}
 
-Manual Ref: 5.8 - 37
 @endnode
 
 @node "Environment - Backgrounds" "Environment - Backgrounds"
@@ -3187,9 +3098,8 @@ You can either display background pictures using a settings file created
 with the WBPattern Prefs program or directly by giving the filenames of
 the images you wish to use.
 
-Under OS2.0 and 2.1, you can only use WBPattern prefs, and only
-to generate patterns, not pictures. The picture display system relies
-on the Amiga Datatypes system, which is not available under OS2.0.
+Picture display relies on the Amiga datatypes system; on AmigaOS 3.x,
+4, MorphOS and AROS this is fully supported.
 
 If the Use WBPattern Prefs flag is cleared you should specify the images
 files you want to use using the set top set of gadgets.
@@ -3238,7 +3148,6 @@ choose a directory.
 Any path entered here will have the assign D5Themes: given to it, it defaults
 to DOpus5:Themes/.
 
-Manual Ref: 5.8 - 37, 38, 39
 @endnode
 
 @node "Environment - CLI Launching" "Environment - CLI Launching"
@@ -3263,7 +3172,6 @@ This section controls certain parameters used when calling AmigaDOS programs.
     You can set the maximum command line length that Opus will use when
     calling external programs, the default is 255.
 
-Manual Ref: 5.8 - 40
 @endnode
 
 @node "Environment - Copy" "Environment - Copy"
@@ -3297,7 +3205,6 @@ This sets the controls for what happens when Opus copies files.
     version information as looking for the version number can take some
     time.
 
-Manual Ref: 5.5 - 86
 @endnode
 
 @node "Environment - Delete" "Environment - Delete"
@@ -3307,7 +3214,6 @@ This allows you to set when Opus should ask about @{" deleting " link "Delete"}.
 where a toggle is set is where Opus will ask to confirm the request to
 delete.
 
-Manual Ref: 5.5 - 86, 87
 @endnode
 
 @node "Environment - Desktop" "Environment - Desktop"
@@ -3354,7 +3260,6 @@ From here you can set up some features of Opus 5's desktop environment.
     access to the popup menu is still possible by holding down either shift
     key when you drop the file onto the desktop.
 
-Manual Ref: 5.8 - 41
 @endnode
 
 @node "Environment - Directories" "Environment - Directories"
@@ -3378,17 +3283,40 @@ internally buffered.
     Allows you to set the maximum filename length that will be displayed in
     listers.  The default is 30, the maximum is 107.
 
-Manual Ref: 5.8 - 42
 @endnode
 
 @node "Environment - Display" "Environment - Display"
  Display Mode
 
-The Screen Display Mode requester allows you to specify the mode, size and
-depth of the screen.  The requester contains a list of available Display
-modes.  The screen height and width fields allow you to specify screen width
-and height.  You can also select a default screen font for the Opus 5
-screen.
+The Screen Display Mode requester selects the mode, size, depth and
+font of the DOpus screen.
+
+  Display Modes:
+    A scrolling list of every screen mode (or public-screen target)
+    available on the system.  The selected mode determines the maximum
+    width, height and colour count for the gadgets below.  Choose
+    "Workbench" to run on the Workbench screen, or "Custom Public
+    Screen..." to attach to a named public screen.
+
+  Width / Height:
+    Numeric fields for the requested screen dimensions in pixels.
+    Each has a "Default" checkbox next to it; when ticked, the
+    requested value is ignored and DOpus uses the mode-supplied
+    default for that axis.  Untick to override.
+
+  Colours:
+    Slider that controls the screen colour depth.  The actual count
+    appears in the right-hand display.  The available range is
+    constrained by the chosen display mode (e.g. an 8-bit chunky mode
+    won't let you push past 256).
+
+  Font (popup, name, size):
+    Three gadgets for the screen font: the popup button on the left
+    opens a font requester, the centre string field shows the
+    selected font name, and the small integer on the right is the
+    font size in pixels.  Affects gadget labels, menu text, and
+    desktop chrome.
+
 @endnode
 
 @node "Environment - Hide Method" "Environment - Hide Method"
@@ -3404,12 +3332,13 @@ itself.  The choices range from:
     This will place no visual icon on screen when closed and will require
     the hotkey combination to bring it up again.
 
-  AppIcon (Workbench Only):
-    This creates a normal icon on Workbench when Opus iconifies.
+  AppIcon (Workbench / AROS / MorphOS):
+    This creates a normal icon on Workbench (or the AROS / MorphOS
+    desktop equivalent) when Opus iconifies.
 
-  AppMenu (Workbench Only):
+  AppMenu (Workbench / AROS / MorphOS):
     This makes Opus append itself to the 'Workbench Application Tools'
-    menu.
+    menu (or the equivalent on AROS / MorphOS).
 
   Popkey:
     This field allows you to alter the Opus 5 hotkey.  To use the standard
@@ -3419,7 +3348,6 @@ The hotkey field will sample the keys you press as the hotkey.  If you wish
 to enter a hotkey combination manually, press caps-lock and type as per
 normal. To erase the hotkey field, press backspace twice.
 
-Manual Ref: 5.5 - 87, 88
 @endnode
 
 @node "Environment - Icon Display" "Environment - Icon Display"
@@ -3460,7 +3388,39 @@ This section allows you to configure how icons are displayed within Opus.
     for icons on the desktop and in windows, respectively. You can change
     which font is used and how it is coloured.
 
-Manual Ref: 5.8 - 43
+@endnode
+
+@node "Environment - Icon Layout" "Environment - Icon Layout"
+ Icon Layout
+
+This panel controls how icons are arranged on the DOpus desktop and in
+icon-mode listers.  Replaces several legacy dopus/Icon* env variables
+that historically controlled the same numbers (see the Environment
+Variables appendix).
+
+  Icon Spacing X / Icon Spacing Y:
+    Extra horizontal and vertical pixels added between icons when
+    DOpus auto-arranges them.  A value of 0 packs the icons as tightly
+    as possible; larger values give the layout more breathing room.
+    Replaces the legacy dopus/IconSpaceX and dopus/IconSpaceY env
+    variables.
+
+  Icon Grid X / Icon Grid Y:
+    Snap-to-grid step size in pixels.  When the user drops an icon,
+    DOpus rounds the X and Y coordinates up to the next multiple of
+    the grid step, producing a tidy aligned layout.  A value of 1
+    disables snapping on that axis (icons keep their pixel-exact drop
+    position).  Replaces the legacy dopus/IconGridX and dopus/IconGridY
+    env variables.
+
+  Drop on Desktop Saves Position:
+    When enabled, dropping an icon on the desktop snapshots its new
+    position into that icon's .info file so it stays put across DOpus
+    restarts.  Otherwise the drop is treated as ephemeral and the
+    icon will revert to its arrangement-time position next time the
+    desktop is rebuilt.  Replaces the legacy dopus/ReturnOfBenify env
+    variable.
+
 @endnode
 
 @node "Environment - Icon Settings" "Environment - Icon Settings"
@@ -3561,7 +3521,6 @@ This section controls various aspects of Opus's icon display routines.
     Opus-less Amiga user, they will still be able to view your icons in
     the correct positions with Workbench.
 
-Manual Ref: 5.8 - 44, 45, 46
 @endnode
 
 @node "Environment - Lister Colours" "Environment - Lister Colours"
@@ -3580,7 +3539,6 @@ is used when the bar shows less than 90% full, and the background colour
 is used when the bar is at 90% or above. This lets you have a warning
 colour when the disk is getting full.
 
-Manual Ref: 5.8 - 46
 @endnode
 
 @node "Environment - Lister Default" "Environment - Lister Default"
@@ -3594,7 +3552,6 @@ Manual Ref: 5.8 - 46
     This allows you to define the default lister format to be used in
     listers which have not had a custom format defined.
 
-Manual Ref: 5.8 - 47
 @endnode
 
 @node "Environment - Lister Display" "Environment - Lister Display"
@@ -3615,7 +3572,27 @@ Manual Ref: 5.8 - 47
     on the right brings up a list of character sequences which insert
     informational values into the string.
 
-Manual Ref: 5.8 - 47
+  Hide Padlock In Lister Title:
+    When set, the read/write padlock gadget is no longer drawn in the
+    lister title bar.  Useful on narrow screens where the gadget eats
+    into the visible path string.  Replaces the legacy dopus/HidePadlock
+    env variable.  Affects newly-opened listers; already-open listers
+    keep their current chrome until they are closed and reopened.
+
+  Live Folder Updates (DOS Patches):
+    When enabled, dopus5.library installs hooks over a small set of
+    dos.library entry points (CreateDir, DeleteFile, SetFileDate,
+    SetComment, SetProtection, Rename, Open, Close, Write) so that
+    listers refresh automatically whenever any process - DOpus itself,
+    a CLI, an ARexx script, etc. - modifies a directory you have open.
+
+    Without this option you would need to manually re-read the lister
+    (e.g. press F5) to see external changes.  Replaces the legacy
+    dopus/DOSPatch env variable.
+
+    The patches install at dopus5.library open time, so a toggle
+    requires a DOpus restart to take effect.
+
 @endnode
 
 @node "Environment - Lister Options" "Environment - Lister Options"
@@ -3673,6 +3650,11 @@ The following options also control the lister behaviour:
     Enabling this causes listers to zoom to just a titlebar instead of the
     smallest window size when you click on the lister zoom gadget.
 
+  Show Full Path in Lister Title:
+    When set, the lister title bar shows the absolute path of the current
+    directory instead of just the leaf name.  Helpful when you have many
+    listers open and want to disambiguate without clicking on each one.
+
   Inline Editing:
     Enables inline editing of the filename and details in name mode
     listers. The setting of the cycle gadget controls how the inline
@@ -3682,7 +3664,6 @@ The following options also control the lister behaviour:
     the middle mouse button down. Left & Middle means that both buttons
     work.
 
-Manual Ref: 5.8 - 48
 @endnode
 
 @node "Environment - Locale" "Environment - Locale"
@@ -3705,7 +3686,6 @@ The different things that can be changed are:
     This allows you to have a separator between the hundreds and thousands
     when a number is displayed.
 
-Manual Ref: 5.5 - 89, 90
 @endnode
 
 @node "Environment - Miscellaneous" "Environment - Miscellaneous"
@@ -3751,13 +3731,17 @@ This enables you to set a few miscellaneous options.
     Determines the maximum number of Open With entries that appear in a
     project icon's popup menu.
 
+  Mouse Wheel Scroll Lines:
+    Sets how many lines a single notch of the mouse wheel scrolls a
+    lister.  Replaces the legacy dopus/WheelScrollLines env variable.
+    Minimum value is 1.
+
   Custom Screen Title:
     Allows you to display various information in the Opus screen's titlebar,
     such as CPU, Graphic chipset, total memory, tasks, etc.  The gadget to
     the left of the string gadget displays a list of allowable command
     sequences.
 
-Manual Ref: 5.8 - 49, 50, 51
 @endnode
 
 @node "Environment - Priority" "Environment - Priority"
@@ -3771,30 +3755,62 @@ You might need to use this, for instance, if you find a program you use at
 the same time as Opus 5 is at a higher priority and is hogging the CPU,
 preventing Opus 5 from working efficiently.
 
-Manual Ref: 5.5 - 91, 92
 @endnode
 
 @node "Environment - WB Emulation" "Environment - WB Emulation"
  WB Emulation
 
-This allows you to enable some Workbench Application functions.
+This panel groups the Workbench-emulation toggles and the application-
+patch flags that DOpus uses to behave like Workbench at the user-visible
+layer.
 
-Display AppIcons tells Opus to display all application icons in the Opus
-window.  Display Tools Menu tells Opus to add any Workbench Application
-Menus to a Global Tools Menu.  If you enable Move AppIcons to 'Tools' Menu
-then application icons will be redirected to the tools menu instead of
-appearing on the desktop.
+  Display AppIcons:
+    Tells Opus to display all application icons in the Opus main
+    window, just as Workbench would.
 
-Note that if you turn on Move AppIcons to 'Tools' Menu, you should make
-sure that Display Tools Menu is also on, otherwise application icons will
-be completely hidden. Also note that changing the flag only affects
-AppIcons added after the change is made.
+  Display 'Tools' Menu:
+    Tells Opus to add any Workbench application menu items to a global
+    Tools menu.
 
-By default, Opus will display all icons representing all volumes available
-in the system, including non-DOS disks.  The display of these 'bad disks'
-can be turned off.
+  Move AppIcons to 'Tools' Menu:
+    When enabled, application icons are redirected to the Tools menu
+    instead of appearing on the desktop.  Note that if you enable this,
+    you should make sure Display 'Tools' Menu is also on, otherwise
+    the application icons will be hidden completely.  The change only
+    affects AppIcons added after it is made.
 
-Manual Ref: 5.8 - 53
+  Hide Bad Disks:
+    By default, Opus shows icons for all volumes including non-DOS
+    disks.  Enable this to hide them and unclutter the backdrop window.
+
+  Show Workbench Leftout icons:
+    When enabled, Opus also shows Workbench "leftout" icons on its
+    desktop.
+
+  Suppress DOpus Title Bar Clock:
+    Stops Opus from drawing its own clock in the screen title bar so
+    that other Workbench-style title-bar patches (e.g. ToolManager,
+    custom-clock commodities) can use the space.  Replaces the legacy
+    dopus/WorkbenchTitle env variable.
+
+  Use Workbench Icon Information:
+    When set, the icon-information popup is routed through
+    Workbench's WBInfo() instead of DOpus's built-in editor.  Lets
+    third-party tools such as SwazInfo or RAWBInfo handle the request.
+    Replaces the legacy dopus/UseWBInfo env variable.
+
+  Enable Desktop Keyboard Shortcuts:
+    Enables an extra set of single-key shortcuts on the DOpus desktop
+    (e.g. for selecting all icons, opening the parent path, etc.).
+    Replaces the legacy dopus/EnableShortcuts env variable.
+
+  Prefer Datatypes for Showing Pictures:
+    Tells the Show command to ask the OS datatypes system before
+    falling back to DOpus's built-in IFF reader, which is useful if
+    you want to view formats not natively supported by Opus (PNG,
+    JPEG, etc.).  Replaces the legacy dopus/ShowUseDatatypesFirst
+    env variable.
+
 @endnode
 
 @node "Environment - Palette" "Environment - Palette"
@@ -3820,15 +3836,15 @@ You can select a path in the list and use Delete to remove it, conversely
 you can use the Add button and the string gadget or folder button next to
 it to add a path.
 
-Manual Ref: 5.8 - 51, 52
 @endnode
 
 @node "Environment - Sound Events" "Environment - Sound Events"
  Sound Events
 
 This section lets you configure a sound file to be played automatically for
-certain events.  The event list is the same as for scripts, but it saves you
-having to configure a whole script just to play a sound file.
+certain events.  The event list is the same as in the
+@{" Scripts Editor " link "Scripts Editor"}, but it saves you having to configure a whole
+script just to play a sound file.
 
 The folder button to the left of the string gadget brings up a file requester
 that you can choose the sound file from, the gadget to the right clears the
@@ -3843,7 +3859,6 @@ lets you test the sound before saving.
     be played on shutdown.  This should help stop any conflicts with other
     sounds that are trying to be played.
 
-Manual Ref: 5.8 - 53, 54
 @endnode
 
 @node "Lister Format" "Lister Format"
@@ -3906,7 +3921,6 @@ There are a variety of different options:
     Abandons any changes you have made to the display options for this
     lister.
 
-Manual Ref: 5.5 - 43
             5.8 - 18
 @endnode
 
@@ -3917,7 +3931,6 @@ This function allows you to alter the filetypes recognised and handled by
 Opus 5.  You may add, remove, rename, duplicate or @{" Edit " link "File Type Editor"} a selected
 filetype at this level.
 
-Manual Ref: 5.5 - 140
 @endnode
 
 @node "File Type Editor" "File Type Editor"
@@ -3933,7 +3946,21 @@ dropping the icon into the icon box or selecting the icon file using select
 icon.  The manner in which Opus 5 identifies a file to be of this filetype
 can be edited with the @{" Edit Class " link "File Class Editor"} button.
 
-Manual Ref: 5.5 - 141
+  Reordering icon menu entries:
+    The Up and Down buttons next to the icon menu list move the
+    selected entry one position up or down respectively.  The buttons
+    disable themselves at the top / bottom of the list to give
+    immediate feedback.  You can also drag-and-drop a list entry onto
+    a different row; the dropped entry inserts AT the target position
+    rather than swapping with it, so the visual position you release
+    over is where the entry lands.
+
+  Adding a new entry:
+    The Add button creates a new icon-menu entry pre-named "Untitled"
+    and selects it so you can edit straight into it.  If you click
+    Cancel before saving, any unsaved "Untitled" placeholders are
+    discarded so the original icon menu is preserved.
+
 @endnode
 
 @node "Lister File Count" "Lister File Count"
@@ -3941,19 +3968,16 @@ Manual Ref: 5.5 - 141
 asterisk '*' will also be shown if any files are hidden from view for any
 reason.
 
-Manual Ref: 5.5 - 38
 @endnode
 
 @node "Lister Menu PopUp" "Lister Menu PopUp"
  This button activates the user-editable lister menu popup.
 
-Manual Ref: 5.5 - 39
 @endnode
 
 @node "Lister Path PopUp" "Lister Path PopUp"
  This button activates the lister path popup.
 
-Manual Ref: 5.5 - 40
 @endnode
 
 @node "Lister Status PopUp" "Lister Status PopUp"
@@ -3966,7 +3990,6 @@ mode the lister is in.  The various modes are:
      @{" BUSY " link "Busy"}
      @{" OFF " link "Lister - Off"}
 
-Manual Ref: 5.5 - 40
 @endnode
 
 @node "Lister" "Lister"
@@ -4096,6 +4119,9 @@ system.
   @{b}The following variables are generated by Directory Opus and should NOT
              be edited under any circumstances.@{ub}
 
+  Most of these store binary data with @{i}GVF_BINARY_VAR@{ui} and aren't
+  human-readable; the descriptions below are for reference only.
+
  -----------------------------------------------------------------------------
 
 @{b}@{fg shine}@{bg text} dopus/dopus @{bg background}@{fg text}           @{bg shine} DO NOT EDIT!! @{bg background}@{ub}
@@ -4103,7 +4129,6 @@ system.
        Contains various enabled settings, eg. titlebar clock, recursive
        filter, etc.
 
-       Manual Ref: 5.5 - 251
 
 @{b}@{fg shine}@{bg text} dopus/Icon Clock @{bg background}@{fg text}      @{bg shine} DO NOT EDIT!! @{bg background}@{ub}
 
@@ -4123,7 +4148,6 @@ system.
 
        Stores preferences and information for the DOpus print functions.
 
-       Manual Ref: 5.5 - 251
 
 @{b}@{fg shine}@{bg text} dopus/taf @{bg background}@{fg text}             @{bg shine} DO NOT EDIT!! @{bg background}@{ub}
 
@@ -4142,7 +4166,6 @@ system.
        Contains all the information set for the DOpus internal text viewer, eg.
        position, font, editors.
 
-       Manual Ref: 5.5 - 251
 
 @{b}@{fg shine}@{bg text} dopus/windows/?????? @{bg background}@{fg text}  @{bg shine} DO NOT EDIT!! @{bg background}@{ub}
 
@@ -4160,7 +4183,7 @@ system.
 
 @{b}@{fg shine}@{bg text} dopus/HidePadlock @{bg background}@{fg text}@{ub}
 
-       Now: Environment editor -> Lister Options ->
+       Now: Environment editor -> Lister Display ->
        "Hide Padlock In Lister Title".
 
 @{b}@{fg shine}@{bg text} dopus/WorkbenchTitle @{bg background}@{fg text}@{ub}
@@ -4198,17 +4221,32 @@ system.
        Now: Environment editor -> Misc ->
        "Mouse Wheel Scroll Lines".
 
+@{b}@{fg shine}@{bg text} dopus/PopUpDelay @{bg background}@{fg text}@{ub}
+
+       Now: Environment editor -> Misc -> "Popup Delay".
+
+       Pre-v5.5 one-shot migration variable.  When DOpus loads a
+       config older than CONFIG_VERSION_11 it imports this var into
+       the saved settings; once the config has been saved by a
+       version-11+ build, the env var is no longer consulted.
+
+@{b}@{fg shine}@{bg text} dopus/CommandLineLength @{bg background}@{fg text}@{ub}
+
+       Now: Environment editor -> CLI Launching -> "Max. CLL".
+
+       Pre-v5.5 one-shot migration variable; same lifecycle as
+       dopus/PopUpDelay above.
+
 @{b}@{fg shine}@{bg text} dopus/NoBeeGees @{bg background}@{fg text}@{ub}
 
        Now: FTP module -> Default FTP Options ->
        "Disable Stayin' Alive Pings".
 
-       Note: because the FTP config has no version field, the env var
-       is consulted on every launch whenever the GUI checkbox is OFF.
-       If you set DOpus/NoBeeGees historically and now want the feature
-       OFF, remove the env var (`unsetenv DOpus/NoBeeGees`) to make the
-       GUI authoritative -- otherwise the env var takes precedence on
-       each launch and the box re-checks itself.
+       The FTP module imports this variable once on the first launch
+       with this build (commit 86f9d71), then deletes it from both
+       ENV: and ENVARC: so the GUI checkbox is the only source of
+       truth on subsequent runs.  No further action needed if you
+       set DOpus/NoBeeGees historically.
 
  -----------------------------------------------------------------------------
 
@@ -4224,7 +4262,6 @@ system.
 
        When set, provides compatibility for programs such as SysiHack.
 
-       Manual Ref: 5.5 - 251
 
 @{b}@{fg shine}@{bg text} dopus/OuEstLeMinibar @{bg background}@{fg text}@{ub}
 

@@ -1,3 +1,112 @@
+[dopus5allamigas next] Documentation refresh and historical-archive cleanup
+Program remains at 5.100.  No module version changes.
+
+Documentation:
+- Refreshed every per-tab description in DOpus5.guide for the
+  Environment editor.  All 21 panels now match their gadget arrays
+  1:1, including the new Icon Layout tab and the relocated Hide
+  Padlock entry.
+- Added Live Folder Updates (DOS Patches) writeup on the Lister
+  Display node and corrected the dopus/HidePadlock pointer that
+  still claimed the GUI checkbox lived under Lister Options.
+- Refreshed Format Requester for FFS-LNFS and PFS-family detection.
+- Refreshed File Type Editor for the icon-menu Up/Down + drag-
+  reorder rework.
+- Documented missing-button-banks prompt on Settings - Save Layout
+  and the WB-order DIRS / TOOLS / PROJECTS sort on Icons - Arrange
+  Icons.
+- Filled out the previously-thin Environment - Display node so all
+  11 widgets are described.
+- Added dopus/PopUpDelay and dopus/CommandLineLength to the
+  Variables appendix and refreshed the dopus/NoBeeGees migration
+  note now that the legacy var is one-shot.
+- Polish: @$VER bumped to 58.0, copyright extended to 2026, WB
+  Emulation prose aligned with actual catalog strings, OS 2.0/2.1
+  era-specific notes trimmed, AROS / MorphOS coverage added to
+  Hide Method, FTPOptions gadget list enumerated, Sound Events
+  cross-linked to Scripts Editor, GVF_BINARY_VAR preface added to
+  the auto-managed variables block.
+
+Documentation / archive cleanup:
+- Removed historical-version manual archives (documents/dopus5/,
+  documents/dopus5.5/, documents/dopus5.6/, documents/dopus5.8/,
+  DOpus55.pdf, DOpus582.pdf): 256 files / ~17 MB.  None of them
+  were referenced by build, installer or makefile.  documents/ now
+  contains only DOpus5.guide and DOpusM2_ARexx.guide as live
+  references, plus the two ModuleDiscovery / ModuleCallbacks
+  developer-notes markdown files.
+- Dropped 187 dangling "Manual Ref: X.Y - NN" page-number footnotes
+  from DOpus5.guide; the printed source manual they pointed at no
+  longer ships in-tree.
+
+Build:
+- Drop the release-package PDF copy step in source/makefile now
+  that no .pdf files remain in documents/; the wildcard expansion
+  was failing every CI build's release-packaging step.
+- Resolves #58.
+2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
+
+[dopus5allamigas next] Environment editor: legacy ENV variable cleanup and GUI promotion
+Program remains at 5.100.  dopus5.library bumps to v73r5;
+configopus.module, icon.module, show.module and ftp.module ship in
+v73r5.
+
+Environment editor / GUI promotions:
+- Promoted ten user-facing dopus/* env variables to GUI checkboxes
+  spread across the Environment editor.  The corresponding GUI tab
+  is now the source of truth; legacy env vars are imported once on
+  first launch via CONFIG_VERSION_13 / 14 / 15 migrations and then
+  ignored.
+    dopus/HidePadlock           -> Lister Display
+    dopus/WorkbenchTitle        -> WB Emulation
+    dopus/UseWBInfo             -> WB Emulation
+    dopus/EnableShortcuts       -> WB Emulation
+    dopus/ShowUseDatatypesFirst -> WB Emulation
+    dopus/IconSpaceX/Y          -> Icon Layout (new tab)
+    dopus/IconGridX/Y           -> Icon Layout
+    dopus/ReturnOfBenify        -> Icon Layout
+    dopus/WheelScrollLines      -> Misc
+    dopus/NoBeeGees             -> FTP / Default FTP Options
+- Added a brand-new "Icon Layout" tab to the Environment editor for
+  the four icon-arrangement controls plus the Benify checkbox.
+- Surfaced the existing dopus/DOSPatch ENVARC: variable as a "Live
+  Folder Updates (DOS Patches)" checkbox on Lister Display.
+
+Library / dos_patch.c:
+- L_PatchedOpen lazy-allocates its FIB + 512 path scratch buffer
+  only on the create branch (was unconditional, wasting an alloc on
+  every Open-for-read).
+- New shared dos_patch_memory pool (L_NewMemHandle 4096/1024,
+  MEMF_CLEAR | MEMF_PUBLIC) backs every FIB scratch allocation in
+  the patched DOS functions; reduces heap traffic on bulk file
+  operations.
+
+Library / cleanup:
+- Removed dead / easter-egg ENV reads: dopus/HardDiskCompression,
+  SchindlersList, JavaVM, CPUTurboMode, ColdChiselMode,
+  DigitalConvergence, PPCEnabled, TuEsUnTeapot, JeTePlumeraiLaTete,
+  plus unused source/Misc/Unused/dopus_var.c.
+- Retired the four obsolete GUIF2_* defines (WB_TITLE,
+  ENABLE_SHORTCUTS, NO_PADLOCK, BENIFY) now that their replacements
+  live in CFG_ENVR.
+
+FTP module / NoBeeGees migration:
+- DOpus/NoBeeGees env var is imported once on first launch with the
+  new build, then DeleteVar'd from both ENV: and ENVARC: so the GUI
+  checkbox is the only source of truth on subsequent runs.
+- Pre-#57 behaviour was to re-assert the env var on every launch as
+  long as the saved bit was 0, which made it impossible to disable
+  the feature via the GUI.
+
+AROS / cross-platform:
+- Added byte-swap symmetry on every new UWORD field in CFG_ENVR
+  (env_icon_space_x/y, env_icon_grid_x/y, env_wheel_scroll_lines,
+  env_pad_15) in both config_open.c (load) and environment.c
+  (save).  Configs are portable between AROS and big-endian
+  targets.
+- Resolves #49.
+2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
+
 [dopus5allamigas next] format.module: LNFS support and PFS awareness
 Program remains at 5.100. format.module ships in v73r5.
 
