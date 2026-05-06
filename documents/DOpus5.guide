@@ -83,6 +83,7 @@ that item and then press the help key before selecting it.
   @{" Environment, Desktop           " link "Environment - Desktop"}  @{" Environment, Directories       " link "Environment - Directories"}
   @{" Environment, Display           " link "Environment - Display"}  @{" Environment, Hide Method       " link "Environment - Hide Method"}
   @{" Environment, Icon Display      " link "Environment - Icon Display"}  @{" Environment, Icon Settings     " link "Environment - Icon Settings"}
+  @{" Environment, Icon Layout       " link "Environment - Icon Layout"}
   @{" Environment, Lister Colours    " link "Environment - Lister Colours"}  @{" Environment, Lister Default    " link "Environment - Lister Default"}
   @{" Environment, Lister Display    " link "Environment - Lister Display"}  @{" Environment, Lister Options    " link "Environment - Lister Options"}
   @{" Environment, Locale            " link "Environment - Locale"}  @{" Environment, Miscellaneous     " link "Environment - Miscellaneous"}
@@ -3158,6 +3159,7 @@ Environment editor:
     @{" Display " link "Environment - Display"}
     @{" Hide Method " link "Environment - Hide Method"}
     @{" Icon Display " link "Environment - Icon Display"}
+    @{" Icon Layout " link "Environment - Icon Layout"}
     @{" Icon Settings " link "Environment - Icon Settings"}
     @{" Lister Colours " link "Environment - Lister Colours"}
     @{" Lister Default " link "Environment - Lister Default"}
@@ -3463,6 +3465,40 @@ This section allows you to configure how icons are displayed within Opus.
 Manual Ref: 5.8 - 43
 @endnode
 
+@node "Environment - Icon Layout" "Environment - Icon Layout"
+ Icon Layout
+
+This panel controls how icons are arranged on the DOpus desktop and in
+icon-mode listers.  Replaces several legacy dopus/Icon* env variables
+that historically controlled the same numbers (see the Environment
+Variables appendix).
+
+  Icon Spacing X / Icon Spacing Y:
+    Extra horizontal and vertical pixels added between icons when
+    DOpus auto-arranges them.  A value of 0 packs the icons as tightly
+    as possible; larger values give the layout more breathing room.
+    Replaces the legacy dopus/IconSpaceX and dopus/IconSpaceY env
+    variables.
+
+  Icon Grid X / Icon Grid Y:
+    Snap-to-grid step size in pixels.  When the user drops an icon,
+    DOpus rounds the X and Y coordinates up to the next multiple of
+    the grid step, producing a tidy aligned layout.  A value of 1
+    disables snapping on that axis (icons keep their pixel-exact drop
+    position).  Replaces the legacy dopus/IconGridX and dopus/IconGridY
+    env variables.
+
+  Drop on Desktop Saves Position:
+    When enabled, dropping an icon on the desktop snapshots its new
+    position into that icon's .info file so it stays put across DOpus
+    restarts.  Otherwise the drop is treated as ephemeral and the
+    icon will revert to its arrangement-time position next time the
+    desktop is rebuilt.  Replaces the legacy dopus/ReturnOfBenify env
+    variable.
+
+Manual Ref: 5.8 - 44
+@endnode
+
 @node "Environment - Icon Settings" "Environment - Icon Settings"
  Icon Settings
 
@@ -3615,6 +3651,27 @@ Manual Ref: 5.8 - 47
     on the right brings up a list of character sequences which insert
     informational values into the string.
 
+  Hide Padlock In Lister Title:
+    When set, the read/write padlock gadget is no longer drawn in the
+    lister title bar.  Useful on narrow screens where the gadget eats
+    into the visible path string.  Replaces the legacy dopus/HidePadlock
+    env variable.  Affects newly-opened listers; already-open listers
+    keep their current chrome until they are closed and reopened.
+
+  Live Folder Updates (DOS Patches):
+    When enabled, dopus5.library installs hooks over a small set of
+    dos.library entry points (CreateDir, DeleteFile, SetFileDate,
+    SetComment, SetProtection, Rename, Open, Close, Write) so that
+    listers refresh automatically whenever any process - DOpus itself,
+    a CLI, an ARexx script, etc. - modifies a directory you have open.
+
+    Without this option you would need to manually re-read the lister
+    (e.g. press F5) to see external changes.  Replaces the legacy
+    dopus/DOSPatch env variable.
+
+    The patches install at dopus5.library open time, so a toggle
+    requires a DOpus restart to take effect.
+
 Manual Ref: 5.8 - 47
 @endnode
 
@@ -3672,6 +3729,11 @@ The following options also control the lister behaviour:
   Window Zooms to Title Bar:
     Enabling this causes listers to zoom to just a titlebar instead of the
     smallest window size when you click on the lister zoom gadget.
+
+  Show Full Path in Lister Title:
+    When set, the lister title bar shows the absolute path of the current
+    directory instead of just the leaf name.  Helpful when you have many
+    listers open and want to disambiguate without clicking on each one.
 
   Inline Editing:
     Enables inline editing of the filename and details in name mode
@@ -3751,6 +3813,11 @@ This enables you to set a few miscellaneous options.
     Determines the maximum number of Open With entries that appear in a
     project icon's popup menu.
 
+  Mouse Wheel Scroll Lines:
+    Sets how many lines a single notch of the mouse wheel scrolls a
+    lister.  Replaces the legacy dopus/WheelScrollLines env variable.
+    Minimum value is 1.
+
   Custom Screen Title:
     Allows you to display various information in the Opus screen's titlebar,
     such as CPU, Graphic chipset, total memory, tasks, etc.  The gadget to
@@ -3777,22 +3844,56 @@ Manual Ref: 5.5 - 91, 92
 @node "Environment - WB Emulation" "Environment - WB Emulation"
  WB Emulation
 
-This allows you to enable some Workbench Application functions.
+This panel groups the Workbench-emulation toggles and the application-
+patch flags that DOpus uses to behave like Workbench at the user-visible
+layer.
 
-Display AppIcons tells Opus to display all application icons in the Opus
-window.  Display Tools Menu tells Opus to add any Workbench Application
-Menus to a Global Tools Menu.  If you enable Move AppIcons to 'Tools' Menu
-then application icons will be redirected to the tools menu instead of
-appearing on the desktop.
+  Display AppIcons:
+    Tells Opus to display all application icons in the Opus main
+    window, just as Workbench would.
 
-Note that if you turn on Move AppIcons to 'Tools' Menu, you should make
-sure that Display Tools Menu is also on, otherwise application icons will
-be completely hidden. Also note that changing the flag only affects
-AppIcons added after the change is made.
+  Display Tools Menu:
+    Tells Opus to add any Workbench application menu items to a global
+    Tools menu.
 
-By default, Opus will display all icons representing all volumes available
-in the system, including non-DOS disks.  The display of these 'bad disks'
-can be turned off.
+  Move AppIcons to 'Tools' Menu:
+    When enabled, application icons are redirected to the Tools menu
+    instead of appearing on the desktop.  Note that if you enable this,
+    you should make sure Display Tools Menu is also on, otherwise the
+    application icons will be hidden completely.  The change only
+    affects AppIcons added after it is made.
+
+  Hide Bad Disks:
+    By default, Opus shows icons for all volumes including non-DOS
+    disks.  Enable this to hide them and unclutter the backdrop window.
+
+  Show WB Leftouts:
+    When enabled, Opus also shows Workbench "leftout" icons on its
+    desktop.
+
+  Suppress DOpus Title Bar Clock:
+    Stops Opus from drawing its own clock in the screen title bar so
+    that other Workbench-style title-bar patches (e.g. ToolManager,
+    custom-clock commodities) can use the space.  Replaces the legacy
+    dopus/WorkbenchTitle env variable.
+
+  Use Workbench Icon Information:
+    When set, the icon-information popup is routed through
+    Workbench's WBInfo() instead of DOpus's built-in editor.  Lets
+    third-party tools such as SwazInfo or RAWBInfo handle the request.
+    Replaces the legacy dopus/UseWBInfo env variable.
+
+  Enable Desktop Keyboard Shortcuts:
+    Enables an extra set of single-key shortcuts on the DOpus desktop
+    (e.g. for selecting all icons, opening the parent path, etc.).
+    Replaces the legacy dopus/EnableShortcuts env variable.
+
+  Prefer Datatypes for Showing Pictures:
+    Tells the Show command to ask the OS datatypes system before
+    falling back to DOpus's built-in IFF reader, which is useful if
+    you want to view formats not natively supported by Opus (PNG,
+    JPEG, etc.).  Replaces the legacy dopus/ShowUseDatatypesFirst
+    env variable.
 
 Manual Ref: 5.8 - 53
 @endnode
@@ -4160,7 +4261,7 @@ system.
 
 @{b}@{fg shine}@{bg text} dopus/HidePadlock @{bg background}@{fg text}@{ub}
 
-       Now: Environment editor -> Lister Options ->
+       Now: Environment editor -> Lister Display ->
        "Hide Padlock In Lister Title".
 
 @{b}@{fg shine}@{bg text} dopus/WorkbenchTitle @{bg background}@{fg text}@{ub}

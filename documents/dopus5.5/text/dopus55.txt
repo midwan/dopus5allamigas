@@ -1477,7 +1477,29 @@ Display AppIcons:  Tells Opus 5 to display  all application icons in the Opus 5 
 
 Display Tools Menu:  Tells Opus 5 to add any WorkBench application menus to a global 'Tools' menu.
 
+Move AppIcons to 'Tools' Menu:  When enabled, application icons are redirected to the Tools menu instead of appearing on the desktop.  Note that you should also enable Display Tools Menu, otherwise the application icons will be hidden completely.  The change only affects AppIcons added after it is made.
+
 Hide Bad Disks:  By default, Opus 5 will show any Non-DOS disk icons (as does Workbench).  This option allows you to hide these icons to unclutter your backdrop window.
+
+Show WB Leftouts:  When enabled, Opus also shows Workbench "leftout" icons on its desktop.
+
+Suppress DOpus Title Bar Clock:  Stops Opus from drawing its own clock in the screen title bar so that Workbench-style title-bar patches (e.g. ToolManager, custom-clock commodities) can use the space.  Replaces the legacy dopus/WorkbenchTitle env variable.
+
+Use Workbench Icon Information:  When set, the icon-information popup is routed through Workbench's WBInfo() instead of Opus's built-in editor, so third-party tools such as SwazInfo or RAWBInfo can handle the request.  Replaces the legacy dopus/UseWBInfo env variable.
+
+Enable Desktop Keyboard Shortcuts:  Enables an extra set of single-key shortcuts on the Opus desktop (e.g. for selecting all icons, opening the parent path, etc.).  Replaces the legacy dopus/EnableShortcuts env variable.
+
+Prefer Datatypes for Showing Pictures:  Tells the Show command to ask the OS datatypes system before falling back to Opus's built-in IFF reader.  Useful if you want to view formats not natively supported by Opus (PNG, JPEG, etc.).  Replaces the legacy dopus/ShowUseDatatypesFirst env variable.
+
+Icon Layout
+
+This section controls how icons are arranged on the Opus desktop and in icon-mode listers.  Replaces several legacy dopus/Icon* env variables.
+
+Icon Spacing X / Icon Spacing Y:  Extra horizontal and vertical pixels added between icons when Opus auto-arranges them.  A value of 0 packs icons as tightly as possible.  Replaces the legacy dopus/IconSpaceX and dopus/IconSpaceY env variables.
+
+Icon Grid X / Icon Grid Y:  Snap-to-grid step size in pixels.  When the user drops an icon, Opus rounds the X and Y coordinates up to the next multiple of the grid step, producing a tidy aligned layout.  A value of 1 disables snapping on that axis.  Replaces the legacy dopus/IconGridX and dopus/IconGridY env variables.
+
+Drop on Desktop Saves Position:  When enabled, dropping an icon on the desktop snapshots its new position into that icon's .info file so it stays put across Opus restarts.  Replaces the legacy dopus/ReturnOfBenify env variable.
 
 Lister Display
 
@@ -1505,6 +1527,12 @@ Select Font:  From a font requester you may select the font and size you wish to
 
 Default Format:  From the List Format requester, you may select the default format you wish to be used whenever a new Lister is opened.  
 
+Field Titles:  Tells Opus to display the name of each display field at the top of the Lister when in Name mode.  When field titles are displayed, clicking on the field name will resort the list in ascending or descending order by that field.
+
+Hide Padlock In Lister Title:  When set, the read/write padlock gadget is no longer drawn in the lister title bar.  Useful on narrow screens where the gadget eats into the visible path string.  Replaces the legacy dopus/HidePadlock env variable.  Affects newly-opened listers; already-open listers keep their current chrome until they are closed and reopened.
+
+Live Folder Updates (DOS Patches):  When enabled, dopus5.library installs hooks over a small set of dos.library entry points (CreateDir, DeleteFile, SetFileDate, SetComment, SetProtection, Rename, Open, Close, Write) so that listers refresh automatically whenever any process - Opus itself, a CLI, an ARexx script, etc. - modifies a directory you have open.  Without this option you would need to manually re-read the lister (e.g. press F5) to see external changes.  Replaces the legacy dopus/DOSPatch env variable.  The patches install at dopus5.library open time, so a toggle requires an Opus restart to take effect.
+
 
 
 
@@ -1520,11 +1548,19 @@ RMB double-click editing: When selected, double-clicking the right mouse button 
 
 SimpleRefresh windows:  This option tells Opus to handle the refreshing of Lister windows rather than let it be done by the system.  Enabling this option will mean Opus Listers will use less memory, but may be refreshed somewhat slower.
 
-Field Titles:  This option tells Opus to display the name of each display field at the top of the Lister when in Name mode.  This setting is global and applies to all Name mode Listers.  When field titles are displayed, clicking on the field name will resort the list in ascending or descending order by that field.
-
 Always Use Snapshot Position:  When a Lister is closed, Opus makes a temporary snapshot of the size, position and mode for the specific path displayed in the Lister.  When you next open this same path, Opus uses this temporary snapshot to re-display the Lister exactly as when you last used it in this session.  However, some users prefer to have Listers always appear in a set size, position and mode.  To do this, open a Lister for the required path and permanently snapshot the Lister details from the Lister/Snapshot Menu.  If this option is set, whenever Opus opens a new Lister of this path, the permanent snapshot will always be used instead of the temporary one.
 
 Name Mode Popup:  Enables the RMB Filetype pop-up menus in Name mode.  This are the same menus as the icon pop-up menus.  They provides access to a set of common functions plus special functions according to the type of file and may be further enhanced using the Filetypes system.
+
+Drag Into Sub-Directories:  When enabled, dragging files over a directory in a Lister highlights the directory name; releasing the files there uses that sub-directory as the destination instead of the path of the lister itself.  When disabled, holding Shift while dragging activates the same behaviour on demand.
+
+Allow File Select On Source Activation:  When enabled, clicking on a file in a non-source Lister both makes it the source AND selects the file in one click.  When disabled, the click only changes the source; the file selection requires a second click.
+
+Window Zooms to Title Bar:  Enabling this causes Listers to zoom to just a titlebar instead of the smallest window size when you click on the Lister zoom gadget.
+
+Show Full Path in Lister Title:  When set, the Lister title bar shows the absolute path of the current directory instead of just the leaf name.  Helpful when you have many Listers open and want to disambiguate without clicking on each one.
+
+Inline Editing:  Enables inline editing of the filename and details in name mode listers.  The setting of the cycle gadget controls how the inline editing mode is activated.  Left Button means that you must hold the left mouse button over the entry for a certain time before editing mode is activated; Middle Button means that you must hold the middle mouse button down; Left & Middle means that both buttons work.
 
 Default Size:  Allows you to set the initial size to use when opening a new Lister.  
 
@@ -1671,6 +1707,16 @@ Quick quit:  When set, Opus 5 will quit immediately when asked to without first 
 Extended lister key selection:  With this turned on, you can quickly find files in large directories even if many files begin with the same letters.  When you type the first letter, a string gadget will appear over the Lister toolbar enabling you to type as much of the filename as is necessary for it to scroll into view.  As soon as you begin any other action the string gadget will disappear once more.
 
 Filetype Sniffer:  If enabled, Opus will automatically run the FindFiletype command when a file with no defined Filetype is double-clicked.  With the option turned off, Opus will run the SmartRead command to view the file as either text, ansi or hexadecimal.
+
+Thin Gadget Borders:  Turning this on will make all Opus gadgets (except GadTools ones) use single-pixel vertical borders to improve the display on 1:1 screen ratios.
+
+Popup Delay:  Determines how long the mouse button should be held down before a popup menu appears.  Specified in tenths of a second.
+
+Maximum 'Open With' Entries:  Determines the maximum number of Open With entries that appear in a project icon's popup menu.
+
+Mouse Wheel Scroll Lines:  Sets how many lines a single notch of the mouse wheel scrolls a Lister.  Replaces the legacy dopus/WheelScrollLines env variable.  Minimum value is 1.
+
+Custom Screen Title:  Allows you to display various information in the Opus screen titlebar (CPU, graphic chipset, total memory, tasks, etc.).  The gadget to the left of the string field displays a list of allowable command sequences.
 
 Priority
 
@@ -5244,7 +5290,7 @@ Promoted to the GUI (read once on first launch with the new build, then
 ignored - the corresponding setting in the Environment editor or the FTP
 options dialog is the source of truth):
 
-	dopus/HidePadlock         - Environment editor / Lister Options
+	dopus/HidePadlock         - Environment editor / Lister Display
 	dopus/WorkbenchTitle      - Environment editor / WB Emulation
 	dopus/UseWBInfo           - Environment editor / WB Emulation
 	dopus/EnableShortcuts     - Environment editor / WB Emulation
