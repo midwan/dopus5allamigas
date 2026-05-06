@@ -460,7 +460,7 @@ IPC_EntryCode(clock_proc)
 								ok = 1;
 
 								// Rendering to screen title bar, in Workbench compatible way?
-								if (GUI->flags2 & GUIF2_WB_TITLE)
+								if (environment->env->display_options & DISPOPTF_WB_TITLE)
 								{
 									// Save window pointer
 									tit_window = IntuitionBase->ActiveWindow;

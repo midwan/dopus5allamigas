@@ -878,6 +878,12 @@ Window _Zooms to Title Bar
 MSG_ENVIRONMENT_FULL_PATH (23023//)
 Show Full _Path in Lister Title
 ;
+MSG_ENVIRONMENT_HIDE_PADLOCK (//)
+_Hide Padlock In Lister Title
+;
+MSG_ENVIRONMENT_OPTIONS_WB_TITLE (//)
+_Suppress DOpus Title Bar Clock
+;
 ;
 MSG_ENVIRONMENT_PICTURE_STRETCHED (//)
 Stretch Picture

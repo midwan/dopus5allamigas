@@ -142,7 +142,7 @@ struct Window *lister_open_window(Lister *lister, struct Screen *screen)
 		screen, &lister->backdrop_info->boopsi_list, (lister->flags & LISTERF_LOCK_POS) ? TRUE : FALSE);
 
 	// Create lock gadget
-	if (!(GUI->flags2 & GUIF2_NO_PADLOCK) &&
+	if (!(environment->env->lister_options & LISTEROPTF_NO_PADLOCK) &&
 		(lock_gad = CreateTitleGadget(screen,
 									  &lister->backdrop_info->boopsi_list,
 									  (lister->flags & LISTERF_LOCK_POS) ? TRUE : FALSE,

@@ -1877,6 +1877,9 @@ void _config_env_set(config_env_data *data, short option)
 		SetGadgetValue(data->option_list,
 					   GAD_ENVIRONMENT_OPTIONS_SHOW_WBLEFTOUTS,
 					   data->config->display_options & DISPOPTF_SHOW_WBLEFTOUTS);
+		SetGadgetValue(data->option_list,
+					   GAD_ENVIRONMENT_OPTIONS_WB_TITLE,
+					   data->config->display_options & DISPOPTF_WB_TITLE);
 		break;
 
 	// Pictures
@@ -1947,6 +1950,10 @@ void _config_env_set(config_env_data *data, short option)
 		// Full path in lister title
 		SetGadgetValue(
 			data->option_list, GAD_ENVIRONMENT_FULL_PATH, data->config->lister_options & LISTEROPTF_FULL_PATH);
+
+		// Hide padlock gadget
+		SetGadgetValue(
+			data->option_list, GAD_ENVIRONMENT_HIDE_PADLOCK, data->config->lister_options & LISTEROPTF_NO_PADLOCK);
 
 		// Lister editing
 		SetGadgetValue(data->option_list,
@@ -2309,7 +2316,7 @@ void _config_env_store(config_env_data *data, short option)
 
 		// Reset flags
 		data->config->display_options &= ~(DISPOPTF_SHOW_APPICONS | DISPOPTF_SHIFT_APPICONS | DISPOPTF_SHOW_TOOLS |
-										   DISPOPTF_HIDE_BAD | DISPOPTF_SHOW_WBLEFTOUTS);
+										   DISPOPTF_HIDE_BAD | DISPOPTF_SHOW_WBLEFTOUTS | DISPOPTF_WB_TITLE);
 
 		// Workbench patches
 		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_APPICONS))
@@ -2322,6 +2329,8 @@ void _config_env_store(config_env_data *data, short option)
 			data->config->display_options |= DISPOPTF_HIDE_BAD;
 		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_SHOW_WBLEFTOUTS))
 			data->config->display_options |= DISPOPTF_SHOW_WBLEFTOUTS;
+		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_WB_TITLE))
+			data->config->display_options |= DISPOPTF_WB_TITLE;
 		break;
 
 	// Pictures
@@ -2444,6 +2453,12 @@ void _config_env_store(config_env_data *data, short option)
 			data->config->lister_options |= LISTEROPTF_FULL_PATH;
 		else
 			data->config->lister_options &= ~LISTEROPTF_FULL_PATH;
+
+		// Hide padlock gadget
+		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_HIDE_PADLOCK))
+			data->config->lister_options |= LISTEROPTF_NO_PADLOCK;
+		else
+			data->config->lister_options &= ~LISTEROPTF_NO_PADLOCK;
 
 		// Lister editing
 		option = GetGadgetValue(data->option_list, GAD_ENVIRONMENT_LISTER_EDITING);

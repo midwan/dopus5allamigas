@@ -384,6 +384,7 @@ enum {
 #define DISPOPTF_REALTIME_SCROLL (1 << 10)	// Real-time icon scrolling
 #define DISPOPTF_THIN_BORDERS (1 << 11)		// Thin borders
 #define DISPOPTF_SHOW_WBLEFTOUTS (1 << 12)	// show workbench's leftout icons from the .backdrop files
+#define DISPOPTF_WB_TITLE (1 << 13)			// Suppress DOpus title-bar clock so WB-style patches can use it
 
 // lister options
 #define LISTEROPTF_DEVICES (1 << 0)	   // Device list in new lister
@@ -400,6 +401,7 @@ enum {
 #define LISTEROPTF_NOACTIVESELECT (1 << 10)	 // No file select on window activation
 #define LISTEROPTF_VOSTY_ZOOM (1 << 11)		 // Ben Vost zoom mode
 #define LISTEROPTF_FULL_PATH (1 << 12)		 // Show full path in lister title
+#define LISTEROPTF_NO_PADLOCK (1 << 13)		 // Hide padlock gadget from lister title bars
 
 // desktop flags
 #define DESKTOPF_DISTINCT (1 << 0)		  // Distinct icon positions

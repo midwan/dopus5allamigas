@@ -654,6 +654,16 @@ const ObjectDef _config_environment_objects[] =
 						 GAD_ENVIRONMENT_OPTIONS_SHOW_WBLEFTOUTS,
 						 _environment_relative_taglist},
 
+						// Suppress DOpus title bar clock (lets WB-style patches use it)
+						{OD_GADGET,
+						 CHECKBOX_KIND,
+						 {4, 9, 0, 1},
+						 {5, 49, 26, 4},
+						 MSG_ENVIRONMENT_OPTIONS_WB_TITLE,
+						 PLACETEXT_RIGHT,
+						 GAD_ENVIRONMENT_OPTIONS_WB_TITLE,
+						 _environment_relative_taglist},
+
 						{OD_END}},
 
 				// Output window
@@ -856,11 +866,21 @@ const ObjectDef _config_environment_objects[] =
 			 GAD_ENVIRONMENT_FULL_PATH,
 			 _environment_relative_taglist},
 
+			// Hide padlock gadget
+			{OD_GADGET,
+			 CHECKBOX_KIND,
+			 {4, 11, 0, 1},
+			 {5, 58, 26, 4},
+			 MSG_ENVIRONMENT_HIDE_PADLOCK,
+			 PLACETEXT_RIGHT,
+			 GAD_ENVIRONMENT_HIDE_PADLOCK,
+			 _environment_relative_taglist},
+
 			// Lister editing
 			{OD_GADGET,
 			 CYCLE_KIND,
-			 {4, 11, 16, 1},
-			 {5, 58, 24, 6},
+			 {4, 12, 16, 1},
+			 {5, 64, 24, 6},
 			 MSG_ENVIRONMENT_LISTER_EDITING,
 			 PLACETEXT_RIGHT,
 			 GAD_ENVIRONMENT_LISTER_EDITING,

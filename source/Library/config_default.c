@@ -322,7 +322,7 @@ void LIBFUNC L_DefaultEnvironment(REG(a0, CFG_ENVR *env))
 	env->env_NewIconsPrecision = 16;
 
 	// Set version
-	env->version = CONFIG_VERSION_12;
+	env->version = CONFIG_VERSION_13;
 
 	// Get default settings
 	L_DefaultSettings(&env->settings);
@@ -527,11 +527,24 @@ void LIBFUNC L_UpdateEnvironment(REG(a0, CFG_ENVR *env))
 		env->settings.max_filename = 30;
 	}
 
+	// Pre-version 13: import legacy ENV: flags into the config so users see
+	// their previous behaviour after upgrading. Empty values count as "off".
+	if (env->version < CONFIG_VERSION_13)
+	{
+		char buf[4];
+
+		if (GetVar("dopus/HidePadlock", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0 && buf[0] != '0')
+			env->lister_options |= LISTEROPTF_NO_PADLOCK;
+
+		if (GetVar("dopus/WorkbenchTitle", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0 && buf[0] != '0')
+			env->display_options |= DISPOPTF_WB_TITLE;
+	}
+
 	fix_list_format_display(&env->list_format);
 	fix_list_format_colours(&env->list_format, env->version < CONFIG_VERSION_12);
 
 	// Fix version
-	env->version = CONFIG_VERSION_12;
+	env->version = CONFIG_VERSION_13;
 
 	// Is themes path empty?
 	if (!env->themes_location[0])
