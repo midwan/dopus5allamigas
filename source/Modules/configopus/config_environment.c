@@ -2570,6 +2570,11 @@ void _config_env_store(config_env_data *data, short option)
 		// Read into signed LONG and clamp BEFORE casting to UWORD: an
 		// INTEGER_KIND gadget without GTCustom_MinMax accepts negative input,
 		// and (val < 1) on an unsigned val would silently keep the wrap.
+		// Note: the (LONG) truncation of GetGadgetValue's IPTR is safe because
+		// GTIN_MaxChars=4 in _environment_icon_int_tags constrains values to
+		// [-9999, 9999] -- well within int32 range.  If max-chars ever grows
+		// beyond 9, switch to (IPTR)/intptr_t to avoid losing the sign bit on
+		// x86_64-aros where IPTR is 64-bit.
 		LONG val;
 
 		val = (LONG)GetGadgetValue(data->option_list, GAD_ENVIRONMENT_ICON_SPACE_X);

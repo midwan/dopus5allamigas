@@ -466,6 +466,12 @@ typedef struct
 
 	// Promoted from ENV: vars in CONFIG_VERSION_14 (issue #49). Steals 8 of
 	// pad[17]'s 68 reserved bytes so on-disk layout stays compatible.
+	// IMPORTANT: if you ever grow CFG_ENVR past its current 72-byte footprint
+	// you must memset(0) the destination before L_IFFReadChunkBytes in
+	// config_open.c -- the IFF reader does NOT zero-fill the trailing buffer
+	// when the on-disk chunk is shorter than sizeof(CFG_ENVR), and the
+	// version-gated migrations in config_default.c rely on the new fields
+	// being zero in pre-v14 configs.
 	UWORD env_icon_space_x;	 // Desktop icon X spacing (was dopus/IconSpaceX)
 	UWORD env_icon_space_y;	 // Desktop icon Y spacing (was dopus/IconSpaceY)
 	UWORD env_icon_grid_x;	 // Desktop icon X grid step, 1 = no grid

@@ -4204,10 +4204,11 @@ system.
        "Disable Stayin' Alive Pings".
 
        Note: because the FTP config has no version field, the env var
-       is consulted whenever the GUI checkbox is OFF -- so if you used
-       to set the env var and now want to turn the feature off, also
-       UNSET dopus/NoBeeGees (`unsetenv DOpus/NoBeeGees`) or it will
-       keep re-asserting on each launch.
+       is consulted on every launch whenever the GUI checkbox is OFF.
+       If you set DOpus/NoBeeGees historically and now want the feature
+       OFF, remove the env var (`unsetenv DOpus/NoBeeGees`) to make the
+       GUI authoritative -- otherwise the env var takes precedence on
+       each launch and the box re-checks itself.
 
  -----------------------------------------------------------------------------
 
