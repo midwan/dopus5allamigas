@@ -272,7 +272,7 @@ struct ftp_config
 
 			unsigned int oc_addr_auto : 1;	// auto close addressbook on connect
 			unsigned int oc_addr_dc : 2;	// what to do on double click
-			unsigned int pad8 : 1;
+			unsigned int oc_no_keep_alive : 1;	// disable "Stayin' Alive" pings (was DOpus/NoBeeGees env var)
 #ifdef __AROS__
 		};
 		unsigned int bitfield1;
@@ -478,6 +478,7 @@ enum {
 	GAD_ENV_AUTO_DOWNLOAD_SIZE,
 	GAD_ENV_LOG_ENABLE,
 	GAD_ENV_DEBUG,
+	GAD_ENV_NO_KEEP_ALIVE,
 	GAD_ENV_LOG_FILE,
 	GAD_ENV_ANON_PASSWORD,
 

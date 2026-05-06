@@ -151,6 +151,8 @@ BPTR setup_config(struct opusftp_globals *ogp)
 
 	if (!get_global_options(ogp))
 	{
+		char env;
+
 		set_config_to_default(oc);
 
 		// check for old config and read if there
@@ -160,6 +162,13 @@ BPTR setup_config(struct opusftp_globals *ogp)
 			UnLock(lock);
 			read_old_config(oc);
 		}
+
+		// Migration: if the legacy DOpus/NoBeeGees env var is set, enable
+		// "Disable Stayin' Alive Pings" by default. Only fires when there's
+		// no saved FTP config yet, so once the user saves the addressbook
+		// the GUI checkbox becomes the source of truth.
+		if (GetVar("DOpus/NoBeeGees", &env, 1, GVF_GLOBAL_ONLY) != -1)
+			oc->oc_no_keep_alive = 1;
 	}
 
 	// Open log file

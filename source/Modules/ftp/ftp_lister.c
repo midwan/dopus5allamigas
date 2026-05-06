@@ -3291,15 +3291,15 @@ static int lister_alive(struct ftp_node *ftpnode, IPCMessage *msg)
 static BOOL network_available(struct ftp_node *ftpnode, IPCMessage *msg)
 {
 	BOOL result = FALSE;
-	char env;
 
 	D(bug("check network\n"));
 
 	while (1)  // for colin :)
 	{
-		// if envvar then skip this check
+		// Skip the keep-alive check if the user disabled it in the FTP options
+		// (was driven by the DOpus/NoBeeGees env var; now an addressbook flag).
 
-		if (GetVar("DOpus/NoBeeGees", &env, 1, GVF_GLOBAL_ONLY) == -1)
+		if (!ftpnode->fn_og->og_oc.oc_no_keep_alive)
 		{
 			// if getput then check destination connection first
 
