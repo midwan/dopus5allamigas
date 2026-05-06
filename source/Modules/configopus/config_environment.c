@@ -1828,6 +1828,10 @@ void _config_env_set(config_env_data *data, short option)
 		// Field titles
 		SetGadgetValue(
 			data->option_list, GAD_ENVIRONMENT_FIELD_TITLES, data->config->lister_options & LISTEROPTF_TITLES);
+
+		// Hide padlock gadget
+		SetGadgetValue(
+			data->option_list, GAD_ENVIRONMENT_HIDE_PADLOCK, data->config->lister_options & LISTEROPTF_NO_PADLOCK);
 		break;
 
 	// Lister colours
@@ -1959,10 +1963,6 @@ void _config_env_set(config_env_data *data, short option)
 		// Full path in lister title
 		SetGadgetValue(
 			data->option_list, GAD_ENVIRONMENT_FULL_PATH, data->config->lister_options & LISTEROPTF_FULL_PATH);
-
-		// Hide padlock gadget
-		SetGadgetValue(
-			data->option_list, GAD_ENVIRONMENT_HIDE_PADLOCK, data->config->lister_options & LISTEROPTF_NO_PADLOCK);
 
 		// Lister editing
 		SetGadgetValue(data->option_list,
@@ -2313,6 +2313,12 @@ void _config_env_store(config_env_data *data, short option)
 			data->config->lister_options |= LISTEROPTF_TITLES;
 		else
 			data->config->lister_options &= ~LISTEROPTF_TITLES;
+
+		// Hide padlock gadget
+		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_HIDE_PADLOCK))
+			data->config->lister_options |= LISTEROPTF_NO_PADLOCK;
+		else
+			data->config->lister_options &= ~LISTEROPTF_NO_PADLOCK;
 		break;
 
 	// Lister colours
@@ -2480,12 +2486,6 @@ void _config_env_store(config_env_data *data, short option)
 			data->config->lister_options |= LISTEROPTF_FULL_PATH;
 		else
 			data->config->lister_options &= ~LISTEROPTF_FULL_PATH;
-
-		// Hide padlock gadget
-		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_HIDE_PADLOCK))
-			data->config->lister_options |= LISTEROPTF_NO_PADLOCK;
-		else
-			data->config->lister_options &= ~LISTEROPTF_NO_PADLOCK;
 
 		// Lister editing
 		option = GetGadgetValue(data->option_list, GAD_ENVIRONMENT_LISTER_EDITING);
