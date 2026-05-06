@@ -1123,10 +1123,15 @@ void backdrop_show_rect(BackdropInfo *info, BackdropObject *object, short x, sho
 // Check grid coordinates
 void backdrop_check_grid(long *x, long *y)
 {
-	if (x && environment->env->env_icon_grid_x > 1 && *x > 0)
-		*x = ((*x + environment->env->env_icon_grid_x - 1) / environment->env->env_icon_grid_x) * environment->env->env_icon_grid_x;
-	if (y && environment->env->env_icon_grid_y > 1 && *y > 0)
-		*y = ((*y + environment->env->env_icon_grid_y - 1) / environment->env->env_icon_grid_y) * environment->env->env_icon_grid_y;
+	// Hoist into locals - this gets called per icon in the lineup loop,
+	// no point doing two pointer dereferences three times each.
+	UWORD gx = environment->env->env_icon_grid_x;
+	UWORD gy = environment->env->env_icon_grid_y;
+
+	if (x && gx > 1 && *x > 0)
+		*x = ((*x + gx - 1) / gx) * gx;
+	if (y && gy > 1 && *y > 0)
+		*y = ((*y + gy - 1) / gy) * gy;
 }
 
 // Line-up backdrop objects
