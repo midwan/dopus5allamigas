@@ -538,6 +538,10 @@ void LIBFUNC L_UpdateEnvironment(REG(a0, CFG_ENVR *env))
 
 		if (GetVar("dopus/WorkbenchTitle", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0 && buf[0] != '0')
 			env->display_options |= DISPOPTF_WB_TITLE;
+
+		// Note: legacy UseWBInfo used `> 0` (any value enables) -- preserve that semantics
+		if (GetVar("dopus/UseWBInfo", buf, sizeof(buf), GVF_GLOBAL_ONLY) > 0)
+			env->display_options |= DISPOPTF_USE_WBINFO;
 	}
 
 	fix_list_format_display(&env->list_format);

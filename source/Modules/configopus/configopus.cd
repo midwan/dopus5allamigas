@@ -884,6 +884,9 @@ _Hide Padlock In Lister Title
 MSG_ENVIRONMENT_OPTIONS_WB_TITLE (//)
 _Suppress DOpus Title Bar Clock
 ;
+MSG_ENVIRONMENT_OPTIONS_USE_WBINFO (//)
+Use Workbench _Icon Information
+;
 ;
 MSG_ENVIRONMENT_PICTURE_STRETCHED (//)
 Stretch Picture

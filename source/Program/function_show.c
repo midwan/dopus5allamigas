@@ -287,13 +287,13 @@ DOPUS_FUNC(function_show)
 			)
 			{
 				// Show IconInfo
-				if (Module_Entry((struct List *)list,
-								 GUI->screen_pointer,
-								 handle->ipc,
-								 &main_ipc,
-								 0,
-								 (environment->env->desktop_flags & DESKTOPF_NO_REMAP) ? 1 : 0))
-					ret = 1;
+				{
+					ULONG flags = (environment->env->desktop_flags & DESKTOPF_NO_REMAP) ? 1 : 0;
+					if (environment->env->display_options & DISPOPTF_USE_WBINFO)
+						flags |= ICON_USE_WBINFO_FLAG;
+					if (Module_Entry((struct List *)list, GUI->screen_pointer, handle->ipc, &main_ipc, 0, flags))
+						ret = 1;
+				}
 
 // Close module
 #ifdef __amigaos4__

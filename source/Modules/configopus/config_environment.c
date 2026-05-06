@@ -1880,6 +1880,9 @@ void _config_env_set(config_env_data *data, short option)
 		SetGadgetValue(data->option_list,
 					   GAD_ENVIRONMENT_OPTIONS_WB_TITLE,
 					   data->config->display_options & DISPOPTF_WB_TITLE);
+		SetGadgetValue(data->option_list,
+					   GAD_ENVIRONMENT_OPTIONS_USE_WBINFO,
+					   data->config->display_options & DISPOPTF_USE_WBINFO);
 		break;
 
 	// Pictures
@@ -2316,7 +2319,8 @@ void _config_env_store(config_env_data *data, short option)
 
 		// Reset flags
 		data->config->display_options &= ~(DISPOPTF_SHOW_APPICONS | DISPOPTF_SHIFT_APPICONS | DISPOPTF_SHOW_TOOLS |
-										   DISPOPTF_HIDE_BAD | DISPOPTF_SHOW_WBLEFTOUTS | DISPOPTF_WB_TITLE);
+										   DISPOPTF_HIDE_BAD | DISPOPTF_SHOW_WBLEFTOUTS | DISPOPTF_WB_TITLE |
+										   DISPOPTF_USE_WBINFO);
 
 		// Workbench patches
 		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_APPICONS))
@@ -2331,6 +2335,8 @@ void _config_env_store(config_env_data *data, short option)
 			data->config->display_options |= DISPOPTF_SHOW_WBLEFTOUTS;
 		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_WB_TITLE))
 			data->config->display_options |= DISPOPTF_WB_TITLE;
+		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_OPTIONS_USE_WBINFO))
+			data->config->display_options |= DISPOPTF_USE_WBINFO;
 		break;
 
 	// Pictures

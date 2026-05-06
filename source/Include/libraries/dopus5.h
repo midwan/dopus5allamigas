@@ -385,6 +385,10 @@ enum {
 #define DISPOPTF_THIN_BORDERS (1 << 11)		// Thin borders
 #define DISPOPTF_SHOW_WBLEFTOUTS (1 << 12)	// show workbench's leftout icons from the .backdrop files
 #define DISPOPTF_WB_TITLE (1 << 13)			// Suppress DOpus title-bar clock so WB-style patches can use it
+#define DISPOPTF_USE_WBINFO (1 << 14)		// Route Information requests through OS WBInfo() (e.g. SwazInfo / RAWBInfo)
+
+// icon.module mod_data flags (passed in d1 to Module_Entry)
+#define ICON_USE_WBINFO_FLAG (1 << 16)		// Caller wants icon.module to defer to WBInfo()
 
 // lister options
 #define LISTEROPTF_DEVICES (1 << 0)	   // Device list in new lister

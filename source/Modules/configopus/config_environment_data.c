@@ -664,6 +664,16 @@ const ObjectDef _config_environment_objects[] =
 						 GAD_ENVIRONMENT_OPTIONS_WB_TITLE,
 						 _environment_relative_taglist},
 
+						// Use Workbench Information (route through WBInfo() for SwazInfo / RAWBInfo)
+						{OD_GADGET,
+						 CHECKBOX_KIND,
+						 {4, 10, 0, 1},
+						 {5, 54, 26, 4},
+						 MSG_ENVIRONMENT_OPTIONS_USE_WBINFO,
+						 PLACETEXT_RIGHT,
+						 GAD_ENVIRONMENT_OPTIONS_USE_WBINFO,
+						 _environment_relative_taglist},
+
 						{OD_END}},
 
 				// Output window
