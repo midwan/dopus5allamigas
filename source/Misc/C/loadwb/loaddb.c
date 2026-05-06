@@ -246,23 +246,47 @@ int main(int argc, char **arg_string)
 	return (0);
 }
 
-// Launch without keeping the startup shell/script process or its files open
+// Launch without keeping the startup shell/script process or its files open.
+//
+// SystemTags() in async mode (SYS_Asynch=TRUE) takes ownership of the input/
+// output/error filehandles and closes them when the launched command exits.
+// If we pass 0 for those tags, dos.library clones the *caller's* Input() and
+// Output() handles for the new process - which keeps the parent CLI/shell
+// pinned open until DOpus exits, even though LoadDB itself has already
+// returned (see issue #56). Open explicit NIL: streams instead so the
+// launched process holds zero references to our shell.
 BOOL launch_detached(char *command)
 {
-	return (SystemTags(command,
-					   SYS_Input,
-					   0,
-					   SYS_Output,
-					   0,
-					   DETACH_Error,
-					   0,
-					   SYS_Asynch,
-					   TRUE,
-					   SYS_UserShell,
-					   TRUE,
-					   NP_Cli,
-					   TRUE,
-					   TAG_DONE) != -1);
+	BPTR nil_in = 0, nil_out = 0, nil_err = 0;
+	BOOL ok = FALSE;
+
+	nil_in  = Open("NIL:", MODE_OLDFILE);
+	nil_out = Open("NIL:", MODE_NEWFILE);
+	nil_err = Open("NIL:", MODE_NEWFILE);
+
+	if (nil_in && nil_out && nil_err)
+	{
+		ok = (SystemTags(command,
+						 SYS_Input,     nil_in,
+						 SYS_Output,    nil_out,
+						 DETACH_Error,  nil_err,
+						 SYS_Asynch,    TRUE,
+						 SYS_UserShell, TRUE,
+						 NP_Cli,        TRUE,
+						 TAG_DONE) != -1);
+	}
+
+	if (!ok)
+	{
+		// SystemTags failed (or NIL: open failed); we still own the handles.
+		if (nil_in)  Close(nil_in);
+		if (nil_out) Close(nil_out);
+		if (nil_err) Close(nil_err);
+	}
+	// On success, SystemTags() owns the handles and closes them when the
+	// async command finishes.
+
+	return ok;
 }
 
 // See if Workbench is running

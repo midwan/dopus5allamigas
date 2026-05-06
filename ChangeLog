@@ -1,3 +1,21 @@
+[dopus5allamigas next] LoadDB: detach launched DOpus from caller's CLI streams
+Program remains at 5.100.  LoadDB ships in v65r3.
+
+Source / Misc/C/loadwb/loaddb.c:
+- launch_detached() now opens explicit NIL: filehandles for SYS_Input,
+  SYS_Output and SYS_Error before calling SystemTags(... SYS_Asynch=TRUE
+  ...).  Previously it passed 0 for all three, which under the dos.library
+  contract makes System() clone the caller's Input()/Output() handles for
+  the new asynchronous process.  Those clones kept the parent shell's
+  console handler referenced, so the user's Shell window could not be
+  closed until DOpus5 itself quit, even though LoadDB had already
+  returned (issue #56).
+- The launched DOpus5 now holds zero references to the caller's CLI
+  streams, so the Shell that ran LoadDB exits normally as soon as
+  LoadDB returns.  Same fix applies to the LoadWB fallback path.
+- Resolves #56.
+2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
+
 [dopus5allamigas next] display.c: runtime version check for SA_OffScreenDragging
 Program remains at 5.100.  No module version changes.
 
