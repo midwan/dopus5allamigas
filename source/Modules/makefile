@@ -85,7 +85,22 @@ endif
 MODULES := about cleanup configopus diskcopy diskinfo filetype fixicons \
      format ftp icon join listerformat misc pathformat play print \
      read show themes
-ifneq ($(PLATFORM), aros)
+
+# xadopus.module needs xadmaster.library headers (proto/xadmaster.h, etc.).
+# OS3/OS4/MorphOS toolchains ship them; the AROS toolchain Docker images
+# (midwan/aros-compiler:i386-aros / x86_64-aros) do NOT.  AROS distributions
+# like AROS One include xadmaster, so AROS users with it installed locally
+# can opt in via:
+#
+#     make i386-aros release debug=no xadopus=yes
+#
+# Default on AROS is "skip" so the headerless CI / Docker toolchains keep
+# building cleanly.  All other platforms always build it.
+ifeq ($(PLATFORM), aros)
+ifeq ($(xadopus), yes)
+MODULES += xadopus
+endif
+else
 MODULES += xadopus
 endif
 
