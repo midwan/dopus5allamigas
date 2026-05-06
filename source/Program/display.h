@@ -339,14 +339,20 @@ typedef struct
 #define GUIF_GOT_PALETTE (1 << 30)	  // Allocated palette
 #define GUIF_LISTER_COOKIE (1 << 31)  // Done lister cookie
 
-#define GUIF2_ICONPOS (1 << 0)			 // Doing icon positioning
-#define GUIF2_WB_TITLE (1 << 1)			 // Obsolete since CONFIG_VERSION_13: now DISPOPTF_WB_TITLE (#49)
-#define GUIF2_ENABLE_SHORTCUTS (1 << 3)	 // Obsolete since CONFIG_VERSION_15: now ENVF_ENABLE_SHORTCUTS (#49)
-#define GUIF2_NO_SCREENFRONT (1 << 5)	 // Don't bring screen to front
-#define GUIF2_BACKFILL_SET (1 << 7)		 // Set backfill
-#define GUIF2_NO_PADLOCK (1 << 8)		 // Obsolete since CONFIG_VERSION_13: now LISTEROPTF_NO_PADLOCK (#49)
-#define GUIF2_KEY_FINDER (1 << 9)		 // Key Finder active
-#define GUIF2_BENIFY (1 << 10)			 // Obsolete since CONFIG_VERSION_14: now ENVF_BENIFY (#49)
+#define GUIF2_ICONPOS (1 << 0)		   // Doing icon positioning
+#define GUIF2_NO_SCREENFRONT (1 << 5)  // Don't bring screen to front
+#define GUIF2_BACKFILL_SET (1 << 7)	   // Set backfill
+#define GUIF2_KEY_FINDER (1 << 9)	   // Key Finder active
+
+// The following GUIF2 bits were retired in #49 - all four moved into the
+// CFG_ENVR struct so they can be persisted as part of the user's prefs:
+//   bit 1  GUIF2_WB_TITLE          -> DISPOPTF_WB_TITLE
+//   bit 3  GUIF2_ENABLE_SHORTCUTS  -> ENVF_ENABLE_SHORTCUTS
+//   bit 8  GUIF2_NO_PADLOCK        -> LISTEROPTF_NO_PADLOCK
+//   bit 10 GUIF2_BENIFY            -> ENVF_BENIFY
+// Bits 1, 3, 8, 10 are intentionally left unassigned in the GUI->flags2
+// namespace to avoid a future contributor accidentally re-using them with
+// different semantics.
 
 extern GUI_Glue *GUI;
 
