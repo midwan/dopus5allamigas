@@ -2358,9 +2358,7 @@ These keys can be used when viewing an Animation:-
 
 If any pictures are marked for deletion when the last picture has been shown, the Delete function will be automatically launched on them (you are given the usual warning first).
 
-The Show command will use its own IFF code in preference to datatypes IFF, since datatypes can be slower and have more problems.  If you wish to force Opus to use datatypes first, set the Opus environment variable with:-
-
-		setenv dopus/ShowUseDatatypesFirst
+The Show command will use its own IFF code in preference to datatypes IFF, since datatypes can be slower and have more problems.  If you wish to force Opus to use datatypes first, enable "Prefer Datatypes for Showing Pictures" in the Environment editor's WB Emulation page.  (The legacy ENV: variable was dopus/ShowUseDatatypesFirst.)
 
 
 
@@ -5229,31 +5227,43 @@ if function='Test2' then do
 
 Opus 5.5 Environment Variables
 
-Although most of the operation of Opus 5 can be controlled through the Environment and Options settings, some specialised functions are controlled through system environment variables in the ENV: directory.  These are:-
+Most of the operation of Opus 5 is controlled through the Environment and Options settings.  This appendix lists the ENV: variables that DOpus reads or maintains.  See the full list in the DOpus5.guide; the entries below are a quick reference.
 
-dopus/dopus
+Auto-managed (do not edit):
 
-Stores temporary preferences for the main Opus 5 program.
+	dopus/dopus           - master flags string for the main Opus 5 program
+	dopus/Text Viewer     - read.module geometry, font, editors
+	dopus/Print           - print.module preferences (binary blob)
+	dopus/Player          - play.module iconified position
+	dopus/Icon Editor     - selected icon-information editor
+	dopus/Icon Clock      - iconclock.module position
+	dopus/taf             - themes.module last "apply" bitmask
+	dopus/windows/...     - assorted window geometries (v5.81+)
 
-dopus/UseWBInfo
+Promoted to the GUI (read once on first launch with the new build, then
+ignored - the corresponding setting in the Environment editor or the FTP
+options dialog is the source of truth):
 
-Forces the icon.module to call the OS WBInfo() routine to do the icon information function.  (This only works under V39, and may only work if you have Workbench running).  It is designed to let you use patches like SwazInfo.
+	dopus/HidePadlock         - Environment editor / Lister Options
+	dopus/WorkbenchTitle      - Environment editor / WB Emulation
+	dopus/UseWBInfo           - Environment editor / WB Emulation
+	dopus/EnableShortcuts     - Environment editor / WB Emulation
+	dopus/ShowUseDatatypesFirst - Environment editor / WB Emulation
+	dopus/IconSpaceX/Y        - Environment editor / Icon Layout
+	dopus/IconGridX/Y         - Environment editor / Icon Layout
+	dopus/ReturnOfBenify      - Environment editor / Icon Layout
+	dopus/WheelScrollLines    - Environment editor / Misc
+	dopus/NoBeeGees           - FTP module / Default FTP Options
 
-dopus/ShowUseDatatypesFirst
+Advanced / install-time only (no GUI - read at library init):
 
-The show.module uses its own IFF code in preference to datatypes IFF, since datatypes can be slower with more problems.  If required, you can force Opus to use datatypes first by setting this variable.
-
-dopus/3DLook
-
-A special flag to provide compatibility with programs such as SysiHack.
-
-dopus/Text Viewer
-
-Stores preferences and information for the Opus text viewer.
-
-dopus/Print
-
-Stores preferences and information for the Opus print functions.
+	dopus/3DLook         - SysiHack-compatible 3D gadget look
+	dopus/OuEstLeMinibar - disable requester stippling
+	dopus/DOSPatch       - install DOS patches for live lister refresh
+	dopus/NoSysPatch     - safe-mode: skip all system-library patches
+	dopus/PatchWBInfo    - install global WBInfo() patch
+	dopus/FiletypeCache=N - enable filetype-recognition cache (min 10)
+	dopus/StartupNumbers  - show splash file counter (debug)
 Appendix B - ViewFont
 
 Opus 5 has no built-in font viewer.  To solve this problem we have provided the ViewFont program as a seperate stand alone program.  This normally resides in the DOpus5:C directory.  It can be used from within Opus 5 to show a sample of your selected fonts.
