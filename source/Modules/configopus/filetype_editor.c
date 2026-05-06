@@ -388,6 +388,19 @@ void FiletypeEditor(void)
 						if (filetypeed_check_iconmenu(data, data->last_icon, TRUE))
 							change_flag = 1;
 						break;
+
+					// Move icon menu entry up or down
+					case GAD_FILETYPES_UP_ICON_MENU:
+					case GAD_FILETYPES_DOWN_ICON_MENU:
+
+						// Need a selection
+						if (!data->last_icon)
+							break;
+
+						// Move it
+						if (filetypeed_move_iconmenu(data, gadget->GadgetID == GAD_FILETYPES_UP_ICON_MENU))
+							change_flag = 1;
+						break;
 					}
 					break;
 
@@ -1295,6 +1308,56 @@ BOOL filetypeed_check_iconmenu(filetype_ed_data *data, Att_Node *node, BOOL del)
 	return 0;
 }
 
+// Move the selected icon menu entry up or down by one position
+BOOL filetypeed_move_iconmenu(filetype_ed_data *data, BOOL up)
+{
+	Att_Node *neighbour, *anchor;
+	Cfg_Function *cur_func, *neighbour_func;
+
+	// Need a selection
+	if (!data->last_icon)
+		return 0;
+
+	// Find the neighbour we're swapping past
+	if (up)
+		neighbour = (Att_Node *)data->last_icon->node.ln_Pred;
+	else
+		neighbour = (Att_Node *)data->last_icon->node.ln_Succ;
+
+	// Already at the boundary? (head/tail sentinel reached)
+	if (!neighbour || (up ? !neighbour->node.ln_Pred : !neighbour->node.ln_Succ))
+		return 0;
+
+	cur_func = ((func_node *)data->last_icon->data)->func;
+	neighbour_func = ((func_node *)neighbour->data)->func;
+
+	// Detach list from listview
+	SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, (APTR)~0);
+
+	// Reposition icon node next to its neighbour using insert-before
+	// semantics. Att_PosNode places the node before "anchor".
+	anchor = up ? neighbour : (Att_Node *)neighbour->node.ln_Succ;
+	Att_PosNode(data->icon_list, data->last_icon, anchor);
+
+	// Move the corresponding label function the same way in the
+	// filetype's full function list (which also contains action
+	// functions; only the relative order of label functions matters
+	// for the icon menu).
+	Remove((struct Node *)cur_func);
+	if (up)
+		Insert(&data->type->function_list, (struct Node *)cur_func, neighbour_func->node.ln_Pred);
+	else
+		Insert(&data->type->function_list, (struct Node *)cur_func, (struct Node *)neighbour_func);
+
+	// Reattach list and keep focus on the moved entry
+	SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, data->icon_list);
+	SetGadgetValue(data->objlist, GAD_FILETYPES_ICON_MENU, Att_FindNodeNumber(data->icon_list, data->last_icon));
+
+	// Refresh enable/disable state for the new selection position
+	filetypeed_sel_icon(data, Att_FindNodeNumber(data->icon_list, data->last_icon));
+	return 1;
+}
+
 // End drag
 BOOL filetypeed_end_drag(filetype_ed_data *data, BOOL ok)
 {
@@ -1354,27 +1417,47 @@ BOOL filetypeed_end_drag(filetype_ed_data *data, BOOL ok)
 		// Valid item?
 		if (item >= 0 && item < Att_NodeCount(data->icon_list) && item != drag_item)
 		{
-			Att_Node *node1, *node2;
+			Att_Node *target, *dragged;
 
 			// Get the two nodes
-			if ((node1 = Att_FindNode(data->icon_list, item)) && (node2 = Att_FindNode(data->icon_list, drag_item)))
+			if ((target = Att_FindNode(data->icon_list, item)) &&
+				(dragged = Att_FindNode(data->icon_list, drag_item)))
 			{
+				Cfg_Function *target_func = ((func_node *)target->data)->func;
+				Cfg_Function *dragged_func = ((func_node *)dragged->data)->func;
+				BOOL drag_down = (BOOL)(drag_item < item);
+				Att_Node *anchor;
+
 				// Detach list from listview
 				SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, (APTR)~0);
 
-				// Swap the nodes
-				SwapListNodes((struct List *)data->icon_list, (struct Node *)node1, (struct Node *)node2);
+				// Insert-at-target semantics: dragging downward drops the
+				// node just after the target; dragging upward drops it
+				// just before the target. So the dropped item ends up
+				// visually where the user released it.
+				anchor = drag_down ? (Att_Node *)target->node.ln_Succ : target;
+				Att_PosNode(data->icon_list, dragged, anchor);
 
-				// Swap functions
-				SwapListNodes((struct List *)&data->type->function_list,
-							  (struct Node *)((func_node *)node1->data)->func,
-							  (struct Node *)((func_node *)node2->data)->func);
+				// Mirror the move in the filetype's full function list
+				// (which contains action functions interleaved with
+				// label functions; only the relative order of label
+				// functions matters for the icon menu).
+				Remove((struct Node *)dragged_func);
+				if (drag_down)
+					Insert(&data->type->function_list,
+						   (struct Node *)dragged_func,
+						   (struct Node *)target_func);
+				else
+					Insert(&data->type->function_list,
+						   (struct Node *)dragged_func,
+						   target_func->node.ln_Pred);
 
-				// Attach list
+				// Attach list and keep the focus on the moved entry
 				SetGadgetChoices(data->objlist, GAD_FILETYPES_ICON_MENU, data->icon_list);
-
-				// Set no selection
-				filetypeed_no_iconsel(data);
+				SetGadgetValue(data->objlist,
+							   GAD_FILETYPES_ICON_MENU,
+							   Att_FindNodeNumber(data->icon_list, dragged));
+				filetypeed_sel_icon(data, Att_FindNodeNumber(data->icon_list, dragged));
 				ret = 1;
 			}
 		}
@@ -1529,9 +1612,11 @@ void filetypeed_no_iconsel(filetype_ed_data *data)
 	SetGadgetValue(data->objlist, GAD_FILETYPES_ICON_MENU, (ULONG)-1);
 	data->last_icon = 0;
 
-	// Disable edit/delete buttons
+	// Disable edit/delete/move buttons
 	DisableObject(data->objlist, GAD_FILETYPES_EDIT_ICON_MENU, TRUE);
 	DisableObject(data->objlist, GAD_FILETYPES_DEL_ICON_MENU, TRUE);
+	DisableObject(data->objlist, GAD_FILETYPES_UP_ICON_MENU, TRUE);
+	DisableObject(data->objlist, GAD_FILETYPES_DOWN_ICON_MENU, TRUE);
 }
 
 // Given a button
@@ -1605,12 +1690,9 @@ BOOL filetypeed_get_button(filetype_ed_data *data, Cfg_Button *button, Point *po
 				// New node?
 				if (node)
 				{
-					// Select this node
+					// Select this node and refresh edit/delete/move buttons
 					SetGadgetValue(data->objlist, GAD_FILETYPES_ICON_MENU, Att_FindNodeNumber(data->icon_list, node));
-
-					// Enable edit/delete buttons
-					DisableObject(data->objlist, GAD_FILETYPES_EDIT_ICON_MENU, FALSE);
-					DisableObject(data->objlist, GAD_FILETYPES_DEL_ICON_MENU, FALSE);
+					filetypeed_sel_icon(data, Att_FindNodeNumber(data->icon_list, node));
 				}
 			}
 
@@ -1664,6 +1746,7 @@ BOOL filetypeed_del_action(filetype_ed_data *data, short action)
 BOOL filetypeed_sel_icon(filetype_ed_data *data, short item)
 {
 	Att_Node *node;
+	BOOL at_top, at_bottom;
 
 	// Get selected node
 	if (!(node = Att_FindNode(data->icon_list, item)))
@@ -1672,6 +1755,15 @@ BOOL filetypeed_sel_icon(filetype_ed_data *data, short item)
 	// Enable edit/delete buttons
 	DisableObject(data->objlist, GAD_FILETYPES_EDIT_ICON_MENU, FALSE);
 	DisableObject(data->objlist, GAD_FILETYPES_DEL_ICON_MENU, FALSE);
+
+	// Up is meaningful only when there's a node before us; Down only
+	// when there's a node after us. Sentinel ln_Pred / ln_Succ point at
+	// the list head/tail anchor (themselves valid Node structs whose
+	// own ln_Pred / ln_Succ are NULL), so test that to detect ends.
+	at_top = (BOOL)(!node->node.ln_Pred || !node->node.ln_Pred->ln_Pred);
+	at_bottom = (BOOL)(!node->node.ln_Succ || !node->node.ln_Succ->ln_Succ);
+	DisableObject(data->objlist, GAD_FILETYPES_UP_ICON_MENU, at_top);
+	DisableObject(data->objlist, GAD_FILETYPES_DOWN_ICON_MENU, at_bottom);
 
 	// Store pointer
 	data->last_icon = node;

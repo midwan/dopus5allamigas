@@ -4,7 +4,7 @@
 // Filetypes editor window dimensions
 const ConfigWindow _config_filetypes_window = {{POS_CENTER, POS_CENTER, 48, 11}, {0, 0, 42, 16}},
 
-				   _filetype_editor_window = {{POS_CENTER, POS_CENTER, 60, 12}, {0, 0, 104, 32}},
+				   _filetype_editor_window = {{POS_CENTER, POS_CENTER, 60, 13}, {0, 0, 104, 32}},
 
 				   _fileclass_editor_window = {{POS_RIGHT_JUSTIFY, POS_RIGHT_JUSTIFY, 54, 10}, {0, 0, 52, 48}};
 
@@ -174,7 +174,7 @@ const ObjectDef
 			// Function area
 			{OD_AREA,
 			 0,
-			 {0, 0, 60, 11},
+			 {0, 0, 60, 12},
 			 {2, 2, 100, 20},
 			 0,
 			 AREAFLAG_RECESSED | AREAFLAG_ERASE,
@@ -249,6 +249,26 @@ const ObjectDef
 			 MSG_FILETYPES_DEL_ICON_MENU,
 			 0,
 			 GAD_FILETYPES_DEL_ICON_MENU,
+			 _filetype_function_rel},
+
+			// Move icon menu entry up
+			{OD_GADGET,
+			 BUTTON_KIND,
+			 {22, 11, 10, 1},
+			 {36, 14, 16, 6},
+			 MSG_MENUS_UP,
+			 0,
+			 GAD_FILETYPES_UP_ICON_MENU,
+			 _filetype_function_rel},
+
+			// Move icon menu entry down
+			{OD_GADGET,
+			 BUTTON_KIND,
+			 {32, 11, 11, 1},
+			 {52, 14, 8, 6},
+			 MSG_MENUS_DOWN,
+			 0,
+			 GAD_FILETYPES_DOWN_ICON_MENU,
 			 _filetype_function_rel},
 
 			// Icon label

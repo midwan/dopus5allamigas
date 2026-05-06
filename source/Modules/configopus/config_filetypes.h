@@ -222,6 +222,7 @@ void filetypeed_update_iconmenu(filetype_ed_data *data);
 void filetypeed_add_iconmenu(filetype_ed_data *data);
 void filetypeed_edit_iconmenu(filetype_ed_data *data, Att_Node *node);
 BOOL filetypeed_check_iconmenu(filetype_ed_data *data, Att_Node *node, BOOL);
+BOOL filetypeed_move_iconmenu(filetype_ed_data *data, BOOL up);
 
 void filetypeed_start_drag(filetype_ed_data *data, struct IntuiMessage *msg);
 BOOL filetypeed_end_drag(filetype_ed_data *data, BOOL ok);
