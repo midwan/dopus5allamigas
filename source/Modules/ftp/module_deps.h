@@ -5,11 +5,6 @@
 #include <proto/dopus5.h>
 #include <proto/module.h>
 
-#undef LIB_REVISION
-#define LIB_REVISION 5
-#undef LIB_STRING
-#define LIB_STRING STRI(LIB_VERSION) "." STRI(LIB_REVISION) " " STRI(PLATFORM) " (" DOPUSDATE ")"
-
 extern struct DOpusLocale *locale;
 #ifndef __amigaos3__
 	#pragma pack(2)
