@@ -36,6 +36,48 @@ void calc_daymonyr(long days, long *day, long *month, long *year);
 #define MOON_BIG_SIZE 13
 #define MOON_SMALL_SIZE 9
 
+#ifndef USE_SCREENTITLE
+struct ClockTitleBarMetrics
+{
+	short height;
+	short text_y;
+	short fill_bottom;
+};
+
+static struct ClockTitleBarMetrics clock_titlebar_metrics = {0, 0, 0};
+
+static void clock_titlebar_set_metrics(struct Screen *screen, struct RastPort *rp)
+{
+	short height = rp->TxHeight + 2;
+	short text_y = rp->TxBaseline + 1;
+	short fill_bottom = height - 1;
+
+#ifdef __amigaos3__
+	if (screen && ((struct Library *)IntuitionBase)->lib_Version >= 47 && screen->BarHeight > 0)
+	{
+		height = screen->BarHeight + 1;
+
+		if (height > rp->TxHeight)
+			text_y = ((height - rp->TxHeight) >> 1) + rp->TxBaseline;
+
+		fill_bottom = height - 2;
+	}
+#endif
+
+	clock_titlebar_metrics.height = height;
+	clock_titlebar_metrics.text_y = text_y;
+	clock_titlebar_metrics.fill_bottom = fill_bottom;
+}
+
+static short clock_titlebar_image_y(short image_height)
+{
+	if (clock_titlebar_metrics.height > image_height)
+		return (clock_titlebar_metrics.height - image_height) >> 1;
+
+	return 0;
+}
+#endif
+
 #ifdef __amigaos4__
 APTR clock_show_custom_title(struct RastPort *rp,
 							 long clock_x,
@@ -181,6 +223,10 @@ IPC_EntryCode(clock_proc)
 
 								// Free draw info
 								FreeScreenDrawInfo(screen, drawinfo);
+
+#ifndef USE_SCREENTITLE
+								clock_titlebar_set_metrics(screen, &clock_rp);
+#endif
 
 								// Get position to render clock
 								bar_x = screen->Width - 16;
@@ -390,7 +436,7 @@ IPC_EntryCode(clock_proc)
 					if (window || layer)
 					{
 						short hours, seconds;
-						unsigned long minutes;
+						ULONG minutes;
 
 						// Get current datestamp
 						DateStamp(&date.dat_Stamp);
@@ -501,7 +547,7 @@ IPC_EntryCode(clock_proc)
 									if (GUI->flags & GUIF_CLOCK)
 									{
 #ifndef USE_SCREENTITLE
-										Move(&clock_rp, clock_x, clock_rp.TxBaseline + 1);
+										Move(&clock_rp, clock_x, clock_titlebar_metrics.text_y);
 										Text(&clock_rp, titlebuf, strlen(titlebuf));
 #endif
 
@@ -654,7 +700,7 @@ void clock_show_memory(struct RastPort *rp, long msg, long clock_x, char *error)
 
 #ifndef USE_SCREENTITLE
 	// Render text
-	Move(rp, 5, rp->Font->tf_Baseline + 1);
+	Move(rp, 5, clock_titlebar_metrics.text_y);
 	Text(rp, GUI->screen_title, strlen(GUI->screen_title));
 
 	// Erase to start of clock text
@@ -665,7 +711,7 @@ void clock_show_memory(struct RastPort *rp, long msg, long clock_x, char *error)
 		// Save front pen
 		fp = rp->FgPen;
 		SetAPen(rp, rp->BgPen);
-		RectFill(rp, rp->cp_x, 0, clock_x - 1, rp->Font->tf_YSize + 1);
+		RectFill(rp, rp->cp_x, 0, clock_x - 1, clock_titlebar_metrics.fill_bottom);
 		SetAPen(rp, fp);
 	}
 #endif
@@ -719,12 +765,10 @@ APTR clock_show_custom_title(struct RastPort *rp,
 							 struct Library *SysInfoBase)
 #endif
 {
-	char *ptr, *format, *title_buffer;
+	char *ptr, *title_buffer;
 	short pos = 0, moon_day = -1, moon_pos = 0;
 	struct BitMap bm;
 
-	// Get numeric formatting string
-	format = (environment->env->settings.date_flags & DATE_1000SEP && GUI->flags & GUIF_LOCALE_OK) ? "%lU" : "%ld";
 	title_buffer = GUI->screen_title;
 
 	// Go through title text
@@ -1045,7 +1089,6 @@ APTR clock_show_custom_title(struct RastPort *rp,
 				{
 					// memory values should always be unsigned
 					lsprintf(buf, "%lu", memval);
-					// lsprintf(buf,format,memval);
 				}
 			}
 
@@ -1072,7 +1115,7 @@ APTR clock_show_custom_title(struct RastPort *rp,
 
 	// Render text
 #ifndef USE_SCREENTITLE
-	Move(rp, 5, rp->Font->tf_Baseline + 1);
+	Move(rp, 5, clock_titlebar_metrics.text_y);
 	Text(rp, title_buffer, (moon_day > -1) ? moon_pos : strlen(title_buffer));
 
 	// Moon to show?
@@ -1132,10 +1175,10 @@ APTR clock_show_custom_title(struct RastPort *rp,
 		}
 
 		// Draw moon
-		BltBitMapRastPort(&bm, 0, 0, rp, x, (rp->TxHeight + 2 - size) >> 1, size, size, 0xc0);
+		BltBitMapRastPort(&bm, 0, 0, rp, x, clock_titlebar_image_y(size), size, size, 0xc0);
 
 		// Draw the rest of the text
-		Move(rp, x + size, rp->Font->tf_Baseline + 1);
+		Move(rp, x + size, clock_titlebar_metrics.text_y);
 		if ((x = strlen(title_buffer) - moon_pos - 2) > 0)
 			Text(rp, title_buffer + moon_pos + 2, x);
 	}
@@ -1148,7 +1191,7 @@ APTR clock_show_custom_title(struct RastPort *rp,
 		// Save front pen
 		fp = rp->FgPen;
 		SetAPen(rp, rp->BgPen);
-		RectFill(rp, rp->cp_x, 0, clock_x - 1, rp->Font->tf_YSize + 1);
+		RectFill(rp, rp->cp_x, 0, clock_x - 1, clock_titlebar_metrics.fill_bottom);
 		SetAPen(rp, fp);
 	}
 #endif
