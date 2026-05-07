@@ -11,10 +11,8 @@ New build targets:
   A3000 / A4000 owners (issue #51).
 - New AROS i386 (ABIv0) and x86_64 (ABIv11) build packages, with
   CI debug + release parity (PR #25 plus follow-ups).
-- xadopus.module on AROS is no longer a hard skip: AROS users with
-  xadmaster.library headers installed locally (e.g. AROS One) can
-  now opt in via `make i386-aros xadopus=yes`, mirroring the
-  existing `sftp=yes` pattern.
+- xadopus.module now builds by default on AROS too; the AROS Docker
+  toolchains ship the required xadmaster.library headers.
 
 FTP / file transfer:
 - SFTP support backed by libssh2 (always on for OS3 / OS4 / MorphOS
@@ -94,6 +92,10 @@ Release archive / packaging:
 - Default Lister Toolbar and Toolbar.default refreshed with a new
   CacheList icon/label so the left-most button matches its action
   (issue #65).
+- CI release packaging now runs `release-package` in the same Docker
+  image as the build; the old AROS `package_image` fallback to the
+  sacredbanana OS3 image is gone now that `midwan/aros-compiler:*`
+  ships `lha`.
 
 Documentation:
 - Refreshed every per-tab Environment editor description in
@@ -140,42 +142,29 @@ Versioning notes:
   LoadDB CLI-detachment work; commands ship at v65r3.
 
 Detailed per-feature entries follow.
-2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
+2026-05-07 by Dimitris Panokostas <midwan@gmail.com>
 
-[dopus5 5.101] modules: gate xadopus on AROS behind xadopus=yes opt-in
-Ships in 5.101.  Makefile-only change; no module version changes.
+[dopus5 5.101] ci: package AROS releases in the AROS Docker image
+Ships in 5.101.  CI / makefile / README-only change; no module version
+changes.
+
+.github/workflows/makefile.yml:
+- Removed the `package_image` matrix key and now run `release-package`
+  in `matrix.platform.image` for every platform.
+- AROS release packaging no longer falls back to
+  `sacredbanana/amiga-compiler:m68k-amigaos`; the current
+  `midwan/aros-compiler:*` images ship `lha`.
 
 Source / Modules/makefile:
-- Pre-5.101 the AROS path unconditionally dropped xadopus from the
-  modules list, with no documentation as to why.  The actual reason
-  is that the standard AROS toolchain Docker images
-  (midwan/aros-compiler:i386-aros / x86_64-aros) do not ship the
-  xadmaster.library headers (proto/xadmaster.h, libraries/xad/*),
-  so a CI build for AROS would fail to compile xadopus.module.
-- AROS distributions like AROS One DO include xadmaster, and
-  xadopus.module compiles cleanly on those systems - so the blanket
-  exclusion was punishing the on-target users to keep the headerless
-  CI green.
-- Replaced the unconditional `ifneq ($(PLATFORM), aros)` skip with
-  an opt-in `xadopus=yes` flag, mirroring the existing `sftp=yes`
-  pattern used for SFTP on AROS:
+- AROS now includes `xadopus.module` in the default module set again.
+  The current AROS Docker images ship the required xadmaster.library
+  headers, so CI no longer needs the previous `xadopus=yes` opt-in.
 
-      make i386-aros release debug=no xadopus=yes
-      make x86_64-aros release debug=no xadopus=yes
-
-  Default behaviour on AROS is unchanged ('xadopus' skipped, CI
-  builds keep working without xadmaster); AROS users with
-  xadmaster headers installed locally now have a documented opt-in
-  that produces the module in the release archive.
-- Added a comment block to Modules/makefile explaining the why so
-  the gate's reasoning survives the next refactor.
-- README.md grows a new "xadopus.module on AROS" subsection in
-  the Building section, describing the opt-in and what the
-  expected error message looks like when xadmaster headers are
-  missing.
-- All other platforms (os3, os3-68000, os4, mos) continue to build
-  xadopus unconditionally - their toolchains include xadmaster.
-2026-05-06 by Dimitris Panokostas <midwan@gmail.com>
+README.md:
+- Replaced the AROS-specific xadopus opt-in section with the current
+  default: xadopus builds for every target, and local/native builds
+  need xadmaster developer headers installed.
+2026-05-07 by Dimitris Panokostas <midwan@gmail.com>
 
 [dopus5 5.101] config: rename .bac_5_90_cfg backup to .bak (+ migrate)
 Ships in 5.101.  dopus5.library at v73r5 (with the global
