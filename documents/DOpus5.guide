@@ -1,6 +1,6 @@
 @database dopus5
 @master dopus5.guide
-@$VER: Dopus5Guide 58.0 (6.5.2026)
+@$VER: Dopus5Guide 58.1 (6.5.2026)
 @author "Mark Anderson, Andrew Dunbar, Dr Greg Perry, Leo Davidson and Dave Clarke"
 @(c) "Directory Opus 5 Help Guide (c) GPSoftware 1999"
 @(c) "Directory Opus 5 Help Guide (c) DOPUS5 Open Source Team 2012-2026"
@@ -22,6 +22,11 @@
                 Workbench-order backdrop sort documented, dangling
                 "Manual Ref:" page-number footnotes dropped now that
                 the printed source manual is no longer in-tree.
+@remark v58.1 - 5.101 follow-up: project rename housekeeping
+                ('dopus5allamigas' -> 'dopus5 fork' note on the live
+                Filter overlay), plus a heads-up about the new
+                separate `os3-68000` build for stock 68000-era
+                hardware (A500 / A600 / A1000 / A2000 / CDTV).
 
 @node "Main" "dopus5.guide"
 Help Introduction for Directory Opus 5
@@ -2361,7 +2366,7 @@ listers; icon mode uses a different path widget.
 
 Available as: View menu -> Filter... (right-Amiga + F).
 
-(dopus5allamigas extension)
+(dopus5 fork extension)
 @endnode
 
 @node "Lister - Iconify" "Lister - Iconify"

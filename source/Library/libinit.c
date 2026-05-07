@@ -15,7 +15,7 @@ AROS Public License for more details.
 The release of Directory Opus 5 under the GPL in NO WAY affects
 the existing commercial status of Directory Opus for Windows.
 
-Directory Opus 5 project: http://sourceforge.net/projects/dopus5allamigas/
+Directory Opus 5 project: https://github.com/BlitterStudio/dopus5
 
 For more information on Directory Opus for Windows please see:
 

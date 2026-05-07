@@ -57,12 +57,12 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - { name: os3, image: "sacredbanana/amiga-compiler:m68k-amigaos", package_image: "sacredbanana/amiga-compiler:m68k-amigaos" }
-          - { name: os3-68000, image: "sacredbanana/amiga-compiler:m68k-amigaos", package_image: "sacredbanana/amiga-compiler:m68k-amigaos" }
-          - { name: os4, image: "sacredbanana/amiga-compiler:ppc-amigaos", package_image: "sacredbanana/amiga-compiler:ppc-amigaos" }
-          - { name: mos, image: "sacredbanana/amiga-compiler:ppc-morphos", package_image: "sacredbanana/amiga-compiler:ppc-morphos" }
-          - { name: i386-aros, image: "midwan/aros-compiler:i386-aros", package_image: "sacredbanana/amiga-compiler:m68k-amigaos" }
-          - { name: x86_64-aros, image: "midwan/aros-compiler:x86_64-aros", package_image: "sacredbanana/amiga-compiler:m68k-amigaos" }
+          - { name: os3, image: "sacredbanana/amiga-compiler:m68k-amigaos" }
+          - { name: os3-68000, image: "sacredbanana/amiga-compiler:m68k-amigaos" }
+          - { name: os4, image: "sacredbanana/amiga-compiler:ppc-amigaos" }
+          - { name: mos, image: "sacredbanana/amiga-compiler:ppc-morphos" }
+          - { name: i386-aros, image: "midwan/aros-compiler:i386-aros" }
+          - { name: x86_64-aros, image: "midwan/aros-compiler:x86_64-aros" }
         variant:
           - { name: debug,   flags: "",          suffix: "_debug" }
           - { name: release, flags: "debug=no",  suffix: "" }
@@ -75,7 +75,7 @@ jobs:
       - name: Build (${{ matrix.platform.name }} ${{ matrix.variant.name }})
         run: |
           docker run --rm -v ${{ github.workspace }}:/work ${{ matrix.platform.image }} sh -c "cd /work/source && make ${{ matrix.platform.name }} all ${{ matrix.variant.flags }}"
-          docker run --rm -v ${{ github.workspace }}:/work ${{ matrix.platform.package_image }} sh -c "cd /work/source && make ${{ matrix.platform.name }} release-package ${{ matrix.variant.flags }}"
+          docker run --rm -v ${{ github.workspace }}:/work ${{ matrix.platform.image }} sh -c "cd /work/source && make ${{ matrix.platform.name }} release-package ${{ matrix.variant.flags }}"
 
       - uses: actions/upload-artifact@v7
         with:

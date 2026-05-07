@@ -1980,18 +1980,46 @@ void do_backup(char *name)
 	BPTR in = 0;
 	BPTR out = 0;
 	BPTR lock = 0;
-	char *extension = ".bac_5_90_cfg";
+	char *extension = ".bak";
+	char *legacy_extension = ".bac_5_90_cfg";
 	char outname[256] = {'\0'};
+	char legacy_outname[256] = {'\0'};
 	char buffer[4096] = {'\0'};
 	int buflen = 4094;
 	int insize = 0, outsize = 0;
 
 	if (!name)
 		return;
+	// 238 leaves room for the longer legacy_extension (13 chars) plus
+	// nul terminator inside both 256-byte buffers; the new .bak fits
+	// comfortably in the same budget.
 	if (strlen(name) > 238)
 		return;
 	strcpy(outname, name);
 	strcat(outname, extension);
+
+	// One-shot migration: pre-5.101 builds wrote backups with the
+	// .bac_5_90_cfg extension.  If such a file is still sitting next
+	// to `name` from an earlier install, fold it into the new .bak
+	// scheme so the user does not end up with two stale snapshots.
+	// If a current .bak already exists, just delete the legacy file;
+	// otherwise rename it so the original one-shot snapshot is kept.
+	strcpy(legacy_outname, name);
+	strcat(legacy_outname, legacy_extension);
+	if ((lock = Lock(legacy_outname, SHARED_LOCK)))
+	{
+		UnLock(lock);
+		if ((lock = Lock(outname, SHARED_LOCK)))
+		{
+			UnLock(lock);
+			DeleteFile(legacy_outname);
+		}
+		else
+		{
+			Rename(legacy_outname, outname);
+		}
+	}
+
 	if ((lock = Lock(outname, SHARED_LOCK)))
 	{
 		UnLock(lock);

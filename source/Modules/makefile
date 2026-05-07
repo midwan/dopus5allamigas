@@ -84,10 +84,7 @@ endif
 
 MODULES := about cleanup configopus diskcopy diskinfo filetype fixicons \
      format ftp icon join listerformat misc pathformat play print \
-     read show themes
-ifneq ($(PLATFORM), aros)
-MODULES += xadopus
-endif
+     read show themes xadopus
 
 .PHONY : all
 all: $(MODULES)
@@ -360,4 +357,3 @@ os4: mos
 aros: mos
 mos:
 	-@sh -c "echo -n"
-
