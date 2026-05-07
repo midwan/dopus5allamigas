@@ -1,6 +1,6 @@
 @database dopus5
 @master dopus5.guide
-@$VER: Dopus5Guide 58.1 (6.5.2026)
+@$VER: Dopus5Guide 58.2 (7.5.2026)
 @author "Mark Anderson, Andrew Dunbar, Dr Greg Perry, Leo Davidson and Dave Clarke"
 @(c) "Directory Opus 5 Help Guide (c) GPSoftware 1999"
 @(c) "Directory Opus 5 Help Guide (c) DOPUS5 Open Source Team 2012-2026"
@@ -27,6 +27,9 @@
                 Filter overlay), plus a heads-up about the new
                 separate `os3-68000` build for stock 68000-era
                 hardware (A500 / A600 / A1000 / A2000 / CDTV).
+@remark v58.2 - Format Requester follow-up: Long File Names is only
+                offered when the selected FastFileSystem is new enough
+                to support DOS\7 / LNFS.
 
 @node "Main" "dopus5.guide"
 Help Introduction for Directory Opus 5
@@ -1931,11 +1934,14 @@ requester are -
 
   Long File Names:
     Selects the FFS-LNFS variant (DOS\7), which lifts the historical
-    30-character filename limit to 105 characters.  Implies Fast File
-    System and International Mode (Caching is automatically cleared
-    when this option is selected, and the FFS / International / Caching
-    gadgets become locked while LNFS is active).  When you re-open the
-    requester on an existing FFS-LNFS volume, this option is pre-ticked.
+    30-character filename limit to 105 characters.  It is only
+    available when the selected device is backed by a FastFileSystem
+    version that supports LNFS (v46 or newer; older AmigaOS 3.1-era
+    handlers keep the option disabled).  Implies Fast File System and
+    International Mode (Caching is automatically cleared when this
+    option is selected, and the FFS / International / Caching gadgets
+    become locked while LNFS is active).  When you re-open the requester
+    on an existing FFS-LNFS volume, this option is pre-ticked.
 
   Make Bootable:
     This button will 'Install' the disk with a standard AmigaDOS boot

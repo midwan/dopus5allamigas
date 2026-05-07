@@ -23,7 +23,92 @@ For more information on Directory Opus for Windows please see:
 
 #include "format.h"
 
+#define FORMAT_LNFS_MIN_FS_VERSION 46
+#define FORMAT_DOS_TYPE_MASK 0xffffff00UL
+#define FORMAT_FILESYSTEM_RESOURCE "FileSystem.resource"
+
+typedef struct
+{
+	struct Node fsr_Node;
+	struct List fsr_FileSysEntries;
+} FormatFileSysResource;
+
+typedef struct
+{
+	struct Node fse_Node;
+	unsigned long fse_DosType;
+	unsigned long fse_Version;
+} FormatFileSysEntry;
+
 int sys_format(struct Screen *screen, char *name);
+
+static BOOL format_is_dos_filesystem(unsigned long dos_type)
+{
+	return (BOOL)((dos_type & FORMAT_DOS_TYPE_MASK) == ID_DOS_DISK);
+}
+
+static unsigned short format_filesystem_resource_version(unsigned long dos_type)
+{
+	FormatFileSysResource *resource;
+	FormatFileSysEntry *entry;
+	unsigned short version = 0;
+
+	if (!(resource = (FormatFileSysResource *)OpenResource(FORMAT_FILESYSTEM_RESOURCE)))
+		return 0;
+
+	Forbid();
+	for (entry = (FormatFileSysEntry *)resource->fsr_FileSysEntries.lh_Head; entry->fse_Node.ln_Succ;
+		 entry = (FormatFileSysEntry *)entry->fse_Node.ln_Succ)
+	{
+		if (entry->fse_DosType == dos_type)
+		{
+			version = (unsigned short)(entry->fse_Version >> 16);
+			break;
+		}
+	}
+	Permit();
+
+	return version;
+}
+
+static void format_handler_name(struct DosList *dl, char *handler_name, short size)
+{
+	BPTR handler;
+
+	if (!handler_name || size < 1)
+		return;
+	handler_name[0] = 0;
+
+	if (!dl || !(handler = dl->dol_misc.dol_handler.dol_Handler))
+		return;
+
+	if (TypeOfMem(BADDR(handler)) == 0)
+		return;
+
+	BtoCStr((BSTR)handler, handler_name, size);
+}
+
+static BOOL format_filesystem_supports_lnfs(unsigned long dos_type, char *handler_name)
+{
+	short version, revision;
+
+	if (!format_is_dos_filesystem(dos_type))
+		return FALSE;
+
+	if (((struct Library *)DOSBase)->lib_Version < FORMAT_LNFS_MIN_FS_VERSION)
+		return FALSE;
+
+	if (dos_type == ID_FFS7_DISK)
+		return TRUE;
+
+	if (handler_name && handler_name[0])
+	{
+		if (GetFileVersion(handler_name, &version, &revision, 0, 0))
+			return (BOOL)(version >= FORMAT_LNFS_MIN_FS_VERSION);
+	}
+
+	return (BOOL)(format_filesystem_resource_version(dos_type) >= FORMAT_LNFS_MIN_FS_VERSION);
+}
 
 int LIBFUNC L_Module_Entry(REG(a0, struct List *disks),
 						   REG(a1, struct Screen *screen),
@@ -322,6 +407,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *disks),
 BOOL format_open(format_data *data, BOOL noactive)
 {
 	long sel;
+	BOOL selected = FALSE;
 
 	// Fill out new window
 	data->new_win.parent = data->screen;
@@ -362,9 +448,7 @@ BOOL format_open(format_data *data, BOOL noactive)
 	{
 		// Select this entry
 		SetGadgetValue(data->list, GAD_FORMAT_DEVICES, sel);
-
-		// Show device info
-		show_device_info(data);
+		selected = TRUE;
 	}
 
 	// Otherwise, disable format buttons initially
@@ -372,6 +456,7 @@ BOOL format_open(format_data *data, BOOL noactive)
 	{
 		DisableObject(data->list, GAD_FORMAT_QUICK_FORMAT, TRUE);
 		DisableObject(data->list, GAD_FORMAT_FORMAT, TRUE);
+		DisableObject(data->list, GAD_FORMAT_LNFS, TRUE);
 	}
 
 	// If <39, disable International, Caching and Long File Names
@@ -405,6 +490,9 @@ BOOL format_open(format_data *data, BOOL noactive)
 		DisableObject(data->list, GAD_FORMAT_INTERNATIONAL, TRUE);
 		DisableObject(data->list, GAD_FORMAT_CACHING, TRUE);
 	}
+
+	if (selected)
+		show_device_info(data);
 
 	return 1;
 }
@@ -497,8 +585,11 @@ void show_device_info(format_data *data)
 	Att_Node *node;
 	struct DosList *dl;
 	char name_buf[32], *ptr;
+	char handler_name[108] = {0};
 	char info_buf[120];
 	unsigned long dos_type = ID_DOS_DISK, table_size = 0;
+	BOOL device_found = FALSE;
+	BOOL lnfs_supported = FALSE;
 
 	// Get selected node
 	if (!(node = Att_FindNode(data->device_list, GetGadgetValue(data->list, GAD_FORMAT_DEVICES))))
@@ -536,6 +627,8 @@ void show_device_info(format_data *data)
 		// Store dos type and table size
 		dos_type = geo->de_DosType;
 		table_size = geo->de_TableSize;
+		device_found = TRUE;
+		format_handler_name(dl, handler_name, sizeof(handler_name));
 
 		// Calculate size of disk
 		size = tracks * track_size;
@@ -549,6 +642,9 @@ void show_device_info(format_data *data)
 
 	// Unlock dos list
 	UnLockDosList(LDF_DEVICES | LDF_READ);
+
+	if (device_found)
+		lnfs_supported = format_filesystem_supports_lnfs(dos_type, handler_name);
 
 	// Identify PFS-family volumes in the status text so the user knows
 	// they are re-formatting a PFS partition rather than a plain DOS
@@ -599,11 +695,17 @@ void show_device_info(format_data *data)
 	// Also lock FFS/International/Caching whenever LNFS is on, since
 	// LNFS implies FFS+International and excludes Directory Caching.
 	{
-		BOOL not_dos = (dos_type & ID_DOS_DISK) != ID_DOS_DISK;
+		BOOL not_dos = !format_is_dos_filesystem(dos_type);
 		BOOL lnfs_on = GetGadgetValue(data->list, GAD_FORMAT_LNFS);
 		BOOL cache_on = GetGadgetValue(data->list, GAD_FORMAT_CACHING);
 
-		DisableObject(data->list, GAD_FORMAT_LNFS, not_dos);
+		if (!lnfs_supported && lnfs_on)
+		{
+			SetGadgetValue(data->list, GAD_FORMAT_LNFS, 0);
+			lnfs_on = FALSE;
+		}
+
+		DisableObject(data->list, GAD_FORMAT_LNFS, not_dos || !lnfs_supported);
 		DisableObject(data->list, GAD_FORMAT_FFS, not_dos || lnfs_on);
 		DisableObject(data->list, GAD_FORMAT_CACHING, not_dos || lnfs_on);
 		DisableObject(data->list, GAD_FORMAT_INTERNATIONAL, not_dos || cache_on || lnfs_on);
