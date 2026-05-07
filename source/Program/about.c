@@ -34,11 +34,12 @@ char *_version_str = "\0$VER: DirectoryOpus " PROG_STRING;
 // Show about requester
 void show_about(struct Screen *screen, IPCData *ipc)
 {
-	// Copyright is split across two lines here because the full COPYRIGHT
+	// Copyright is split across three lines here because the full COPYRIGHT
 	// macro (used verbatim for library/module $VER strings) no longer
 	// fits inside the About window's fixed-width copyright area.
 	static const char about_1[] = "(c) 1993-2012 Jonathan Potter & GP Software";
-	static const char about_2[] = "(c) 2023-2026 Dimitris Panokostas";
+	static const char about_2[] = "(c) 2012-2015 DOpus 5 Open Source Team";
+	static const char about_3[] = "(c) 2023-2026 Dimitris Panokostas";
 
 	char buf[80], *buffer;
 	struct Library *ModuleBase;
@@ -57,6 +58,7 @@ void show_about(struct Screen *screen, IPCData *ipc)
 	Att_NewNode(list, buf, 2, 0);
 	Att_NewNode(list, about_1, 2, 0);
 	Att_NewNode(list, about_2, 2, 0);
+	Att_NewNode(list, about_3, 2, 0);
 
 	// Name of the translator
 	Att_NewNode(list, GetString(&locale, MSG_TRANSLATION_BY_YOUR_NAME), 3, 0);
@@ -70,7 +72,7 @@ void show_about(struct Screen *screen, IPCData *ipc)
 	Att_NewNode(list, "", 1, 0);
 
 	// Link on site
-	Att_NewNode(list, "www.dopus5.org", 1, 0);
+	Att_NewNode(list, "https://github.com/BlitterStudio/dopus5", 1, 0);
 	Att_NewNode(list, "", 0, 0);
 
 	// Try for external about library
