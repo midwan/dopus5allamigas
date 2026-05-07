@@ -25,7 +25,8 @@ FTP / file transfer:
   protocol selector, sftp:// URL handling.
 
 format.module:
-- FFS-LNFS (DOS\7) support with a "Long File Names" checkbox that
+- FFS-LNFS (DOS\7) support with a "Long File Names" checkbox that is
+  only available when the selected FastFileSystem is v46+ capable; it
   implies FFS+International and locks out Directory Caching (issue
   #46).
 - PFS-family detection in the status bar (PFS\0..3, PDS\0..3, muPF).
