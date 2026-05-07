@@ -56,8 +56,8 @@ const ObjectDef about_objects[] = {
 	// Copyright text
 	{OD_AREA,
 	 TEXTPEN,
-	 {0, 0, SIZE_MAXIMUM, 1},
-	 {0, 3, 0, 0},
+	 {0, POS_PROPORTION + 4, SIZE_MAXIMUM, 1},
+	 {0, 0, 0, 0},
 	 0,
 	 TEXTFLAG_CENTER | AREAFLAG_FILL_COLOUR,
 	 GAD_COPYRIGHT_1,
@@ -65,7 +65,7 @@ const ObjectDef about_objects[] = {
 
 	{OD_AREA,
 	 TEXTPEN,
-	 {0, POS_CENTER, SIZE_MAXIMUM, 1},
+	 {0, POS_PROPORTION + 29, SIZE_MAXIMUM, 1},
 	 {0, 0, 0, 0},
 	 0,
 	 TEXTFLAG_CENTER | AREAFLAG_FILL_COLOUR,
@@ -74,11 +74,20 @@ const ObjectDef about_objects[] = {
 
 	{OD_AREA,
 	 TEXTPEN,
-	 {0, POS_RIGHT_JUSTIFY, SIZE_MAXIMUM, 1},
-	 {0, -3, 0, 0},
+	 {0, POS_PROPORTION + 54, SIZE_MAXIMUM, 1},
+	 {0, 0, 0, 0},
 	 0,
 	 TEXTFLAG_CENTER | AREAFLAG_FILL_COLOUR,
 	 GAD_COPYRIGHT_3,
+	 copyright_tags},
+
+	{OD_AREA,
+	 TEXTPEN,
+	 {0, POS_PROPORTION + 79, SIZE_MAXIMUM, 1},
+	 {0, 0, 0, 0},
+	 0,
+	 TEXTFLAG_CENTER | AREAFLAG_FILL_COLOUR,
+	 GAD_COPYRIGHT_4,
 	 copyright_tags},
 
 	// Registration information

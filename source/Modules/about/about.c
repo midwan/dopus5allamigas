@@ -281,7 +281,7 @@ int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 			// Render copyright text
 			SetAPen(data.window->RPort, DRAWINFO(data.window)->dri_Pens[TEXTPEN]);
 			node = files->lh_Head;
-			for (a = 0; a < 3 && node->ln_Succ; a++, node = node->ln_Succ)
+			for (a = 0; a < 4 && node->ln_Succ; a++, node = node->ln_Succ)
 				SetGadgetValue(objlist, GAD_COPYRIGHT_1 + a, (IPTR)node->ln_Name);
 
 			// Get translator information
