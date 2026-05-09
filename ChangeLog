@@ -146,6 +146,9 @@ Other fixes:
 - Custom Screen Title memory values now honour the locale thousands
   separator setting for plain byte values as well as K/M/G/S forms
   (issue #81).
+- print.module now uses bounded copies for user-supplied title,
+  output path, wrap buffer and header/footer strings, closing the
+  V-001 CWE-120 buffer-overflow report.
 
 Versioning notes:
 - Global LIB_REVISION moves 4 -> 5 for all libraries and modules.
@@ -180,6 +183,13 @@ Program / titlebar:
 Program / menus:
 - "Resize to Fit" is now disabled outside lister icon menus, matching
   the command's actual lister-icon-only implementation.
+
+print.module:
+- Replaced unbounded strcpy / strcat calls with strlcpy / strlcat for
+  the print requester title string, output path, word-wrap buffer,
+  header style escape sequences and header/footer title text.  This
+  closes the V-001 CWE-120 fixed-buffer overflow report without
+  changing the printed output layout.
 
 configopus.module:
 - Restored the Lister Options panel spacing around the Icon Action
