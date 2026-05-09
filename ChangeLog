@@ -62,6 +62,8 @@ Library / dopus5.library:
 - L_PatchedOpen lazy-allocates its FIB + 512 path scratch buffer
   only on the create branch; new shared dos_patch_memory pool
   reduces heap traffic on bulk file operations (issue #49).
+- OS3 68000 startup no longer risks a Guru 8000 0003 while scanning
+  modules whose built-in CatComp string block lands on an odd address.
 - icon_cache: route system deficons through GetCachedDiskObjectNew
   rather than hijacking GetCachedDiskObject (Filetype Editor icon
   fallout fix).
@@ -159,6 +161,28 @@ Versioning notes:
   LoadDB CLI-detachment work; commands ship at v65r3.
 
 Detailed per-feature entries and late-cycle maintenance notes follow.
+2026-05-09 by Dimitris Panokostas <midwan@gmail.com>
+
+[dopus5 5.101] os3-68000: fix odd-aligned CatComp string lookup
+Ships in 5.101.  dopus5.library at v73r5 (with the global
+LIB_REVISION 4 -> 5 bump for this release).
+
+Source / Library/layout_support.c:
+- L_GetString now parses built-in CatComp string blocks with explicit
+  big-endian byte reads instead of casting the byte stream to LONG *
+  and UWORD *.
+- This fixes a plain 68000 address-error path seen on OS3.2.3 while
+  DOpus scans modules at startup.  In the reported case the last
+  SnoopDos entry was PROGDIR:Modules/cleanup.mod (OK); cleanup.module
+  had an odd-address CatCompBlock, and the old parser could emit
+  aligned word/long reads from that odd address.
+- 68020+ systems tolerate the unaligned reads, so this was specific to
+  the new OS3 68000 build variant.  The new parser keeps the same
+  table format and works on all targets without relying on alignment.
+
+Tests:
+- Added a focused source regression test that guards L_GetString
+  against reintroducing unsafe LONG * / UWORD * CatComp-block parsing.
 2026-05-07 by Dimitris Panokostas <midwan@gmail.com>
 
 [dopus5 5.101] late-cycle UI, titlebar and locale fixes
