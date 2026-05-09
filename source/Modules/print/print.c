@@ -259,7 +259,7 @@ void print_get_header(print_data *data, short h)
 		data->header_flags[h] |= PRINT_HEADERF_DATE;
 	if (GetGadgetValue(data->objlist, GAD_PRINT_PAGE))
 		data->header_flags[h] |= PRINT_HEADERF_PAGE;
-	strcpy(data->header_title[h], (char *)GetGadgetValue(data->objlist, GAD_PRINT_TITLE_STRING));
+	strlcpy(data->header_title[h], (char *)GetGadgetValue(data->objlist, GAD_PRINT_TITLE_STRING), sizeof(data->header_title[h]));
 	data->header_style[h] = GetGadgetValue(data->objlist, GAD_PRINT_STYLE);
 }
 
@@ -354,7 +354,7 @@ void print_print(print_data *data)
 		ClearPointer(data->prog_win);
 
 		// Get filename
-		strcpy(data->output_name, data->filereq->fr_Drawer);
+		strlcpy(data->output_name, data->filereq->fr_Drawer, sizeof(data->output_name));
 		AddPart(data->output_name, data->filereq->fr_File, 256);
 
 		// Open file
@@ -595,7 +595,7 @@ BOOL print_print_file(print_data *data, BPTR file)
 				if (last_space > 0)
 				{
 					// Copy to wrap buffer
-					strcpy(data->wrap_buffer, data->line_buffer + last_space + 1 + ((ch == ' ' || ch == '\t') ? 1 : 0));
+					strlcpy(data->wrap_buffer, data->line_buffer + last_space + 1 + ((ch == ' ' || ch == '\t') ? 1 : 0), sizeof(data->wrap_buffer));
 					data->line_buffer[last_space] = 0;
 					line_pos = last_space;
 					last_space = 0;
@@ -641,7 +641,7 @@ BOOL print_print_file(print_data *data, BPTR file)
 			if (data->wrap_buffer[0])
 			{
 				// Copy word-wrap stuff
-				strcpy(data->line_buffer, data->wrap_buffer);
+				strlcpy(data->line_buffer, data->wrap_buffer, sizeof(data->line_buffer));
 				line_pos = strlen(data->line_buffer);
 
 				// Clear word-wrap buffer
@@ -837,7 +837,7 @@ BOOL print_header_footer(print_data *data, short which)
 	// Style
 	if (data->header_style[which])
 	{
-		strcpy(data->header_buffer + off, print_styles[data->header_style[which] - 1]);
+		strlcpy(data->header_buffer + off, print_styles[data->header_style[which] - 1], sizeof(data->header_buffer) - off);
 		off = strlen(data->header_buffer);
 	}
 
@@ -858,11 +858,11 @@ BOOL print_header_footer(print_data *data, short which)
 
 		// Supplied title?
 		if (data->header_title[which][0])
-			strcpy(title, data->header_title[which]);
+			strlcpy(title, data->header_title[which], sizeof(title));
 
 		// Otherwise use filename
 		else
-			strcpy(title, data->fib.fib_FileName);
+			strlcpy(title, data->fib.fib_FileName, sizeof(title));
 
 		// Check length
 		if ((len = strlen(title)) > data->line_width - 4)
@@ -899,7 +899,7 @@ BOOL print_header_footer(print_data *data, short which)
 	// Restore normal
 	if (data->header_style[which])
 	{
-		strcat(data->header_buffer, "\x1b[0m");
+		strlcat(data->header_buffer, "\x1b[0m", sizeof(data->header_buffer));
 	}
 
 	// Print string
