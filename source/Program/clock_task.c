@@ -82,7 +82,6 @@ static short clock_titlebar_image_y(short image_height)
 APTR clock_show_custom_title(struct RastPort *rp,
 							 long clock_x,
 							 long days,
-							 struct DateStamp *date,
 							 struct SysInfo *si,
 							 struct Library *SysInfoBase,
 							 struct SysInfoIFace *ISysInfo);
@@ -90,7 +89,6 @@ APTR clock_show_custom_title(struct RastPort *rp,
 APTR clock_show_custom_title(struct RastPort *rp,
 							 long clock_x,
 							 long days,
-							 struct DateStamp *date,
 							 struct SysInfo *si,
 							 struct Library *SysInfoBase);
 #endif
@@ -570,7 +568,6 @@ IPC_EntryCode(clock_proc)
 										clock_show_custom_title(&clock_rp,
 																(GUI->flags & GUIF_CLOCK) ? clock_x : last_x,
 																days,
-																&date.dat_Stamp,
 																si,
 																SysInfoBase,
 																ISysInfo);
@@ -578,7 +575,6 @@ IPC_EntryCode(clock_proc)
 										clock_show_custom_title(&clock_rp,
 																(GUI->flags & GUIF_CLOCK) ? clock_x : last_x,
 																days,
-																&date.dat_Stamp,
 																si,
 																SysInfoBase);
 #endif
@@ -752,7 +748,6 @@ void title_error(char *txt, short time)
 APTR clock_show_custom_title(struct RastPort *rp,
 							 long clock_x,
 							 long days,
-							 struct DateStamp *date,
 							 struct SysInfo *si,
 							 struct Library *SysInfoBase,
 							 struct SysInfoIFace *ISysInfo)
@@ -760,7 +755,6 @@ APTR clock_show_custom_title(struct RastPort *rp,
 APTR clock_show_custom_title(struct RastPort *rp,
 							 long clock_x,
 							 long days,
-							 struct DateStamp *date,
 							 struct SysInfo *si,
 							 struct Library *SysInfoBase)
 #endif
@@ -993,28 +987,6 @@ APTR clock_show_custom_title(struct RastPort *rp,
 #endif
 					lsprintf(buf, "%ld", year);
 				esc = 2;
-			}
-
-			// Internet time
-			else if (*(ptr + 1) == 'i' && *(ptr + 2) == 't')
-			{
-				if (locale.li_Locale)
-				{
-					long minutes;
-					minutes = date->ds_Minute;
-					minutes += locale.li_Locale->loc_GMTOffset;
-					if (minutes < 0)
-						minutes += 1440;
-					minutes += 60;
-					minutes %= 1440;
-					minutes *= 60;
-					minutes += date->ds_Tick / TICKS_PER_SECOND;
-					minutes *= 1000;
-					minutes /= 1440;
-					minutes /= 60;
-					lsprintf(buf, "%03ld", minutes);
-					esc = 2;
-				}
 			}
 
 			// Environment variable
