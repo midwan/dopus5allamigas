@@ -1060,7 +1060,7 @@ APTR clock_show_custom_title(struct RastPort *rp,
 				else
 				{
 					// memory values should always be unsigned
-					lsprintf(buf, "%lu", memval);
+					ItoaU(memval, buf, (environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
 				}
 			}
 

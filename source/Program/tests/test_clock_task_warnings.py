@@ -29,6 +29,12 @@ class ClockTaskWarningTests(unittest.TestCase):
         self.assertNotIn("format =", source)
         self.assertNotIn("lsprintf(buf,format,memval)", source)
 
+    def test_custom_title_plain_memory_values_use_locale_separator(self):
+        source = read_source(CLOCK_TASK_C)
+
+        self.assertIn("ItoaU(memval,", source)
+        self.assertNotIn('lsprintf(buf, "%lu", memval);', source)
+
 
 if __name__ == "__main__":
     unittest.main()
