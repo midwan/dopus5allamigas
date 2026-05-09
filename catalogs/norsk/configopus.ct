@@ -1430,10 +1430,6 @@ MSG_SCREENTITLE_CODE_20
 *pm\tPhase of the Moon
 ; *pm\tPhase of the Moon
 ;
-MSG_SCREENTITLE_CODE_21
-*it\tInternet Time
-; *it\tInternet Time
-;
 MSG_SCREENTITLE_CODE_LAST
 -
 ; -
