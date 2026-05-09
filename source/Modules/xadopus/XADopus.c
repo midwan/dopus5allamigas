@@ -23,6 +23,38 @@ char *viewcmds = "Read Play Show HexRead AnsiRead IconInfo";
 
 LIBFUNC ULONG ASM SAVEDS L_ProgressHook(REG(a0, struct Hook *), REG(a2, int skip), REG(a1, struct xadProgressInfo *));
 
+static IPTR xad_parse_handle(const char *text)
+{
+	UQUAD value = 0;
+
+	if (!text)
+		return 0;
+
+	while (*text >= '0' && *text <= '9')
+	{
+		value = (value * 10) + (*text - '0');
+		++text;
+	}
+
+	return (IPTR)value;
+}
+
+static void xad_format_handle(char *buf, IPTR handle)
+{
+	char tmp[24];
+	int pos = sizeof(tmp) - 1;
+	UQUAD value = (UQUAD)handle;
+
+	tmp[pos] = 0;
+	do
+	{
+		tmp[--pos] = '0' + (value % 10);
+		value /= 10;
+	} while (value && pos > 0);
+
+	strcpy(buf, tmp + pos);
+}
+
 /// Error Requester
 void ErrorReq(struct xoData *data, char *Mess)
 {
@@ -1204,10 +1236,10 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 		/*if(!(data.destp = data.hook.dc_GetDest(IPCDATA(ipc), data.listpath))) return(0);
 		data.hook.dc_EndDest(IPCDATA(ipc), 0);*/
 
-		data.listh = (ULONG)data.listp2->lister;
+		data.listh = (IPTR)data.listp2->lister;
 		data.listw = (APTR)DC_CALL1(infoptr, dc_GetWindow, DC_REGA0, data.listp2);
 		// data.listw = data.hook.dc_GetWindow(data.listp2);
-		sprintf(data.lists, "%lu", data.listh);
+		xad_format_handle(data.lists, data.listh);
 
 		sprintf(buf, "lister query %s numselentries", data.lists);
 		total = DC_CALL4(infoptr, dc_SendCommand, DC_REGA0, IPCDATA(ipc), DC_REGA1, buf, DC_REGA2, NULL, DC_REGD0, 0);
@@ -1283,7 +1315,7 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 					default:
 						xadFreeInfo(data.ArcInf);
 						ti[0].ti_Tag = XAD_INFILENAME;
-						ti[0].ti_Data = (ULONG)arcname;
+						ti[0].ti_Data = (IPTR)arcname;
 						ti[1].ti_Tag = TAG_DONE;
 						if (!(err = xadGetDiskInfo(data.ArcInf, XAD_INDISKARCHIVE, (IPTR)ti, TAG_DONE)))
 							over = ExtractF(&data);
@@ -1308,7 +1340,8 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 					AddPart(arcname, Entry->name, 512);
 				}
 			}
-			sprintf(buf, "command source %lu ScanDir %s", (ULONG)data.destp->lister, data.destp->path);
+			xad_format_handle(data.lists, (IPTR)data.destp->lister);
+			sprintf(buf, "command source %s ScanDir %s", data.lists, data.destp->path);
 			DC_CALL4(infoptr, dc_SendCommand, DC_REGA0, IPCDATA(ipc), DC_REGA1, buf, DC_REGA2, NULL, DC_REGD0, 0);
 			// data.hook.dc_SendCommand(IPCDATA(ipc),buf,NULL,NULL);
 
@@ -1327,7 +1360,7 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 	data.hook.dc_EndEntry(IPCDATA(ipc), Entry, TRUE);
 	data.hook.dc_UnlockSource(IPCDATA(ipc));*/
 
-	//		data.listh = (ULONG)data.listp2->lister;
+	//		data.listh = (IPTR)data.listp2->lister;
 	//		sprintf(data.lists, "%d", data.listh);
 
 	if (!DC_CALL4(infoptr,
@@ -1342,9 +1375,24 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 				  COMMANDF_RESULT))
 	// if(!data.hook.dc_SendCommand(IPCDATA(ipc), "lister new", &result, COMMANDF_RESULT))
 	{
-		strcpy(data.lists, result);
-		data.listh = atol(result);
+		if (!result)
+		{
+			FreeMemHandle(data.rhand);
+			RemoveTemp(&data);
+			return 0;
+		}
+
+		data.listh = xad_parse_handle(result);
 		FreeVec(result);
+
+		if (!data.listh)
+		{
+			FreeMemHandle(data.rhand);
+			RemoveTemp(&data);
+			return 0;
+		}
+
+		xad_format_handle(data.lists, data.listh);
 
 		//		ErrorReq(&data, data.lists); // *********************
 
@@ -1399,7 +1447,7 @@ int LIBFUNC L_Module_Entry(REG(a0, char *args),
 
 					xadFreeInfo(data.ArcInf);
 					ti[0].ti_Tag = XAD_INFILENAME;
-					ti[0].ti_Data = (ULONG)arcname;
+					ti[0].ti_Data = (IPTR)arcname;
 					ti[1].ti_Tag = TAG_DONE;
 					err = xadGetDiskInfo(data.ArcInf, XAD_INDISKARCHIVE, (IPTR)ti, TAG_DONE);
 				}

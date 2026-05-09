@@ -51,7 +51,7 @@ void cli_free(CLIData *);
 // Internal command line interpreter
 DOPUS_FUNC(function_cli)
 {
-	CLIData data;
+	CLIData data = {0};
 	short pos = 0;
 	char ch;
 	CommandList *last_cmd = 0;
@@ -487,6 +487,9 @@ BOOL cli_open(CLIData *data)
 	// Duplicate output channel for input
 	if (!(data->input = Open("console:", MODE_OLDFILE)))
 	{
+		SelectOutput(data->old_output);
+		SelectInput(data->old_input);
+		SetConsoleTask(data->old_console);
 		Close(data->output);
 		data->output = 0;
 		return 0;
@@ -507,8 +510,10 @@ void cli_close(CLIData *data)
 	SetConsoleTask(data->old_console);
 
 	// Close input/output channels
-	Close(data->input);
-	Close(data->output);
+	if (data->input)
+		Close(data->input);
+	if (data->output)
+		Close(data->output);
 
 	// Clear handles
 	data->input = 0;
@@ -518,6 +523,8 @@ void cli_close(CLIData *data)
 // Free CLI
 void cli_free(CLIData *data)
 {
-	DeleteMsgPort(data->reply_port);
-	FreeVec(data->name);
+	if (data->reply_port)
+		DeleteMsgPort(data->reply_port);
+	if (data->name)
+		FreeVec(data->name);
 }

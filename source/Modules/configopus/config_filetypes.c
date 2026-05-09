@@ -1,6 +1,26 @@
 #include "config_lib.h"
 #include "config_filetypes.h"
 
+static BOOL filetypes_saved_size_matches_font(struct Screen *screen, short fontsize)
+{
+	struct Screen *pub = 0;
+	short current_size = 0;
+
+	if (!screen)
+	{
+		if (!(pub = LockPubScreen(0)))
+			return FALSE;
+		screen = pub;
+	}
+
+	current_size = screen->RastPort.TxHeight;
+
+	if (pub)
+		UnlockPubScreen(0, pub);
+
+	return (current_size == fontsize);
+}
+
 short LIBFUNC L_Config_Filetypes(REG(a0, struct Screen *screen),
 								 REG(a1, IPCData *ipc),
 								 REG(a2, IPCData *owner_ipc),
@@ -40,7 +60,7 @@ short LIBFUNC L_Config_Filetypes(REG(a0, struct Screen *screen),
 	dims = _config_filetypes_window;
 
 	// Get saved position
-	if (LoadPos("dopus/windows/filetypes", &pos, &fontsize))
+	if (LoadPos("dopus/windows/filetypes", &pos, &fontsize) && filetypes_saved_size_matches_font(screen, fontsize))
 	{
 		dims.char_dim.Width = 0;
 		dims.char_dim.Height = 0;
