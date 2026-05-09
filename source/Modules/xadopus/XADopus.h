@@ -35,7 +35,7 @@
 
 struct function_entry
 {
-	ULONG pad[2];
+	struct MinNode node;
 	char *name;	  // File name
 	APTR entry;	  // Entry pointer (don't touch!)
 	short type;	  // Type of file
@@ -44,7 +44,7 @@ struct function_entry
 
 struct path_node
 {
-	ULONG pad[2];
+	struct MinNode node;
 	char buffer[512];  // Contains path string
 	char *path;		   // Points to path string
 	APTR lister;	   // Lister pointer
@@ -62,8 +62,9 @@ struct Tree
 
 struct xoData
 {
-	ULONG ArcMode, listh;
-	char lists[20], listpath[512], rootpath[108];
+	ULONG ArcMode;
+	IPTR listh;
+	char lists[24], listpath[512], rootpath[108];
 	struct xadArchiveInfo *ArcInf;
 	struct MsgPort *mp;
 	char mp_name[20];
