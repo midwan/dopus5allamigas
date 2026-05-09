@@ -3751,7 +3751,9 @@ This enables you to set a few miscellaneous options.
     Allows you to display various information in the Opus screen's titlebar,
     such as CPU, Graphic chipset, total memory, tasks, etc.  The gadget to
     the left of the string gadget displays a list of allowable command
-    sequences.
+    sequences.  Memory values shown with the memory control codes use the
+    Locale page's Thousands separator option for plain byte values and for
+    the kilobyte, megabyte, gigabyte and smart-size forms.
 
 @endnode
 

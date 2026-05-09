@@ -133,6 +133,19 @@ Other fixes:
 - Button image fallback length guard.
 - DOpus 4 import: fix mapping buttons -> menus -> drives offset.
 - copy: read $VER strings without colon.
+- OS3 titlebar drawing now uses the real screen bar height on
+  intuition.library v47+ instead of assuming TxHeight + 2.
+- Environment / Lister Options spacing restored around the Icon
+  Action double-click row.
+- About requester copyright text now stays inside the requester on
+  both the main program and about.module paths.
+- "Resize to Fit" is only enabled for lister icon menus, matching the
+  command implementation.
+- Removed the dead Custom Screen Title Internet Time code from the
+  formatter, configuration popup and translated catalogs.
+- Custom Screen Title memory values now honour the locale thousands
+  separator setting for plain byte values as well as K/M/G/S forms
+  (issue #81).
 
 Versioning notes:
 - Global LIB_REVISION moves 4 -> 5 for all libraries and modules.
@@ -142,8 +155,48 @@ Versioning notes:
 - CMD_REVISION already advanced 1 -> 3 during the cycle for the
   LoadDB CLI-detachment work; commands ship at v65r3.
 
-Detailed per-feature entries follow.
+Detailed per-feature entries and late-cycle maintenance notes follow.
 2026-05-07 by Dimitris Panokostas <midwan@gmail.com>
+
+[dopus5 5.101] late-cycle UI, titlebar and locale fixes
+Ships in 5.101.  Program / configopus / about.module fixes; no version
+bump beyond the existing 5.101 / v73r5 / v65r3 release bump.
+
+Program / titlebar:
+- Use intuition.library v47+ screen BarHeight for direct OS3 titlebar
+  drawing when available.  This keeps the clock, memory text and
+  custom title text vertically centred on OS3.2-style titlebars while
+  keeping the old TxHeight + 2 fallback for older systems.
+- Removed the dormant Custom Screen Title Internet Time handler and
+  prototype.  It depended on date/locale state that was not wired into
+  the title formatter, and the visible configuration popup no longer
+  advertises it in any catalog.
+- Plain Custom Screen Title memory substitutions now format through
+  ItoaU with DATE_1000SEP / GUI->decimal_sep, so entries such as
+  Total memory, Free memory and Memory in use match the user's locale
+  thousands-separator preference.  The existing K/M/G/S and percent
+  forms are unchanged.
+
+Program / menus:
+- "Resize to Fit" is now disabled outside lister icon menus, matching
+  the command's actual lister-icon-only implementation.
+
+configopus.module:
+- Restored the Lister Options panel spacing around the Icon Action
+  double-click row after the Environment editor reflow work.
+
+about.module / main About requester:
+- Tightened the copyright block so the text fits inside the requester
+  in both the standalone about.module and the main program path.
+
+Documentation / tests:
+- DOpus5.guide now documents the thousands-separator interaction for
+  Custom Screen Title memory values.
+- Added focused regression tests for the titlebar metric wiring,
+  Custom Screen Title code list, Resize to Fit menu gating, Lister
+  Options layout spacing, About requester text layout, and title
+  memory thousands-separator formatting.
+2026-05-09 by Dimitris Panokostas <midwan@gmail.com>
 
 [dopus5 5.101] ci: package AROS releases in the AROS Docker image
 Ships in 5.101.  CI / makefile / README-only change; no module version
