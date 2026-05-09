@@ -95,6 +95,9 @@ Release archive / packaging:
 - Default Lister Toolbar and Toolbar.default refreshed with a new
   CacheList icon/label so the left-most button matches its action
   (issue #65).
+- basedata.lha now includes DOpus5/Sounds/.dummy so the Environment /
+  Sound Events requester can open its default DOpus5:Sounds drawer on
+  clean installs.
 - CI release packaging now runs `release-package` in the same Docker
   image as the build; the old AROS `package_image` fallback to the
   sacredbanana OS3 image is gone now that `midwan/aros-compiler:*`
