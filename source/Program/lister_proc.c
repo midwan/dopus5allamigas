@@ -38,6 +38,29 @@ static void lister_launch_special_pair(Lister *lister, Cfg_Function *func)
 	function_launch_quick(FUNCTION_RUN_FUNCTION, func, lister);
 }
 
+static short lister_proc_apply_side(Lister **lister, ULONG side, BOOL preserve_active)
+{
+	if (!lister || !*lister)
+		return -1;
+
+	if (side > 0 && side <= LISTER_DUAL_SIDES)
+	{
+		if (preserve_active && lister_dual_apply_side_temporary(*lister, side - 1))
+			return side - 1;
+		lister_dual_apply_side(*lister, side - 1);
+	}
+	else
+		*lister = lister_dual_active_side(*lister);
+
+	return -1;
+}
+
+static void lister_proc_restore_side(Lister *lister, short side)
+{
+	if (side >= 0)
+		lister_dual_restore_active(lister, side);
+}
+
 // Initialise a new lister
 IPC_StartupCode(lister_init, Lister *, lister, static)
 {
@@ -1022,35 +1045,36 @@ IPC_EntryCode(lister_code)
 					break;
 
 				// Refresh path field
-				case LISTER_REFRESH_PATH:
-					if (flags > 0 && flags <= LISTER_DUAL_SIDES)
-						lister_dual_apply_side(lister, flags - 1);
-					else
-						lister = lister_dual_active_side(lister);
+				case LISTER_REFRESH_PATH: {
+					short restore_side;
+
+					restore_side = lister_proc_apply_side(&lister, flags, TRUE);
 
 					// Refresh path field
 					lister_update_pathfield(lister);
 
 					// Update title bar
 					lister_show_name(lister);
+					lister_proc_restore_side(lister, restore_side);
 					break;
+				}
 
 				// Refresh free space
 				case LISTER_REFRESH_FREE:
-				case LISTER_REFRESH_NAME:
-					if (flags > 0 && flags <= LISTER_DUAL_SIDES)
-						lister_dual_apply_side(lister, flags - 1);
-					else
-						lister = lister_dual_active_side(lister);
+				case LISTER_REFRESH_NAME: {
+					short restore_side;
+
+					restore_side = lister_proc_apply_side(&lister, flags, TRUE);
 					lister_update_name(lister);
+					lister_proc_restore_side(lister, restore_side);
 					break;
+				}
 
 				// Refresh lister display
-				case LISTER_REFRESH_WINDOW:
-					if ((IPTR)data > 0 && (IPTR)data <= LISTER_DUAL_SIDES)
-						lister_dual_apply_side(lister, (IPTR)data - 1);
-					else
-						lister = lister_dual_active_side(lister);
+				case LISTER_REFRESH_WINDOW: {
+					short restore_side;
+
+					restore_side = lister_proc_apply_side(&lister, (IPTR)data, TRUE);
 
 					// Datestamp?
 					if (flags & REFRESHF_DATESTAMP)
@@ -1060,7 +1084,10 @@ IPC_EntryCode(lister_code)
 
 						// Only refresh date?
 						if (flags == REFRESHF_DATESTAMP)
+						{
+							lister_proc_restore_side(lister, restore_side);
 							break;
+						}
 					}
 
 					// Window open?
@@ -1073,7 +1100,9 @@ IPC_EntryCode(lister_code)
 					// Change directory?
 					if (flags & REFRESHF_CD)
 						lister_fix_cd(lister);
+					lister_proc_restore_side(lister, restore_side);
 					break;
+				}
 
 				// Refresh lister title
 				case LISTER_REFRESH_TITLE:
@@ -1158,13 +1187,14 @@ IPC_EntryCode(lister_code)
 					break;
 
 				// Show selection information
-				case LISTER_SHOW_INFO:
-					if (flags > 0 && flags <= LISTER_DUAL_SIDES)
-						lister_dual_apply_side(lister, flags - 1);
-					else
-						lister = lister_dual_active_side(lister);
+				case LISTER_SHOW_INFO: {
+					short restore_side;
+
+					restore_side = lister_proc_apply_side(&lister, flags, TRUE);
 					select_show_info(lister, 0);
+					lister_proc_restore_side(lister, restore_side);
 					break;
+				}
 
 				// Remove directory sizes
 				case LISTER_REMOVE_SIZES:
@@ -1337,16 +1367,17 @@ IPC_EntryCode(lister_code)
 					break;
 
 				// Update buffer stamp
-				case LISTER_UPDATE_STAMP:
-					if (flags > 0 && flags <= LISTER_DUAL_SIDES)
-						lister_dual_apply_side(lister, flags - 1);
-					else
-						lister = lister_dual_active_side(lister);
+				case LISTER_UPDATE_STAMP: {
+					short restore_side;
+
+					restore_side = lister_proc_apply_side(&lister, flags, TRUE);
 
 					// If there's no pending rescan
 					if (!(lister->flags & LISTERF_RESCAN))
 						update_buffer_stamp(lister);
+					lister_proc_restore_side(lister, restore_side);
 					break;
+				}
 
 				// Copy a buffer
 				case LISTER_COPY_BUFFER:
@@ -1674,13 +1705,14 @@ IPC_EntryCode(lister_code)
 					break;
 
 				// Set gauge state
-				case LISTER_SET_GAUGE:
-					if (flags > 0 && flags <= LISTER_DUAL_SIDES)
-						lister_dual_apply_side(lister, flags - 1);
-					else
-						lister = lister_dual_active_side(lister);
+				case LISTER_SET_GAUGE: {
+					short restore_side;
+
+					restore_side = lister_proc_apply_side(&lister, flags, TRUE);
 					lister_set_gauge(lister, TRUE);
+					lister_proc_restore_side(lister, restore_side);
 					break;
+				}
 
 				// Highlight an entry
 				case LISTER_HIGHLIGHT:

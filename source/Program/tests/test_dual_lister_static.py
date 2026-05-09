@@ -1013,6 +1013,92 @@ class DualListerStaticTests(unittest.TestCase):
             r"lister_dual_suppress_popup_front\(lister\);",
         )
 
+    def test_dual_side_targeted_refresh_ipc_preserves_active_side(self):
+        lister_h = read_program_source("lister.h")
+        lister_dual_c = read_program_source_if_exists("lister_dual.c")
+        lister_proc_c = read_program_source("lister_proc.c")
+
+        self.assertIn("BOOL lister_dual_apply_side_temporary(Lister *lister, short side);", lister_h)
+        self.assertIn("void lister_dual_restore_active(Lister *lister, short side);", lister_h)
+        self.assertRegex(
+            lister_dual_c,
+            r"(?s)BOOL lister_dual_apply_side_temporary\(Lister \*lister, short side\).*"
+            r"lister_dual_capture_active_buffer\(lister\);.*"
+            r"lister_dual_apply_panel\(lister, side\);",
+        )
+        temporary_func = re.search(
+            r"(?s)BOOL lister_dual_apply_side_temporary\(Lister \*lister, short side\).*?"
+            r"\n}\n\nvoid lister_dual_restore_active",
+            lister_dual_c,
+        ).group(0)
+        self.assertNotIn("state->active = side;", temporary_func)
+        self.assertRegex(
+            lister_dual_c,
+            r"(?s)void lister_dual_restore_active\(Lister \*lister, short side\).*"
+            r"state->buffer\[side\] = lister->cur_buffer;.*"
+            r"lister_dual_capture_side_offsets\(lister, state, side\);.*"
+            r"lister_dual_apply_panel\(lister, state->active\);",
+        )
+        self.assertRegex(
+            lister_proc_c,
+            r"(?s)static short lister_proc_apply_side\(Lister \*\*lister, ULONG side, BOOL preserve_active\).*"
+            r"preserve_active && lister_dual_apply_side_temporary\(\*lister, side - 1\).*"
+            r"return side - 1;.*"
+            r"lister_dual_apply_side\(\*lister, side - 1\);.*"
+            r"\*lister = lister_dual_active_side\(\*lister\);",
+        )
+        self.assertRegex(
+            lister_proc_c,
+            r"(?s)static void lister_proc_restore_side\(Lister \*lister, short side\).*"
+            r"if \(side >= 0\).*"
+            r"lister_dual_restore_active\(lister, side\);",
+        )
+
+        for case_name, side_expr in (
+            ("LISTER_REFRESH_PATH", "flags"),
+            ("LISTER_REFRESH_FREE", "flags"),
+            ("LISTER_REFRESH_WINDOW", "(IPTR)data"),
+            ("LISTER_SHOW_INFO", "flags"),
+            ("LISTER_UPDATE_STAMP", "flags"),
+            ("LISTER_SET_GAUGE", "flags"),
+        ):
+            with self.subTest(case_name=case_name):
+                block = re.search(r"(?s)case %s:.*?break;" % case_name, lister_proc_c).group(0)
+                self.assertRegex(
+                    block,
+                    r"(?s)restore_side = lister_proc_apply_side\(&lister, %s, TRUE\);.*"
+                    r"lister_proc_restore_side\(lister, restore_side\);" % re.escape(side_expr),
+                )
+
+    def test_dual_enter_and_role_changes_clear_external_source_dest_roles(self):
+        lister_dual_c = read_program_source_if_exists("lister_dual.c")
+
+        self.assertRegex(
+            lister_dual_c,
+            r"(?s)static void lister_dual_clear_external_roles\(Lister \*dual\).*"
+            r"lock_listlock\(&GUI->lister_list, FALSE\);.*"
+            r"for \(ipc = \(IPCData \*\)GUI->lister_list.list.lh_Head;.*"
+            r"lister = IPCDATA\(ipc\);.*"
+            r"if \(lister == dual \|\| lister_dual_is_side\(lister\)\).*"
+            r"continue;.*"
+            r"lister->flags & \(LISTERF_SOURCE \| LISTERF_DEST \| LISTERF_STORED_SOURCE \| "
+            r"LISTERF_STORED_DEST \| LISTERF_SOURCEDEST_LOCK\).*"
+            r"IPC_Command\(lister->ipc, LISTER_OFF, 0, 0, 0, 0\);.*"
+            r"unlock_listlock\(&GUI->lister_list\);",
+        )
+        self.assertRegex(
+            lister_dual_c,
+            r"(?s)BOOL lister_dual_enter\(Lister \*lister\).*"
+            r"lister_dual_clear_external_roles\(lister\);.*"
+            r"lister_check_source\(lister\);",
+        )
+        self.assertRegex(
+            lister_dual_c,
+            r"(?s)static void lister_dual_set_roles\(Lister \*source, BOOL locked\).*"
+            r"lister_dual_clear_external_roles\(source\);.*"
+            r"lister_dual_apply_panel\(source, state->active\);",
+        )
+
     def test_dual_filechanges_update_inactive_panel_buffer(self):
         function_filechange_c = read_program_source("function_filechange.c")
         function_launch_c = read_program_source("function_launch.c")
@@ -1045,7 +1131,8 @@ class DualListerStaticTests(unittest.TestCase):
         )
         self.assertNotIn("old_side + 1 : 0", function_filechange_c)
         refresh_block = re.search(r"(?s)case LISTER_REFRESH_WINDOW:.*?break;", lister_proc_c).group(0)
-        self.assertIn("lister_dual_apply_side(lister, (IPTR)data - 1);", refresh_block)
+        self.assertIn("restore_side = lister_proc_apply_side(&lister, (IPTR)data, TRUE);", refresh_block)
+        self.assertIn("lister_proc_restore_side(lister, restore_side);", refresh_block)
         self.assertNotIn("ref |= REFRESHF_FULL;", function_launch_c)
         self.assertRegex(
             function_support_c,
@@ -1114,16 +1201,20 @@ class DualListerStaticTests(unittest.TestCase):
             r"IPC_Command\(path->lister->ipc, LISTER_RESCAN, side, 0, 0, 0\);.*"
             r"IPC_Command\(path->lister->ipc, LISTER_UPDATE_STAMP, side, 0, 0, 0\);",
         )
-        for case_name in ("LISTER_RESCAN", "LISTER_UPDATE_STAMP"):
-            with self.subTest(case_name=case_name):
-                block = re.search(r"(?s)case %s:.*?break;" % case_name, lister_proc_c).group(0)
-                self.assertRegex(
-                    block,
-                    r"(?s)if \(flags > 0 && flags <= LISTER_DUAL_SIDES\).*"
-                    r"lister_dual_apply_side\(lister, flags - 1\);.*"
-                    r"else.*"
-                    r"lister = lister_dual_active_side\(lister\);",
-                )
+        rescan_block = re.search(r"(?s)case LISTER_RESCAN:.*?break;", lister_proc_c).group(0)
+        self.assertRegex(
+            rescan_block,
+            r"(?s)if \(flags > 0 && flags <= LISTER_DUAL_SIDES\).*"
+            r"lister_dual_apply_side\(lister, flags - 1\);.*"
+            r"else.*"
+            r"lister = lister_dual_active_side\(lister\);",
+        )
+        stamp_block = re.search(r"(?s)case LISTER_UPDATE_STAMP:.*?break;", lister_proc_c).group(0)
+        self.assertRegex(
+            stamp_block,
+            r"(?s)restore_side = lister_proc_apply_side\(&lister, flags, TRUE\);.*"
+            r"lister_proc_restore_side\(lister, restore_side\);",
+        )
 
     def test_dual_unlock_refresh_ipc_carries_captured_side(self):
         function_launch_c = read_program_source("function_launch.c")
@@ -1139,18 +1230,14 @@ class DualListerStaticTests(unittest.TestCase):
         refresh_block = re.search(r"(?s)case LISTER_REFRESH_WINDOW:.*?break;", lister_proc_c).group(0)
         self.assertRegex(
             refresh_block,
-            r"(?s)if \(\(IPTR\)data > 0 && \(IPTR\)data <= LISTER_DUAL_SIDES\).*"
-            r"lister_dual_apply_side\(lister, \(IPTR\)data - 1\);.*"
-            r"else.*"
-            r"lister = lister_dual_active_side\(lister\);",
+            r"(?s)restore_side = lister_proc_apply_side\(&lister, \(IPTR\)data, TRUE\);.*"
+            r"lister_proc_restore_side\(lister, restore_side\);",
         )
         show_info_block = re.search(r"(?s)case LISTER_SHOW_INFO:.*?break;", lister_proc_c).group(0)
         self.assertRegex(
             show_info_block,
-            r"(?s)if \(flags > 0 && flags <= LISTER_DUAL_SIDES\).*"
-            r"lister_dual_apply_side\(lister, flags - 1\);.*"
-            r"else.*"
-            r"lister = lister_dual_active_side\(lister\);",
+            r"(?s)restore_side = lister_proc_apply_side\(&lister, flags, TRUE\);.*"
+            r"lister_proc_restore_side\(lister, restore_side\);",
         )
 
     def test_dual_refresh_name_ipc_carries_captured_side(self):
@@ -1172,10 +1259,8 @@ class DualListerStaticTests(unittest.TestCase):
         refresh_name_block = re.search(r"(?s)case LISTER_REFRESH_FREE:.*?break;", lister_proc_c).group(0)
         self.assertRegex(
             refresh_name_block,
-            r"(?s)if \(flags > 0 && flags <= LISTER_DUAL_SIDES\).*"
-            r"lister_dual_apply_side\(lister, flags - 1\);.*"
-            r"else.*"
-            r"lister = lister_dual_active_side\(lister\);",
+            r"(?s)restore_side = lister_proc_apply_side\(&lister, flags, TRUE\);.*"
+            r"lister_proc_restore_side\(lister, restore_side\);",
         )
 
     def test_dual_keyboard_and_lister_menu_actions_target_active_side(self):
@@ -1238,7 +1323,6 @@ class DualListerStaticTests(unittest.TestCase):
             "LISTER_DO_RESELECT",
             "LISTER_FIND_FIRST_SEL",
             "LISTER_FIND_ENTRY",
-            "LISTER_SHOW_INFO",
             "LISTER_REMOVE_SIZES",
             "LISTER_SELECT_GLOBAL_STATE",
             "LISTER_SELECT_GLOBAL_TOGGLE",
@@ -1484,14 +1568,19 @@ class DualListerStaticTests(unittest.TestCase):
         set_gauge_block = re.search(r"(?s)case LISTER_SET_GAUGE:.*?break;", lister_proc_c).group(0)
         show_buffer_block = re.search(r"(?s)case LISTER_SHOW_BUFFER:.*?break;", lister_proc_c).group(0)
 
-        for block in (special_block, refresh_path_block, set_gauge_block):
+        for block in (refresh_path_block, set_gauge_block):
             self.assertRegex(
                 block,
-                r"(?s)if \(flags > 0 && flags <= LISTER_DUAL_SIDES\).*"
-                r"lister_dual_apply_side\(lister, flags - 1\);.*"
-                r"else.*"
-                r"lister = lister_dual_active_side\(lister\);",
+                r"(?s)restore_side = lister_proc_apply_side\(&lister, flags, TRUE\);.*"
+                r"lister_proc_restore_side\(lister, restore_side\);",
             )
+        self.assertRegex(
+            special_block,
+            r"(?s)if \(flags > 0 && flags <= LISTER_DUAL_SIDES\).*"
+            r"lister_dual_apply_side\(lister, flags - 1\);.*"
+            r"else.*"
+            r"lister = lister_dual_active_side\(lister\);",
+        )
         self.assertRegex(
             show_buffer_block,
             r"(?s)side = \(flags >> 16\) & 0xff;.*"
@@ -1514,8 +1603,6 @@ class DualListerStaticTests(unittest.TestCase):
             "LISTER_SHOW_BUFFER",
             "LISTER_BUFFER_FIND_EMPTY",
             "LISTER_FIND_CACHED_BUFFER",
-            "LISTER_REFRESH_PATH",
-            "LISTER_REFRESH_FREE",
             "LISTER_REFRESH_TITLE",
             "LISTER_REFRESH_SLIDERS",
             "LISTER_DO_PARENT_ROOT",

@@ -617,6 +617,8 @@ void lister_dual_detach_closing(Lister *lister);
 Lister *lister_dual_active_side(Lister *lister);
 short lister_dual_active_index(Lister *lister);
 void lister_dual_apply_side(Lister *lister, short side);
+BOOL lister_dual_apply_side_temporary(Lister *lister, short side);
+void lister_dual_restore_active(Lister *lister, short side);
 void lister_dual_store_active_buffer(Lister *lister);
 void lister_dual_to_front(Lister *lister);
 BOOL lister_dual_is_side(Lister *lister);

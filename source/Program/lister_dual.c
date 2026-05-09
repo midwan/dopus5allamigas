@@ -2144,6 +2144,39 @@ void lister_dual_apply_side(Lister *lister, short side)
 	lister_dual_apply_panel(lister, side);
 }
 
+// Apply a panel temporarily without changing the selected/source side
+BOOL lister_dual_apply_side_temporary(Lister *lister, short side)
+{
+	ListerDualState *state;
+
+	if (!(state = lister_dual_get_state(lister)) || !(state->flags & DUALF_ONE_WINDOW))
+		return FALSE;
+
+	lister_dual_capture_active_buffer(lister);
+	if (side < 0 || side >= LISTER_DUAL_SIDES)
+		return FALSE;
+
+	lister_dual_apply_panel(lister, side);
+	return TRUE;
+}
+
+void lister_dual_restore_active(Lister *lister, short side)
+{
+	ListerDualState *state;
+
+	if (!(state = lister_dual_get_state(lister)) || !(state->flags & DUALF_ONE_WINDOW))
+		return;
+
+	if (side >= 0 && side < LISTER_DUAL_SIDES && lister->cur_buffer)
+	{
+		state->buffer[side] = lister->cur_buffer;
+		lister_dual_capture_side_offsets(lister, state, side);
+		lister_dual_capture_title_boxes(lister, state, side);
+	}
+
+	lister_dual_apply_panel(lister, state->active);
+}
+
 // Store the current lister buffer as the active dual panel buffer
 void lister_dual_store_active_buffer(Lister *lister)
 {
@@ -2181,6 +2214,27 @@ void lister_dual_detach_closing(Lister *lister)
 	lister_dual_detach(lister);
 }
 
+// Remove external source/destination state while a dual lister owns local roles
+static void lister_dual_clear_external_roles(Lister *dual)
+{
+	Lister *lister;
+	IPCData *ipc;
+
+	if (!dual)
+		return;
+
+	lock_listlock(&GUI->lister_list, FALSE);
+	for (ipc = (IPCData *)GUI->lister_list.list.lh_Head; ipc->node.mln_Succ; ipc = (IPCData *)ipc->node.mln_Succ)
+	{
+		lister = IPCDATA(ipc);
+		if (lister == dual || lister_dual_is_side(lister))
+			continue;
+		if (lister->flags & (LISTERF_SOURCE | LISTERF_DEST | LISTERF_STORED_SOURCE | LISTERF_STORED_DEST | LISTERF_SOURCEDEST_LOCK))
+			IPC_Command(lister->ipc, LISTER_OFF, 0, 0, 0, 0);
+	}
+	unlock_listlock(&GUI->lister_list);
+}
+
 // Set the local source/destination roles for both sides of a dual lister
 static void lister_dual_set_roles(Lister *source, BOOL locked)
 {
@@ -2189,6 +2243,7 @@ static void lister_dual_set_roles(Lister *source, BOOL locked)
 	if ((state = lister_dual_get_state(source)) && state->flags & DUALF_ONE_WINDOW)
 	{
 		state->locked = locked;
+		lister_dual_clear_external_roles(source);
 		lister_dual_apply_panel(source, state->active);
 		lister_dual_refresh(source, LREFRESH_FULL);
 		return;
@@ -2253,6 +2308,7 @@ BOOL lister_dual_enter(Lister *lister)
 
 	lister->flags2 |= LISTERF2_DUAL;
 	lister_dual_apply_panel(lister, state->active);
+	lister_dual_clear_external_roles(lister);
 	lister_check_source(lister);
 	if (lister_valid_window(lister))
 	{
