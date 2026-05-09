@@ -23,6 +23,47 @@ For more information on Directory Opus for Windows please see:
 
 #include "print.h"
 
+static size_t print_bounded_strlen(char *str, size_t max)
+{
+	size_t len;
+
+	for (len = 0; len < max && str[len]; len++)
+		;
+
+	return len;
+}
+
+static void print_copy_string(char *dest, const char *src, size_t dest_size)
+{
+	size_t pos;
+
+	if (!dest || dest_size == 0)
+		return;
+	if (!src)
+		src = "";
+
+	for (pos = 0; pos < dest_size - 1 && src[pos]; pos++)
+		dest[pos] = src[pos];
+	dest[pos] = 0;
+}
+
+static void print_append_string(char *dest, const char *src, size_t dest_size)
+{
+	size_t pos;
+
+	if (!dest || dest_size == 0)
+		return;
+
+	pos = print_bounded_strlen(dest, dest_size);
+	if (pos >= dest_size)
+	{
+		dest[dest_size - 1] = 0;
+		return;
+	}
+
+	print_copy_string(dest + pos, src, dest_size - pos);
+}
+
 int LIBFUNC L_Module_Entry(REG(a0, struct List *files),
 						   REG(a1, struct Screen *screen),
 						   REG(a2, IPCData *ipc),
@@ -259,7 +300,7 @@ void print_get_header(print_data *data, short h)
 		data->header_flags[h] |= PRINT_HEADERF_DATE;
 	if (GetGadgetValue(data->objlist, GAD_PRINT_PAGE))
 		data->header_flags[h] |= PRINT_HEADERF_PAGE;
-	strlcpy(data->header_title[h], (char *)GetGadgetValue(data->objlist, GAD_PRINT_TITLE_STRING), sizeof(data->header_title[h]));
+	print_copy_string(data->header_title[h], (char *)GetGadgetValue(data->objlist, GAD_PRINT_TITLE_STRING), sizeof(data->header_title[h]));
 	data->header_style[h] = GetGadgetValue(data->objlist, GAD_PRINT_STYLE);
 }
 
@@ -354,7 +395,7 @@ void print_print(print_data *data)
 		ClearPointer(data->prog_win);
 
 		// Get filename
-		strlcpy(data->output_name, data->filereq->fr_Drawer, sizeof(data->output_name));
+		print_copy_string(data->output_name, data->filereq->fr_Drawer, sizeof(data->output_name));
 		AddPart(data->output_name, data->filereq->fr_File, 256);
 
 		// Open file
@@ -595,7 +636,7 @@ BOOL print_print_file(print_data *data, BPTR file)
 				if (last_space > 0)
 				{
 					// Copy to wrap buffer
-					strlcpy(data->wrap_buffer, data->line_buffer + last_space + 1 + ((ch == ' ' || ch == '\t') ? 1 : 0), sizeof(data->wrap_buffer));
+					print_copy_string(data->wrap_buffer, data->line_buffer + last_space + 1 + ((ch == ' ' || ch == '\t') ? 1 : 0), sizeof(data->wrap_buffer));
 					data->line_buffer[last_space] = 0;
 					line_pos = last_space;
 					last_space = 0;
@@ -641,7 +682,7 @@ BOOL print_print_file(print_data *data, BPTR file)
 			if (data->wrap_buffer[0])
 			{
 				// Copy word-wrap stuff
-				strlcpy(data->line_buffer, data->wrap_buffer, sizeof(data->line_buffer));
+				print_copy_string(data->line_buffer, data->wrap_buffer, sizeof(data->line_buffer));
 				line_pos = strlen(data->line_buffer);
 
 				// Clear word-wrap buffer
@@ -837,7 +878,7 @@ BOOL print_header_footer(print_data *data, short which)
 	// Style
 	if (data->header_style[which])
 	{
-		strlcpy(data->header_buffer + off, print_styles[data->header_style[which] - 1], sizeof(data->header_buffer) - off);
+		print_copy_string(data->header_buffer + off, print_styles[data->header_style[which] - 1], sizeof(data->header_buffer) - off);
 		off = strlen(data->header_buffer);
 	}
 
@@ -858,11 +899,11 @@ BOOL print_header_footer(print_data *data, short which)
 
 		// Supplied title?
 		if (data->header_title[which][0])
-			strlcpy(title, data->header_title[which], sizeof(title));
+			print_copy_string(title, data->header_title[which], sizeof(title));
 
 		// Otherwise use filename
 		else
-			strlcpy(title, data->fib.fib_FileName, sizeof(title));
+			print_copy_string(title, data->fib.fib_FileName, sizeof(title));
 
 		// Check length
 		if ((len = strlen(title)) > data->line_width - 4)
@@ -899,7 +940,7 @@ BOOL print_header_footer(print_data *data, short which)
 	// Restore normal
 	if (data->header_style[which])
 	{
-		strlcat(data->header_buffer, "\x1b[0m", sizeof(data->header_buffer));
+		print_append_string(data->header_buffer, "\x1b[0m", sizeof(data->header_buffer));
 	}
 
 	// Print string

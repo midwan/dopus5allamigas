@@ -185,11 +185,12 @@ Program / menus:
   the command's actual lister-icon-only implementation.
 
 print.module:
-- Replaced unbounded strcpy / strcat calls with strlcpy / strlcat for
-  the print requester title string, output path, word-wrap buffer,
-  header style escape sequences and header/footer title text.  This
-  closes the V-001 CWE-120 fixed-buffer overflow report without
-  changing the printed output layout.
+- Replaced unbounded strcpy / strcat handling with bounded local
+  copy/append helpers for the print requester title string, output
+  path, word-wrap buffer, header style escape sequences and
+  header/footer title text.  This closes the V-001 CWE-120
+  fixed-buffer overflow report without changing the printed output
+  layout.
 
 configopus.module:
 - Restored the Lister Options panel spacing around the Icon Action
