@@ -27,12 +27,29 @@ For more information on Directory Opus for Windows please see:
 DOPUS_FUNC(function_reselect)
 {
 	Lister *lister;
+	ListerReselectData *packet;
+	short active;
+	ULONG side;
 
 	// Get current lister
 	if ((lister = function_lister_current(&handle->source_paths)))
 	{
-		// Call reselect
-		IPC_Command(lister->ipc, LISTER_DO_RESELECT, 1, (APTR)&lister->reselect, 0, (struct MsgPort *)-1);
+		side = 0;
+		if ((active = lister_dual_active_index(lister)) >= 0)
+			side = active + 1;
+
+		if ((packet = AllocVec(sizeof(ListerReselectData), MEMF_CLEAR)))
+		{
+			packet->reselect = &lister->reselect;
+			packet->flags = 1;
+			packet->side = side;
+
+			// Call reselect
+			if (!IPC_Command(lister->ipc, LISTER_DO_RESELECT, 0, packet, packet, (struct MsgPort *)-1))
+				FreeVec(packet);
+		}
+		else
+			IPC_Command(lister->ipc, LISTER_DO_RESELECT, 1, (APTR)&lister->reselect, 0, (struct MsgPort *)-1);
 	}
 
 	return 1;

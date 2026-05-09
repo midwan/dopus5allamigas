@@ -107,6 +107,7 @@ typedef struct _PathNode
 	char path_buf[512];
 	char *path;
 	Lister *lister;
+	short dual_side;
 	ULONG flags;
 } PathNode;
 
@@ -122,6 +123,7 @@ typedef struct _PathNode
 #define LISTNF_UPDATE_STAMP (1 << 5)  // Update datestamp
 #define LISTNF_RESCAN (1 << 6)		  // Rescan this list
 #define LISTNF_NO_REFRESH (1 << 7)	  // Don't refresh this lister
+#define LISTNF_DUAL_SIDE (1 << 8)	  // Lister path is tied to a dual panel
 
 #ifndef __amigaos3__
 	#pragma pack(2)
@@ -132,6 +134,28 @@ typedef struct
 	struct MinList list;
 	PathNode *current;
 } PathList;
+
+typedef struct
+{
+	SelectData data;
+	PathList *dest_list;
+	ULONG side;
+} SelectWildData;
+
+typedef struct
+{
+	ReselectionData *reselect;
+	ULONG flags;
+	ULONG side;
+} ListerReselectData;
+
+typedef struct
+{
+	char *path;
+	struct DateStamp *stamp;
+	char *name;
+	ULONG side;
+} ListerBufferFindData;
 
 typedef struct
 {
@@ -444,6 +468,9 @@ BOOL function_progress_update(FunctionHandle *handle, FunctionEntry *entry, ULON
 Lister *function_get_paths(FunctionHandle *, PathList *, ULONG, short);
 BOOL function_valid_path(PathNode *path);
 PathNode *function_add_path(FunctionHandle *, PathList *, Lister *, char *);
+void function_init_path_node(PathNode *);
+void function_capture_path_side(PathNode *);
+void function_apply_path_side(PathNode *);
 
 void function_read_directory(FunctionHandle *handle, Lister *lister, char *);
 void buffer_list_buffers(Lister *dest_lister);

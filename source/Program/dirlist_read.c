@@ -127,7 +127,15 @@ Lister *read_new_lister(char *path, Lister *parent, UWORD qual)
 			}
 
 			// Initialise lister
-			IPC_Command(new_lister->ipc, LISTER_INIT, LISTERF_MAKE_SOURCE, GUI->screen_pointer, 0, 0);
+			{
+				ULONG init_flags = LISTERF_MAKE_SOURCE;
+
+				if ((environment->env->lister_options & LISTEROPTF_DUAL_DEFAULT) &&
+					!(mode & LISTERMODE_ICON) && !(qual & (IEQUALIFIER_LALT | IEQUALIFIER_RALT)))
+					init_flags |= LISTERF_DUAL;
+
+				IPC_Command(new_lister->ipc, LISTER_INIT, init_flags, GUI->screen_pointer, 0, 0);
+			}
 		}
 	}
 

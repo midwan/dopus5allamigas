@@ -23,6 +23,41 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopus.h"
 
+void function_init_path_node(PathNode *node)
+{
+	if (!node)
+		return;
+
+	node->path_buf[0] = 0;
+	node->path = 0;
+	node->lister = 0;
+	node->dual_side = -1;
+	node->flags = 0;
+}
+
+void function_capture_path_side(PathNode *node)
+{
+	short side;
+
+	if (!node || !node->lister)
+		return;
+
+	node->flags &= ~LISTNF_DUAL_SIDE;
+	node->dual_side = -1;
+	if ((side = lister_dual_active_index(node->lister)) >= 0)
+	{
+		node->dual_side = side;
+		node->flags |= LISTNF_DUAL_SIDE;
+		lister_dual_apply_side(node->lister, side);
+	}
+}
+
+void function_apply_path_side(PathNode *node)
+{
+	if (node && node->lister && node->flags & LISTNF_DUAL_SIDE)
+		lister_dual_apply_side(node->lister, node->dual_side);
+}
+
 // Add path
 PathNode *function_add_path(FunctionHandle *handle, PathList *list, Lister *lister, char *path)
 {
@@ -31,12 +66,15 @@ PathNode *function_add_path(FunctionHandle *handle, PathList *list, Lister *list
 	// Allocate node
 	if ((node = AllocMemH(handle->memory, sizeof(PathNode))))
 	{
+		function_init_path_node(node);
+
 		// Copy path
 		if (path)
 			strcpy(node->path_buf, path);
 
 		// Store lister pointer
 		node->lister = lister;
+		function_capture_path_side(node);
 
 		// Add to path list
 		AddHead((struct List *)list, (struct Node *)node);
@@ -82,6 +120,8 @@ PathNode *function_path_current(PathList *list)
 	// Is there a current one?
 	if (list->current && list->current->node.mln_Succ)
 	{
+		function_apply_path_side(list->current);
+
 		// Make sure the path is right
 		if (list->current->lister && !(list->current->flags & LISTNF_CHANGED))
 			list->current->path = list->current->lister->cur_buffer->buf_Path;
@@ -100,6 +140,7 @@ Lister *function_lister_current(PathList *list)
 	// Is there a current one?
 	if (list->current && list->current->node.mln_Succ)
 	{
+		function_apply_path_side(list->current);
 		return list->current->lister;
 	}
 	return 0;
@@ -193,6 +234,8 @@ BOOL function_valid_path(PathNode *path)
 	// Lister pointer?
 	if (path->lister)
 	{
+		function_apply_path_side(path);
+
 		// Get path from lister
 		path->path = path->lister->cur_buffer->buf_Path;
 		return 1;

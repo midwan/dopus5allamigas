@@ -62,6 +62,7 @@ COMMON_OBJS =	data.o \
 	search_data.o \
 	lister.o \
 	lister_data.o \
+	lister_dual.o \
 	lister_proc.o \
 	lister_idcmp.o \
 	lister_function.o \
@@ -166,4 +167,3 @@ COMMON_OBJS =	data.o \
 	position.o \
 	callback_main.o callback_dir.o callback_help.o callback_lister.o \
 	about.o
-

@@ -100,6 +100,8 @@ DOPUS_FUNC(function_devicelist)
 		// Open new lister
 		if ((lister = lister_new(0)))
 		{
+			ULONG init_flags = 0;
+
 			// Set flag for devicelist if appropriate
 			if (command->function == FUNC_DEVICELIST)
 			{
@@ -123,8 +125,11 @@ DOPUS_FUNC(function_devicelist)
 			else
 				lister->lister->lister.flags |= DLSTF_CACHE_LIST;
 
+			if (environment->env->lister_options & LISTEROPTF_DUAL_DEFAULT)
+				init_flags |= LISTERF_DUAL;
+
 			// Tell it to open
-			IPC_Command(lister->ipc, LISTER_INIT, 0, GUI->screen_pointer, 0, 0);
+			IPC_Command(lister->ipc, LISTER_INIT, init_flags, GUI->screen_pointer, 0, 0);
 		}
 
 		// Return, lister will generate its own list

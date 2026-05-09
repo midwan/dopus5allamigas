@@ -39,7 +39,15 @@ For more information on Directory Opus for Windows please see:
 
 #define LISTERF_MAKE_SOURCE (1 << 0)
 #define LISTERF_ACTIVATE (1 << 1)
+#define LISTERF_DUAL (1 << 2)
 #define LISTERF_DEVICES 0x400000
+
+#define LISTER_DUAL_TOGGLE -1
+#define LISTER_DUAL_OFF 0
+#define LISTER_DUAL_ON 1
+#define LISTER_DUAL_LEFT 0
+#define LISTER_DUAL_RIGHT 1
+#define LISTER_DUAL_SIDES 2
 
 #define KEY_SEL_OFFSET 12
 
@@ -190,6 +198,7 @@ enum {
 
 	LISTER_FILE_PROGRESS_TOTAL64,	// Set 64bit file progress total
 	LISTER_FILE_PROGRESS_UPDATE64,	// Set 64bit file progress update
+	LISTER_DUAL,					// Toggle dual lister mode
 };
 
 // Maximum length we can display in a window
@@ -281,7 +290,7 @@ typedef struct ListerWindow
 	short tool_hover_but;			 // Hovered toolbar button (-1 = none)
 	short tool_hover_ticks;			 // IntuiTicks elapsed on current hover
 	struct Window *tool_tip_window;	 // Tooltip popup (0 = not shown)
-	char pad2[42];
+	char pad2[42];					 // Reserved; dual lister stores private links here
 
 	DragInfo *drag_info;	   // File drag information
 	struct MsgPort *app_port;  // Application message port
@@ -504,6 +513,7 @@ typedef struct ListerWindow
 #define LISTERF_FIRST_TIME (1 << 31)	   // First initialisation
 
 #define LISTERF2_UNAVAILABLE (1 << 0)  // Lister is unavailable for functions
+#define LISTERF2_DUAL (1 << 1)		 // Lister is in dual-panel mode
 
 #define LISTERF_PROP_FONT (1 << 0)	   // Proportional font
 #define LISTERF_TITLE (1 << 1)		   // Title for fields
@@ -596,6 +606,40 @@ Lister *lister_default(ULONG, BOOL);
 void lister_check_source(Lister *);
 void lister_check_dest(Lister *);
 void lister_split_display(Lister *lister, Lister *other_lister);
+BOOL lister_dual_toggle(Lister *lister, short mode);
+BOOL lister_dual_enter(Lister *lister);
+void lister_dual_leave(Lister *lister);
+void lister_dual_activate(Lister *lister);
+void lister_dual_lock_source(Lister *lister);
+void lister_dual_unlock(Lister *lister);
+void lister_dual_detach(Lister *lister);
+void lister_dual_detach_closing(Lister *lister);
+Lister *lister_dual_active_side(Lister *lister);
+short lister_dual_active_index(Lister *lister);
+void lister_dual_apply_side(Lister *lister, short side);
+void lister_dual_store_active_buffer(Lister *lister);
+void lister_dual_to_front(Lister *lister);
+BOOL lister_dual_is_side(Lister *lister);
+BOOL lister_dual_one_window(Lister *lister);
+BOOL lister_dual_init_display(Lister *lister);
+void lister_dual_refresh(Lister *lister, unsigned short mode);
+void lister_dual_finish_frame_refresh(Lister *lister);
+void lister_dual_refresh_display(Lister *lister, ULONG flags);
+void lister_dual_close_display(Lister *lister);
+void lister_dual_activate_at(Lister *lister, UWORD x, UWORD y);
+BOOL lister_dual_popup_at(Lister *lister, UWORD x, UWORD y);
+void lister_dual_suppress_popup_front(Lister *lister);
+BOOL lister_dual_consume_popup_front(Lister *lister);
+void lister_dual_activate_other(Lister *lister);
+char *lister_dual_dest_path(Lister *lister);
+BOOL lister_dual_update_pathfields(Lister *lister);
+BOOL lister_dual_disable_pathfields(Lister *lister, short disable);
+BOOL lister_dual_handle_path_gadget(Lister *lister, struct Gadget *gadget);
+BOOL lister_dual_activate_pathfield(Lister *lister);
+BOOL lister_dual_update_sliders(Lister *lister, int which);
+BOOL lister_dual_handle_scroll_gadget(Lister *lister, struct Gadget *gadget, short which);
+BOOL lister_dual_handle_close_button(Lister *lister, UWORD x, UWORD y);
+BOOL lister_dual_help_at(Lister *lister, UWORD x, UWORD y);
 
 void lister_configure(Lister *);
 void lister_change_format(Lister *, ListFormat *);
@@ -661,6 +705,8 @@ void lister_init_display(Lister *lister);
 void lister_refresh(Lister *lister, unsigned short mode);
 void lister_init_filelist(Lister *lister);
 void lister_init_lister_area(Lister *lister);
+void lister_update_slider(Lister *lister, int which);
+BOOL lister_fix_horiz_len(Lister *lister);
 void lister_add_pathfield(Lister *lister);
 void lister_remove_pathfield(Lister *lister, BOOL);
 void lister_disable_pathfield(Lister *lister, short disable);

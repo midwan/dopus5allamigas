@@ -426,6 +426,7 @@ enum {
 #define LISTEROPTF_VOSTY_ZOOM (1 << 11)		 // Ben Vost zoom mode
 #define LISTEROPTF_FULL_PATH (1 << 12)		 // Show full path in lister title
 #define LISTEROPTF_NO_PADLOCK (1 << 13)		 // Hide padlock gadget from lister title bars
+#define LISTEROPTF_DUAL_DEFAULT (1 << 14)	 // Open new listers in dual mode
 
 // desktop flags
 #define DESKTOPF_DISTINCT (1 << 0)		  // Distinct icon positions

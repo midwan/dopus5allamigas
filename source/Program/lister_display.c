@@ -34,6 +34,9 @@ void lister_init_display(Lister *lister)
 	if (lister->flags & LISTERF_VIEW_ICONS && !(lister->flags & LISTERF_ICON_ACTION))
 		icons = 1;
 
+	if (lister_dual_init_display(lister))
+		return;
+
 	// Want a title?
 	if (environment->env->lister_options & LISTEROPTF_TITLES)
 	{
@@ -244,6 +247,12 @@ void lister_init_display(Lister *lister)
 void lister_refresh(Lister *lister, unsigned short mode)
 {
 	ULONG flags;
+
+	if (lister_dual_one_window(lister))
+	{
+		lister_dual_refresh(lister, mode);
+		return;
+	}
 
 	// Refresh?
 	if (mode & LREFRESH_REFRESH)
@@ -457,6 +466,9 @@ void lister_add_pathfield(Lister *lister)
 // Update path field
 void lister_update_pathfield(Lister *lister)
 {
+	if (lister_dual_update_pathfields(lister))
+		return;
+
 	// Is window open with path field?
 	if (lister->window && lister->flags & LISTERF_PATH_FIELD)
 	{
@@ -502,6 +514,9 @@ void lister_remove_pathfield(Lister *lister, BOOL clear)
 // Dis/enable path field
 void lister_disable_pathfield(Lister *lister, short disable)
 {
+	if (lister_dual_disable_pathfields(lister, disable))
+		return;
+
 	// Disable it
 	if (lister->flags & LISTERF_PATH_FIELD)
 		SetGadgetAttrs(lister->path_field, lister->window, 0, GA_Disabled, disable, TAG_END);
@@ -699,6 +714,7 @@ REF_CALLBACK_BEGIN(void, lister_refresh_callback, d0, ULONG, type, a0, struct Wi
 				// Do refresh stuff
 				BeginRefresh(lister->window);
 				EndRefresh(lister->window, TRUE);
+				lister_dual_finish_frame_refresh(lister);
 
 				// Do full refresh
 				lister_refresh(lister, LREFRESH_FULL);
@@ -754,6 +770,7 @@ REF_CALLBACK_BEGIN(void, lister_refresh_callback, d0, ULONG, type, a0, struct Wi
 
 				// End refresh for good
 				EndRefresh(lister->window, TRUE);
+				lister_dual_finish_frame_refresh(lister);
 
 				// Unlock layers
 #ifdef LOCKLAYER_OK

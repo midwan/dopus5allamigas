@@ -615,6 +615,16 @@ const ObjectDef _config_environment_objects[] =
 						 GAD_ENVIRONMENT_DOS_PATCH,
 						 _environment_relative_taglist},
 
+						// Open new listers in dual mode
+						{OD_GADGET,
+						 CHECKBOX_KIND,
+						 {14, 11, 0, 1},
+						 {5, 44, 26, 6},
+						 MSG_ENVIRONMENT_DUAL_DEFAULT,
+						 PLACETEXT_RIGHT,
+						 GAD_ENVIRONMENT_DUAL_DEFAULT,
+						 _environment_relative_taglist},
+
 						{OD_END}},
 
 				_environment_options_gadgets[] =

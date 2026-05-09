@@ -50,6 +50,10 @@ Lister *lister_default(ULONG flags, BOOL valid)
 		// Get lister
 		lister = IPCDATA(ipc);
 
+		// Dual lister sides keep source/dest roles local to their pair.
+		if (lister_dual_is_side(lister))
+			continue;
+
 		// Is this lister the right type and not busy
 		if (lister->flags & flags && !(lister->flags & LISTERF_LOCK))
 		{
@@ -122,7 +126,7 @@ void lister_check_source(Lister *source)
 		lister = IPCDATA(ipc);
 
 		// Not our lister?
-		if (lister != source)
+		if (lister != source && !lister_dual_is_side(lister))
 		{
 			// Is this lister an unlocked source?
 			if (lister->flags & LISTERF_SOURCE && !(lister->flags & LISTERF_SOURCEDEST_LOCK))
@@ -157,7 +161,7 @@ void lister_check_dest(Lister *dest)
 		lister = IPCDATA(ipc);
 
 		// Not our lister?
-		if (lister != dest)
+		if (lister != dest && !lister_dual_is_side(lister))
 		{
 			// Is this lister an unlocked destination?
 			if (lister->flags & LISTERF_DEST && !(lister->flags & LISTERF_SOURCEDEST_LOCK))

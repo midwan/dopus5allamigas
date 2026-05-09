@@ -27,15 +27,21 @@ For more information on Directory Opus for Windows please see:
 DOPUS_FUNC(function_all)
 {
 	Lister *lister;
+	short active;
+	ULONG side;
 
 	// Get current lister
 	if ((lister = function_lister_current(&handle->source_paths)))
 	{
+		side = 0;
+		if ((active = lister_dual_active_index(lister)) >= 0)
+			side = active + 1;
+
 		// Select global state
-		IPC_Command(lister->ipc, LISTER_SELECT_GLOBAL_STATE, 1, 0, 0, REPLY_NO_PORT);
+		IPC_Command(lister->ipc, LISTER_SELECT_GLOBAL_STATE, 1, (APTR)(IPTR)side, 0, REPLY_NO_PORT);
 
 		// Refresh window
-		IPC_Command(lister->ipc, LISTER_REFRESH_WINDOW, 0, 0, 0, REPLY_NO_PORT);
+		IPC_Command(lister->ipc, LISTER_REFRESH_WINDOW, 0, (APTR)(IPTR)side, 0, REPLY_NO_PORT);
 		return 1;
 	}
 

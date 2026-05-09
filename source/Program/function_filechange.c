@@ -407,28 +407,47 @@ void function_filechange_do(FunctionHandle *handle, BOOL strip)
 	for (ipc = (IPCData *)GUI->lister_list.list.lh_Head; ipc->node.mln_Succ; ipc = (IPCData *)ipc->node.mln_Succ)
 	{
 		BackdropInfo *info;
-		short substr;
-		BOOL show = FALSE;
-		ULONG ref_flags = REFRESHF_SLIDERS | REFRESHF_ICONS | REFRESHF_STATUS;
-		FileChangeList *list = NULL;
-		DirEntry *show_file = NULL;
+		short old_side = -1, side, side_count = 1, substr;
+		FileChangeList *list;
 
 		// Get lister
 		lister = IPCDATA(ipc);
 
-		// If lister has a custom buffer, skip it
-		if (lister->cur_buffer->buf_CustomHandler[0])
-			continue;
-
-		// Get backdrop pointer
-		info = lister->backdrop_info;
-
-		// Any changes for this path?
-		while ((list = function_find_filechanges(handle, list, lister->cur_buffer->buf_Path, lister, &substr)))
+		if (lister_dual_one_window(lister))
 		{
-			FileChange *change;
-			DirBuffer *buffer;
-			long flags = SEMF_EXCLUSIVE;
+			old_side = lister_dual_active_index(lister);
+			side_count = LISTER_DUAL_SIDES;
+		}
+
+		for (side = 0; side < side_count; side++)
+		{
+			BOOL show;
+			ULONG ref_flags;
+			DirEntry *show_file;
+
+			if (old_side != -1)
+				lister_dual_apply_side(lister, side);
+
+			show = FALSE;
+			ref_flags = REFRESHF_SLIDERS | REFRESHF_ICONS | REFRESHF_STATUS;
+			if (old_side != -1)
+				ref_flags |= REFRESHF_FULL;
+			show_file = NULL;
+			list = NULL;
+
+			// If lister has a custom buffer, skip it
+			if (lister->cur_buffer->buf_CustomHandler[0])
+				continue;
+
+			// Get backdrop pointer
+			info = lister->backdrop_info;
+
+			// Any changes for this path?
+			while ((list = function_find_filechanges(handle, list, lister->cur_buffer->buf_Path, lister, &substr)))
+			{
+				FileChange *change;
+				DirBuffer *buffer;
+				long flags = SEMF_EXCLUSIVE;
 
 			// Increment count in list if not a sub-string
 			if (!substr)
@@ -720,34 +739,47 @@ void function_filechange_do(FunctionHandle *handle, BOOL strip)
 			}
 		}
 
-		// Need to refresh?
-		if (show)
-		{
-			// Need icons?
-			if (lister->flags & LISTERF_VIEW_ICONS)
+			// Need to refresh?
+			if (show)
 			{
-				// Get icons
-				IPC_Command(lister->ipc, LISTER_GET_ICON, 0, 0, 0, 0);
-			}
+				// Need icons?
+				if (lister->flags & LISTERF_VIEW_ICONS)
+				{
+					// Get icons
+					IPC_Command(lister->ipc, LISTER_GET_ICON, 0, 0, 0, 0);
+				}
 
-			// Only do this if lister isn't locked by us
-			if (lister->locker_ipc != handle->ipc || !handle->ipc)
-			{
-				// Refresh lister
-				IPC_Command(lister->ipc, LISTER_REFRESH_WINDOW, ref_flags | REFRESHF_DATESTAMP, 0, 0, 0);
-			}
+				// Dual panels need the full redraw even while this function still owns the lister lock
+				if (old_side != -1 || lister->locker_ipc != handle->ipc || !handle->ipc)
+				{
+					ULONG refresh_side;
 
-			// File to show?
-			else if (show_file)
-			{
-				// Tell lister to show this entry
-				IPC_Command(lister->ipc, LISTER_FIND_ENTRY, 0, show_file, 0, 0);
-			}
+					refresh_side = (old_side != -1) ? side + 1 : 0;
 
-			// Fix icon selection count (for icon action mode)
-			if (lister->flags & LISTERF_ICON_ACTION)
-				backdrop_fix_count(lister->backdrop_info, 0);
+					// Refresh lister
+					IPC_Command(lister->ipc,
+								LISTER_REFRESH_WINDOW,
+								ref_flags | REFRESHF_DATESTAMP,
+								(APTR)(IPTR)refresh_side,
+								0,
+								0);
+				}
+
+				// File to show?
+				else if (show_file)
+				{
+					// Tell lister to show this entry
+					IPC_Command(lister->ipc, LISTER_FIND_ENTRY, 0, show_file, 0, 0);
+				}
+
+				// Fix icon selection count (for icon action mode)
+				if (lister->flags & LISTERF_ICON_ACTION)
+					backdrop_fix_count(lister->backdrop_info, 0);
+			}
 		}
+
+		if (old_side != -1)
+			lister_dual_apply_side(lister, old_side);
 	}
 
 	// Unlock lister list

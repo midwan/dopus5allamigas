@@ -113,7 +113,7 @@ DOPUS_FUNC(function_copy)
 	char *password = 0, *password_buf;
 	BOOL move_flag = 0, rename_flag = 0, link_flag = 0, no_move_rename = 0, source_same = 0, dragdrop = 0;
 	BOOL change_info = 0;
-	ULONG copy_flags;
+	ULONG copy_flags, side;
 #ifdef USE_64BIT
 	UQUAD rec_size = 0;
 #else
@@ -996,8 +996,10 @@ DOPUS_FUNC(function_copy)
 							// Valid lister?
 							if (path->lister && path->lister->window)
 							{
+								side = (path->flags & LISTNF_DUAL_SIDE) ? path->dual_side + 1 : 0;
+
 								// Send update message
-								IPC_Command(path->lister->ipc, LISTER_REFRESH_NAME, 0, 0, 0, 0);
+								IPC_Command(path->lister->ipc, LISTER_REFRESH_NAME, side, 0, 0, 0);
 							}
 						}
 
