@@ -38,7 +38,7 @@ void cx_install(CxData *cx)
 	// Initialise broker
 	cx->nb.nb_Version = NB_VERSION;
 	cx->nb.nb_Name = "Directory Opus 5";
-	cx->nb.nb_Title = "�1998 Jonathan Potter & GPSoftware";
+	cx->nb.nb_Title = "(c) 1998 Jonathan Potter & GPSoftware";
 	cx->nb.nb_Descr = GetString(&locale, MSG_CX_DESC);
 	cx->nb.nb_Unique = 0;
 	cx->nb.nb_Flags = COF_SHOW_HIDE;
