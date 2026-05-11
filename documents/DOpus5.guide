@@ -3800,11 +3800,12 @@ layer.
     When enabled, Opus also shows Workbench "leftout" icons on its
     desktop.
 
-  Suppress DOpus Title Bar Clock:
-    Stops Opus from drawing its own clock in the screen title bar so
-    that other Workbench-style title-bar patches (e.g. ToolManager,
-    custom-clock commodities) can use the space.  Replaces the legacy
-    dopus/WorkbenchTitle env variable.
+  Workbench-Compatible Title Bar:
+    Stops Opus from drawing/updating its own screen-title contents
+    (memory counter, custom title text, and optional clock).  Opus
+    instead publishes a Workbench-style title so other title-bar patches
+    (e.g. ToolManager, custom-clock commodities) can intercept it.
+    Replaces the legacy dopus/WorkbenchTitle env variable.
 
   Use Workbench Icon Information:
     When set, the icon-information popup is routed through
@@ -4202,7 +4203,7 @@ system.
 @{b}@{fg shine}@{bg text} dopus/WorkbenchTitle @{bg background}@{fg text}@{ub}
 
        Now: Environment editor -> WB Emulation ->
-       "Suppress DOpus Title Bar Clock".
+       "Workbench-Compatible Title Bar".
 
 @{b}@{fg shine}@{bg text} dopus/UseWBInfo @{bg background}@{fg text}@{ub}
 

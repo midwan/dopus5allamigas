@@ -680,7 +680,7 @@ const ObjectDef _config_environment_objects[] =
 						 GAD_ENVIRONMENT_OPTIONS_SHOW_WBLEFTOUTS,
 						 _environment_relative_taglist},
 
-						// Suppress DOpus title bar clock (lets WB-style patches use it)
+						// Workbench-compatible title bar mode (lets WB-style patches use it)
 						{OD_GADGET,
 						 CHECKBOX_KIND,
 						 {4, 7, 0, 1},

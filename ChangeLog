@@ -41,6 +41,10 @@ Environment editor / configopus.module:
   the Benify checkbox.
 - Surfaced the existing dopus/DOSPatch ENVARC: variable as a "Live
   Folder Updates (DOS Patches)" checkbox.
+- Renamed the WB Emulation "Suppress DOpus Title Bar Clock" checkbox
+  to "Workbench-Compatible Title Bar" and expanded the guide text to
+  make clear that it enables Workbench-style title-bar patch
+  compatibility, not just the clock toggle (issue #94).
 - ftp.module's NoBeeGees migration is one-shot now: imported on
   first launch and then DeleteVar'd from ENV: / ENVARC:.
 - configopus: clean up ghost filetype data, surface missing icons,
