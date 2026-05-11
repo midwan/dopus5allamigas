@@ -30,6 +30,13 @@ For more information on Directory Opus for Windows please see:
 struct Window *lister_open_window(Lister *, struct Screen *);
 void lister_close_window(Lister *, BOOL);
 
+#ifdef IDCMP_EXTENDEDMOUSE
+static BOOL lister_native_wheel_supported(void)
+{
+	return (BOOL)(((struct Library *)IntuitionBase)->lib_Version >= 47);
+}
+#endif
+
 // Open a lister display
 struct Window *lister_open(Lister *lister, struct Screen *screen)
 {
@@ -187,8 +194,8 @@ struct Window *lister_open_window(Lister *lister, struct Screen *screen)
 							 IDCMP_ACTIVEWINDOW | IDCMP_CHANGEWINDOW | IDCMP_CLOSEWINDOW | IDCMP_GADGETDOWN |
 								 IDCMP_GADGETUP | IDCMP_INACTIVEWINDOW | IDCMP_INTUITICKS | IDCMP_MENUHELP |
 								 IDCMP_MENUPICK | IDCMP_MENUVERIFY | IDCMP_MOUSEBUTTONS | IDCMP_MOUSEMOVE |
-#ifdef __amigaos4__
-								 IDCMP_EXTENDEDMOUSE |
+#ifdef IDCMP_EXTENDEDMOUSE
+								 (lister_native_wheel_supported() ? IDCMP_EXTENDEDMOUSE : 0) |
 #endif
 								 IDCMP_NEWSIZE | IDCMP_REFRESHWINDOW | IDCMP_RAWKEY,
 							 WA_AutoAdjust,

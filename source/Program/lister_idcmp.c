@@ -27,6 +27,20 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopus.h"
 
+#ifndef RAWKEY_WHEEL_UP
+	#define RAWKEY_WHEEL_UP 0x7a
+#endif
+#ifndef RAWKEY_WHEEL_DOWN
+	#define RAWKEY_WHEEL_DOWN 0x7b
+#endif
+
+#ifdef IDCMP_EXTENDEDMOUSE
+static BOOL lister_native_wheel_supported(void)
+{
+	return (BOOL)(((struct Library *)IntuitionBase)->lib_Version >= 47);
+}
+#endif
+
 // Process lister IDCMP messages
 void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 {
@@ -167,9 +181,9 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 	}
 	break;
 
-#ifdef __amigaos4__
+#ifdef IDCMP_EXTENDEDMOUSE
 	case IDCMP_EXTENDEDMOUSE:
-		if (msg->Code == IMSGCODE_INTUIWHEELDATA)
+		if (lister_native_wheel_supported() && msg->Code == IMSGCODE_INTUIWHEELDATA)
 		{
 			struct IntuiWheelData *iwd = (struct IntuiWheelData *)msg->IAddress;
 
@@ -181,8 +195,13 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 					msg->Code = HOME;
 				else
 				{
+					int scroll_line = environment->env->env_wheel_scroll_lines;
+
+					if (scroll_line < 1)
+						scroll_line = 1;
+
 					msg->Code = KEY_CURSORUP;
-					lister_scroll(lister, 0, -1);
+					lister_scroll(lister, 0, -(scroll_line * ABS(iwd->WheelY)));
 				}
 			}
 
@@ -194,8 +213,13 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 					msg->Code = END;
 				else
 				{
+					int scroll_line = environment->env->env_wheel_scroll_lines;
+
+					if (scroll_line < 1)
+						scroll_line = 1;
+
 					msg->Code = KEY_CURSORDOWN;
-					lister_scroll(lister, 0, 1);
+					lister_scroll(lister, 0, scroll_line * iwd->WheelY);
 				}
 			}
 		}
@@ -284,7 +308,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 			}
 
 			// Mouse wheel support
-			else if (msg->Code == 0x7a)
+			else if (msg->Code == RAWKEY_WHEEL_UP)
 			{
 				if (msg->Qualifier & IEQUAL_ANYSHIFT)
 					msg->Code = PAGEUP;
@@ -296,7 +320,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 					scroll_line = environment->env->env_wheel_scroll_lines;
 				}
 			}
-			else if (msg->Code == 0x7b)
+			else if (msg->Code == RAWKEY_WHEEL_DOWN)
 			{
 				if (msg->Qualifier & IEQUAL_ANYSHIFT)
 					msg->Code = PAGEDOWN;
