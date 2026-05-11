@@ -25,6 +25,16 @@ For more information on Directory Opus for Windows please see:
 #define BOOPSI_LIBS
 #include "boopsi.h"
 
+static BOOL button_has_custom_backfill(struct gpRender *render)
+{
+	struct Window *window;
+
+	if (!render || !render->gpr_GInfo || !(window = render->gpr_GInfo->gi_Window) || !window->WLayer)
+		return FALSE;
+
+	return (window->WLayer->BackFill && window->WLayer->BackFill != LAYERS_BACKFILL);
+}
+
 // Button dispatcher
 IPTR LIBFUNC button_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg))
 {
@@ -1194,9 +1204,12 @@ void button_render(Class *cl, struct Gadget *gadget, ButtonData *data, struct gp
 		short len, str_len;
 		short x, y;
 		UBYTE old_style;
+		BOOL custom_backfill_text;
 
 		// Remember old style
 		old_style = rp->AlgoStyle;
+		// Outside labels should not paint BACKGROUNDPEN over requester backfills.
+		custom_backfill_text = (data->place != PLACETEXT_IN && button_has_custom_backfill(render));
 
 		// Set pen for text
 		if (data->place == PLACETEXT_IN)
@@ -1209,7 +1222,7 @@ void button_render(Class *cl, struct Gadget *gadget, ButtonData *data, struct gp
 			SetAPen(rp, pens[TEXTPEN]);
 			SetBPen(rp, pens[BACKGROUNDPEN]);
 		}
-		SetDrMd(rp, JAM2);
+		SetDrMd(rp, (custom_backfill_text) ? JAM1 : JAM2);
 		if (data->font)
 			SetFont(rp, data->font);
 		if (data->flags & BUTTONF_BOLD)
@@ -1250,6 +1263,8 @@ void button_render(Class *cl, struct Gadget *gadget, ButtonData *data, struct gp
 		}
 
 		// Draw text
+		if (custom_backfill_text)
+			EraseRect(rp, x, y - rp->TxBaseline, x + len - 1, y - rp->TxBaseline + rp->TxHeight);
 		Move(rp, x, y);
 		Text(rp, data->title, str_len);
 
