@@ -58,6 +58,7 @@ static void clock_titlebar_set_metrics(struct Screen *screen, struct RastPort *r
 	if (screen && ((struct Library *)IntuitionBase)->lib_Version >= 47 && screen->BarHeight > 0)
 	{
 		height = screen->BarHeight + 1;
+		fill_bottom = height - 2;
 
 		if (height > rp->TxHeight)
 		{

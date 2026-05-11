@@ -60,8 +60,18 @@ class ScreenTitleBarOffsetTests(unittest.TestCase):
 
         self.assertIn("short fill_top = 0", source)
         self.assertIn("short fill_bottom = height - 1", source)
+        self.assertIn("fill_bottom = height - 2", source)
         self.assertIn("fill_top = (height - rp->TxHeight) >> 1", source)
         self.assertIn("fill_bottom = fill_top + rp->TxHeight - 1", source)
+
+    def test_os3_v47_erase_preserves_trim_when_bar_is_not_taller_than_font(self):
+        source = read_source(CLOCK_TASK_C)
+
+        height_from_screen = source.index("height = screen->BarHeight + 1")
+        trim_preserve = source.index("fill_bottom = height - 2", height_from_screen)
+        centering_check = source.index("if (height > rp->TxHeight)", height_from_screen)
+
+        self.assertLess(trim_preserve, centering_check)
 
     def test_titlebar_render_functions_do_not_recompute_screen_metrics(self):
         source = read_source(CLOCK_TASK_C)
