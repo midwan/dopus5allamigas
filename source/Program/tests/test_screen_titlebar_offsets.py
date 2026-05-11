@@ -22,7 +22,8 @@ class ScreenTitleBarOffsetTests(unittest.TestCase):
         self.assertIn("clock_titlebar_set_metrics(struct Screen *screen, struct RastPort *rp)", source)
         self.assertIn("((struct Library *)IntuitionBase)->lib_Version >= 47", source)
         self.assertIn("height = screen->BarHeight + 1", source)
-        self.assertIn("((height - rp->TxHeight) >> 1) + rp->TxBaseline", source)
+        self.assertIn("fill_top = (height - rp->TxHeight) >> 1", source)
+        self.assertIn("text_y = fill_top + rp->TxBaseline", source)
         self.assertNotIn("screen->BarVBorder + rp->TxBaseline", source)
 
     def test_titlebar_metrics_are_cached_from_screen_height(self):
@@ -32,8 +33,9 @@ class ScreenTitleBarOffsetTests(unittest.TestCase):
         self.assertIn("clock_titlebar_set_metrics(screen, &clock_rp)", source)
         self.assertIn("clock_titlebar_metrics.height = height", source)
         self.assertIn("clock_titlebar_metrics.text_y = text_y", source)
+        self.assertIn("clock_titlebar_metrics.fill_top = fill_top", source)
         self.assertIn("clock_titlebar_metrics.fill_bottom = fill_bottom", source)
-        self.assertIn("fill_bottom = height - 2", source)
+        self.assertIn("fill_bottom = fill_top + rp->TxHeight - 1", source)
         self.assertNotIn("clock_titlebar_height(struct Screen *screen, struct RastPort *rp)", source)
         self.assertNotIn("clock_titlebar_fill_height", source)
 
@@ -43,7 +45,10 @@ class ScreenTitleBarOffsetTests(unittest.TestCase):
         self.assertIn("Move(&clock_rp, clock_x, clock_titlebar_metrics.text_y)", source)
         self.assertIn("Move(rp, 5, clock_titlebar_metrics.text_y)", source)
         self.assertIn("clock_titlebar_image_y(size)", source)
-        self.assertIn("RectFill(rp, rp->cp_x, 0, clock_x - 1, clock_titlebar_metrics.fill_bottom)", source)
+        self.assertIn(
+            "RectFill(rp, rp->cp_x, clock_titlebar_metrics.fill_top, clock_x - 1, clock_titlebar_metrics.fill_bottom)",
+            source,
+        )
 
     def test_screen_titlebar_draw_paths_do_not_clear_full_width_on_refresh(self):
         source = read_source(CLOCK_TASK_C)
@@ -53,8 +58,10 @@ class ScreenTitleBarOffsetTests(unittest.TestCase):
     def test_os3_v47_erase_preserves_titlebar_trim_line(self):
         source = read_source(CLOCK_TASK_C)
 
+        self.assertIn("short fill_top = 0", source)
         self.assertIn("short fill_bottom = height - 1", source)
-        self.assertIn("fill_bottom = height - 2", source)
+        self.assertIn("fill_top = (height - rp->TxHeight) >> 1", source)
+        self.assertIn("fill_bottom = fill_top + rp->TxHeight - 1", source)
 
     def test_titlebar_render_functions_do_not_recompute_screen_metrics(self):
         source = read_source(CLOCK_TASK_C)
