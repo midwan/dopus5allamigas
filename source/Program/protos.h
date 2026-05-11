@@ -92,7 +92,7 @@ void free_locale_data(struct DOpusLocale *);
 IPC_EntryProto(clock_proc, extern);
 void clock_show_memory(struct RastPort *, long, long, char *);
 void title_error(char *txt, short);
-// void clock_show_custom_title(struct RastPort *,long,long,struct DateStamp *,struct SysInfo *,struct Library *);
+// void clock_show_custom_title(struct RastPort *,long,long,struct SysInfo *,struct Library *);
 
 // tile.c
 void tile_windows(TileInfo *);

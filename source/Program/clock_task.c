@@ -41,31 +41,37 @@ struct ClockTitleBarMetrics
 {
 	short height;
 	short text_y;
+	short fill_top;
 	short fill_bottom;
 };
 
-static struct ClockTitleBarMetrics clock_titlebar_metrics = {0, 0, 0};
+static struct ClockTitleBarMetrics clock_titlebar_metrics = {0, 0, 0, 0};
 
 static void clock_titlebar_set_metrics(struct Screen *screen, struct RastPort *rp)
 {
 	short height = rp->TxHeight + 2;
 	short text_y = rp->TxBaseline + 1;
+	short fill_top = 0;
 	short fill_bottom = height - 1;
 
 #ifdef __amigaos3__
 	if (screen && ((struct Library *)IntuitionBase)->lib_Version >= 47 && screen->BarHeight > 0)
 	{
 		height = screen->BarHeight + 1;
+		fill_bottom = height - 2;
 
 		if (height > rp->TxHeight)
-			text_y = ((height - rp->TxHeight) >> 1) + rp->TxBaseline;
-
-		fill_bottom = height - 2;
+		{
+			fill_top = (height - rp->TxHeight) >> 1;
+			text_y = fill_top + rp->TxBaseline;
+			fill_bottom = fill_top + rp->TxHeight - 1;
+		}
 	}
 #endif
 
 	clock_titlebar_metrics.height = height;
 	clock_titlebar_metrics.text_y = text_y;
+	clock_titlebar_metrics.fill_top = fill_top;
 	clock_titlebar_metrics.fill_bottom = fill_bottom;
 }
 
@@ -82,7 +88,6 @@ static short clock_titlebar_image_y(short image_height)
 APTR clock_show_custom_title(struct RastPort *rp,
 							 long clock_x,
 							 long days,
-							 struct DateStamp *date,
 							 struct SysInfo *si,
 							 struct Library *SysInfoBase,
 							 struct SysInfoIFace *ISysInfo);
@@ -90,7 +95,6 @@ APTR clock_show_custom_title(struct RastPort *rp,
 APTR clock_show_custom_title(struct RastPort *rp,
 							 long clock_x,
 							 long days,
-							 struct DateStamp *date,
 							 struct SysInfo *si,
 							 struct Library *SysInfoBase);
 #endif
@@ -570,7 +574,6 @@ IPC_EntryCode(clock_proc)
 										clock_show_custom_title(&clock_rp,
 																(GUI->flags & GUIF_CLOCK) ? clock_x : last_x,
 																days,
-																&date.dat_Stamp,
 																si,
 																SysInfoBase,
 																ISysInfo);
@@ -578,7 +581,6 @@ IPC_EntryCode(clock_proc)
 										clock_show_custom_title(&clock_rp,
 																(GUI->flags & GUIF_CLOCK) ? clock_x : last_x,
 																days,
-																&date.dat_Stamp,
 																si,
 																SysInfoBase);
 #endif
@@ -711,7 +713,7 @@ void clock_show_memory(struct RastPort *rp, long msg, long clock_x, char *error)
 		// Save front pen
 		fp = rp->FgPen;
 		SetAPen(rp, rp->BgPen);
-		RectFill(rp, rp->cp_x, 0, clock_x - 1, clock_titlebar_metrics.fill_bottom);
+		RectFill(rp, rp->cp_x, clock_titlebar_metrics.fill_top, clock_x - 1, clock_titlebar_metrics.fill_bottom);
 		SetAPen(rp, fp);
 	}
 #endif
@@ -752,7 +754,6 @@ void title_error(char *txt, short time)
 APTR clock_show_custom_title(struct RastPort *rp,
 							 long clock_x,
 							 long days,
-							 struct DateStamp *date,
 							 struct SysInfo *si,
 							 struct Library *SysInfoBase,
 							 struct SysInfoIFace *ISysInfo)
@@ -760,7 +761,6 @@ APTR clock_show_custom_title(struct RastPort *rp,
 APTR clock_show_custom_title(struct RastPort *rp,
 							 long clock_x,
 							 long days,
-							 struct DateStamp *date,
 							 struct SysInfo *si,
 							 struct Library *SysInfoBase)
 #endif
@@ -995,28 +995,6 @@ APTR clock_show_custom_title(struct RastPort *rp,
 				esc = 2;
 			}
 
-			// Internet time
-			else if (*(ptr + 1) == 'i' && *(ptr + 2) == 't')
-			{
-				if (locale.li_Locale)
-				{
-					long minutes;
-					minutes = date->ds_Minute;
-					minutes += locale.li_Locale->loc_GMTOffset;
-					if (minutes < 0)
-						minutes += 1440;
-					minutes += 60;
-					minutes %= 1440;
-					minutes *= 60;
-					minutes += date->ds_Tick / TICKS_PER_SECOND;
-					minutes *= 1000;
-					minutes /= 1440;
-					minutes /= 60;
-					lsprintf(buf, "%03ld", minutes);
-					esc = 2;
-				}
-			}
-
 			// Environment variable
 			else if (*(ptr + 1) == 'e' && *(ptr + 2) == 'v')
 			{
@@ -1088,7 +1066,7 @@ APTR clock_show_custom_title(struct RastPort *rp,
 				else
 				{
 					// memory values should always be unsigned
-					lsprintf(buf, "%lu", memval);
+					ItoaU(memval, buf, (environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
 				}
 			}
 
@@ -1191,7 +1169,7 @@ APTR clock_show_custom_title(struct RastPort *rp,
 		// Save front pen
 		fp = rp->FgPen;
 		SetAPen(rp, rp->BgPen);
-		RectFill(rp, rp->cp_x, 0, clock_x - 1, clock_titlebar_metrics.fill_bottom);
+		RectFill(rp, rp->cp_x, clock_titlebar_metrics.fill_top, clock_x - 1, clock_titlebar_metrics.fill_bottom);
 		SetAPen(rp, fp);
 	}
 #endif

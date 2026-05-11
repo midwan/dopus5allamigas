@@ -11,4 +11,5 @@
 .DS_Store
 releases
 local-notes/
+notes/
 source/Modules/ftp/third_party/libssh2/build/

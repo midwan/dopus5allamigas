@@ -803,15 +803,20 @@ void LIBFUNC L_ClearWindowBusy(REG(a0, struct Window *window))
 							 Get a Locale string
  ****************************************************************************/
 
+static LONG locale_read_be_long(const UBYTE *ptr)
+{
+	return (LONG)(((ULONG)ptr[0] << 24) | ((ULONG)ptr[1] << 16) | ((ULONG)ptr[2] << 8) | (ULONG)ptr[3]);
+}
+
+static UWORD locale_read_be_word(const UBYTE *ptr)
+{
+	return (UWORD)(((UWORD)ptr[0] << 8) | (UWORD)ptr[1]);
+}
+
 STRPTR LIBFUNC L_GetString(REG(a0, struct DOpusLocale *li), REG(d0, LONG stringNum))
 {
-	register LONG *l;
-	register UWORD *w;
+	const UBYTE *entry;
 	register STRPTR builtIn;
-#ifdef __AROS__
-	register LONG l_le;
-	register UWORD w_le;
-#endif
 
 	if (!li)
 		return "";
@@ -826,28 +831,16 @@ STRPTR LIBFUNC L_GetString(REG(a0, struct DOpusLocale *li), REG(d0, LONG stringN
 #undef LocaleBase
 
 	// Get pointer to table
-	l = (LONG *)li->li_BuiltIn;
+	entry = (const UBYTE *)li->li_BuiltIn;
 
 	// Look for string
-#ifdef __AROS__
-	l_le = AROS_BE2LONG(*l);
-	while (l_le != stringNum)
-#else
-	while (*l != stringNum)
-#endif
+	while (locale_read_be_long(entry) != stringNum)
 	{
-		w = (UWORD *)((IPTR)l + sizeof(ULONG));
-#ifdef __AROS__
-		w_le = AROS_BE2WORD(*w);
-		l = (LONG *)((IPTR)l + (IPTR)w_le + sizeof(ULONG) + sizeof(UWORD));
-		l_le = AROS_BE2LONG(*l);
-#else
-		l = (LONG *)((IPTR)l + (IPTR)*w + sizeof(ULONG) + sizeof(UWORD));
-#endif
+		entry += locale_read_be_word(entry + sizeof(ULONG)) + sizeof(ULONG) + sizeof(UWORD);
 	}
 
 	// Return string
-	builtIn = (STRPTR)((IPTR)l + sizeof(ULONG) + sizeof(UWORD));
+	builtIn = (STRPTR)(entry + sizeof(ULONG) + sizeof(UWORD));
 	return builtIn;
 }
 

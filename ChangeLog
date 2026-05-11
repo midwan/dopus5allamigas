@@ -41,6 +41,13 @@ Environment editor / configopus.module:
   the Benify checkbox.
 - Surfaced the existing dopus/DOSPatch ENVARC: variable as a "Live
   Folder Updates (DOS Patches)" checkbox.
+- Renamed the WB Emulation "Suppress DOpus Title Bar Clock" checkbox
+  to "Workbench-Compatible Title Bar" and expanded the guide text to
+  make clear that it enables Workbench-style title-bar patch
+  compatibility, not just the clock toggle (issue #94).
+- Requester control labels in Environment and ftp.module configs no
+  longer paint flat backdrops over patterned backgrounds, while the
+  checkbox controls keep their normal fill (issue #101 / PR #102).
 - ftp.module's NoBeeGees migration is one-shot now: imported on
   first launch and then DeleteVar'd from ENV: / ENVARC:.
 - configopus: clean up ghost filetype data, surface missing icons,
@@ -62,6 +69,8 @@ Library / dopus5.library:
 - L_PatchedOpen lazy-allocates its FIB + 512 path scratch buffer
   only on the create branch; new shared dos_patch_memory pool
   reduces heap traffic on bulk file operations (issue #49).
+- OS3 68000 startup no longer risks a Guru 8000 0003 while scanning
+  modules whose built-in CatComp string block lands on an odd address.
 - icon_cache: route system deficons through GetCachedDiskObjectNew
   rather than hijacking GetCachedDiskObject (Filetype Editor icon
   fallout fix).
@@ -93,6 +102,9 @@ Release archive / packaging:
 - Default Lister Toolbar and Toolbar.default refreshed with a new
   CacheList icon/label so the left-most button matches its action
   (issue #65).
+- basedata.lha now includes DOpus5/Sounds/.dummy so the Environment /
+  Sound Events requester can open its default DOpus5:Sounds drawer on
+  clean installs.
 - CI release packaging now runs `release-package` in the same Docker
   image as the build; the old AROS `package_image` fallback to the
   sacredbanana OS3 image is gone now that `midwan/aros-compiler:*`
@@ -133,6 +145,22 @@ Other fixes:
 - Button image fallback length guard.
 - DOpus 4 import: fix mapping buttons -> menus -> drives offset.
 - copy: read $VER strings without colon.
+- OS3 titlebar drawing now uses the real screen bar height on
+  intuition.library v47+ instead of assuming TxHeight + 2.
+- Environment / Lister Options spacing restored around the Icon
+  Action double-click row.
+- About requester copyright text now stays inside the requester on
+  both the main program and about.module paths.
+- "Resize to Fit" is only enabled for lister icon menus, matching the
+  command implementation.
+- Removed the dead Custom Screen Title Internet Time code from the
+  formatter, configuration popup and translated catalogs.
+- Custom Screen Title memory values now honour the locale thousands
+  separator setting for plain byte values as well as K/M/G/S forms
+  (issue #81).
+- print.module now uses bounded copies for user-supplied title,
+  output path, wrap buffer and header/footer strings, closing the
+  V-001 CWE-120 buffer-overflow report.
 
 Versioning notes:
 - Global LIB_REVISION moves 4 -> 5 for all libraries and modules.
@@ -142,8 +170,78 @@ Versioning notes:
 - CMD_REVISION already advanced 1 -> 3 during the cycle for the
   LoadDB CLI-detachment work; commands ship at v65r3.
 
-Detailed per-feature entries follow.
+Detailed per-feature entries and late-cycle maintenance notes follow.
+2026-05-09 by Dimitris Panokostas <midwan@gmail.com>
+
+[dopus5 5.101] os3-68000: fix odd-aligned CatComp string lookup
+Ships in 5.101.  dopus5.library at v73r5 (with the global
+LIB_REVISION 4 -> 5 bump for this release).
+
+Source / Library/layout_support.c:
+- L_GetString now parses built-in CatComp string blocks with explicit
+  big-endian byte reads instead of casting the byte stream to LONG *
+  and UWORD *.
+- This fixes a plain 68000 address-error path seen on OS3.2.3 while
+  DOpus scans modules at startup.  In the reported case the last
+  SnoopDos entry was PROGDIR:Modules/cleanup.mod (OK); cleanup.module
+  had an odd-address CatCompBlock, and the old parser could emit
+  aligned word/long reads from that odd address.
+- 68020+ systems tolerate the unaligned reads, so this was specific to
+  the new OS3 68000 build variant.  The new parser keeps the same
+  table format and works on all targets without relying on alignment.
+
+Tests:
+- Added a focused source regression test that guards L_GetString
+  against reintroducing unsafe LONG * / UWORD * CatComp-block parsing.
 2026-05-07 by Dimitris Panokostas <midwan@gmail.com>
+
+[dopus5 5.101] late-cycle UI, titlebar and locale fixes
+Ships in 5.101.  Program / configopus / about.module fixes; no version
+bump beyond the existing 5.101 / v73r5 / v65r3 release bump.
+
+Program / titlebar:
+- Use intuition.library v47+ screen BarHeight for direct OS3 titlebar
+  drawing when available.  This keeps the clock, memory text and
+  custom title text vertically centred on OS3.2-style titlebars while
+  keeping the old TxHeight + 2 fallback for older systems.
+- Removed the dormant Custom Screen Title Internet Time handler and
+  prototype.  It depended on date/locale state that was not wired into
+  the title formatter, and the visible configuration popup no longer
+  advertises it in any catalog.
+- Plain Custom Screen Title memory substitutions now format through
+  ItoaU with DATE_1000SEP / GUI->decimal_sep, so entries such as
+  Total memory, Free memory and Memory in use match the user's locale
+  thousands-separator preference.  The existing K/M/G/S and percent
+  forms are unchanged.
+
+Program / menus:
+- "Resize to Fit" is now disabled outside lister icon menus, matching
+  the command's actual lister-icon-only implementation.
+
+print.module:
+- Replaced unbounded strcpy / strcat handling with bounded local
+  copy/append helpers for the print requester title string, output
+  path, word-wrap buffer, header style escape sequences and
+  header/footer title text.  This closes the V-001 CWE-120
+  fixed-buffer overflow report without changing the printed output
+  layout.
+
+configopus.module:
+- Restored the Lister Options panel spacing around the Icon Action
+  double-click row after the Environment editor reflow work.
+
+about.module / main About requester:
+- Tightened the copyright block so the text fits inside the requester
+  in both the standalone about.module and the main program path.
+
+Documentation / tests:
+- DOpus5.guide now documents the thousands-separator interaction for
+  Custom Screen Title memory values.
+- Added focused regression tests for the titlebar metric wiring,
+  Custom Screen Title code list, Resize to Fit menu gating, Lister
+  Options layout spacing, About requester text layout, and title
+  memory thousands-separator formatting.
+2026-05-09 by Dimitris Panokostas <midwan@gmail.com>
 
 [dopus5 5.101] ci: package AROS releases in the AROS Docker image
 Ships in 5.101.  CI / makefile / README-only change; no module version
