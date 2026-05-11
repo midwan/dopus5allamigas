@@ -41,31 +41,37 @@ struct ClockTitleBarMetrics
 {
 	short height;
 	short text_y;
+	short fill_top;
 	short fill_bottom;
 };
 
-static struct ClockTitleBarMetrics clock_titlebar_metrics = {0, 0, 0};
+static struct ClockTitleBarMetrics clock_titlebar_metrics = {0, 0, 0, 0};
 
 static void clock_titlebar_set_metrics(struct Screen *screen, struct RastPort *rp)
 {
 	short height = rp->TxHeight + 2;
 	short text_y = rp->TxBaseline + 1;
+	short fill_top = 0;
 	short fill_bottom = height - 1;
 
 #ifdef __amigaos3__
 	if (screen && ((struct Library *)IntuitionBase)->lib_Version >= 47 && screen->BarHeight > 0)
 	{
 		height = screen->BarHeight + 1;
+		fill_bottom = height - 2;
 
 		if (height > rp->TxHeight)
-			text_y = ((height - rp->TxHeight) >> 1) + rp->TxBaseline;
-
-		fill_bottom = height - 2;
+		{
+			fill_top = (height - rp->TxHeight) >> 1;
+			text_y = fill_top + rp->TxBaseline;
+			fill_bottom = fill_top + rp->TxHeight - 1;
+		}
 	}
 #endif
 
 	clock_titlebar_metrics.height = height;
 	clock_titlebar_metrics.text_y = text_y;
+	clock_titlebar_metrics.fill_top = fill_top;
 	clock_titlebar_metrics.fill_bottom = fill_bottom;
 }
 
@@ -707,7 +713,7 @@ void clock_show_memory(struct RastPort *rp, long msg, long clock_x, char *error)
 		// Save front pen
 		fp = rp->FgPen;
 		SetAPen(rp, rp->BgPen);
-		RectFill(rp, rp->cp_x, 0, clock_x - 1, clock_titlebar_metrics.fill_bottom);
+		RectFill(rp, rp->cp_x, clock_titlebar_metrics.fill_top, clock_x - 1, clock_titlebar_metrics.fill_bottom);
 		SetAPen(rp, fp);
 	}
 #endif
@@ -1163,7 +1169,7 @@ APTR clock_show_custom_title(struct RastPort *rp,
 		// Save front pen
 		fp = rp->FgPen;
 		SetAPen(rp, rp->BgPen);
-		RectFill(rp, rp->cp_x, 0, clock_x - 1, clock_titlebar_metrics.fill_bottom);
+		RectFill(rp, rp->cp_x, clock_titlebar_metrics.fill_top, clock_x - 1, clock_titlebar_metrics.fill_bottom);
 		SetAPen(rp, fp);
 	}
 #endif
