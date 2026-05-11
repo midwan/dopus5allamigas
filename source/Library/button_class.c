@@ -1264,7 +1264,7 @@ void button_render(Class *cl, struct Gadget *gadget, ButtonData *data, struct gp
 
 		// Draw text
 		if (custom_backfill_text)
-			EraseRect(rp, x, y - rp->TxBaseline, x + len - 1, y - rp->TxBaseline + rp->TxHeight);
+			EraseRect(rp, x, y - rp->TxBaseline, x + len - 1, y - rp->TxBaseline + rp->TxHeight - 1);
 		Move(rp, x, y);
 		Text(rp, data->title, str_len);
 
