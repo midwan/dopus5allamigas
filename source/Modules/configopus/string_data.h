@@ -897,7 +897,7 @@
 	#define MSG_ENVIRONMENT_VOSTY_ZOOM_STR "Window _Zooms to Title Bar"
 #define MSG_ENVIRONMENT_FULL_PATH_STR "Show Full _Path in Lister Title"
 	#define MSG_ENVIRONMENT_HIDE_PADLOCK_STR "_Hide Padlock In Lister Title"
-	#define MSG_ENVIRONMENT_OPTIONS_WB_TITLE_STR "_Suppress DOpus Title Bar Clock"
+	#define MSG_ENVIRONMENT_OPTIONS_WB_TITLE_STR "_Workbench-Compatible Title Bar"
 	#define MSG_ENVIRONMENT_OPTIONS_USE_WBINFO_STR "_Use Workbench Icon Information"
 	#define MSG_ENVIRONMENT_SUB_ICON_LAYOUT_STR "Icon Layout"
 	#define MSG_ENVIRONMENT_ICON_LAYOUT_TITLE_STR "Desktop Icon Arrangement"

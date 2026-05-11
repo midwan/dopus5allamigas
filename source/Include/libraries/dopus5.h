@@ -400,7 +400,7 @@ enum {
 #define DISPOPTF_REALTIME_SCROLL (1 << 10)	// Real-time icon scrolling
 #define DISPOPTF_THIN_BORDERS (1 << 11)		// Thin borders
 #define DISPOPTF_SHOW_WBLEFTOUTS (1 << 12)	// show workbench's leftout icons from the .backdrop files
-#define DISPOPTF_WB_TITLE (1 << 13)			// Suppress DOpus title-bar clock so WB-style patches can use it
+#define DISPOPTF_WB_TITLE (1 << 13)			// Workbench-compatible title bar mode for WB-style patches
 #define DISPOPTF_USE_WBINFO (1 << 14)		// Route Information requests through OS WBInfo() (e.g. SwazInfo / RAWBInfo)
 #define DISPOPTF_SHOW_DATATYPES_FIRST (1 << 15)	// show.module: prefer datatypes IFF over its built-in IFF reader
 
