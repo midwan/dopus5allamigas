@@ -27,6 +27,166 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopus.h"
 
+static int lister_configured_wheel_scroll_lines(void)
+{
+	int scroll_line = environment->env->env_wheel_scroll_lines;
+
+	if (scroll_line < 1)
+		scroll_line = 1;
+
+	return scroll_line;
+}
+
+static void lister_handle_vertical_scroll_key(Lister *lister, UWORD code, int scroll_line)
+{
+	DirBuffer *buffer = lister->cur_buffer;
+
+	switch (code)
+	{
+	case KEY_CURSORUP:
+
+		// In key selection mode?
+		if (lister->flags & LISTERF_KEY_SELECTION)
+		{
+			// Move selector up
+			if (set_list_selector(lister, lister->selector_pos - scroll_line))
+				break;
+		}
+
+		// Scroll up
+		lister_scroll(lister, 0, -scroll_line);
+		break;
+
+	case PAGEUP:
+
+		// In key selection mode?
+		if (lister->flags & LISTERF_KEY_SELECTION)
+		{
+			// Move selector to top if necessary
+			if (set_list_selector(lister, 0))
+				break;
+		}
+
+	// Home
+	case HOME:
+
+		// If already at the top of the list, break
+		if (buffer->buf_VertOffset == 0)
+		{
+			// Make sure selector is at the top
+			if (lister->flags & LISTERF_KEY_SELECTION)
+			{
+				// Move to top of page
+				set_list_selector(lister, 0);
+			}
+			break;
+		}
+
+		// Home?
+		if (code == HOME)
+			buffer->buf_VertOffset = 0;
+
+		// Otherwise page up
+		else
+		{
+			buffer->buf_VertOffset -= lister->text_height - 1;
+			if (buffer->buf_VertOffset < 0)
+				buffer->buf_VertOffset = 0;
+		}
+
+		// In key selection mode?
+		if (lister->flags & LISTERF_KEY_SELECTION)
+		{
+			// Erase old selector
+			show_list_selector(lister, lister->selector_pos, 1);
+		}
+
+		// Refresh scroller and window
+		lister_update_slider(lister, SLIDER_VERT);
+		lister_display_dir(lister);
+
+		// Move selector to the top of the page
+		if (lister->flags & LISTERF_KEY_SELECTION)
+		{
+			set_list_selector(lister, 0);
+			show_list_selector(lister, lister->selector_pos, 0);
+		}
+		break;
+
+	case KEY_CURSORDOWN:
+
+		// In key selection mode?
+		if (lister->flags & LISTERF_KEY_SELECTION)
+		{
+			// Move selector down
+			if (set_list_selector(lister, lister->selector_pos + scroll_line))
+				break;
+		}
+
+		// Scroll down
+		lister_scroll(lister, 0, scroll_line);
+		break;
+
+	case PAGEDOWN:
+
+		// In key selection mode?
+		if (lister->flags & LISTERF_KEY_SELECTION)
+		{
+			// Move selector to bottom if necessary
+			if (set_list_selector(lister, 0xffff))
+				break;
+		}
+
+	// End
+	case END:
+
+		// If already at the bottom of the list, break
+		if (buffer->buf_VertOffset + lister->text_height >= buffer->buf_TotalEntries[0])
+		{
+			// Make sure selector is at the bottom
+			if (lister->flags & LISTERF_KEY_SELECTION)
+			{
+				// Move to bottom of page
+				set_list_selector(lister, 0xffff);
+			}
+			break;
+		}
+
+		// End?
+		if (code == END)
+			buffer->buf_VertOffset = buffer->buf_TotalEntries[0] - lister->text_height;
+
+		// Otherwise page down
+		else
+		{
+			buffer->buf_VertOffset += lister->text_height - 1;
+			if (buffer->buf_VertOffset + lister->text_height > buffer->buf_TotalEntries[0])
+				buffer->buf_VertOffset = buffer->buf_TotalEntries[0] - lister->text_height;
+			if (buffer->buf_VertOffset < 0)
+				buffer->buf_VertOffset = 0;
+		}
+
+		// In key selection mode?
+		if (lister->flags & LISTERF_KEY_SELECTION)
+		{
+			// Erase old selector
+			show_list_selector(lister, lister->selector_pos, 1);
+		}
+
+		// Refresh scroller and window
+		lister_update_slider(lister, SLIDER_VERT);
+		lister_display_dir(lister);
+
+		// Move selector to the bottom of the page
+		if (lister->flags & LISTERF_KEY_SELECTION)
+		{
+			set_list_selector(lister, 0xffff);
+			show_list_selector(lister, lister->selector_pos, 0);
+		}
+		break;
+	}
+}
+
 // Process lister IDCMP messages
 void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 {
@@ -167,35 +327,37 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 	}
 	break;
 
-#ifdef __amigaos4__
+#ifdef IDCMP_EXTENDEDMOUSE
 	case IDCMP_EXTENDEDMOUSE:
-		if (msg->Code == IMSGCODE_INTUIWHEELDATA)
+		if (DOPUS_NATIVE_WHEEL_SUPPORTED() && msg->Code == IMSGCODE_INTUIWHEELDATA)
 		{
 			struct IntuiWheelData *iwd = (struct IntuiWheelData *)msg->IAddress;
 
 			if (iwd->WheelY < 0)
 			{
 				if (msg->Qualifier & IEQUAL_ANYSHIFT)
-					msg->Code = PAGEUP;
+					lister_handle_vertical_scroll_key(lister, PAGEUP, 1);
 				else if (msg->Qualifier & IEQUALIFIER_CONTROL)
-					msg->Code = HOME;
+					lister_handle_vertical_scroll_key(lister, HOME, 1);
 				else
 				{
-					msg->Code = KEY_CURSORUP;
-					lister_scroll(lister, 0, -1);
+					int scroll_line = lister_configured_wheel_scroll_lines();
+
+					lister_scroll(lister, 0, scroll_line * iwd->WheelY);
 				}
 			}
 
 			else if (iwd->WheelY > 0)
 			{
 				if (msg->Qualifier & IEQUAL_ANYSHIFT)
-					msg->Code = PAGEDOWN;
+					lister_handle_vertical_scroll_key(lister, PAGEDOWN, 1);
 				else if (msg->Qualifier & IEQUALIFIER_CONTROL)
-					msg->Code = END;
+					lister_handle_vertical_scroll_key(lister, END, 1);
 				else
 				{
-					msg->Code = KEY_CURSORDOWN;
-					lister_scroll(lister, 0, 1);
+					int scroll_line = lister_configured_wheel_scroll_lines();
+
+					lister_scroll(lister, 0, scroll_line * iwd->WheelY);
 				}
 			}
 		}
@@ -287,7 +449,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 			}
 
 			// Mouse wheel support
-			else if (msg->Code == 0x7a)
+			else if (msg->Code == RAWKEY_WHEEL_UP)
 			{
 				if (msg->Qualifier & IEQUAL_ANYSHIFT)
 					msg->Code = PAGEUP;
@@ -296,10 +458,10 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 				else
 				{
 					msg->Code = KEY_CURSORUP;
-					scroll_line = environment->env->env_wheel_scroll_lines;
+					scroll_line = lister_configured_wheel_scroll_lines();
 				}
 			}
-			else if (msg->Code == 0x7b)
+			else if (msg->Code == RAWKEY_WHEEL_DOWN)
 			{
 				if (msg->Qualifier & IEQUAL_ANYSHIFT)
 					msg->Code = PAGEDOWN;
@@ -308,7 +470,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 				else
 				{
 					msg->Code = KEY_CURSORDOWN;
-					scroll_line = environment->env->env_wheel_scroll_lines;
+					scroll_line = lister_configured_wheel_scroll_lines();
 				}
 			}
 
@@ -328,148 +490,17 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 
 			// Cursor up
 			case KEY_CURSORUP:
-
-				// In key selection mode?
-				if (lister->flags & LISTERF_KEY_SELECTION)
-				{
-					// Move selector up one
-					if (set_list_selector(lister, lister->selector_pos - scroll_line))
-						break;
-				}
-
-				// Scroll up a line
-				lister_scroll(lister, 0, -scroll_line);
-				break;
-
 			// Page up
 			case PAGEUP:
-
-				// In key selection mode?
-				if (lister->flags & LISTERF_KEY_SELECTION)
-				{
-					// Move selector to top if necessary
-					if (set_list_selector(lister, 0))
-						break;
-				}
-
 			// Home
 			case HOME:
-
-				// If already at the top of the list, break
-				if (buffer->buf_VertOffset == 0)
-				{
-					// Make sure selector is at the top
-					if (lister->flags & LISTERF_KEY_SELECTION)
-					{
-						// Move to top of page
-						set_list_selector(lister, 0);
-					}
-					break;
-				}
-
-				// Home?
-				if (msg->Code == HOME)
-					buffer->buf_VertOffset = 0;
-
-				// Otherwise page up
-				else
-				{
-					buffer->buf_VertOffset -= lister->text_height - 1;
-					if (buffer->buf_VertOffset < 0)
-						buffer->buf_VertOffset = 0;
-				}
-
-				// In key selection mode?
-				if (lister->flags & LISTERF_KEY_SELECTION)
-				{
-					// Erase old selector
-					show_list_selector(lister, lister->selector_pos, 1);
-				}
-
-				// Refresh scroller and window
-				lister_update_slider(lister, SLIDER_VERT);
-				lister_display_dir(lister);
-
-				// Move selector to the top of the page
-				if (lister->flags & LISTERF_KEY_SELECTION)
-				{
-					set_list_selector(lister, 0);
-					show_list_selector(lister, lister->selector_pos, 0);
-				}
-				break;
-
 			// Cursor down
 			case KEY_CURSORDOWN:
-
-				// In key selection mode?
-				if (lister->flags & LISTERF_KEY_SELECTION)
-				{
-					// Move selector down one
-					if (set_list_selector(lister, lister->selector_pos + scroll_line))
-						break;
-				}
-
-				// Scroll down a line
-				lister_scroll(lister, 0, scroll_line);
-				break;
-
 			// Page down
 			case PAGEDOWN:
-
-				// In key selection mode?
-				if (lister->flags & LISTERF_KEY_SELECTION)
-				{
-					// Move selector to bottom if necessary
-					if (set_list_selector(lister, 0xffff))
-						break;
-				}
-
 			// End
 			case END:
-
-				// If already at the bottom of the list, break
-				if (buffer->buf_VertOffset + lister->text_height >= buffer->buf_TotalEntries[0])
-				{
-					// Make sure selector is at the bottom
-					if (lister->flags & LISTERF_KEY_SELECTION)
-					{
-						// Move to bottom of page
-						set_list_selector(lister, 0xffff);
-					}
-					break;
-				}
-
-				// End?
-				if (msg->Code == END)
-					buffer->buf_VertOffset = buffer->buf_TotalEntries[0] - lister->text_height;
-
-				// Otherwise page down
-				else
-				{
-					buffer->buf_VertOffset += lister->text_height - 1;
-					if (buffer->buf_VertOffset + lister->text_height > buffer->buf_TotalEntries[0])
-						buffer->buf_VertOffset = buffer->buf_TotalEntries[0] - lister->text_height;
-					if (buffer->buf_VertOffset < 0)
-						buffer->buf_VertOffset = 0;
-				}
-
-				// In key selection mode?
-				if (lister->flags & LISTERF_KEY_SELECTION)
-				{
-					// Erase old selector
-					show_list_selector(lister, lister->selector_pos, 1);
-				}
-
-				// Refresh scroller and window
-				lister_update_slider(lister, SLIDER_VERT);
-				lister_display_dir(lister);
-
-				// Move selector to the bottom of the page
-				if (lister->flags & LISTERF_KEY_SELECTION)
-				{
-					set_list_selector(lister, 0xffff);
-					show_list_selector(lister, lister->selector_pos, 0);
-				}
+				lister_handle_vertical_scroll_key(lister, msg->Code, scroll_line);
 				break;
 
 			// Cursor left = scroll left

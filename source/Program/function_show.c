@@ -146,6 +146,7 @@ DOPUS_FUNC(function_show)
 		{
 			// Set files pointer
 			startup->files = (struct List *)list;
+			startup->wheel_scroll_lines = environment->env->env_wheel_scroll_lines;
 
 			// Synchronous?
 			if (sync_flag)

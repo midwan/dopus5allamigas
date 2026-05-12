@@ -729,6 +729,8 @@ BOOL file_trap_more(char *name, char *tool)
 		// Allocate startup
 		if ((read = AllocVec(sizeof(struct read_startup), MEMF_CLEAR)))
 		{
+			read->wheel_scroll_lines = environment->env->env_wheel_scroll_lines;
+
 			// Create list
 			if ((read->files = (struct List *)Att_NewList(0)))
 			{

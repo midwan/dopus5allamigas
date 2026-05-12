@@ -292,6 +292,7 @@ void function_close_script(FunctionHandle *handle, int run_okay)
 								{
 									// Read file
 									startup->files = (struct List *)list;
+									startup->wheel_scroll_lines = environment->env->env_wheel_scroll_lines;
 									if (misc_startup("dopus_read", FUNC_READ, 0, startup, FALSE))
 										/* */ return;
 									FreeVec(startup);

@@ -183,6 +183,7 @@ struct read_startup
 	IPCData *owner;
 	struct IBox dims;
 	BOOL got_pos;
+	UWORD wheel_scroll_lines;
 };
 #ifndef __amigaos3__
 	#pragma pack()
