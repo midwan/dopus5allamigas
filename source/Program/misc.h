@@ -99,6 +99,7 @@ struct read_startup
 	IPCData *owner;
 	struct IBox dims;
 	BOOL got_pos;
+	UWORD wheel_scroll_lines;
 };
 
 typedef struct

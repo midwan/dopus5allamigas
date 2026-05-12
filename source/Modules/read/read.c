@@ -41,6 +41,14 @@ struct InputIFace *IInput;
 
 #define H_EXTRA 1
 
+static long read_wheel_scroll_lines(read_data *data)
+{
+	if (data && data->startup && data->startup->wheel_scroll_lines > 0)
+		return data->startup->wheel_scroll_lines;
+
+	return 1;
+}
+
 #define IEQUALIFIER_BAD \
 	(IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT | IEQUALIFIER_LALT | IEQUALIFIER_RALT | IEQUALIFIER_CONTROL)
 
@@ -439,8 +447,8 @@ struct Window *read_open_window(read_data *data)
 										IDCMP_CLOSEWINDOW | IDCMP_NEWSIZE | IDCMP_MENUPICK | IDCMP_IDCMPUPDATE |
 											IDCMP_INACTIVEWINDOW | IDCMP_GADGETUP | IDCMP_RAWKEY | IDCMP_MENUVERIFY |
 											IDCMP_MOUSEBUTTONS |
-#ifdef __amigaos4__
-											IDCMP_EXTENDEDMOUSE |
+#ifdef IDCMP_EXTENDEDMOUSE
+											(DOPUS_NATIVE_WHEEL_SUPPORTED() ? IDCMP_EXTENDEDMOUSE : 0) |
 #endif
 											IDCMP_MOUSEMOVE,
 										WA_PubScreen,
@@ -1269,10 +1277,21 @@ BOOL read_view(read_data *data)
 			while ((msg = (struct IntuiMessage *)GetMsg(data->window->UserPort)))
 			{
 				struct IntuiMessage msg_copy;
+#ifdef IDCMP_EXTENDEDMOUSE
+				struct IntuiWheelData wheel_data;
+#endif
 				short sel_dx = 0, sel_dy = 0;
 
 				// Copy message
 				msg_copy = *msg;
+#ifdef IDCMP_EXTENDEDMOUSE
+				if (msg_copy.Class == IDCMP_EXTENDEDMOUSE && msg_copy.Code == IMSGCODE_INTUIWHEELDATA &&
+					msg_copy.IAddress)
+				{
+					wheel_data = *(struct IntuiWheelData *)msg_copy.IAddress;
+					msg_copy.IAddress = &wheel_data;
+				}
+#endif
 
 				// Menu verify?
 				if (msg->Class == IDCMP_MENUVERIFY)
@@ -1612,29 +1631,47 @@ BOOL read_view(read_data *data)
 						break;
 					}
 					break;
-#ifdef __amigaos4__
+#ifdef IDCMP_EXTENDEDMOUSE
 					// native mouse wheel support
-				case IDCMP_EXTENDEDMOUSE:
-					if (msg->Code == IMSGCODE_INTUIWHEELDATA)
-					{
-						struct IntuiWheelData *iwd = (struct IntuiWheelData *)msg->IAddress;
-						if (iwd->WheelY < 0)
+					case IDCMP_EXTENDEDMOUSE:
+						if (DOPUS_NATIVE_WHEEL_SUPPORTED() && msg_copy.Code == IMSGCODE_INTUIWHEELDATA &&
+							msg_copy.IAddress)
 						{
-							if (data->top > 0)
-							{
-								read_update_text(data, 0, -1, 0);
-							}
-						}
+							struct IntuiWheelData *iwd = (struct IntuiWheelData *)msg_copy.IAddress;
 
-						else if (iwd->WheelY > 0)
-						{
-							if (data->top + data->v_visible < data->lines)
+							if (iwd->WheelY < 0)
 							{
-								read_update_text(data, 0, 1, 0);
+								if (data->top <= 0)
+									break;
+								if (msg_copy.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT))
+									read_update_text(data, 0, -(data->v_visible - 1), 0);
+								else if (msg_copy.Qualifier & IEQUALIFIER_CONTROL)
+									read_update_text(data, 0, -data->top, 0);
+								else
+								{
+									long scroll_line = read_wheel_scroll_lines(data);
+
+									read_update_text(data, 0, scroll_line * iwd->WheelY, 0);
+								}
+							}
+
+							else if (iwd->WheelY > 0)
+							{
+								if (data->top + data->v_visible >= data->lines)
+									break;
+								if (msg_copy.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT))
+									read_update_text(data, 0, data->v_visible - 1, 0);
+								else if (msg_copy.Qualifier & IEQUALIFIER_CONTROL)
+									read_update_text(data, 0, (data->lines - data->top) - data->v_visible, 0);
+								else
+								{
+									long scroll_line = read_wheel_scroll_lines(data);
+
+									read_update_text(data, 0, scroll_line * iwd->WheelY, 0);
+								}
 							}
 						}
-					}
-					break;
+						break;
 #endif
 
 				// Key press
@@ -1669,7 +1706,7 @@ BOOL read_view(read_data *data)
 
 					// Scroll up
 					case CURSORUP:
-					case 0x7a: /* mouse wheel up */
+					case RAWKEY_WHEEL_UP:
 					case 0x3e: /* KP 8 */
 
 						// Ok to scroll up?
@@ -1689,7 +1726,12 @@ BOOL read_view(read_data *data)
 
 						// Line up
 						else
-							read_update_text(data, 0, -1, 0);
+						{
+							long scroll_line =
+								(msg_copy.Code == RAWKEY_WHEEL_UP) ? read_wheel_scroll_lines(data) : 1;
+
+							read_update_text(data, 0, -scroll_line, 0);
+						}
 						break;
 
 					// Page up
@@ -1716,7 +1758,7 @@ BOOL read_view(read_data *data)
 
 					// Scroll down
 					case CURSORDOWN:
-					case 0x7b: /* mouse wheel down */
+					case RAWKEY_WHEEL_DOWN:
 					case 0x1e: /* KP 2 */
 
 						// Ok to scroll down?
@@ -1736,7 +1778,12 @@ BOOL read_view(read_data *data)
 
 						// Line down
 						else
-							read_update_text(data, 0, 1, 0);
+						{
+							long scroll_line =
+								(msg_copy.Code == RAWKEY_WHEEL_DOWN) ? read_wheel_scroll_lines(data) : 1;
+
+							read_update_text(data, 0, scroll_line, 0);
+						}
 						break;
 
 					// Page down

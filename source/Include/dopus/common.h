@@ -131,6 +131,17 @@
 	#define REG68K_a4 REG68K_A4
 #endif
 
+#ifndef RAWKEY_WHEEL_UP
+	#define RAWKEY_WHEEL_UP 0x7a
+#endif
+#ifndef RAWKEY_WHEEL_DOWN
+	#define RAWKEY_WHEEL_DOWN 0x7b
+#endif
+
+#define DOPUS_NATIVE_WHEEL_MIN_VERSION 47
+#define DOPUS_NATIVE_WHEEL_SUPPORTED() \
+	((BOOL)(((struct Library *)IntuitionBase)->lib_Version >= DOPUS_NATIVE_WHEEL_MIN_VERSION))
+
 /* Long word alignement (mainly used to get
  * FIB or DISK_INFO as auto variables)
  */

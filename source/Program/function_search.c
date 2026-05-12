@@ -272,6 +272,7 @@ DOPUS_FUNC(function_search)
 							// Copy search string
 							strcpy(startup->initial_search, data->search_text);
 							startup->files = (struct List *)list;
+							startup->wheel_scroll_lines = environment->env->env_wheel_scroll_lines;
 
 							// Read file
 							if (misc_startup("dopus_read", FUNC_READ, 0, startup, 0))
@@ -333,6 +334,7 @@ DOPUS_FUNC(function_search)
 					// Set flag to indicate delete file
 					node->node.ln_Pri = 1;
 					startup->files = (struct List *)list;
+					startup->wheel_scroll_lines = environment->env->env_wheel_scroll_lines;
 
 					// Read file
 					if (misc_startup("dopus_read", FUNC_READ, 0, startup, FALSE))

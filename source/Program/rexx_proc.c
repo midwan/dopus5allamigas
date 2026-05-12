@@ -657,6 +657,7 @@ RexxReader *rexx_read_file(short command, char *args, struct RexxMsg *msg)
 			// Save position
 			startup->dims = dims;
 			startup->got_pos = got_pos;
+			startup->wheel_scroll_lines = environment->env->env_wheel_scroll_lines;
 
 			// Set owner for goodbye packet
 			startup->owner = GUI->rexx_proc;
