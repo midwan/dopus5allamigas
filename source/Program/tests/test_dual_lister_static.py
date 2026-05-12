@@ -21,6 +21,10 @@ def read_program_source_if_exists(name):
     return path.read_text(encoding="latin-1")
 
 
+def read_repo_file(*parts):
+    return (ROOT.joinpath(*parts)).read_text(encoding="latin-1")
+
+
 class DualListerStaticTests(unittest.TestCase):
     def test_lister_menu_has_dual_lister_toggle(self):
         menu_data_h = read_program_source("menu_data.h")
@@ -52,6 +56,17 @@ class DualListerStaticTests(unittest.TestCase):
             r"IPC_Command\([^;]*LISTER_DUAL[^;]*\);",
             re.S,
         )
+
+    def test_dual_lister_user_docs_are_updated(self):
+        changelog = read_repo_file("ChangeLog")
+        guide = read_repo_file("documents", "DOpus5.guide")
+
+        self.assertIn("New Dual Lister mode", changelog)
+        self.assertIn("Open New Listers in Dual Mode", changelog)
+        self.assertIn('@node "Lister - Dual Lister" "Lister - Dual Lister"', guide)
+        self.assertIn('link "Lister - Dual Lister"', guide)
+        self.assertIn("Set Dual [On|Off|Toggle|0|1]", guide)
+        self.assertIn("Open New Listers in Dual Mode:", guide)
 
     def test_dual_lister_core_symbols_are_present(self):
         lister_h = read_program_source("lister.h")

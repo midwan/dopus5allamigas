@@ -14,6 +14,15 @@ New build targets:
 - xadopus.module now builds by default on AROS too; the AROS Docker
   toolchains ship the required xadmaster.library headers.
 
+Lister UI:
+- New Dual Lister mode for name-mode listers, toggled from the Lister
+  menu or with `Set Dual`.  It keeps two independent lister panels in one
+  window, each with its own path field, scrollbar state, title fields and
+  close/menu controls; the active panel is the source and the inactive
+  panel supplies the default destination path.
+- Environment / Lister Display now has an "Open New Listers in Dual Mode"
+  option so newly-opened listers can default to the two-panel layout.
+
 FTP / file transfer:
 - SFTP support backed by libssh2 (always on for OS3 / OS4 / MorphOS
   via bundled libssh2 1.11.1, opt-in via `sftp=yes` for AROS).
