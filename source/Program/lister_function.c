@@ -32,6 +32,8 @@ int lister_do_function(Lister *lister, IPTR func)
 	BOOL show_status = 0;
 	BOOL spec_ok = 0;
 
+	lister = lister_dual_active_side(lister);
+
 	// Not special buffer or icons, and state not locked, and not iconified?
 	if (lister->cur_buffer != lister->special_buffer && !(lister->cur_buffer->more_flags & DWF_LOCK_STATE) &&
 		!(lister->flags & LISTERF_ICONIFIED) &&
@@ -43,6 +45,13 @@ int lister_do_function(Lister *lister, IPTR func)
 	{
 	// Make source
 	case MENU_LISTER_SOURCE:
+
+		// Dual lister side?
+		if (lister_dual_is_side(lister))
+		{
+			lister_dual_activate(lister);
+			break;
+		}
 
 		// If not special buffer or icons, make lister the source
 		if (spec_ok)
@@ -57,6 +66,13 @@ int lister_do_function(Lister *lister, IPTR func)
 	// Make destination
 	case MENU_LISTER_DEST:
 
+		// Dual lister side?
+		if (lister_dual_is_side(lister))
+		{
+			lister_dual_activate_other(lister);
+			break;
+		}
+
 		// If not special buffer, make lister the destination
 		if (spec_ok)
 		{
@@ -70,6 +86,13 @@ int lister_do_function(Lister *lister, IPTR func)
 	// Lock as source
 	case MENU_LISTER_LOCK_SOURCE:
 
+		// Dual lister side?
+		if (lister_dual_is_side(lister))
+		{
+			lister_dual_lock_source(lister);
+			break;
+		}
+
 		// If not special buffer, lock lister as source
 		if (spec_ok)
 		{
@@ -82,6 +105,14 @@ int lister_do_function(Lister *lister, IPTR func)
 	// Lock as destination
 	case MENU_LISTER_LOCK_DEST:
 
+		// Dual lister side?
+		if (lister_dual_is_side(lister))
+		{
+			lister_dual_activate_other(lister);
+			lister_dual_lock_source(lister);
+			break;
+		}
+
 		// If not special buffer, lock lister as destination
 		if (spec_ok)
 		{
@@ -93,6 +124,14 @@ int lister_do_function(Lister *lister, IPTR func)
 
 	// Unlock
 	case MENU_LISTER_UNLOCK:
+
+		// Dual lister side?
+		if (lister_dual_is_side(lister))
+		{
+			lister_dual_unlock(lister);
+			break;
+		}
+
 		lister->flags &= ~LISTERF_SOURCEDEST_LOCK;
 		if (lister->flags & LISTERF_SOURCE)
 			lister_check_source(lister);
@@ -104,6 +143,13 @@ int lister_do_function(Lister *lister, IPTR func)
 	// Off
 	case MENU_LISTER_OFF:
 
+		// Dual lister side?
+		if (lister_dual_is_side(lister))
+		{
+			lister_dual_unlock(lister);
+			break;
+		}
+
 		// If not locked, turn off
 		if (!(lister->cur_buffer->more_flags & DWF_LOCK_STATE))
 		{
@@ -111,6 +157,11 @@ int lister_do_function(Lister *lister, IPTR func)
 							   LISTERF_SOURCEDEST_LOCK);
 			show_status = 1;
 		}
+		break;
+
+	// Dual lister
+	case MENU_LISTER_DUAL:
+		IPC_Command(lister->ipc, LISTER_DUAL, LISTER_DUAL_TOGGLE, 0, 0, 0);
 		break;
 
 	// Close
@@ -289,6 +340,10 @@ int lister_do_function(Lister *lister, IPTR func)
 		// Is lister not open?
 		if (!lister->window)
 		{
+			// Dual listers are Name-mode only.
+			if (lister_dual_is_side(lister))
+				lister_dual_leave(lister);
+
 			// Set icon mode flag
 			lister->flags |= LISTERF_VIEW_ICONS;
 
@@ -307,6 +362,10 @@ int lister_do_function(Lister *lister, IPTR func)
 		{
 			struct IBox dims, current;
 			short extra;
+
+			// Dual listers are Name-mode only.
+			if (lister_dual_is_side(lister))
+				lister_dual_leave(lister);
 
 			// Get extra height
 			extra = ((lister->toolbar) ? lister->toolbar->height : 0) + lister->window->WScreen->RastPort.TxHeight +

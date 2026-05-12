@@ -24,6 +24,9 @@ For more information on Directory Opus for Windows please see:
 #include "dopus.h"
 
 static int function_run_instruction(FunctionHandle *handle, InstructionParsed *instruction);
+static Cfg_Function *function_dual_special_function(FunctionHandle *handle, ULONG *open_flags);
+
+enum { DUAL_DEVLIST_ARG_NEW, DUAL_DEVLIST_ARG_FULL, DUAL_DEVLIST_ARG_BRIEF };
 
 // Run a function
 void function_run_function(FunctionHandle *handle)
@@ -329,6 +332,42 @@ static int function_run_instruction(FunctionHandle *handle, InstructionParsed *i
 	return ret;
 }
 
+static Cfg_Function *function_dual_special_function(FunctionHandle *handle, ULONG *open_flags)
+{
+	InstructionParsed *instruction;
+
+	if (!handle)
+		return 0;
+
+	for (instruction = (InstructionParsed *)handle->func_instructions.mlh_Head; instruction->node.mln_Succ;
+		 instruction = (InstructionParsed *)instruction->node.mln_Succ)
+	{
+		if (instruction->type != INST_COMMAND || !instruction->command)
+			continue;
+
+		if (instruction->command->function == FUNC_DEVICELIST)
+		{
+			if (instruction->funcargs)
+			{
+				if (instruction->funcargs->FA_Arguments[DUAL_DEVLIST_ARG_FULL])
+					return def_function_devicelist_full;
+				if (instruction->funcargs->FA_Arguments[DUAL_DEVLIST_ARG_BRIEF])
+					return def_function_devicelist_brief;
+			}
+			if (open_flags)
+				*open_flags |= LISTERF_DEVICES;
+			return def_function_devicelist;
+		}
+
+		if (instruction->command->function == FUNC_BUFFERLIST)
+			return def_function_cachelist;
+
+		break;
+	}
+
+	return 0;
+}
+
 // Check a function has the right paths
 BOOL function_check_paths(FunctionHandle *handle)
 {
@@ -349,15 +388,24 @@ BOOL function_check_paths(FunctionHandle *handle)
 			else if (handle->func_flags & FUNCF_CREATE_SOURCE)
 			{
 				Lister *lister;
+				ULONG open_flags = 0;
+				ULONG special_open_flags = 0;
 
 				// Create a new lister
 				if ((lister = lister_new(0)))
 				{
+					function_dual_special_function(handle, &special_open_flags);
+					if (environment->env->lister_options & LISTEROPTF_DUAL_DEFAULT)
+					{
+						open_flags |= special_open_flags;
+						open_flags |= LISTERF_DUAL;
+					}
+
 					// We want lister to be available for functions
 					lister->flags2 &= ~LISTERF2_UNAVAILABLE;
 
 					// Open lister
-					IPC_Command(lister->ipc, LISTER_OPEN, 0, GUI->screen_pointer, 0, 0);
+					IPC_Command(lister->ipc, LISTER_OPEN, open_flags, GUI->screen_pointer, 0, 0);
 
 					// Add this lister
 					function_add_path(handle, &handle->source_paths, lister, 0);
@@ -443,6 +491,10 @@ short function_check_single(FunctionHandle *handle, long type, long usetype, sho
 
 			// Get lister
 			lister = IPCDATA(ipc);
+
+			// Dual lister sides are resolved locally by their launch path.
+			if (lister_dual_is_side(lister))
+				continue;
 
 			// Is this lister the right type and not busy, or an icon view?
 			if ((!usetype || lister->flags & usetype) && lister->cur_buffer->buf_Path[0] &&
@@ -569,6 +621,8 @@ short function_check_single(FunctionHandle *handle, long type, long usetype, sho
 			// Get new current path
 			if ((current = AllocMemH(handle->memory, sizeof(PathNode))))
 			{
+				function_init_path_node(current);
+
 				// Typed-in path name?
 				if (handle->work_buffer[0])
 				{
@@ -595,6 +649,7 @@ short function_check_single(FunctionHandle *handle, long type, long usetype, sho
 							{
 								// Grab it
 								current->lister = (Lister *)node->data;
+								function_capture_path_side(current);
 								break;
 							}
 						}
@@ -610,7 +665,7 @@ short function_check_single(FunctionHandle *handle, long type, long usetype, sho
 						if (node)
 							strcpy(current->path_buf, node->node.ln_Name);
 						else
-							current->path[0] = 0;
+							current->path_buf[0] = 0;
 						current->path = current->path_buf;
 					}
 				}
@@ -700,6 +755,8 @@ void function_replace_paths(FunctionHandle *handle, PathList *path_list, char *n
 	// Get new current path
 	if ((current = AllocMemH(handle->memory, sizeof(PathNode))))
 	{
+		function_init_path_node(current);
+
 		// Copy path
 		strcpy(current->path_buf, new_path);
 		current->path = current->path_buf;

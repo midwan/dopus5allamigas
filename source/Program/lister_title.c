@@ -256,6 +256,12 @@ void lister_show_status(Lister *lister)
 	struct TextExtent extent;
 	int len, lock = 0;
 
+	if (lister_dual_one_window(lister))
+	{
+		lister_dual_refresh(lister, LREFRESH_FULL);
+		return;
+	}
+
 	// Showing icons?
 	if (lister->flags & LISTERF_VIEW_ICONS && !(lister->flags & LISTERF_ICON_ACTION))
 		return;

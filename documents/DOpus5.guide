@@ -134,6 +134,7 @@ that item and then press the help key before selecting it.
   @{" Icons, UnSnapshot              " link "Icons - UnSnapshot"}  @{" Join                           " link "Join"}
   @{" LeaveOut                       " link "LeaveOut"}  @{" Lister                         " link "Lister"}
   @{" Lister, Close                  " link "Lister - Close"}  @{" Lister, Close All              " link "Lister - Close All"}
+  @{" Lister, Dual Lister            " link "Lister - Dual Lister"}
   @{" Lister, Edit                   " link "Lister - Edit"}  @{" Lister, Edit Menu              " link "Lister - Edit Menu"}
   @{" Lister, Edit ToolBar           " link "Lister - Edit Toolbar"}  @{" Lister, File Count             " link "Lister File Count"}
   @{" Lister, Filter                 " link "Lister - Filter"}  @{" Lister, Format                 " link "Lister Format"}
@@ -1585,6 +1586,12 @@ or the operation of the current function:
   Set Dest
     Set lister into destination mode.
 
+  Set Dual [On|Off|Toggle|0|1]
+    Turns Dual Lister mode on or off for the current lister, or toggles
+    it if no state is supplied.  Dual mode is only available for name-mode
+    listers.  The active panel becomes the source and the other panel is
+    used as the default destination.
+
   Set Display <items>
     Change the display items.
 
@@ -2244,6 +2251,29 @@ This makes the lister into a destination, this may also cycle other
 
 This turns the mode of the active lister to off so that it is neither a
 @{" Source " link "Source"} nor a @{" Destination " link "Destination"}.
+
+@endnode
+
+@node "Lister - Dual Lister" "Lister - Dual Lister"
+ Lister - Dual Lister
+
+This toggles Dual Lister mode for the active name-mode lister.  In Dual
+Lister mode, one lister window is split into two independent panels.  Each
+panel keeps its own path, scroll position and file display, while sharing
+the same window, toolbar and lister menu.
+
+Click inside a panel to make it active.  The active panel is treated as the
+source and the other panel is treated as the destination, so commands such
+as Copy can use the opposite panel as their default target.  The small
+menu button in each panel opens the lister menu for that panel; the close
+button closes that panel and returns the remaining panel to normal lister
+mode.
+
+Dual Lister mode can also be controlled from buttons, hotkeys or scripts
+with the @{" Set " link "Set"} command, for example "Set Dual Toggle",
+"Set Dual On" or "Set Dual Off".
+
+Icon-mode and icon-action listers remain single-panel listers.
 
 @endnode
 
@@ -3603,6 +3633,13 @@ colour when the disk is getting full.
 
     The patches install at dopus5.library open time, so a toggle
     requires a DOpus restart to take effect.
+
+  Open New Listers in Dual Mode:
+    If this is set, newly-opened name-mode listers start in
+    @{" Dual Lister " link "Lister - Dual Lister"} mode.  Dual mode splits
+    one lister window into two panels with separate paths and scroll
+    positions.  Icon-mode and icon-action listers still open as normal
+    single-panel listers.
 
 @endnode
 

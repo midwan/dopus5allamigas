@@ -318,6 +318,8 @@ void function_abort(FunctionHandle *handle)
 	// Get current lister
 	if ((node = handle->source_paths.current) && node->node.mln_Succ)
 	{
+		function_apply_path_side(node);
+
 		// Display abort text
 		status_abort(node->lister);
 
@@ -334,6 +336,8 @@ void function_error_text(FunctionHandle *handle, int code)
 	// Get current lister
 	if ((node = handle->source_paths.current) && node->node.mln_Succ)
 	{
+		function_apply_path_side(node);
+
 		// Display abort text
 		status_display_error(node->lister, code);
 
@@ -350,6 +354,8 @@ void function_text(FunctionHandle *handle, char *text)
 	// Get current lister
 	if ((node = handle->source_paths.current) && node->node.mln_Succ)
 	{
+		function_apply_path_side(node);
+
 		// Display text
 		status_text(node->lister, text);
 
@@ -396,6 +402,8 @@ void function_cleanup(FunctionHandle *handle, PathNode *node, BOOL full)
 		FunctionEntry *entry;
 		DirBuffer *buffer = 0;
 		Lister *lister;
+
+		function_apply_path_side(node);
 
 		// Get lister
 		if ((lister = node->lister))
@@ -504,12 +512,16 @@ void function_do_lister_changes(FunctionHandle *handle, PathList *list)
 // Do changes to a lister
 void function_perform_changes(FunctionHandle *handle, PathNode *path)
 {
+	ULONG side;
+
+	side = (path->flags & LISTNF_DUAL_SIDE) ? path->dual_side + 1 : 0;
+
 	// Rescan directory?
 	if (path->flags & LISTNF_RESCAN && path->lister)
 	{
 		// Rescan
 		if (path->lister)
-			IPC_Command(path->lister->ipc, LISTER_RESCAN, 0, 0, 0, 0);
+			IPC_Command(path->lister->ipc, LISTER_RESCAN, side, 0, 0, 0);
 
 		// Clear flag
 		path->flags &= ~LISTNF_RESCAN;
@@ -520,7 +532,7 @@ void function_perform_changes(FunctionHandle *handle, PathNode *path)
 	{
 		// Valid lister?
 		if (path->lister)
-			IPC_Command(path->lister->ipc, LISTER_UPDATE_STAMP, 0, 0, 0, 0);
+			IPC_Command(path->lister->ipc, LISTER_UPDATE_STAMP, side, 0, 0, 0);
 
 		// Otherwise, do global lister update
 		else

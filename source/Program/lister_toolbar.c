@@ -432,7 +432,7 @@ void lister_toolbar_click(Lister *lister, short x, short y, unsigned short code,
 					if ((function = button_valid(lister->tool_sel_button, lister->tool_type)))
 					{
 						// Launch function
-						function_launch_quick(FUNCTION_RUN_FUNCTION, function, lister);
+						function_launch_quick(FUNCTION_RUN_FUNCTION, function, lister_dual_active_side(lister));
 					}
 				}
 			}

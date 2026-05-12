@@ -208,6 +208,9 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 		// Dismiss any toolbar tooltip on keyboard activity
 		lister_toolbar_tooltip_hide(lister);
 
+		// Keyboard actions belong to the selected dual panel.
+		lister = lister_dual_active_side(lister);
+
 		// Send to editor
 		if (lister_edit_key(lister, msg))
 			break;
@@ -225,7 +228,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 			if ((function = match_function_key(msg->Code, msg->Qualifier, 0, lister, WINDOW_LISTER, 0)))
 			{
 				// Run function
-				function_launch_quick(FUNCTION_RUN_FUNCTION, function, lister);
+				function_launch_quick(FUNCTION_RUN_FUNCTION, function, lister_dual_active_side(lister));
 				break;
 			}
 
@@ -546,10 +549,16 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 				}
 				break;
 
-			// Tab activates the next window
+			// Tab activates the next panel/window
 			case 0x42: {
 				IPCData *next;
 				Lister *nextlister;
+
+				if (lister_dual_one_window(lister))
+				{
+					lister_dual_activate_other(lister);
+					break;
+				}
 
 				// Get the next window
 				lock_listlock(&GUI->lister_list, FALSE);
@@ -607,7 +616,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 				}
 
 				// Activate path field
-				if (key_ok)
+				if (key_ok && !lister_dual_activate_pathfield(lister))
 					ActivateStrGad(lister->path_field, lister->window);
 				break;
 
@@ -647,12 +656,12 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 			// delete does edit
 			case 0x46:
 				if (key_ok)
-					lister_configure(lister);
+					lister_configure(lister_dual_active_side(lister));
 				break;
 
 			// F10 means window to front
 			case 0x59:
-				WindowToFront(lister->window);
+				lister_dual_to_front(lister);
 				break;
 
 			// Default
@@ -689,35 +698,35 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 
 				// * does select
 				case '*':
-					function_launch_quick(FUNCTION_RUN_FUNCTION, def_function_select, lister);
+					function_launch_quick(FUNCTION_RUN_FUNCTION, def_function_select, lister_dual_active_side(lister));
 					break;
 
 				// ( does all
 				case '(':
-					select_global_state(lister, 1);
+					select_global_state(lister_dual_active_side(lister), 1);
 					lister_refresh_display(lister, (lister->flags & LISTERF_ICON_ACTION) ? REFRESHF_ICONS : 0);
 					break;
 
 				// ) does none
 				case ')':
-					select_global_state(lister, 0);
+					select_global_state(lister_dual_active_side(lister), 0);
 					lister_refresh_display(lister, (lister->flags & LISTERF_ICON_ACTION) ? REFRESHF_ICONS : 0);
 					break;
 
 				// - does toggle
 				case '-':
-					select_global_toggle(lister);
+					select_global_toggle(lister_dual_active_side(lister));
 					lister_refresh_display(lister, (lister->flags & LISTERF_ICON_ACTION) ? REFRESHF_ICONS : 0);
 					break;
 
 				// + does device list
 				case '+':
-					function_launch_quick(FUNCTION_RUN_FUNCTION, def_function_devicelist, lister);
+					function_launch_quick(FUNCTION_RUN_FUNCTION, def_function_devicelist, lister_dual_active_side(lister));
 					break;
 
 				// . does buffer list
 				case '.':
-					function_launch_quick(FUNCTION_RUN_FUNCTION, def_function_cachelist, lister);
+					function_launch_quick(FUNCTION_RUN_FUNCTION, def_function_cachelist, lister_dual_active_side(lister));
 					break;
 
 				// = returns from special buffer
@@ -729,6 +738,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 				// \ does reselect
 				case '\\':
 					// Do reselection
+					lister = lister_dual_active_side(lister);
 					buffer_lock(lister->cur_buffer, FALSE);
 					DoReselect(&lister->reselect, lister, 1);
 					buffer_unlock(lister->cur_buffer);
@@ -779,10 +789,24 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 
 	// Window activated
 	case IDCMP_ACTIVEWINDOW:
+	{
+		BOOL suppress_front;
 
 		// Set pointer to current lister only if not minimized to titlebar
 		if (!(lister->more_flags & LISTERF_TITLEBARRED))
 			GUI->current_lister = lister;
+
+		// Dual listers keep source/destination between their two sides.
+		// Toolbar and popup clicks should act without raising the lister over
+		// their transient UI.
+		suppress_front = lister_dual_consume_popup_front(lister);
+		if (lister_dual_is_side(lister) && !lister_dual_one_window(lister) &&
+			!suppress_front && !lister_dual_popup_at(lister, msg->MouseX, msg->MouseY))
+			lister_dual_to_front(lister);
+		if (!lister_dual_popup_at(lister, msg->MouseX, msg->MouseY) &&
+			(!(lister->flags & LISTERF_TOOLBAR) ||
+			 !point_in_element(&lister->toolbar_area, msg->MouseX, msg->MouseY)))
+			lister_dual_activate(lister);
 
 		/*
 					// Is lister busy, and do we have a known locker?
@@ -804,6 +828,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 			lister_check_old_buffer(lister, 0);
 		}
 		break;
+	}
 
 	// Mouse move
 	case IDCMP_MOUSEMOVE:
@@ -963,31 +988,43 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 		{
 		// Up arrow
 		case GAD_VERT_ARROW_UP:
+			if (lister_dual_handle_scroll_gadget(lister, lister->down_gadget, 0))
+				break;
 			lister_scroll(lister, 0, -1);
 			break;
 
 		// Down arrow
 		case GAD_VERT_ARROW_DOWN:
+			if (lister_dual_handle_scroll_gadget(lister, lister->down_gadget, 0))
+				break;
 			lister_scroll(lister, 0, 1);
 			break;
 
 		// Left arrow
 		case GAD_HORIZ_ARROW_LEFT:
+			if (lister_dual_handle_scroll_gadget(lister, lister->down_gadget, 0))
+				break;
 			lister_scroll(lister, -1, 0);
 			break;
 
 		// Right arrow
 		case GAD_HORIZ_ARROW_RIGHT:
+			if (lister_dual_handle_scroll_gadget(lister, lister->down_gadget, 0))
+				break;
 			lister_scroll(lister, 1, 0);
 			break;
 
 		// Vertical slider
 		case GAD_VERT_SCROLLER:
+			if (lister_dual_handle_scroll_gadget(lister, lister->down_gadget, SLIDER_VERT))
+				break;
 			lister_pos_slider(lister, SLIDER_VERT);
 			break;
 
 		// Horizontal slider
 		case GAD_HORIZ_SCROLLER:
+			if (lister_dual_handle_scroll_gadget(lister, lister->down_gadget, SLIDER_HORZ))
+				break;
 			lister_pos_slider(lister, SLIDER_HORZ);
 			break;
 		}
@@ -1008,16 +1045,22 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 		{
 		// Vertical slider
 		case GAD_VERT_SCROLLER:
+			if (lister_dual_handle_scroll_gadget(lister, gadget, SLIDER_VERT))
+				break;
 			lister_pos_slider(lister, SLIDER_VERT);
 			break;
 
 		// Horizontal slider
 		case GAD_HORIZ_SCROLLER:
+			if (lister_dual_handle_scroll_gadget(lister, gadget, SLIDER_HORZ))
+				break;
 			lister_pos_slider(lister, SLIDER_HORZ);
 			break;
 
 		// Path
 		case GAD_PATH:
+			if (lister_dual_handle_path_gadget(lister, gadget))
+				break;
 
 			// Hot name requester shown?
 			if (lister->hot_name_req)
@@ -1131,6 +1174,15 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 
 	// Mouse button
 	case IDCMP_MOUSEBUTTONS:
+
+		if (msg->Code == SELECTDOWN && lister_dual_handle_close_button(lister, msg->MouseX, msg->MouseY))
+			break;
+
+		// Legacy split dual listers keep their windows together.
+		if (msg->Qualifier != 0xffff && lister_dual_is_side(lister) && !lister_dual_one_window(lister) &&
+			!lister_dual_popup_at(lister, msg->MouseX, msg->MouseY))
+			lister_dual_to_front(lister);
+		lister_dual_activate_at(lister, msg->MouseX, msg->MouseY);
 
 		// Dismiss any toolbar tooltip immediately
 		lister_toolbar_tooltip_hide(lister);
@@ -1304,7 +1356,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 				{
 					// Edit lister format
 					if (!(lister->flags & LISTERF_LOCK) && !(environment->env->lister_options & LISTEROPTF_2XCLICK))
-						lister_configure(lister);
+						lister_configure(lister_dual_active_side(lister));
 
 					// Progress window to front
 					else if (lister->progress_window)
@@ -1316,7 +1368,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 				{
 					lister->rmb_old_seconds = lister->seconds;
 					lister->rmb_old_micros = lister->micros;
-					select_rmb_scroll(lister, lister->window->MouseX, lister->window->MouseY);
+					select_rmb_scroll(lister_dual_active_side(lister), lister->window->MouseX, lister->window->MouseY);
 				}
 				break;
 			}
@@ -1450,7 +1502,8 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 			}
 
 			// Or click on status display?
-			else if (msg->Code == SELECTDOWN && point_in_element(&lister->status_area, msg->MouseX, msg->MouseY))
+			else if (msg->Code == SELECTDOWN && !lister_dual_one_window(lister) &&
+					 point_in_element(&lister->status_area, msg->MouseX, msg->MouseY))
 			{
 				UWORD res;
 
@@ -1471,7 +1524,8 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 			}
 
 			// Or on parent button?
-			else if (msg->Code == SELECTDOWN && point_in_element(&lister->parent_area, msg->MouseX, msg->MouseY))
+			else if (msg->Code == SELECTDOWN && !lister_dual_one_window(lister) &&
+					 point_in_element(&lister->parent_area, msg->MouseX, msg->MouseY))
 			{
 				// Show parent menu
 				lister_parent_popup(lister, msg->Code);
@@ -1512,7 +1566,8 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 						else
 						{
 							// Launch function
-							function_launch_quick(FUNCTION_RUN_FUNCTION, function, lister);
+							lister_dual_suppress_popup_front(lister);
+							function_launch_quick(FUNCTION_RUN_FUNCTION, function, lister_dual_active_side(lister));
 						}
 					}
 				}
@@ -1527,7 +1582,7 @@ void lister_process_msg(Lister *lister, struct IntuiMessage *msg)
 				// Left button does select
 				if (msg->Code == SELECTDOWN)
 				{
-					select_select_files(lister, msg->Qualifier, msg->MouseX, msg->MouseY);
+					select_select_files(lister_dual_active_side(lister), msg->Qualifier, msg->MouseX, msg->MouseY);
 				}
 
 				// Middle button does edit, if allowed

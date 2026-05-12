@@ -39,6 +39,7 @@ enum {
 	SET_LOCK,
 	SET_NOTIFY,
 	SET_LABEL_COLOUR,
+	SET_DUAL,
 };
 
 enum {
@@ -61,19 +62,29 @@ char *set_keys[] = {"output",
 					"lock",
 					"notify",
 					"labelcolour",
+					"dual",
 					0};
 
 extern char *labelcol_keys[];
 extern char *mode_keys[];
+
+char *dual_mode_keys[] = {"off", "on", "toggle", "0", "1", 0};
 
 // SET function
 DOPUS_FUNC(function_set)
 {
 	Lister *lister;
 	short set, refresh = 0;
+	char *set_args = args;
 
 	// Get key word
-	if ((set = rexx_match_keyword(&args, set_keys, 0)) == -1)
+	rexx_skip_space(&set_args);
+	if (strnicmp(set_args, "dual=", 5) == 0)
+	{
+		set = SET_DUAL;
+		args = set_args + 5;
+	}
+	else if ((set = rexx_match_keyword(&args, set_keys, 0)) == -1)
 		return 0;
 
 	// Get current lister
@@ -300,6 +311,31 @@ DOPUS_FUNC(function_set)
 		send_main_reset_cmd((which == 0) ? CONFIG_CHANGE_ICON_FONT : CONFIG_CHANGE_ICON_FONT_WINDOWS, 0, 0);
 	}
 	break;
+
+	case SET_DUAL:
+
+		// Got lister?
+		if (lister)
+		{
+			short val, mode = LISTER_DUAL_TOGGLE;
+
+			// Accept "Set DUAL=toggle" and "Set DUAL toggle"
+			rexx_skip_space(&args);
+			if (*args == '=')
+			{
+				++args;
+				rexx_skip_space(&args);
+			}
+			val = rexx_match_keyword(&args, dual_mode_keys, 0);
+
+			if (val == 0 || val == 3)
+				mode = LISTER_DUAL_OFF;
+			else if (val == 1 || val == 4)
+				mode = LISTER_DUAL_ON;
+
+			IPC_Command(lister->ipc, LISTER_DUAL, mode, 0, 0, 0);
+		}
+		break;
 	}
 
 	// Resort?

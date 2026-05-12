@@ -2625,6 +2625,9 @@ short select_key_select(Lister *lister, BOOL doubleclick)
 // Run a function on a single file
 void file_run_function(Lister *lister, DirEntry *entry, Cfg_Function *func, char *dest, ULONG flags)
 {
+	lister = lister_dual_active_side(lister);
+	lister_dual_suppress_popup_front(lister);
+
 	// Build filename
 	strcpy(lister->work_buffer, lister->cur_buffer->buf_Path);
 	AddPart(lister->work_buffer, entry->de_Node.dn_Name, 512);

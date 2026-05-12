@@ -617,6 +617,10 @@ void lister_smart_source(Lister *ours)
 		// Get lister
 		lister = IPCDATA(ipc);
 
+		// Dual lister sides keep source/dest roles local to their pair.
+		if (lister_dual_is_side(lister))
+			continue;
+
 		// Is lister available?
 		if (!(lister->flags & (LISTERF_BUSY | LISTERF_ICONIFIED)) &&
 			(!(lister->flags & LISTERF_VIEW_ICONS) || lister->flags & LISTERF_ICON_ACTION))

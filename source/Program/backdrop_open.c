@@ -175,8 +175,14 @@ void backdrop_object_open(BackdropInfo *info,
 				// Open lister for this path
 				else if ((lister = lister_open_new(path, object, info->window, info->lister)))
 				{
+					ULONG init_flags;
+
+					init_flags = (activate) ? LISTERF_ACTIVATE : 0;
+					if (environment->env->lister_options & LISTEROPTF_DUAL_DEFAULT)
+						init_flags |= LISTERF_DUAL;
+
 					// Initialise lister
-					IPC_Command(lister->ipc, LISTER_INIT, (activate) ? LISTERF_ACTIVATE : 0, GUI->screen_pointer, 0, 0);
+					IPC_Command(lister->ipc, LISTER_INIT, init_flags, GUI->screen_pointer, 0, 0);
 
 					// Close parent?
 					if (qual & IEQUALIFIER_LALT)

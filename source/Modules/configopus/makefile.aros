@@ -50,6 +50,8 @@ $(OBJDIR)/%.o : %.c
 	@$(MAKEDIR) $(dir $@)
 	@$(CC) -c $< $(CFLAGS) $(INCLUDES) $(WARNINGS) -o $@
 
+$(OBJDIR)/string_data.o : string_data.h
+
 .PHONY depend: Makefile.dep
 Makefile.dep : $(SRC_OBJS:.o=.c)
 	@$(CC) -MM $(CFLAGS) $(INCLUDES) $(SRC_OBJS:.o=.c) >Makefile.dep
@@ -60,4 +62,3 @@ clean:
 .PHONY cleanall:
 cleanall : clean
 	@$(REMOVE) $(TARGET) $(TARGET).map $(TARGET).s
-

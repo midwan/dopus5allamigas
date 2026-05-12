@@ -734,6 +734,9 @@ Restore
 MSG_LISTER_RESIZE_FIT (//)
 Resize to Fit
 ;
+MSG_LISTER_DUAL (//)
+Dual Lister
+;
 ;
 ;
 ;
