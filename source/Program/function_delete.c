@@ -52,6 +52,7 @@ DOPUS_FUNC(function_delete)
 	BOOL change_info = 0, del_trash = 0;
 	CommandList *delete_cmd;
 	TimerHandle *timer = 0;
+	ULONG side;
 	char *ptr;
 
 	// Find the delete command
@@ -194,8 +195,10 @@ DOPUS_FUNC(function_delete)
 		// Update?
 		if (timer && CheckTimer(timer))
 		{
+			side = (path->flags & LISTNF_DUAL_SIDE) ? path->dual_side + 1 : 0;
+
 			// Send update message
-			IPC_Command(path->lister->ipc, LISTER_REFRESH_NAME, 0, 0, 0, 0);
+			IPC_Command(path->lister->ipc, LISTER_REFRESH_NAME, side, 0, 0, 0);
 
 			// Restart timer
 			StartTimer(timer, DELETE_UPDATE_TIME, 0);

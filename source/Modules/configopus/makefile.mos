@@ -59,6 +59,8 @@ $(OBJDIR)/%.o : %.c
 	@$(MAKEDIR) $(dir $@)
 	@$(CC) -c $< $(CFLAGS) $(INCLUDES) $(WARNINGS) -o $@
 
+$(OBJDIR)/string_data.o : string_data.h
+
 .PHONY depend: Makefile.dep
 Makefile.dep : $(SRC_OBJS:.o=.c)
 	@$(CC) -MM $(CFLAGS) $(INCLUDES) $(SRC_OBJS:.o=.c) >Makefile.dep
@@ -73,4 +75,3 @@ cleanall : clean
 .PHONY dump:
 dump:
 	ppc-morphos-objdump --disassemble-all --reloc $(TARGET) >$(TARGET).s
-

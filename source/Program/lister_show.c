@@ -1068,6 +1068,12 @@ void lister_refresh_display(Lister *lister, ULONG flags)
 {
 	DirBuffer *buffer;
 
+	if (lister_dual_one_window(lister))
+	{
+		lister_dual_refresh_display(lister, flags);
+		return;
+	}
+
 	// Get current buffer
 	buffer = lister->cur_buffer;
 

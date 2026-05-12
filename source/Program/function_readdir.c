@@ -45,9 +45,17 @@ void function_read_directory(FunctionHandle *handle, Lister *lister, char *sourc
 	char *ptr;
 	DirBuffer *buffer;
 	ULONG disktype = 0;
+	ListerReselectData *packet;
+	ListerBufferFindData *find_packet;
+	short active;
+	ULONG side;
+
+	side = 0;
+	if ((active = lister_dual_active_index(lister)) >= 0)
+		side = active + 1;
 
 	// If we're currently displaying a special buffer, return to a normal one
-	IPC_Command(lister->ipc, LISTER_CHECK_SPECIAL_BUFFER, 0, 0, 0, REPLY_NO_PORT);
+	IPC_Command(lister->ipc, LISTER_CHECK_SPECIAL_BUFFER, side, 0, 0, REPLY_NO_PORT);
 
 	// Get last character of path, strip if it's a /
 	ptr = source_path + strlen(source_path) - 1;
@@ -127,8 +135,21 @@ void function_read_directory(FunctionHandle *handle, Lister *lister, char *sourc
 		*/
 
 		// Look for path
-		if ((buffer = (DirBuffer *)IPC_Command(
-				 lister->ipc, LISTER_BUFFER_FIND, (IPTR)stamp_ptr, (APTR)(IPTR)PATH_FULL_DEVICE, 0, REPLY_NO_PORT)))
+		buffer = 0;
+		if ((find_packet = AllocVec(sizeof(ListerBufferFindData), MEMF_CLEAR)))
+		{
+			find_packet->path = PATH_FULL_DEVICE;
+			find_packet->stamp = stamp_ptr;
+			find_packet->side = side;
+
+			buffer = (DirBuffer *)IPC_Command(
+				lister->ipc, LISTER_BUFFER_FIND, 0, find_packet, find_packet, REPLY_NO_PORT);
+		}
+		else
+			buffer = (DirBuffer *)IPC_Command(
+				lister->ipc, LISTER_BUFFER_FIND, (IPTR)stamp_ptr, (APTR)(IPTR)PATH_FULL_DEVICE, 0, REPLY_NO_PORT);
+
+		if (buffer)
 		{
 			// Found it
 			UnLock(lock);
@@ -143,7 +164,7 @@ void function_read_directory(FunctionHandle *handle, Lister *lister, char *sourc
 			buffer->more_flags &= ~DWF_LOCK_STATE;
 
 			// Show buffer in lister
-			IPC_Command(lister->ipc, LISTER_SHOW_BUFFER, TRUE, buffer, 0, REPLY_NO_PORT);
+			IPC_Command(lister->ipc, LISTER_SHOW_BUFFER, LISTER_SHOW_BUFFER_PACK_FLAGS(TRUE, side), buffer, 0, REPLY_NO_PORT);
 			noread = 1;
 		}
 	}
@@ -154,8 +175,21 @@ void function_read_directory(FunctionHandle *handle, Lister *lister, char *sourc
 		// Empty buffer?
 		if (handle->flags & GETDIRF_CANMOVEEMPTY)
 		{
-			IPC_Command(
-				lister->ipc, LISTER_BUFFER_FIND_EMPTY, (IPTR)stamp_ptr, (APTR)(IPTR)PATH_FULL_DEVICE, 0, REPLY_NO_PORT);
+			if ((find_packet = AllocVec(sizeof(ListerBufferFindData), MEMF_CLEAR)))
+			{
+				find_packet->path = PATH_FULL_DEVICE;
+				find_packet->stamp = stamp_ptr;
+				find_packet->side = side;
+
+				IPC_Command(lister->ipc, LISTER_BUFFER_FIND_EMPTY, 0, find_packet, find_packet, REPLY_NO_PORT);
+			}
+			else
+				IPC_Command(lister->ipc,
+							LISTER_BUFFER_FIND_EMPTY,
+							(IPTR)stamp_ptr,
+							(APTR)(IPTR)PATH_FULL_DEVICE,
+							0,
+							REPLY_NO_PORT);
 		}
 
 		// Get buffer
@@ -170,7 +204,7 @@ void function_read_directory(FunctionHandle *handle, Lister *lister, char *sourc
 		strcpy(buffer->buf_ExpandedPath, PATH_FULL_NAME);
 
 		// Refresh path field
-		IPC_Command(lister->ipc, LISTER_REFRESH_PATH, 0, 0, 0, 0);
+		IPC_Command(lister->ipc, LISTER_REFRESH_PATH, side, 0, 0, 0);
 
 		// Display text
 		status_text(lister, GetString(&locale, MSG_READING_DIRECTORY));
@@ -182,7 +216,17 @@ void function_read_directory(FunctionHandle *handle, Lister *lister, char *sourc
 		if (handle->flags & GETDIRF_RESELECT)
 		{
 			InitReselect(&reselect);
-			IPC_Command(lister->ipc, LISTER_MAKE_RESELECT, RESELF_SAVE_FILETYPES, (APTR)&reselect, 0, REPLY_NO_PORT);
+			if ((packet = AllocVec(sizeof(ListerReselectData), MEMF_CLEAR)))
+			{
+				packet->reselect = &reselect;
+				packet->flags = RESELF_SAVE_FILETYPES;
+				packet->side = side;
+
+				if (!IPC_Command(lister->ipc, LISTER_MAKE_RESELECT, 0, packet, packet, REPLY_NO_PORT))
+					FreeVec(packet);
+			}
+			else
+				IPC_Command(lister->ipc, LISTER_MAKE_RESELECT, RESELF_SAVE_FILETYPES, (APTR)&reselect, 0, REPLY_NO_PORT);
 		}
 
 		// Free buffer
@@ -198,7 +242,7 @@ void function_read_directory(FunctionHandle *handle, Lister *lister, char *sourc
 		IPC_Command(lister->ipc,
 					LISTER_REFRESH_WINDOW,
 					REFRESHF_UPDATE_NAME | REFRESHF_STATUS | REFRESHF_SLIDERS | REFRESHF_CLEAR_ICONS,
-					0,
+					(APTR)(IPTR)side,
 					0,
 					REPLY_NO_PORT);
 
@@ -253,7 +297,17 @@ void function_read_directory(FunctionHandle *handle, Lister *lister, char *sourc
 		{
 			if (ret)
 			{
-				IPC_Command(lister->ipc, LISTER_DO_RESELECT, 0, (APTR)&reselect, 0, REPLY_NO_PORT);
+				if ((packet = AllocVec(sizeof(ListerReselectData), MEMF_CLEAR)))
+				{
+					packet->reselect = &reselect;
+					packet->flags = 0;
+					packet->side = side;
+
+					if (!IPC_Command(lister->ipc, LISTER_DO_RESELECT, 0, packet, packet, REPLY_NO_PORT))
+						FreeVec(packet);
+				}
+				else
+					IPC_Command(lister->ipc, LISTER_DO_RESELECT, 0, (APTR)&reselect, 0, REPLY_NO_PORT);
 			}
 			FreeReselect(&reselect);
 		}
@@ -271,12 +325,12 @@ void function_read_directory(FunctionHandle *handle, Lister *lister, char *sourc
 		IPC_Command(lister->ipc,
 					LISTER_REFRESH_WINDOW,
 					REFRESHF_UPDATE_NAME | REFRESHF_STATUS | REFRESHF_SLIDERS | REFRESHF_CD,
-					0,
+					(APTR)(IPTR)side,
 					0,
 					0);
 
 		// Check space gauge
-		IPC_Command(lister->ipc, LISTER_SET_GAUGE, 0, 0, 0, 0);
+		IPC_Command(lister->ipc, LISTER_SET_GAUGE, side, 0, 0, 0);
 
 		// Get icons if necessary
 		if (lister->flags & (LISTERF_VIEW_ICONS | LISTERF_ICON_ACTION))

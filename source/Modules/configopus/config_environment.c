@@ -469,6 +469,7 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 
 							// Free objects
 							FreeObjectList(data->option_list);
+							data->option_list = 0;
 
 							// Erase display
 							SetGadgetValue(data->objlist, GAD_ENVIRONMENT_EDIT_AREA, 0);
@@ -481,7 +482,8 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 
 #ifndef FUNKOFF
 						// Initialise gadgets
-						_config_env_set(data, data->option);
+						if (data->option_list)
+							_config_env_set(data, data->option);
 #endif
 						break;
 
@@ -1703,12 +1705,14 @@ BOOL _config_env_open(config_env_data *data, struct Screen *screen)
 		data->option = _environment_options[data->option_node->data].num;
 
 		// Create option list
-		data->option_list = AddObjectList(data->window, _environment_options[data->option_node->data].objects);
+		if ((data->option_list = AddObjectList(data->window, _environment_options[data->option_node->data].objects)))
+		{
 
 #ifndef FUNKOFF
-		// Initialise gadgets
-		_config_env_set(data, data->option);
+			// Initialise gadgets
+			_config_env_set(data, data->option);
 #endif
+		}
 	}
 
 	return 1;
@@ -1864,6 +1868,10 @@ void _config_env_set(config_env_data *data, short option)
 		// Hide padlock gadget
 		SetGadgetValue(
 			data->option_list, GAD_ENVIRONMENT_HIDE_PADLOCK, data->config->lister_options & LISTEROPTF_NO_PADLOCK);
+
+		// Open new listers in dual mode
+		SetGadgetValue(
+			data->option_list, GAD_ENVIRONMENT_DUAL_DEFAULT, data->config->lister_options & LISTEROPTF_DUAL_DEFAULT);
 
 		// Live folder updates / DOS patches (dopus/DOSPatch ENVARC: var)
 		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_DOS_PATCH, data->dos_patch_state);
@@ -2355,6 +2363,12 @@ void _config_env_store(config_env_data *data, short option)
 		else
 			data->config->lister_options &= ~LISTEROPTF_NO_PADLOCK;
 
+		// Open new listers in dual mode
+		if (GetGadgetValue(data->option_list, GAD_ENVIRONMENT_DUAL_DEFAULT))
+			data->config->lister_options |= LISTEROPTF_DUAL_DEFAULT;
+		else
+			data->config->lister_options &= ~LISTEROPTF_DUAL_DEFAULT;
+
 		// Live folder updates / DOS patches: track current state and only
 		// flag for write-back if the *net* change vs. the dialog-open
 		// snapshot is non-zero.  Comparing against dos_patch_initial
@@ -2544,6 +2558,10 @@ void _config_env_store(config_env_data *data, short option)
 			data->config->lister_options |= LISTEROPTF_EDIT_MID;
 		else if (option == 3)
 			data->config->lister_options |= LISTEROPTF_EDIT_BOTH;
+		break;
+
+	// Lister size
+	case ENVIRONMENT_LISTER_SIZE:
 		break;
 
 	// Desktop

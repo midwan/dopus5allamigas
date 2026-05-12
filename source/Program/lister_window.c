@@ -564,6 +564,9 @@ void lister_close_window(Lister *lister, BOOL run_script)
 			lister->drag_info = 0;
 		}
 
+		// Remove dual-only display gadgets before the window and BOOPSI list go away
+		lister_dual_close_display(lister);
+
 		// Restore hijacked system zoom gadget so Intuition can free it on CloseWindow
 		if (lister->hijacked_zoom)
 		{

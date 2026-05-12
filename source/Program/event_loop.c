@@ -1157,13 +1157,18 @@ BOOL menu_process_event(IPTR id, struct MenuItem *item, struct Window *window)
 	// New lister
 	case MENU_NEW_LISTER: {
 		Lister *lister;
+		ULONG flags;
 
 		// Create new lister
 		if ((lister = lister_new(0)))
 		{
+			flags = (environment->env->lister_options & LISTEROPTF_DEVICES) ? 0 : LISTERF_DEVICES;
+			if (environment->env->lister_options & LISTEROPTF_DUAL_DEFAULT)
+				flags |= LISTERF_DUAL;
+
 			IPC_Command(lister->ipc,
 						LISTER_OPEN,
-						(environment->env->lister_options & LISTEROPTF_DEVICES) ? 0 : LISTERF_DEVICES,
+						flags,
 						GUI->screen_pointer,
 						0,
 						0);

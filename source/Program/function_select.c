@@ -32,11 +32,18 @@ DOPUS_FUNC(function_select)
 {
 	Lister *lister;
 	SelectData *data;
+	SelectWildData *packet;
+	short active;
 	short ret = 0;
+	ULONG side;
 
 	// Get current lister
 	if (!(lister = function_lister_current(&handle->source_paths)))
 		return 1;
+
+	side = 0;
+	if ((active = lister_dual_active_index(lister)) >= 0)
+		side = active + 1;
 
 	// Allocate and copy local select data
 	if (!(data = AllocVec(sizeof(SelectData), MEMF_CLEAR)))
@@ -167,10 +174,20 @@ DOPUS_FUNC(function_select)
 	// Do wildcard selection
 	if (ret)
 	{
-		IPC_Command(lister->ipc, LISTER_SELECT_WILD, (IPTR)&handle->dest_paths, data, 0, REPLY_NO_PORT);
+		if ((packet = AllocVec(sizeof(SelectWildData), MEMF_CLEAR)))
+		{
+			CopyMem(data, &packet->data, sizeof(SelectData));
+			packet->dest_list = &handle->dest_paths;
+			packet->side = side;
+
+			if (!IPC_Command(lister->ipc, LISTER_SELECT_WILD, 0, packet, packet, REPLY_NO_PORT))
+				FreeVec(packet);
+		}
+		else
+			IPC_Command(lister->ipc, LISTER_SELECT_WILD, (IPTR)&handle->dest_paths, data, 0, REPLY_NO_PORT);
 
 		// Refresh window
-		IPC_Command(lister->ipc, LISTER_REFRESH_WINDOW, 0, 0, 0, REPLY_NO_PORT);
+		IPC_Command(lister->ipc, LISTER_REFRESH_WINDOW, 0, (APTR)(IPTR)side, 0, REPLY_NO_PORT);
 		ret = 1;
 	}
 
@@ -519,6 +536,9 @@ void function_select_disable(ObjectList *list, SelectData *data, short type)
 void function_select_file(FunctionHandle *handle, Lister *lister, char *filename)
 {
 	SelectData data;
+	SelectWildData *packet;
+	short active;
+	ULONG side;
 
 	// Fill in selection data
 	strcpy(data.name, filename);
@@ -530,6 +550,20 @@ void function_select_file(FunctionHandle *handle, Lister *lister, char *filename
 	data.compare_match = SELECT_MATCH_IGNORE;
 	data.include = SELECT_INCLUDE;
 
+	side = 0;
+	if ((active = lister_dual_active_index(lister)) >= 0)
+		side = active + 1;
+
 	// Select file
-	IPC_Command(lister->ipc, LISTER_SELECT_WILD, (IPTR)&handle->dest_paths, &data, 0, (struct MsgPort *)-1);
+	if ((packet = AllocVec(sizeof(SelectWildData), MEMF_CLEAR)))
+	{
+		CopyMem(&data, &packet->data, sizeof(SelectData));
+		packet->dest_list = &handle->dest_paths;
+		packet->side = side;
+
+		if (!IPC_Command(lister->ipc, LISTER_SELECT_WILD, 0, packet, packet, (struct MsgPort *)-1))
+			FreeVec(packet);
+	}
+	else
+		IPC_Command(lister->ipc, LISTER_SELECT_WILD, (IPTR)&handle->dest_paths, &data, 0, (struct MsgPort *)-1);
 }

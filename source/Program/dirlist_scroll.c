@@ -29,6 +29,9 @@ void lister_update_slider(Lister *lister, int which)
 {
 	DirBuffer *buffer;
 
+	if (lister_dual_update_sliders(lister, which))
+		return;
+
 	// Iconified or icon view?
 	if (!lister_valid_window(lister) || lister->flags & LISTERF_VIEW_ICONS || lister->more_flags & LISTERF_TITLEBARRED)
 		return;

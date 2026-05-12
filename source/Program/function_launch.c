@@ -45,6 +45,7 @@ BOOL function_launch(ULONG command,
 {
 	FunctionHandle *handle;
 	IPCData *ipc;
+	char *dual_dest_path = 0;
 
 	// Allocate handle
 	if (!(handle = function_new_handle(0, 0)))
@@ -101,6 +102,13 @@ BOOL function_launch(ULONG command,
 		strcpy(handle->source_path, source_path);
 		if (source_path[0])
 			AddPart(handle->source_path, "", 512);
+	}
+
+	// Dual lister functions use the inactive side as destination.
+	if (source_list && !dest_list && !dest_path && (dual_dest_path = lister_dual_dest_path(source_list)) &&
+		dual_dest_path[0])
+	{
+		dest_path = dual_dest_path;
 	}
 
 	// Destination path
@@ -600,6 +608,8 @@ BOOL function_lock_paths(FunctionHandle *handle, PathList *list, int locker)
 		{
 			Lister *lister;
 
+			function_apply_path_side(node);
+
 			// Validate the lister before dereferencing it. The stored pointer may be
 			// stale if the lister was closed while this function was pending; the
 			// shared lock on GUI->lister_list keeps a validated lister alive until we
@@ -725,9 +735,11 @@ void function_unlock_paths(FunctionHandle *handle, PathList *list, int locker)
 			else if (node->flags & LISTNF_LOCKED)
 			{
 				ULONG ref;
+				ULONG side;
 
 				// Clear lock flag
 				node->flags &= ~LISTNF_LOCKED;
+				side = (node->flags & LISTNF_DUAL_SIDE) ? node->dual_side + 1 : 0;
 
 				// Clear locker
 				if (locker)
@@ -749,10 +761,10 @@ void function_unlock_paths(FunctionHandle *handle, PathList *list, int locker)
 						ref |= REFRESHF_UPDATE_NAME | REFRESHF_STATUS;
 
 					// Refresh lister
-					IPC_Command(node->lister->ipc, LISTER_REFRESH_WINDOW, ref, 0, 0, 0);
+					IPC_Command(node->lister->ipc, LISTER_REFRESH_WINDOW, ref, (APTR)(IPTR)side, 0, 0);
 
 					// Update title
-					IPC_Command(node->lister->ipc, LISTER_SHOW_INFO, 0, 0, 0, 0);
+					IPC_Command(node->lister->ipc, LISTER_SHOW_INFO, side, 0, 0, 0);
 				}
 
 				// Set flag to indicate deferred title update
@@ -885,8 +897,9 @@ Lister *function_get_paths(FunctionHandle *handle, PathList *list, ULONG flags, 
 			// Add to head of the list
 			if ((node = AllocMemH(handle->memory, sizeof(PathNode))))
 			{
+				function_init_path_node(node);
 				node->lister = first;
-				node->flags = 0;
+				function_capture_path_side(node);
 				AddHead((struct List *)list, (struct Node *)node);
 			}
 		}
@@ -910,6 +923,10 @@ Lister *function_get_paths(FunctionHandle *handle, PathList *list, ULONG flags, 
 			// Get lister
 			lister = IPCDATA(ipc);
 
+			// Dual lister sides are resolved locally by their launch path.
+			if (lister_dual_is_side(lister))
+				continue;
+
 			// Is this lister the right type and not busy, or an icon view?
 			if (lister->flags & flags && !(lister->flags & LISTERF_BUSY) &&
 				(!(lister->flags & LISTERF_VIEW_ICONS) || lister->flags & LISTERF_ICON_ACTION))
@@ -923,9 +940,11 @@ Lister *function_get_paths(FunctionHandle *handle, PathList *list, ULONG flags, 
 						// Allocate lister node
 						if ((node = AllocMemH(handle->memory, sizeof(PathNode))))
 						{
+							function_init_path_node(node);
+
 							// Add to list
 							node->lister = lister;
-							node->flags = 0;
+							function_capture_path_side(node);
 							AddTail((struct List *)list, (struct Node *)node);
 						}
 					}

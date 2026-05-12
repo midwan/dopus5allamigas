@@ -89,6 +89,9 @@ int function_build_list(FunctionHandle *handle, PathNode **path, InstructionPars
 	handle->link_file_count = 0;
 	handle->link_dir_count = 0;
 
+	if (path && *path)
+		function_apply_path_side(*path);
+
 	// Do we need entries?
 	if (instruction && !(instruction->flags & (FUNCF_NEED_ENTRIES | FUNCF_WANT_ENTRIES)))
 		return 1;
@@ -954,6 +957,7 @@ FunctionEntry *function_get_entry(FunctionHandle *handle)
 					DirBuffer *buffer;
 
 					// Make sure there's a valid buffer
+					function_apply_path_side(handle->source_paths.current);
 					if ((buffer = handle->source_paths.current->lister->cur_buffer))
 					{
 						// Allowed to count sizes?

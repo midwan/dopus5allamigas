@@ -129,6 +129,13 @@ void lister_fix_menus(Lister *lister, BOOL sel_only)
 			set_item(item, icon && lister->flags & LISTERF_SHOW_ALL);
 		}
 
+		// Dual lister
+		if ((item = find_menu_item(menu, MENU_LISTER_DUAL)))
+		{
+			set_item(item, lister->flags2 & LISTERF2_DUAL);
+			off_item(item, busy || icon);
+		}
+
 		// Close (disabled when busy)
 		if ((item = find_menu_item(menu, MENU_LISTER_CLOSE)))
 		{
