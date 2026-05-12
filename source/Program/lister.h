@@ -201,6 +201,16 @@ enum {
 	LISTER_DUAL,					// Toggle dual lister mode
 };
 
+#define LISTER_SHOW_BUFFER_SIDE_SHIFT 16
+#define LISTER_SHOW_BUFFER_SIDE_MASK 0xff
+#define LISTER_SHOW_BUFFER_FLAGS_MASK 0xffff
+#define LISTER_SHOW_BUFFER_PACK_FLAGS(flags, side) \
+	(((ULONG)(flags) & LISTER_SHOW_BUFFER_FLAGS_MASK) | \
+	 (((ULONG)(side) & LISTER_SHOW_BUFFER_SIDE_MASK) << LISTER_SHOW_BUFFER_SIDE_SHIFT))
+#define LISTER_SHOW_BUFFER_SIDE(flags) \
+	(((ULONG)(flags) >> LISTER_SHOW_BUFFER_SIDE_SHIFT) & LISTER_SHOW_BUFFER_SIDE_MASK)
+#define LISTER_SHOW_BUFFER_BASE_FLAGS(flags) ((ULONG)(flags) & LISTER_SHOW_BUFFER_FLAGS_MASK)
+
 // Maximum length we can display in a window
 #define MAXDISPLAYLENGTH 256
 
@@ -290,7 +300,7 @@ typedef struct ListerWindow
 	short tool_hover_but;			 // Hovered toolbar button (-1 = none)
 	short tool_hover_ticks;			 // IntuiTicks elapsed on current hover
 	struct Window *tool_tip_window;	 // Tooltip popup (0 = not shown)
-	char pad2[42];					 // Reserved; dual lister stores private links here
+	char pad2[42];					 // Reserved; dual lister stores a private APTR state slot here
 
 	DragInfo *drag_info;	   // File drag information
 	struct MsgPort *app_port;  // Application message port

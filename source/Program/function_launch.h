@@ -135,6 +135,11 @@ typedef struct
 	PathNode *current;
 } PathList;
 
+/*
+ * Dual lister IPC packets carry a 1-based side value when a command needs to
+ * target a specific panel but the legacy IPC argument slots are already used.
+ * A side of 0 keeps the old active-lister behaviour.
+ */
 typedef struct
 {
 	SelectData data;

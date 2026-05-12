@@ -67,6 +67,7 @@ class DualListerStaticTests(unittest.TestCase):
         self.assertIn('link "Lister - Dual Lister"', guide)
         self.assertIn("Set Dual [On|Off|Toggle|0|1]", guide)
         self.assertIn("Open New Listers in Dual Mode:", guide)
+        self.assertRegex(guide, r"The active panel is treated as the\s+source.*destination")
 
     def test_dual_lister_core_symbols_are_present(self):
         lister_h = read_program_source("lister.h")
@@ -196,6 +197,7 @@ class DualListerStaticTests(unittest.TestCase):
         self.assertNotIn("void lister_dual_sync_partner(Lister *lister);", lister_h)
 
         self.assertIn("typedef struct ListerDualState", lister_dual_c)
+        self.assertIn("sizeof(((Lister *)0)->pad2) >= sizeof(APTR)", lister_dual_c)
         self.assertIn("DUALF_ONE_WINDOW", lister_dual_c)
         self.assertIn("DirBuffer *buffer[LISTER_DUAL_SIDES];", lister_dual_c)
         self.assertIn("DirBuffer *offset_buffer[LISTER_DUAL_SIDES];", lister_dual_c)
@@ -297,6 +299,7 @@ class DualListerStaticTests(unittest.TestCase):
             lister_dual_c,
         ).group(0)
         self.assertNotIn("lister_dual_clear_gadget_box(lister, &lister->parent_button);", ensure_pathfields)
+        self.assertIn("lister_dual_restore_pathfield(lister, state);", ensure_pathfields)
         self.assertRegex(
             lister_dual_c,
             r"(?s)static void lister_dual_restore_pathfield.*"
@@ -452,6 +455,7 @@ class DualListerStaticTests(unittest.TestCase):
         )
         self.assertNotIn("vert_arrow_height", create_scrollbars_func)
         self.assertNotIn("IA_Height", create_scrollbars_func)
+        self.assertIn("lister_dual_dispose_scrollbar_side(lister, state, side, FALSE);", create_scrollbars_func)
         self.assertRegex(
             lister_dual_c,
             r"(?s)static BOOL lister_dual_scroll_metrics_changed.*"
@@ -790,11 +794,13 @@ class DualListerStaticTests(unittest.TestCase):
             r"state->flags & DUALF_ONE_WINDOW.*"
             r"lister_dual_apply_panel\(lister, state->active\);",
         )
-        activate_func = re.search(
+        activate_match = re.search(
             r"(?s)\nvoid lister_dual_activate\(Lister \*lister\)\n\{.*?"
-            r"\n}\n\n// Lock one side",
+            r"\n}\n\n",
             lister_dual_c,
-        ).group(0)
+        )
+        self.assertIsNotNone(activate_match)
+        activate_func = activate_match.group(0)
         self.assertNotIn("BOOL locked", activate_func)
         self.assertNotIn("lister_dual_set_roles(lister, locked)", activate_func)
         self.assertRegex(
@@ -1532,6 +1538,7 @@ class DualListerStaticTests(unittest.TestCase):
         lister_proc_c = read_program_source("lister_proc.c")
 
         self.assertIn("} ListerBufferFindData;", function_launch_h)
+        self.assertIn("target a specific panel", function_launch_h)
         self.assertIn("char *path;", function_launch_h)
         self.assertIn("struct DateStamp *stamp;", function_launch_h)
         self.assertIn("char *name;", function_launch_h)
@@ -1550,7 +1557,7 @@ class DualListerStaticTests(unittest.TestCase):
             r"find_packet->stamp = stamp_ptr;.*"
             r"find_packet->side = side;.*"
             r"IPC_Command\(\s*lister->ipc, LISTER_BUFFER_FIND, 0, find_packet, find_packet, REPLY_NO_PORT\).*"
-            r"IPC_Command\(lister->ipc, LISTER_SHOW_BUFFER, TRUE \| \(side << 16\), buffer, 0, REPLY_NO_PORT\);.*"
+            r"IPC_Command\(lister->ipc, LISTER_SHOW_BUFFER, LISTER_SHOW_BUFFER_PACK_FLAGS\(TRUE, side\), buffer, 0, REPLY_NO_PORT\);.*"
             r"IPC_Command\(\s*lister->ipc, LISTER_BUFFER_FIND_EMPTY, 0, find_packet, find_packet, REPLY_NO_PORT\).*"
             r"IPC_Command\(lister->ipc, LISTER_REFRESH_PATH, side, 0, 0, 0\);.*"
             r"IPC_Command\(lister->ipc,\s*LISTER_REFRESH_WINDOW,\s*REFRESHF_UPDATE_NAME \| REFRESHF_STATUS \| REFRESHF_SLIDERS \| REFRESHF_CLEAR_ICONS,\s*"
@@ -1602,8 +1609,8 @@ class DualListerStaticTests(unittest.TestCase):
         )
         self.assertRegex(
             show_buffer_block,
-            r"(?s)side = \(flags >> 16\) & 0xff;.*"
-            r"flags &= 0xffff;.*"
+            r"(?s)side = LISTER_SHOW_BUFFER_SIDE\(flags\);.*"
+            r"flags = LISTER_SHOW_BUFFER_BASE_FLAGS\(flags\);.*"
             r"if \(side > 0 && side <= LISTER_DUAL_SIDES\).*"
             r"lister_dual_apply_side\(lister, side - 1\);.*"
             r"else.*"

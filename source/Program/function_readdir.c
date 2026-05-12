@@ -164,7 +164,7 @@ void function_read_directory(FunctionHandle *handle, Lister *lister, char *sourc
 			buffer->more_flags &= ~DWF_LOCK_STATE;
 
 			// Show buffer in lister
-			IPC_Command(lister->ipc, LISTER_SHOW_BUFFER, TRUE | (side << 16), buffer, 0, REPLY_NO_PORT);
+			IPC_Command(lister->ipc, LISTER_SHOW_BUFFER, LISTER_SHOW_BUFFER_PACK_FLAGS(TRUE, side), buffer, 0, REPLY_NO_PORT);
 			noread = 1;
 		}
 	}

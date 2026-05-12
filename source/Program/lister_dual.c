@@ -80,6 +80,8 @@ typedef struct ListerDualState
 	struct Rectangle separator;
 } ListerDualState;
 
+typedef char lister_dual_pad2_holds_state_pointer[(sizeof(((Lister *)0)->pad2) >= sizeof(APTR)) ? 1 : -1];
+
 static void lister_dual_restore_pathfield(Lister *lister, ListerDualState *state);
 static void lister_dual_remove_scrollbars(Lister *lister, ListerDualState *state);
 static void lister_dual_close_pathfields(Lister *lister, ListerDualState *state);
@@ -607,7 +609,10 @@ static BOOL lister_dual_ensure_pathfields(Lister *lister, ListerDualState *state
 											 STRINGA_EditHook,
 											 (IPTR)lister->path_edit_hook,
 											 TAG_END)))
+		{
+			lister_dual_restore_pathfield(lister, state);
 			return FALSE;
+		}
 
 		AddGList(lister->window, state->path_field[LISTER_DUAL_RIGHT], -1, 1, 0);
 	}
@@ -873,6 +878,44 @@ static void lister_dual_clear_scroll_metrics(ListerDualState *state)
 	state->scroll_draw_info = 0;
 }
 
+static void lister_dual_dispose_scrollbar_side(Lister *lister, ListerDualState *state, short side, BOOL attached)
+{
+	short a;
+
+	if (!state || side < 0 || side >= LISTER_DUAL_SIDES)
+		return;
+
+	if (attached && lister_valid_window(lister) && state->vert_scroller[side])
+		RemoveGList(lister->window, state->vert_scroller[side], 6);
+
+	if (state->vert_scroller[side])
+		DisposeObject((Object *)state->vert_scroller[side]);
+	if (state->vert_arrow_up[side])
+		DisposeObject((Object *)state->vert_arrow_up[side]);
+	if (state->vert_arrow_down[side])
+		DisposeObject((Object *)state->vert_arrow_down[side]);
+	if (state->horiz_scroller[side])
+		DisposeObject((Object *)state->horiz_scroller[side]);
+	if (state->horiz_arrow_left[side])
+		DisposeObject((Object *)state->horiz_arrow_left[side]);
+	if (state->horiz_arrow_right[side])
+		DisposeObject((Object *)state->horiz_arrow_right[side]);
+
+	state->vert_scroller[side] = 0;
+	state->vert_arrow_up[side] = 0;
+	state->vert_arrow_down[side] = 0;
+	state->horiz_scroller[side] = 0;
+	state->horiz_arrow_left[side] = 0;
+	state->horiz_arrow_right[side] = 0;
+
+	for (a = 0; a < 4; a++)
+	{
+		if (state->scroll_image[side][a])
+			DisposeObject((Object *)state->scroll_image[side][a]);
+		state->scroll_image[side][a] = 0;
+	}
+}
+
 static BOOL lister_dual_create_scrollbar_side(Lister *lister, ListerDualState *state, short side)
 {
 	short a;
@@ -897,7 +940,7 @@ static BOOL lister_dual_create_scrollbar_side(Lister *lister, ListerDualState *s
 													   SYSIA_DrawInfo,
 													   (IPTR)GUI->draw_info,
 													   TAG_END)))
-			return FALSE;
+			goto fail;
 	}
 
 	if (!(state->vert_scroller[side] = (struct Gadget *)NewObject(0,
@@ -1008,7 +1051,7 @@ static BOOL lister_dual_create_scrollbar_side(Lister *lister, ListerDualState *s
 																	 ICA_TARGET,
 																	 ICTARGET_IDCMP,
 																	 TAG_END)))
-		return FALSE;
+		goto fail;
 
 	state->vert_scroller[side]->NextGadget = state->vert_arrow_up[side];
 	state->vert_arrow_up[side]->NextGadget = state->vert_arrow_down[side];
@@ -1021,47 +1064,21 @@ static BOOL lister_dual_create_scrollbar_side(Lister *lister, ListerDualState *s
 	AddGList(lister->window, state->vert_scroller[side], -1, 6, 0);
 	RefreshGList(state->vert_scroller[side], lister->window, 0, 6);
 	return TRUE;
+
+fail:
+	lister_dual_dispose_scrollbar_side(lister, state, side, FALSE);
+	return FALSE;
 }
 
 static void lister_dual_dispose_dual_scrollbars(Lister *lister, ListerDualState *state)
 {
-	short side, a;
+	short side;
 
 	if (!state)
 		return;
 
 	for (side = 0; side < LISTER_DUAL_SIDES; side++)
-	{
-		if (lister_valid_window(lister) && state->vert_scroller[side])
-			RemoveGList(lister->window, state->vert_scroller[side], 6);
-
-		if (state->vert_scroller[side])
-			DisposeObject((Object *)state->vert_scroller[side]);
-		if (state->vert_arrow_up[side])
-			DisposeObject((Object *)state->vert_arrow_up[side]);
-		if (state->vert_arrow_down[side])
-			DisposeObject((Object *)state->vert_arrow_down[side]);
-		if (state->horiz_scroller[side])
-			DisposeObject((Object *)state->horiz_scroller[side]);
-		if (state->horiz_arrow_left[side])
-			DisposeObject((Object *)state->horiz_arrow_left[side]);
-		if (state->horiz_arrow_right[side])
-			DisposeObject((Object *)state->horiz_arrow_right[side]);
-
-		state->vert_scroller[side] = 0;
-		state->vert_arrow_up[side] = 0;
-		state->vert_arrow_down[side] = 0;
-		state->horiz_scroller[side] = 0;
-		state->horiz_arrow_left[side] = 0;
-		state->horiz_arrow_right[side] = 0;
-
-		for (a = 0; a < 4; a++)
-		{
-			if (state->scroll_image[side][a])
-				DisposeObject((Object *)state->scroll_image[side][a]);
-			state->scroll_image[side][a] = 0;
-		}
-	}
+		lister_dual_dispose_scrollbar_side(lister, state, side, TRUE);
 }
 
 static void lister_dual_remove_scrollbars(Lister *lister, ListerDualState *state)
@@ -2262,13 +2279,13 @@ void lister_dual_activate(Lister *lister)
 		lister_dual_apply_panel(lister, state->active);
 }
 
-// Lock one side as source and the other side as destination
+// Latch one side as source and the other side as destination; this is not a task lock.
 void lister_dual_lock_source(Lister *lister)
 {
 	lister_dual_set_roles(lister, TRUE);
 }
 
-// Unlock both sides without breaking their local source/destination roles
+// Release the role latch without breaking the local source/destination roles.
 void lister_dual_unlock(Lister *lister)
 {
 	ListerDualState *state;

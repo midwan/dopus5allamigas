@@ -20,6 +20,8 @@ Lister UI:
   window, each with its own path field, scrollbar state, title fields and
   close/menu controls; the active panel is the source and the inactive
   panel supplies the default destination path.
+- Dual Lister setup now rolls back partially-created path field and
+  scrollbar gadgets if allocation fails.
 - Environment / Lister Display now has an "Open New Listers in Dual Mode"
   option so newly-opened listers can default to the two-panel layout.
 

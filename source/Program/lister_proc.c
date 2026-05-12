@@ -989,8 +989,8 @@ IPC_EntryCode(lister_code)
 				case LISTER_SHOW_BUFFER: {
 					ULONG side;
 
-					side = (flags >> 16) & 0xff;
-					flags &= 0xffff;
+					side = LISTER_SHOW_BUFFER_SIDE(flags);
+					flags = LISTER_SHOW_BUFFER_BASE_FLAGS(flags);
 					if (side > 0 && side <= LISTER_DUAL_SIDES)
 						lister_dual_apply_side(lister, side - 1);
 					else
