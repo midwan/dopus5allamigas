@@ -80,6 +80,10 @@ Library / dopus5.library:
   extension (was ".bac_5_90_cfg" since the 5.90-era schema
   migration); existing legacy backups are folded into the new
   scheme automatically on next save.
+- Environment loading now uses the environment being opened when
+  clamping filename length, cleans up failed legacy conversion paths,
+  zeroes short EPUS environment chunks, and bounds sound-event chunk
+  reads to the on-disk payload.
 
 LoadDB / display / off-screen dragging:
 - LoadDB: detach launched DOpus from caller's CLI streams so the

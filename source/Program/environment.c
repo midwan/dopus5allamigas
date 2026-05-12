@@ -482,11 +482,11 @@ BOOL environment_open(Cfg_Environment *env, char *name, BOOL first, APTR prog)
 
 		// Get maximum filename length
 		// we have to do this before the listers are opened
-		GUI->def_filename_length = environment->env->settings.max_filename;
+		GUI->def_filename_length = env->env->settings.max_filename;
 		if (GUI->def_filename_length < FILENAME_LEN)
 			GUI->def_filename_length = FILENAME_LEN;
-	else if (GUI->def_filename_length > MAX_FILENAME_LEN)
-		GUI->def_filename_length = MAX_FILENAME_LEN;
+		else if (GUI->def_filename_length > MAX_FILENAME_LEN)
+			GUI->def_filename_length = MAX_FILENAME_LEN;
 	}
 	// Successful?
 	if (success || first)
