@@ -2144,7 +2144,7 @@ void lister_dual_apply_side(Lister *lister, short side)
 	lister_dual_apply_panel(lister, side);
 }
 
-// Apply a panel temporarily without changing the selected/source side
+// Apply a panel temporarily; caller restores the previous selected/source side
 BOOL lister_dual_apply_side_temporary(Lister *lister, short side)
 {
 	ListerDualState *state;
@@ -2156,6 +2156,7 @@ BOOL lister_dual_apply_side_temporary(Lister *lister, short side)
 	if (side < 0 || side >= LISTER_DUAL_SIDES)
 		return FALSE;
 
+	state->active = side;
 	lister_dual_apply_panel(lister, side);
 	return TRUE;
 }
@@ -2167,12 +2168,14 @@ void lister_dual_restore_active(Lister *lister, short side)
 	if (!(state = lister_dual_get_state(lister)) || !(state->flags & DUALF_ONE_WINDOW))
 		return;
 
-	if (side >= 0 && side < LISTER_DUAL_SIDES && lister->cur_buffer)
+	if (lister->cur_buffer)
 	{
-		state->buffer[side] = lister->cur_buffer;
-		lister_dual_capture_side_offsets(lister, state, side);
-		lister_dual_capture_title_boxes(lister, state, side);
+		state->buffer[state->active] = lister->cur_buffer;
+		lister_dual_capture_side_offsets(lister, state, state->active);
+		lister_dual_capture_title_boxes(lister, state, state->active);
 	}
+	if (side >= 0 && side < LISTER_DUAL_SIDES)
+		state->active = side;
 
 	lister_dual_apply_panel(lister, state->active);
 }

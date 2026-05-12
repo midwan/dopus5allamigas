@@ -1024,6 +1024,7 @@ class DualListerStaticTests(unittest.TestCase):
             lister_dual_c,
             r"(?s)BOOL lister_dual_apply_side_temporary\(Lister \*lister, short side\).*"
             r"lister_dual_capture_active_buffer\(lister\);.*"
+            r"state->active = side;.*"
             r"lister_dual_apply_panel\(lister, side\);",
         )
         temporary_func = re.search(
@@ -1031,19 +1032,22 @@ class DualListerStaticTests(unittest.TestCase):
             r"\n}\n\nvoid lister_dual_restore_active",
             lister_dual_c,
         ).group(0)
-        self.assertNotIn("state->active = side;", temporary_func)
+        self.assertIn("state->active = side;", temporary_func)
         self.assertRegex(
             lister_dual_c,
             r"(?s)void lister_dual_restore_active\(Lister \*lister, short side\).*"
-            r"state->buffer\[side\] = lister->cur_buffer;.*"
-            r"lister_dual_capture_side_offsets\(lister, state, side\);.*"
+            r"state->buffer\[state->active\] = lister->cur_buffer;.*"
+            r"lister_dual_capture_side_offsets\(lister, state, state->active\);.*"
+            r"lister_dual_capture_title_boxes\(lister, state, state->active\);.*"
+            r"state->active = side;.*"
             r"lister_dual_apply_panel\(lister, state->active\);",
         )
         self.assertRegex(
             lister_proc_c,
             r"(?s)static short lister_proc_apply_side\(Lister \*\*lister, ULONG side, BOOL preserve_active\).*"
+            r"old_side = lister_dual_active_index\(\*lister\);.*"
             r"preserve_active && lister_dual_apply_side_temporary\(\*lister, side - 1\).*"
-            r"return side - 1;.*"
+            r"return old_side;.*"
             r"lister_dual_apply_side\(\*lister, side - 1\);.*"
             r"\*lister = lister_dual_active_side\(\*lister\);",
         )

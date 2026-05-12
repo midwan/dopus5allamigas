@@ -40,13 +40,16 @@ static void lister_launch_special_pair(Lister *lister, Cfg_Function *func)
 
 static short lister_proc_apply_side(Lister **lister, ULONG side, BOOL preserve_active)
 {
+	short old_side = -1;
+
 	if (!lister || !*lister)
 		return -1;
 
 	if (side > 0 && side <= LISTER_DUAL_SIDES)
 	{
+		old_side = lister_dual_active_index(*lister);
 		if (preserve_active && lister_dual_apply_side_temporary(*lister, side - 1))
-			return side - 1;
+			return old_side;
 		lister_dual_apply_side(*lister, side - 1);
 	}
 	else
