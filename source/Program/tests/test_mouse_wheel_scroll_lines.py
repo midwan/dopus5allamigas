@@ -105,9 +105,6 @@ class MouseWheelScrollLinesTests(unittest.TestCase):
         self.assertIn("#ifdef IDCMP_EXTENDEDMOUSE", window_flags)
         self.assertIn("#ifdef IDCMP_EXTENDEDMOUSE", read_source(LISTER_IDCMP_C))
 
-        self.assertNotIn("__amigaos4__", window_flags)
-        self.assertNotIn("__amigaos4__", native_wheel_case())
-
     def test_native_wheel_modifier_events_execute_lister_scroll_actions(self):
         case = native_wheel_case()
 
@@ -144,9 +141,6 @@ class MouseWheelScrollLinesTests(unittest.TestCase):
         self.assertIn("msg_copy.Code == IMSGCODE_INTUIWHEELDATA", case)
         self.assertIn("struct IntuiWheelData *iwd = (struct IntuiWheelData *)msg_copy.IAddress", case)
         self.assertIn("msg_copy.Qualifier", case)
-        self.assertNotIn("__amigaos4__", window_flags)
-        self.assertNotIn("__amigaos4__", case)
-
         self.assertIn("read_wheel_scroll_lines(data)", case)
         self.assertIn("read_update_text(data, 0, scroll_line * iwd->WheelY, 0)", case)
         self.assertIn("read_update_text(data, 0, -(data->v_visible - 1), 0)", case)

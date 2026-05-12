@@ -1632,46 +1632,46 @@ BOOL read_view(read_data *data)
 					}
 					break;
 #ifdef IDCMP_EXTENDEDMOUSE
-					// native mouse wheel support
-					case IDCMP_EXTENDEDMOUSE:
-						if (DOPUS_NATIVE_WHEEL_SUPPORTED() && msg_copy.Code == IMSGCODE_INTUIWHEELDATA &&
-							msg_copy.IAddress)
+				// native mouse wheel support
+				case IDCMP_EXTENDEDMOUSE:
+					if (DOPUS_NATIVE_WHEEL_SUPPORTED() && msg_copy.Code == IMSGCODE_INTUIWHEELDATA &&
+						msg_copy.IAddress)
+					{
+						struct IntuiWheelData *iwd = (struct IntuiWheelData *)msg_copy.IAddress;
+
+						if (iwd->WheelY < 0)
 						{
-							struct IntuiWheelData *iwd = (struct IntuiWheelData *)msg_copy.IAddress;
-
-							if (iwd->WheelY < 0)
+							if (data->top <= 0)
+								break;
+							if (msg_copy.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT))
+								read_update_text(data, 0, -(data->v_visible - 1), 0);
+							else if (msg_copy.Qualifier & IEQUALIFIER_CONTROL)
+								read_update_text(data, 0, -data->top, 0);
+							else
 							{
-								if (data->top <= 0)
-									break;
-								if (msg_copy.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT))
-									read_update_text(data, 0, -(data->v_visible - 1), 0);
-								else if (msg_copy.Qualifier & IEQUALIFIER_CONTROL)
-									read_update_text(data, 0, -data->top, 0);
-								else
-								{
-									long scroll_line = read_wheel_scroll_lines(data);
+								long scroll_line = read_wheel_scroll_lines(data);
 
-									read_update_text(data, 0, scroll_line * iwd->WheelY, 0);
-								}
-							}
-
-							else if (iwd->WheelY > 0)
-							{
-								if (data->top + data->v_visible >= data->lines)
-									break;
-								if (msg_copy.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT))
-									read_update_text(data, 0, data->v_visible - 1, 0);
-								else if (msg_copy.Qualifier & IEQUALIFIER_CONTROL)
-									read_update_text(data, 0, (data->lines - data->top) - data->v_visible, 0);
-								else
-								{
-									long scroll_line = read_wheel_scroll_lines(data);
-
-									read_update_text(data, 0, scroll_line * iwd->WheelY, 0);
-								}
+								read_update_text(data, 0, scroll_line * iwd->WheelY, 0);
 							}
 						}
-						break;
+
+						else if (iwd->WheelY > 0)
+						{
+							if (data->top + data->v_visible >= data->lines)
+								break;
+							if (msg_copy.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT))
+								read_update_text(data, 0, data->v_visible - 1, 0);
+							else if (msg_copy.Qualifier & IEQUALIFIER_CONTROL)
+								read_update_text(data, 0, (data->lines - data->top) - data->v_visible, 0);
+							else
+							{
+								long scroll_line = read_wheel_scroll_lines(data);
+
+								read_update_text(data, 0, scroll_line * iwd->WheelY, 0);
+							}
+						}
+					}
+					break;
 #endif
 
 				// Key press
