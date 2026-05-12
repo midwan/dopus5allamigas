@@ -25,6 +25,8 @@ For more information on Directory Opus for Windows please see:
 #include "config.h"
 #include <Program/dopus_config.h>
 #include "config_open.h"
+#include <stddef.h>
+#include <string.h>
 
 #ifndef __amigaos3__
 	#pragma pack(2)
@@ -180,7 +182,10 @@ Cfg_Lister *LIBFUNC L_ReadListerDef(REG(a0, struct _IFFHandle *iff), REG(d0, ULO
 			if (iff_file_id == ID_OPUS)
 			{
 				if (!convert_open_lister(iff, &lister->lister))
+				{
+					L_FreeListerDef(lister);
 					return NULL;
+				}
 			}
 			else
 				L_IFFReadChunkBytes(iff, &lister->lister, sizeof(CFG_LSTR));
@@ -1424,10 +1429,17 @@ BOOL LIBFUNC L_OpenEnvironment(REG(a0, char *name), REG(a1, struct OpenEnvironme
 			if (iff_file_id == ID_OPUS)
 			{
 				if (!convert_env(iff, &data->env))
+				{
+					L_IFFClose(iff);
+					iff_file_id = 0;
 					return 0;
+				}
 			}
 			else
+			{
+				memset(&data->env, 0, sizeof(data->env));
 				L_IFFReadChunkBytes(iff, &data->env, sizeof(CFG_ENVR));
+			}
 #ifdef __AROS__
 			{
 				int i;
@@ -1632,8 +1644,13 @@ BOOL LIBFUNC L_OpenEnvironment(REG(a0, char *name), REG(a1, struct OpenEnvironme
 				// Allocate entry
 				if ((sound = L_AllocMemH(data->memory, sizeof(Cfg_SoundEntry))))
 				{
+					ULONG sndbytes = L_IFFChunkSize(iff);
+					ULONG sndmax = (ULONG)(sizeof(Cfg_SoundEntry) - offsetof(Cfg_SoundEntry, dse_Name));
+
 					// Read data, add to list
-					L_IFFReadChunkBytes(iff, (char *)sound->dse_Name, L_IFFChunkSize(iff));
+					if (sndbytes > sndmax)
+						sndbytes = sndmax;
+					L_IFFReadChunkBytes(iff, (char *)sound->dse_Name, (long)sndbytes);
 
 #ifdef __AROS__
 					sound->dse_Volume = AROS_BE2WORD(sound->dse_Volume);
@@ -1853,7 +1870,7 @@ int convert_env(struct _IFFHandle *iff, CFG_ENVR *env)
 	env->settings.pri_main[0] = oldenv->settings.pri_main[0];
 	env->settings.pri_main[1] = oldenv->settings.pri_main[1];
 	env->settings.pri_lister[0] = oldenv->settings.pri_lister[0];
-	env->settings.pri_lister[0] = oldenv->settings.pri_lister[0];
+	env->settings.pri_lister[1] = oldenv->settings.pri_lister[1];
 	env->settings.flags = oldenv->settings.flags;
 	env->settings.pop_code = oldenv->settings.pop_code;
 	env->settings.pop_qual = oldenv->settings.pop_qual;
