@@ -3076,6 +3076,14 @@ The "{}" button allows the inclusion of parameters onto the command line of
 the instruction such as the filename of the highlighted file(s).  For
 built-in commands it also allows access to the command argument template.
 
+Source entries are inserted with {f} and {F} for selected entries with
+paths, or {o} and {O} for names only.  Destination lister selections can be
+used separately with {df} and {dF} for selected destination entries with
+paths, or {do} and {dO} for destination names only.  Add ! to make a source
+or destination entry optional, for example {df!}.  In Dual Lister mode the
+destination entry codes use the inactive panel, matching the destination
+directory used by {d}.
+
 The flags allow the custom commands to be implemented in a variety of
 different manners.
 

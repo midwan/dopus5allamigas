@@ -183,6 +183,12 @@ extern CommandList commandlist_internal[];
 #define FUNC_QUOTES 21
 #define FUNC_NO_QUOTES 22
 #define FUNC_NORMAL 23
+#define FUNC_DEST_LAST_FILE 24
+#define FUNC_DEST_LAST_PATH 25
+#define FUNC_DEST_ONE_FILE 26
+#define FUNC_DEST_ALL_FILES 27
+#define FUNC_DEST_ONE_PATH 28
+#define FUNC_DEST_ALL_PATHS 29
 
 // Function types
 enum {

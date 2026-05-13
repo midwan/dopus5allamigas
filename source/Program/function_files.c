@@ -66,6 +66,7 @@ LONG MatchNext64Plus(struct AnchorPath *panchor, ULONG blocksize)
 /*********************************************************/
 
 static int function_check_filter(FunctionHandle *handle);
+static FunctionEntry *function_new_entry_on_list(FunctionHandle *handle, struct List *list, char *name, BOOL icon);
 
 // Build entry list for a function
 int function_build_list(FunctionHandle *handle, PathNode **path, InstructionParsed *instruction)
@@ -673,13 +674,123 @@ int function_build_list(FunctionHandle *handle, PathNode **path, InstructionPars
 	return handle->entry_count;
 }
 
+// Build selected destination entries for argument expansion
+int function_build_dest_list(FunctionHandle *handle, PathNode **path, InstructionParsed *instruction)
+{
+	FunctionEntry *funcentry;
+	DirEntry *entry;
+	DirBuffer *buffer;
+
+	// Initialise the destination entry list
+	NewList(&handle->dest_entry_list);
+	handle->dest_entry_count = 0;
+	handle->dest_current_entry = 0;
+	handle->dest_entry_path = (path) ? *path : 0;
+
+	if (path && *path)
+		function_apply_path_side(*path);
+
+	// Do we need destination entries?
+	if (instruction && !(instruction->flags & (FUNCF_NEED_DEST_ENTRIES | FUNCF_WANT_DEST_ENTRIES)))
+		return 1;
+
+	// Need a real lister to get selected destination entries
+	if (!path || !*path || !(*path)->lister || !(buffer = (*path)->lister->cur_buffer))
+		return 0;
+
+	// Icon mode
+	if ((*path)->lister->flags & (LISTERF_VIEW_ICONS | LISTERF_ICON_ACTION))
+	{
+		BackdropObject *object;
+		BackdropInfo *info;
+
+		info = (*path)->lister->backdrop_info;
+		if (!info)
+			return 0;
+
+		lock_listlock(&info->objects, 0);
+		buffer_lock(buffer, FALSE);
+
+		for (object = (BackdropObject *)info->objects.list.lh_Head; object->node.ln_Succ;
+			 object = (BackdropObject *)object->node.ln_Succ)
+		{
+			short type;
+			BOOL icon_only = 0;
+
+			if (!object->state)
+				continue;
+
+			if ((entry = find_entry(&buffer->entry_list, object->name, 0, buffer->more_flags & DWF_CASE)) ||
+				(entry = find_entry(&buffer->reject_list, object->name, 0, buffer->more_flags & DWF_CASE)))
+			{
+				type = entry->de_Node.dn_Type;
+			}
+			else
+			{
+				type = (object->icon->do_Type == WBDRAWER || object->icon->do_Type == WBGARBAGE) ? ENTRY_DIRECTORY
+																								   : ENTRY_FILE;
+				icon_only = 1;
+			}
+
+			if ((funcentry = function_new_entry_on_list(handle, &handle->dest_entry_list, object->name, 0)))
+			{
+				funcentry->entry = (DirEntry *)object;
+				funcentry->type = type;
+				funcentry->flags = FUNCENTF_TOP_LEVEL | FUNCENTF_ICON_ACTION;
+				if (icon_only)
+					funcentry->flags |= FUNCENTF_ICON_ONLY;
+				if (object->flags & BDOF_LINK_ICON)
+					funcentry->flags |= FUNCENTF_LINK;
+				++handle->dest_entry_count;
+			}
+		}
+
+		buffer_unlock(buffer);
+		unlock_listlock(&info->objects);
+	}
+
+	// Normal file mode
+	else
+	{
+		buffer_lock(buffer, FALSE);
+
+		for (entry = (DirEntry *)buffer->entry_list.mlh_Head; entry->de_Node.dn_Succ;
+			 entry = (DirEntry *)entry->de_Node.dn_Succ)
+		{
+			if (!(entry->de_Flags & ENTF_SELECTED))
+				continue;
+
+			if ((funcentry = function_new_entry_on_list(handle, &handle->dest_entry_list, entry->de_Node.dn_Name, 0)))
+			{
+				funcentry->entry = entry;
+				funcentry->type = entry->de_Node.dn_Type;
+				funcentry->flags = FUNCENTF_TOP_LEVEL;
+				if (entry->de_Flags & ENTF_LINK)
+					funcentry->flags |= FUNCENTF_LINK;
+				++handle->dest_entry_count;
+			}
+		}
+
+		buffer_unlock(buffer);
+	}
+
+	handle->dest_current_entry = (FunctionEntry *)handle->dest_entry_list.lh_Head;
+	return handle->dest_entry_count;
+}
+
 // Add a new entry to a function entry list
 FunctionEntry *function_new_entry(FunctionHandle *handle, char *name, BOOL icon)
+{
+	return function_new_entry_on_list(handle, &handle->entry_list, name, icon);
+}
+
+static FunctionEntry *function_new_entry_on_list(FunctionHandle *handle, struct List *list, char *name, BOOL icon)
 {
 	FunctionEntry *entry;
 
 	// Allocate space for new entry and name
-	if (!name || !(entry = AllocMemH(handle->entry_memory, sizeof(FunctionEntry) + strlen(name) + ((icon) ? 6 : 1))))
+	if (!list || !name ||
+		!(entry = AllocMemH(handle->entry_memory, sizeof(FunctionEntry) + strlen(name) + ((icon) ? 6 : 1))))
 		return 0;
 
 	// Get name pointer and copy name
@@ -689,7 +800,7 @@ FunctionEntry *function_new_entry(FunctionHandle *handle, char *name, BOOL icon)
 		strcat(entry->name, ".info");
 
 	// Add to entry list
-	AddTail(&handle->entry_list, (struct Node *)entry);
+	AddTail(list, (struct Node *)entry);
 
 	// Return entry pointer
 	return entry;
@@ -722,6 +833,33 @@ FunctionEntry *function_next_entry(FunctionHandle *handle)
 	handle->current_entry = (FunctionEntry *)handle->current_entry->node.mln_Succ;
 
 	return entry;
+}
+
+// Get current destination entry
+FunctionEntry *function_current_dest_entry(FunctionHandle *handle)
+{
+	if (!handle->dest_current_entry || !handle->dest_current_entry->node.mln_Succ)
+		return 0;
+
+	return handle->dest_current_entry;
+}
+
+// Get the next destination entry for a function
+FunctionEntry *function_get_dest_entry(FunctionHandle *handle)
+{
+	return function_current_dest_entry(handle);
+}
+
+// Finished with a destination entry
+int function_end_dest_entry(FunctionHandle *handle, FunctionEntry *entry)
+{
+	if (!entry)
+		return 0;
+
+	if (entry == handle->dest_current_entry)
+		handle->dest_current_entry = (FunctionEntry *)handle->dest_current_entry->node.mln_Succ;
+
+	return 1;
 }
 
 // Get the next entry for a function

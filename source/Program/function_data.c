@@ -117,7 +117,7 @@ CommandList commandlist_internal[] = {
 	 FUNCF_ASK_PATH | FUNCF_NEED_ENTRIES | FUNCF_CAN_DO_ICONS | FUNCF_NEED_DEST | FUNCF_ASK_FILTER,
 	 function_copy,
 	 "NAME,NEWNAME,TO,QUIET/S,MOVEWHENSAME/S",
-	 "f0d2"},
+	 "f0a1d2"},
 
 	{{0, 0},
 	 FUNC_DATESTAMP,
@@ -175,7 +175,7 @@ CommandList commandlist_internal[] = {
 	 FUNCF_NEED_ENTRIES | FUNCF_CAN_DO_ICONS | FUNCF_ASK_FILTER,
 	 function_copy,
 	 "NAME,NEWNAME,QUIET/S",
-	 "f0"},
+	 "f0a1"},
 
 	{{0, 0}, FUNC_DISKCOPY, "Diskcopy", MSG_FUNC_DESC_DISKCOPY, 0, function_disk, 0, 0},
 
@@ -283,7 +283,7 @@ CommandList commandlist_internal[] = {
 	 FUNCF_ASK_PATH | FUNCF_NEED_ENTRIES | FUNCF_CAN_DO_ICONS | FUNCF_NEED_DEST | FUNCF_ASK_FILTER,
 	 function_copy,
 	 "NAME,NEWNAME,TO,QUIET/S",
-	 "f0d2"},
+	 "f0a1d2"},
 
 	{{0, 0},
 	 FUNC_MOVE,
@@ -301,7 +301,7 @@ CommandList commandlist_internal[] = {
 	 FUNCF_ASK_PATH | FUNCF_NEED_ENTRIES | FUNCF_CAN_DO_ICONS | FUNCF_NEED_DEST | FUNCF_SINGLE_DEST | FUNCF_ASK_FILTER,
 	 function_copy,
 	 "NAME,NEWNAME,TO,QUIET/S",
-	 "f0d2"},
+	 "f0a1d2"},
 
 	{{0, 0}, FUNC_NONE, "None", MSG_FUNC_DESC_NONE, FUNCF_NEED_SOURCE, function_none, 0, 0},
 
@@ -370,7 +370,7 @@ CommandList commandlist_internal[] = {
 	 FUNCF_NEED_ENTRIES | FUNCF_CAN_DO_ICONS,
 	 function_rename,
 	 "NAME,NEWNAME",
-	 "F0"},
+	 "F0a1"},
 
 	{{0, 0}, FUNC_RESELECT, "Reselect", MSG_FUNC_DESC_RESELECT, FUNCF_NEED_SOURCE, function_reselect, 0, 0},
 

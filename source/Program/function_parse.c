@@ -25,6 +25,8 @@ For more information on Directory Opus for Windows please see:
 
 #define MAXPARSEDEPTH 10
 
+static int function_prepare_dest_entries(FunctionHandle *handle, PathNode **dest_path, InstructionParsed *ins);
+
 // Parse a function
 int function_parse_function(FunctionHandle *handle)
 {
@@ -613,6 +615,240 @@ void function_parse_instruction(FunctionHandle *handle, char *string, unsigned c
 
 			// Destination directory
 			case 'd':
+				// Destination entry path/name
+				if (string[func_pos + 1] == 'f' || string[func_pos + 1] == 'F' || string[func_pos + 1] == 'o' ||
+					string[func_pos + 1] == 'O')
+				{
+					++func_pos;
+
+					// One destination file
+					if (string[func_pos] == 'o')
+					{
+						// Last file?
+						if (string[func_pos + 1] == 'u')
+						{
+							// Got a last file?
+							if (handle->func_flags & FUNCF_LAST_DEST_FILE_FLAG)
+								buffer[parse_pos] = FUNC_DEST_LAST_FILE;
+
+							// Current file
+							else
+							{
+								buffer[parse_pos] = FUNC_DEST_ONE_FILE;
+								handle->func_flags |= FUNCF_LAST_DEST_FILE_FLAG;
+
+								// Need or want?
+								if (string[func_pos + 2] == '!')
+								{
+									*flags |= FUNCF_WANT_DEST | FUNCF_WANT_DEST_ENTRIES;
+									++func_pos;
+								}
+								else
+									*flags |= FUNCF_NEED_DEST | FUNCF_NEED_DEST_ENTRIES;
+							}
+							++func_pos;
+						}
+
+						// Current file
+						else if (handle->func_flags & FUNCF_LAST_DEST_FILE_FLAG)
+						{
+							buffer[parse_pos] = FUNC_DEST_LAST_FILE;
+							handle->func_flags &= ~FUNCF_LAST_DEST_FILE_FLAG;
+						}
+						else
+						{
+							buffer[parse_pos] = FUNC_DEST_ONE_FILE;
+
+							// Need or want?
+							if (string[func_pos + 1] == '!')
+							{
+								*flags |= FUNCF_WANT_DEST | FUNCF_WANT_DEST_ENTRIES;
+								++func_pos;
+							}
+							else
+								*flags |= FUNCF_NEED_DEST | FUNCF_NEED_DEST_ENTRIES;
+						}
+
+						// Quotes?
+						if (string[func_pos + 1] == '`' || string[func_pos + 1] == '\'')
+						{
+							buffer[++parse_pos] = FUNC_QUOTES;
+							++func_pos;
+						}
+
+						// No quotes
+						else if (string[func_pos + 1] == '~')
+						{
+							buffer[++parse_pos] = FUNC_NO_QUOTES;
+							++func_pos;
+						}
+
+						// Normal
+						else
+						{
+							buffer[++parse_pos] = FUNC_NORMAL;
+						}
+
+						// Strip suffix?
+						if (string[func_pos + 1] == '-')
+						{
+							buffer[++parse_pos] = FUNC_STRIP_SUFFIX;
+							++func_pos;
+						}
+
+						++func_pos;
+						++parse_pos;
+						break;
+					}
+
+					// All destination files
+					if (string[func_pos] == 'O')
+					{
+						buffer[parse_pos++] = FUNC_DEST_ALL_FILES;
+						if (string[func_pos + 1] == '!')
+						{
+							*flags |= FUNCF_WANT_DEST | FUNCF_WANT_DEST_ENTRIES;
+							++func_pos;
+						}
+						else
+							*flags |= FUNCF_NEED_DEST | FUNCF_NEED_DEST_ENTRIES;
+
+						// Quotes?
+						if (string[func_pos + 1] == '`' || string[func_pos + 1] == '\'')
+						{
+							buffer[parse_pos++] = FUNC_QUOTES;
+							++func_pos;
+						}
+
+						// No quotes
+						else if (string[func_pos + 1] == '~')
+						{
+							buffer[parse_pos++] = FUNC_NO_QUOTES;
+							++func_pos;
+						}
+
+						// Normal
+						else
+						{
+							buffer[parse_pos++] = FUNC_NORMAL;
+						}
+						++func_pos;
+						break;
+					}
+
+					// One destination path
+					if (string[func_pos] == 'f')
+					{
+						// Last file?
+						if (string[func_pos + 1] == 'u')
+						{
+							// Got a last file?
+							if (handle->func_flags & FUNCF_LAST_DEST_FILE_FLAG)
+								buffer[parse_pos] = FUNC_DEST_LAST_PATH;
+
+							// Current file
+							else
+							{
+								buffer[parse_pos] = FUNC_DEST_ONE_PATH;
+								handle->func_flags |= FUNCF_LAST_DEST_FILE_FLAG;
+
+								// Need or want?
+								if (string[func_pos + 2] == '!')
+								{
+									*flags |= FUNCF_WANT_DEST | FUNCF_WANT_DEST_ENTRIES;
+									++func_pos;
+								}
+								else
+									*flags |= FUNCF_NEED_DEST | FUNCF_NEED_DEST_ENTRIES;
+							}
+							++func_pos;
+						}
+
+						// Current file
+						else if (handle->func_flags & FUNCF_LAST_DEST_FILE_FLAG)
+						{
+							buffer[parse_pos] = FUNC_DEST_LAST_PATH;
+							handle->func_flags &= ~FUNCF_LAST_DEST_FILE_FLAG;
+						}
+						else
+						{
+							buffer[parse_pos] = FUNC_DEST_ONE_PATH;
+
+							// Need or want?
+							if (string[func_pos + 1] == '!')
+							{
+								*flags |= FUNCF_WANT_DEST | FUNCF_WANT_DEST_ENTRIES;
+								++func_pos;
+							}
+							else
+								*flags |= FUNCF_NEED_DEST | FUNCF_NEED_DEST_ENTRIES;
+						}
+
+						// Quotes?
+						if (string[func_pos + 1] == '`' || string[func_pos + 1] == '\'')
+						{
+							buffer[++parse_pos] = FUNC_QUOTES;
+							++func_pos;
+						}
+
+						// No quotes
+						else if (string[func_pos + 1] == '~')
+						{
+							buffer[++parse_pos] = FUNC_NO_QUOTES;
+							++func_pos;
+						}
+
+						// Normal
+						else
+						{
+							buffer[++parse_pos] = FUNC_NORMAL;
+						}
+
+						// Strip suffix?
+						if (string[func_pos + 1] == '-')
+						{
+							buffer[++parse_pos] = FUNC_STRIP_SUFFIX;
+							++func_pos;
+						}
+
+						++func_pos;
+						++parse_pos;
+						break;
+					}
+
+					// All destination paths
+					buffer[parse_pos++] = FUNC_DEST_ALL_PATHS;
+					if (string[func_pos + 1] == '!')
+					{
+						*flags |= FUNCF_WANT_DEST | FUNCF_WANT_DEST_ENTRIES;
+						++func_pos;
+					}
+					else
+						*flags |= FUNCF_NEED_DEST | FUNCF_NEED_DEST_ENTRIES;
+
+					// Quotes?
+					if (string[func_pos + 1] == '`' || string[func_pos + 1] == '\'')
+					{
+						buffer[parse_pos++] = FUNC_QUOTES;
+						++func_pos;
+					}
+
+					// No quotes
+					else if (string[func_pos + 1] == '~')
+					{
+						buffer[parse_pos++] = FUNC_NO_QUOTES;
+						++func_pos;
+					}
+
+					// Normal
+					else
+					{
+						buffer[parse_pos++] = FUNC_NORMAL;
+					}
+					++func_pos;
+					break;
+				}
+
 				buffer[parse_pos++] = FUNC_DEST;
 				if (string[func_pos + 1] == '!')
 				{
@@ -642,6 +878,35 @@ void function_parse_instruction(FunctionHandle *handle, char *string, unsigned c
 	buffer[parse_pos] = 0;
 }
 
+static int function_prepare_dest_entries(FunctionHandle *handle, PathNode **dest_path, InstructionParsed *ins)
+{
+	PathNode *path;
+
+	path = function_path_current(&handle->dest_paths);
+	if (dest_path)
+		*dest_path = path;
+
+	if (!path)
+		return 0;
+
+	if (path->path)
+	{
+		strcpy(handle->dest_path, path->path);
+		if (handle->dest_path[0])
+			AddPart(handle->dest_path, "", 512);
+	}
+
+	if (handle->dest_entry_path != path)
+	{
+		if (function_build_dest_list(handle, &path, ins) == -1)
+			return -1;
+		if (dest_path)
+			*dest_path = path;
+	}
+
+	return handle->dest_entry_count;
+}
+
 // Build a function string with arguments and everything
 int function_build_instruction(FunctionHandle *handle,
 							   InstructionParsed *ins,
@@ -651,9 +916,9 @@ int function_build_instruction(FunctionHandle *handle,
 	short quote_extra = 0;
 	short pos, func_pos = 0, func_len;
 	Lister *source, *dest;
-	PathNode *path;
+	PathNode *source_path_node, *dest_path_node;
 	FunctionEntry *entry = 0;
-	short len, source_len, cont_flag = PARSE_END, max_len, limit;
+	short len, source_len, dest_len, cont_flag = PARSE_END, max_len, limit;
 	UBYTE ch;
 	BOOL okay;
 	BOOL quote_flag = 0, wb_func = 0;
@@ -683,6 +948,7 @@ int function_build_instruction(FunctionHandle *handle,
 
 	// Get length of source path and instruction string
 	source_len = strlen(handle->source_path);
+	dest_len = strlen(handle->dest_path);
 	func_len = strlen(instruction);
 
 	// Get cll limit
@@ -717,12 +983,12 @@ int function_build_instruction(FunctionHandle *handle,
 	quote_flag = 0;
 
 	// Get current paths
-	if (!(path = function_path_current(&handle->source_paths)) || !(source = path->lister))
+	if (!(source_path_node = function_path_current(&handle->source_paths)) || !(source = source_path_node->lister))
 	{
 		if (!(source = handle->source_lister))
 			source = handle->saved_source_lister;
 	}
-	if (!(path = function_path_current(&handle->dest_paths)) || !(dest = path->lister))
+	if (!(dest_path_node = function_path_current(&handle->dest_paths)) || !(dest = dest_path_node->lister))
 		dest = handle->dest_lister;
 
 	// Go through parsed function string
@@ -947,6 +1213,178 @@ int function_build_instruction(FunctionHandle *handle,
 			{
 				// No entries, and must have them?
 				if (ins->flags & FUNCF_NEED_ENTRIES)
+				{
+					cont_flag = PARSE_INVALID;
+					abort = 1;
+				}
+			}
+			break;
+
+		// Single destination pathname
+		case FUNC_DEST_ONE_PATH:
+			path_str = handle->dest_path;
+
+		// Single destination filename
+		case FUNC_DEST_ONE_FILE:
+
+			// Quotes?
+			++pos;
+			if (instruction[pos] == FUNC_QUOTES)
+				quote_value = 2;
+			else if (instruction[pos] == FUNC_NO_QUOTES)
+				quote_value = 0;
+			else
+				quote_value = quote_extra;
+
+			// Make sure destination entries are available
+			function_prepare_dest_entries(handle, &dest_path_node, ins);
+
+			// Get next destination entry to use
+			if ((entry = function_get_dest_entry(handle)))
+			{
+				// Are quotes ok?
+				if (quote_value && !quote_flag && (func_pos == 0 || function_buf[func_pos - 1] == ' '))
+				{
+					// Add a quote
+					function_buf[func_pos++] = '\"';
+					function_buf[func_pos] = 0;
+					quote_flag = 1;
+				}
+
+				// Add name to string
+				func_pos += function_add_filename(
+					function_buf, (entry->type != ENTRY_DEVICE) ? path_str : 0, entry->name, 1, 0);
+
+				// Store name
+				strcpy(handle->dest_last_filename, handle->dest_path);
+				AddPart(handle->dest_last_filename, entry->name, 512);
+
+				// Say we're done with this entry
+				function_end_dest_entry(handle, entry);
+			}
+
+			// No destination entries, and must have them?
+			else if (ins->flags & FUNCF_NEED_DEST_ENTRIES)
+				return PARSE_INVALID;
+			break;
+
+		// Last destination pathname
+		case FUNC_DEST_LAST_PATH:
+		case FUNC_DEST_LAST_FILE:
+
+			// Quotes?
+			++pos;
+			if (instruction[pos] == FUNC_QUOTES)
+				quote_value = 2;
+			else if (instruction[pos] == FUNC_NO_QUOTES)
+				quote_value = 0;
+			else
+				quote_value = quote_extra;
+
+			// Are quotes ok?
+			if (quote_value && !quote_flag && (func_pos == 0 || function_buf[func_pos - 1] == ' '))
+			{
+				// Add a quote
+				function_buf[func_pos++] = '\"';
+				function_buf[func_pos] = 0;
+				quote_flag = 1;
+			}
+
+			// Add filename
+			if (handle->dest_last_filename[0])
+			{
+				func_pos += function_add_filename(function_buf,
+												  (ch == FUNC_DEST_LAST_PATH)
+													  ? (char *)handle->dest_last_filename
+													  : (char *)FilePart(handle->dest_last_filename),
+												  0,
+												  1,
+												  0);
+			}
+			break;
+
+		// All selected destination paths
+		case FUNC_DEST_ALL_PATHS:
+			path_str = handle->dest_path;
+
+		// All selected destination files
+		case FUNC_DEST_ALL_FILES:
+
+			// Quotes?
+			++pos;
+			if (instruction[pos] == FUNC_QUOTES)
+				quote_value = 2;
+			else if (instruction[pos] == FUNC_NO_QUOTES)
+				quote_value = 0;
+			else
+				quote_value = quote_extra;
+
+			// Don't have cont flag set?
+			if (cont_flag)
+				break;
+
+			// Make sure destination entries are available
+			function_prepare_dest_entries(handle, &dest_path_node, ins);
+			dest_len = strlen(handle->dest_path);
+			if (ch == FUNC_DEST_ALL_PATHS)
+				path_len = dest_len;
+
+			// Get length of function string
+			len = strlen(function_buf);
+
+			// Loop until string is full or out of destination entries
+			okay = 0;
+			while (len < max_len)
+			{
+				// Get next destination entry to use
+				if ((entry = function_get_dest_entry(handle)))
+				{
+					BOOL first_space;
+
+					// Need a preceeding space?
+					first_space = okay;
+
+					// Set okay flag
+					okay = 1;
+
+					// See if this would fill the buffer
+					if ((len + strlen(entry->name) + path_len + quote_value) >= max_len)
+						break;
+
+					// Need a preceeding space?
+					if (first_space)
+					{
+						// Add space
+						StrConcat(function_buf, " ", max_len);
+						++len;
+					}
+
+					// Add name to function
+					len += function_add_filename(function_buf,
+												 (entry->type != ENTRY_DEVICE) ? path_str : 0,
+												 entry->name,
+												 (quote_value) ? 0 : FUNCF_NO_QUOTES,
+												 0);
+
+					// Done with this destination entry
+					function_end_dest_entry(handle, entry);
+				}
+				else
+					break;
+			}
+
+			// Get current length of function
+			func_pos = strlen(function_buf);
+
+			// More to do?
+			if (entry)
+				cont_flag = PARSE_MORE_FILES;
+
+			// Outafiles
+			else if (!okay)
+			{
+				// No destination entries, and must have them?
+				if (ins->flags & FUNCF_NEED_DEST_ENTRIES)
 				{
 					cont_flag = PARSE_INVALID;
 					abort = 1;
@@ -1318,8 +1756,13 @@ void function_parse_arguments(FunctionHandle *handle, InstructionParsed *ins)
 			// Got a string for this argument?
 			if (ins->funcargs->FA_ArgArray[arg])
 			{
-				// Parse argument
+				ULONG old_flags;
+
+				// Parse a single ReadArgs value without adding command-line quotes.
+				old_flags = handle->func_parameters.flags;
+				handle->func_parameters.flags |= FUNCF_NO_QUOTES;
 				function_build_instruction(handle, ins, (unsigned char *)ins->funcargs->FA_ArgArray[arg], buf);
+				handle->func_parameters.flags = old_flags;
 
 				// Has it changed?
 				if (strcmp((char *)ins->funcargs->FA_ArgArray[arg], buf))

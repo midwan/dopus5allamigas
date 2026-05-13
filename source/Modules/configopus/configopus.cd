@@ -1085,6 +1085,30 @@ MSG_FUNCED_ARGUMENT_26 (//)
 MSG_FUNCED_ARGUMENT_27 (//)
 {v}\tEnvironment variable
 ;
+MSG_FUNCED_ARGUMENT_28 (//)
+{df}\tFirst destination entry (with path)
+;
+MSG_FUNCED_ARGUMENT_29 (//)
+{dF}\tAll destination entries (with paths)
+;
+MSG_FUNCED_ARGUMENT_30 (//)
+{do}\tFirst destination entry (name only)
+;
+MSG_FUNCED_ARGUMENT_31 (//)
+{dO}\tAll destination entries (names only)
+;
+MSG_FUNCED_ARGUMENT_32 (//)
+{df!}\tAs {df} but not required
+;
+MSG_FUNCED_ARGUMENT_33 (//)
+{dF!}\tAs {dF} but not required
+;
+MSG_FUNCED_ARGUMENT_34 (//)
+{do!}\tAs {do} but not required
+;
+MSG_FUNCED_ARGUMENT_35 (//)
+{dO!}\tAs {dO} but not required
+;
 MSG_FUNCED_ARGUMENT_LAST (//)
 -
 ;

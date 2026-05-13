@@ -46,6 +46,7 @@ BOOL function_launch(ULONG command,
 	FunctionHandle *handle;
 	IPCData *ipc;
 	char *dual_dest_path = 0;
+	short dual_dest_side = -1;
 
 	// Allocate handle
 	if (!(handle = function_new_handle(0, 0)))
@@ -109,6 +110,8 @@ BOOL function_launch(ULONG command,
 		dual_dest_path[0])
 	{
 		dest_path = dual_dest_path;
+		dest_list = source_list;
+		dual_dest_side = lister_dual_dest_index(source_list);
 	}
 
 	// Destination path
@@ -151,6 +154,13 @@ BOOL function_launch(ULONG command,
 		// Add destination path
 		if ((path = function_add_path(handle, &handle->dest_paths, handle->dest_lister, handle->dest_path)))
 		{
+			// Dual lister destination paths target the inactive panel.
+			if (dual_dest_side >= 0)
+			{
+				path->dual_side = dual_dest_side;
+				path->flags |= LISTNF_DUAL_SIDE;
+			}
+
 			// Is this a drag'n'drop to a lister?
 			if (handle->dest_lister && (data == FTTYPE_DRAG_DROP || data == FTTYPE_SHIFT_DRAGDROP ||
 										data == FTTYPE_CTRL_DRAGDROP || data == FTTYPE_ALT_DRAGDROP))
@@ -274,10 +284,15 @@ void function_handle_init(FunctionHandle *handle, BOOL clear)
 
 	// Initialise lists
 	NewList(&handle->entry_list);
+	NewList(&handle->dest_entry_list);
 	NewList((struct List *)&handle->func_instructions);
 	NewList(&handle->func_arguments);
 	NewList(&handle->recurse_list);
 	handle->current_entry = 0;
+	handle->dest_current_entry = 0;
+	handle->dest_entry_count = 0;
+	handle->dest_entry_path = 0;
+	handle->dest_last_filename[0] = 0;
 	NewList(&handle->filechange);
 
 	// Script file stuff
@@ -643,44 +658,53 @@ BOOL function_lock_paths(FunctionHandle *handle, PathList *list, int locker)
 
 				node->lister = lister;
 
-				// Make lister busy
-				IPC_Command(node->lister->ipc, LISTER_BUSY, 0, (APTR)1, 0, handle->reply_port);
-
-				// Unlock lister list
-				unlock_listlock(&GUI->lister_list);
-
-				// Wait for a reply
-				WaitPort(handle->reply_port);
-				msg = (IPCMessage *)GetMsg(handle->reply_port);
-
-				// Ok to use lister?
-				if (msg->command != IPC_ABORT)
+				// Already locked through another path node in this function.
+				if ((lister->flags & LISTERF_BUSY) && lister->locker_ipc == handle->ipc)
 				{
-					// Set lister locker
-					if (locker)
-					{
-						IPC_Command(node->lister->ipc, LISTER_SET_LOCKER, 0, handle->ipc, 0, REPLY_NO_PORT);
-					}
-
-					// Set lock flag
-					node->flags |= LISTNF_LOCKED;
+					node->flags |= LISTNF_LOCKED | LISTNF_SHARED_LOCK;
 				}
 
-				// Don't use lister
+				// Make lister busy
 				else
 				{
-					node->lister = 0;
-					result = 0;
+					IPC_Command(node->lister->ipc, LISTER_BUSY, 0, (APTR)1, 0, handle->reply_port);
+
+					// Unlock lister list
+					unlock_listlock(&GUI->lister_list);
+
+					// Wait for a reply
+					WaitPort(handle->reply_port);
+					msg = (IPCMessage *)GetMsg(handle->reply_port);
+
+					// Ok to use lister?
+					if (msg->command != IPC_ABORT)
+					{
+						// Set lister locker
+						if (locker)
+						{
+							IPC_Command(node->lister->ipc, LISTER_SET_LOCKER, 0, handle->ipc, 0, REPLY_NO_PORT);
+						}
+
+						// Set lock flag
+						node->flags |= LISTNF_LOCKED;
+					}
+
+					// Don't use lister
+					else
+					{
+						node->lister = 0;
+						result = 0;
+					}
+
+					// Free reply
+					IPC_Reply(msg);
+
+					// Lock lister list again
+					lock_listlock(&GUI->lister_list, FALSE);
+
+					// Start again from start of list
+					next = (PathNode *)list->list.mlh_Head;
 				}
-
-				// Free reply
-				IPC_Reply(msg);
-
-				// Lock lister list again
-				lock_listlock(&GUI->lister_list, FALSE);
-
-				// Start again from start of list
-				next = (PathNode *)list->list.mlh_Head;
 			}
 		}
 
@@ -736,17 +760,22 @@ void function_unlock_paths(FunctionHandle *handle, PathList *list, int locker)
 			{
 				ULONG ref;
 				ULONG side;
+				BOOL shared;
 
 				// Clear lock flag
-				node->flags &= ~LISTNF_LOCKED;
+				shared = (node->flags & LISTNF_SHARED_LOCK) ? TRUE : FALSE;
+				node->flags &= ~(LISTNF_LOCKED | LISTNF_SHARED_LOCK);
 				side = (node->flags & LISTNF_DUAL_SIDE) ? node->dual_side + 1 : 0;
 
-				// Clear locker
-				if (locker)
-					IPC_Command(node->lister->ipc, LISTER_SET_LOCKER, 0, 0, 0, REPLY_NO_PORT);
+				if (!shared)
+				{
+					// Clear locker
+					if (locker)
+						IPC_Command(node->lister->ipc, LISTER_SET_LOCKER, 0, 0, 0, REPLY_NO_PORT);
 
-				// Clear busy
-				IPC_Command(node->lister->ipc, LISTER_BUSY, 0, (APTR)0, 0, (locker) ? REPLY_NO_PORT : 0);
+					// Clear busy
+					IPC_Command(node->lister->ipc, LISTER_BUSY, 0, (APTR)0, 0, (locker) ? REPLY_NO_PORT : 0);
+				}
 
 				// Allowed to refresh?
 				if (!(node->flags & LISTNF_NO_REFRESH))
