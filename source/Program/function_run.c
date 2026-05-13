@@ -270,6 +270,9 @@ static int function_run_instruction(FunctionHandle *handle, InstructionParsed *i
 	// Save instruction
 	handle->cur_instruction = instruction;
 
+	// Destination selections are snapshotted per instruction.
+	handle->dest_entry_path = 0;
+
 	// Is the instruction an internal function?
 	if (instruction->type == INST_COMMAND)
 	{
@@ -287,7 +290,7 @@ static int function_run_instruction(FunctionHandle *handle, InstructionParsed *i
 		else
 		{
 			char *args;
-			short limit;
+			short limit, parse_ret;
 
 			// Get cll limit
 			if ((limit = environment->env->settings.command_line_length) < 256)
@@ -299,8 +302,18 @@ static int function_run_instruction(FunctionHandle *handle, InstructionParsed *i
 				ret = 0;
 
 				// Build function string
-				if ((function_build_instruction(handle, instruction, 0, args)) != PARSE_ABORT)
+				if (instruction->string && instruction->string[0])
+					parse_ret = function_build_instruction(handle, instruction, 0, args);
+				else
 				{
+					args[0] = 0;
+					parse_ret = PARSE_OK;
+				}
+
+				if (parse_ret >= PARSE_OK)
+				{
+					handle->dest_entry_path = 0;
+
 					// Check arguments
 					function_parse_arguments(handle, instruction);
 

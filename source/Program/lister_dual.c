@@ -2118,6 +2118,17 @@ char *lister_dual_dest_path(Lister *lister)
 	return 0;
 }
 
+// Return the inactive panel index for dual command destinations
+short lister_dual_dest_index(Lister *lister)
+{
+	ListerDualState *state;
+
+	if ((state = lister_dual_get_state(lister)) && state->flags & DUALF_ONE_WINDOW)
+		return lister_dual_other_side(state->active);
+
+	return -1;
+}
+
 // Return the selected side for commands that are shared by both dual sides
 Lister *lister_dual_active_side(Lister *lister)
 {

@@ -644,6 +644,7 @@ void lister_dual_suppress_popup_front(Lister *lister);
 BOOL lister_dual_consume_popup_front(Lister *lister);
 void lister_dual_activate_other(Lister *lister);
 char *lister_dual_dest_path(Lister *lister);
+short lister_dual_dest_index(Lister *lister);
 BOOL lister_dual_update_pathfields(Lister *lister);
 BOOL lister_dual_disable_pathfields(Lister *lister, short disable);
 BOOL lister_dual_handle_path_gadget(Lister *lister, struct Gadget *gadget);

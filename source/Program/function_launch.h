@@ -124,6 +124,7 @@ typedef struct _PathNode
 #define LISTNF_RESCAN (1 << 6)		  // Rescan this list
 #define LISTNF_NO_REFRESH (1 << 7)	  // Don't refresh this lister
 #define LISTNF_DUAL_SIDE (1 << 8)	  // Lister path is tied to a dual panel
+#define LISTNF_SHARED_LOCK (1 << 9)	  // Lister busy lock is owned by another path node
 
 #ifndef __amigaos3__
 	#pragma pack(2)
@@ -230,6 +231,11 @@ typedef struct _FunctionHandle
 	FunctionEntry *current_entry;  // Current entry
 	FunctionEntry *use_entry;	   // Entry to use
 
+	int dest_entry_count;				 // Total number of destination entries
+	struct List dest_entry_list;			 // Destination entries to use as arguments
+	FunctionEntry *dest_current_entry;	 // Current destination entry
+	PathNode *dest_entry_path;			 // Path used to build destination entries
+
 	int arg_count;			// Argument count
 	struct ArgArray *args;	// Arguments
 	ULONG result;			// Result code
@@ -289,6 +295,7 @@ typedef struct _FunctionHandle
 	struct FileInfoBlock recurse_info;	// Info on last recursed entry
 
 	char last_filename[512];  // Last filename used
+	char dest_last_filename[512];  // Last destination filename used
 
 	APTR script_file;		// External script file
 	char script_name[80];	// Script file name
@@ -374,9 +381,12 @@ typedef struct _FunctionReturn
 #define FUNCF_NEED_DIRS (1 << 3)	// Needs some files to work with
 #define FUNCF_NEED_ENTRIES (FUNCF_NEED_FILES | FUNCF_NEED_DIRS)
 #define FUNCF_SCRIPT_OVERRIDE (1 << 4)	// Can be overridden by a script
+#define FUNCF_NEED_DEST_ENTRIES (1 << 5)  // Needs selected destination entries
 #define FUNCF_CAN_DO_ICONS (1 << 6)		// Function can do icons
+#define FUNCF_LAST_DEST_FILE_FLAG (1 << 7)  // Still using last destination file
 #define FUNCF_SINGLE_SOURCE (1 << 8)	// Only a single source needed
 #define FUNCF_SINGLE_DEST (1 << 9)		// Only a single destination needed
+#define FUNCF_WANT_DEST_ENTRIES (1 << 10)  // Want destination entries
 
 #define FUNCF_WANT_DEST (1 << 11)		   // Want destinations, don't need them
 #define FUNCF_WANT_SOURCE (1 << 12)		   // Want source, don't need it
@@ -462,9 +472,13 @@ BOOL function_lock_paths(FunctionHandle *handle, PathList *, int);
 void function_unlock_paths(FunctionHandle *handle, PathList *, int);
 
 int function_build_list(FunctionHandle *function, PathNode **, InstructionParsed *);
+int function_build_dest_list(FunctionHandle *function, PathNode **, InstructionParsed *);
 FunctionEntry *function_new_entry(FunctionHandle *, char *, BOOL);
 FunctionEntry *function_current_entry(FunctionHandle *handle);
 FunctionEntry *function_next_entry(FunctionHandle *handle);
+FunctionEntry *function_current_dest_entry(FunctionHandle *handle);
+FunctionEntry *function_get_dest_entry(FunctionHandle *handle);
+int function_end_dest_entry(FunctionHandle *, FunctionEntry *);
 void function_files_from_args(FunctionHandle *handle);
 char *function_build_file_string(FunctionHandle *handle, short);
 
