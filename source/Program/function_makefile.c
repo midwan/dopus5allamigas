@@ -34,7 +34,7 @@ DOPUS_FUNC(function_makefile)
 {
 	char *file_path, *file_name;
 	PathNode *path;
-	short ret = 1, ask_flag = 1, lister_flag = 1, icon_flag = 1, def_icon = 0, select = 0;
+	short ret = 1, ask_flag = 1, lister_flag = 1, icon_flag = 0, def_icon = 0, select = 0;
 	FileChange *change;
 
 	// Allocate buffer for file path
@@ -49,6 +49,7 @@ DOPUS_FUNC(function_makefile)
 	if (GUI->flags & GUIF_SAVE_ICONS || handle->flags & FUNCF_ICONS ||
 		(path && path->lister && path->lister->flags & LISTERF_VIEW_ICONS))
 		def_icon = 1;
+	icon_flag = def_icon;
 
 	// Parsed arguments?
 	if (instruction->funcargs)
@@ -134,9 +135,8 @@ DOPUS_FUNC(function_makefile)
 			strcpy(file_path, handle->source_path);
 			AddPart(file_path, file_name, 512);
 
-			// No icon?
-			if (def_icon == ret - 1)
-				icon_flag = 0;
+			// Icon?
+			icon_flag = (def_icon != ret - 1);
 		}
 
 		// If we want an icon, check name isn't too long
