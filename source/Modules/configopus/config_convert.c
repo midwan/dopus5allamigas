@@ -248,6 +248,8 @@ short convert_config(ConfigStuff *cstuff, short convert, char *basename)
 			env->devices_col[1] = oldconfig->filesbg;
 			env->volumes_col[0] = oldconfig->dirsfg;
 			env->volumes_col[1] = oldconfig->dirsbg;
+			env->tooltip_col[0] = 1;
+			env->tooltip_col[1] = 0;
 
 			if (oldconfig->screenmode == MODE_WORKBENCHUSE)
 				env->screen_mode = MODE_WORKBENCHCLONE;

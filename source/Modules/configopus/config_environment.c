@@ -190,6 +190,7 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 			Att_NewNode(data->lister_items, GetString(locale, a), a, 0);
 		}
 		Att_NewNode(data->lister_items, GetString(locale, MSG_ENVIRONMENT_GAUGE_COLOUR), a, 0);
+		Att_NewNode(data->lister_items, GetString(locale, MSG_ENVIRONMENT_TOOLTIP_COLOUR), a + 1, 0);
 	}
 
 	// Build icon settings list
@@ -591,6 +592,8 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 							ptr = data->config->volumes_col;
 						else if (a == 8)
 							ptr = data->config->gauge_col;
+						else if (a == ENVCOL_TOOLTIP)
+							ptr = data->config->tooltip_col;
 						else
 							break;
 
@@ -1265,7 +1268,8 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 					data->config->dest_col[a] != env->env->dest_col[a] ||
 					data->config->devices_col[a] != env->env->devices_col[a] ||
 					data->config->volumes_col[a] != env->env->volumes_col[a] ||
-					data->config->gauge_col[a] != env->env->gauge_col[a])
+					data->config->gauge_col[a] != env->env->gauge_col[a] ||
+					data->config->tooltip_col[a] != env->env->tooltip_col[a])
 				{
 					change_flags[0] |= CONFIG_CHANGE_LIST_DISPLAY;
 					break;
