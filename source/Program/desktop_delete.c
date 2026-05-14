@@ -25,7 +25,7 @@ For more information on Directory Opus for Windows please see:
 
 void desktop_delete(IPCData *ipc, BackdropInfo *info, BackdropObject *only_one)
 {
-	short groupcount = 0, filecount = 0, assigncount = 0, othercount = 0, dircount = 0;
+	short groupcount = 0, filecount = 0, assigncount = 0, othercount = 0, dircount = 0, commandcount = 0;
 	BackdropObject *object = 0;
 	Att_List *list;
 	Att_Node *node;
@@ -60,6 +60,11 @@ void desktop_delete(IPCData *ipc, BackdropInfo *info, BackdropObject *only_one)
 			if (object->icon->do_Type == WBDRAWER)
 				++dircount;
 		}
+
+		// Command left-out?
+		else if (object->type == BDO_LEFT_OUT && info->flags & BDIF_MAIN_DESKTOP &&
+				 !(object->flags & BDOF_TEMP_LEFTOUT) && command_filetype_match(object))
+			++commandcount;
 
 		// Something else
 		else
@@ -104,19 +109,20 @@ void desktop_delete(IPCData *ipc, BackdropInfo *info, BackdropObject *only_one)
 		strcat(info->buffer, buf);
 	}
 
-	// Desktop objects?
-	if (othercount > 0)
+	// Desktop objects or command left-outs?
+	if (othercount > 0 || commandcount > 0)
 	{
 		BOOL cr = 0;
+		short total_files = commandcount + othercount - dircount;
 
 		// Add CR?
 		if (groupcount > 0 || assigncount > 0 || filecount > 0)
 			cr = 1;
 
 		// Add files
-		if (othercount > dircount)
+		if (total_files > 0)
 		{
-			lsprintf(buf, GetString(&locale, MSG_DESKTOP_DELETE_DESKTOP_FILES), othercount - dircount);
+			lsprintf(buf, GetString(&locale, MSG_DESKTOP_DELETE_DESKTOP_FILES), total_files);
 			if (cr)
 				strcat(info->buffer, "\n");
 			strcat(info->buffer, buf);
@@ -191,6 +197,39 @@ void desktop_delete(IPCData *ipc, BackdropInfo *info, BackdropObject *only_one)
 					{
 						// Erase object
 						backdrop_erase_icon(info, object, 0);
+
+						// Remove object
+						backdrop_remove_object(info, object);
+					}
+				}
+
+				// Command left-out?
+				else if (object->type == BDO_LEFT_OUT && info->flags & BDIF_MAIN_DESKTOP &&
+						 !(object->flags & BDOF_TEMP_LEFTOUT) && command_filetype_match(object))
+				{
+					char path[256];
+
+					// Get full path
+					stccpy(path, object->path, sizeof(path));
+					AddPart(path, object->name, sizeof(path));
+
+					// Delete command file, or clean up an orphaned left-out
+					if (DeleteFile(path) || IoErr() == ERROR_OBJECT_NOT_FOUND)
+					{
+						// Delete icon if present
+						DeleteDiskObject(path);
+
+						// Remove command from the command list
+						command_remove(object->name);
+
+						// Erase object
+						backdrop_erase_icon(info, object, 0);
+
+						// Remove left-out record
+						lock_listlock(&GUI->positions, TRUE);
+						if (backdrop_remove_leftout(object))
+							SavePositions(&GUI->positions.list, GUI->position_name);
+						unlock_listlock(&GUI->positions);
 
 						// Remove object
 						backdrop_remove_object(info, object);

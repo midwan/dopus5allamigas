@@ -76,6 +76,7 @@ void command_expunge(char *name);
 CommandList *add_command(char *, char *, char *, char *, ULONG, char *, Att_List *, char *, ULONG);
 void command_new(BackdropInfo *, IPCData *, char *);
 void command_remove(char *);
+BOOL command_filetype_match(BackdropObject *);
 
 // event_loop.c
 void event_loop(void);
