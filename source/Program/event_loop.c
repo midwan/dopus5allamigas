@@ -1643,6 +1643,21 @@ BOOL menu_process_event(IPTR id, struct MenuItem *item, struct Window *window)
 						0,
 						0);
 		break;
+
+	// Create a file on the desktop
+	case MENU_ICON_MAKEFILE:
+		function_launch(FUNCTION_RUN_FUNCTION,
+						def_function_makefile,
+						0,
+						FUNCF_ICONS | FUNCF_RESCAN_DESKTOP,
+						0,
+						0,
+						environment->env->desktop_location,
+						0,
+						0,
+						0,
+						0);
+		break;
 	}
 
 	return 0;

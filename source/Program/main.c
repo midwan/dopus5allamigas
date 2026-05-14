@@ -1166,6 +1166,7 @@ void startup_init_commands()
 	def_function_delete = new_default_function("delete", global_memory_pool);
 	def_function_delete_quiet = new_default_function("delete quiet", global_memory_pool);
 	def_function_makedir = new_default_function("makedir", global_memory_pool);
+	def_function_makefile = new_default_function("makefile", global_memory_pool);
 	def_function_copy = new_default_function("copy", global_memory_pool);
 	def_function_move = new_default_function("move", global_memory_pool);
 	def_function_assign = new_default_function("assign", global_memory_pool);

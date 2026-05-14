@@ -119,6 +119,7 @@ COMMON_OBJS =	data.o \
 	function_copy.o \
 	function_delete.o \
 	function_makedir.o \
+	function_makefile.o \
 	function_rename.o \
 	function_stopsniff.o \
 	function_select.o function_select_data.o \

@@ -799,6 +799,21 @@ int lister_do_function(Lister *lister, IPTR func)
 						0);
 		break;
 
+	// Makefile
+	case MENU_ICON_MAKEFILE:
+		function_launch(FUNCTION_RUN_FUNCTION,
+						def_function_makefile,
+						0,
+						(lister->flags & LISTERF_VIEW_ICONS) ? FUNCF_ICONS : 0,
+						lister,
+						0,
+						lister->cur_buffer->buf_Path,
+						0,
+						0,
+						0,
+						0);
+		break;
+
 	// Open parent
 	case MENU_OPEN_PARENT:
 

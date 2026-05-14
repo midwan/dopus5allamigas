@@ -121,6 +121,7 @@ enum {
 	FUNC_RESET,
 	FUNC_LOADFONTS,
 	FUNC_STOPSNIFF,
+	FUNC_MAKEFILE,
 };
 
 #ifndef __amigaos3__

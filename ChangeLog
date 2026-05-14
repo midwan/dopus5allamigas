@@ -73,6 +73,9 @@ File Type editor:
   cancel (issue #48).
 
 Backdrop / icon mode:
+- New `MakeFile` internal command and Icons/New -> File... menu entry
+  create empty files with optional project icons and lister selection
+  support (issue #79).
 - Sort-by-type honours Workbench order (DIRS, TOOLS, PROJECTS);
   icon-less entries no longer jumped ahead of typed icons (issue
   #26).

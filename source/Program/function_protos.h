@@ -34,6 +34,7 @@ DOPUS_FUNC(function_copy);
 DOPUS_FUNC(function_copy);
 DOPUS_FUNC(function_delete);
 DOPUS_FUNC(function_makedir);
+DOPUS_FUNC(function_makefile);
 DOPUS_FUNC(function_select);
 DOPUS_FUNC(function_devicelist);
 DOPUS_FUNC(function_change);

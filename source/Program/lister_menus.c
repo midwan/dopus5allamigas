@@ -164,6 +164,12 @@ void lister_fix_menus(Lister *lister, BOOL sel_only)
 			off_item(item, busy);
 		}
 
+		// New file (disabled when busy)
+		if ((item = find_menu_item(menu, MENU_ICON_MAKEFILE)))
+		{
+			off_item(item, busy);
+		}
+
 		// Snapshot (disabled when busy)
 		if ((item = find_menu_item(menu, MENU_ICON_SNAPSHOT)))
 		{
