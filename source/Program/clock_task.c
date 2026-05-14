@@ -47,7 +47,19 @@ struct ClockTitleBarMetrics
 
 static struct ClockTitleBarMetrics clock_titlebar_metrics = {0, 0, 0, 0};
 
-static void clock_titlebar_set_metrics(struct Screen *screen, struct RastPort *rp)
+#ifdef __amigaos3__
+#ifndef BARCONTOURPEN
+#define BARCONTOURPEN (0x000C)
+#endif
+
+static BOOL clock_titlebar_has_contour_pen(struct DrawInfo *drawinfo)
+{
+	return drawinfo && drawinfo->dri_Pens && drawinfo->dri_NumPens > BARCONTOURPEN &&
+		   drawinfo->dri_Pens[BARCONTOURPEN] != drawinfo->dri_Pens[BARBLOCKPEN];
+}
+#endif
+
+static void clock_titlebar_set_metrics(struct Screen *screen, struct RastPort *rp, struct DrawInfo *drawinfo)
 {
 	short height = rp->TxHeight + 2;
 	short text_y = rp->TxBaseline + 1;
@@ -67,6 +79,9 @@ static void clock_titlebar_set_metrics(struct Screen *screen, struct RastPort *r
 			fill_bottom = fill_top + rp->TxHeight - 1;
 		}
 	}
+
+	if (clock_titlebar_has_contour_pen(drawinfo) && fill_top == 0)
+		fill_top = 1;
 #endif
 
 	clock_titlebar_metrics.height = height;
@@ -225,12 +240,12 @@ IPC_EntryCode(clock_proc)
 										drawinfo->dri_Pens[(drawinfo->dri_Version >= 2) ? BARBLOCKPEN : BLOCKPEN]);
 								SetDrMd(&clock_rp, JAM2);
 
+#ifndef USE_SCREENTITLE
+								clock_titlebar_set_metrics(screen, &clock_rp, drawinfo);
+#endif
+
 								// Free draw info
 								FreeScreenDrawInfo(screen, drawinfo);
-
-#ifndef USE_SCREENTITLE
-								clock_titlebar_set_metrics(screen, &clock_rp);
-#endif
 
 								// Get position to render clock
 								bar_x = screen->Width - 16;

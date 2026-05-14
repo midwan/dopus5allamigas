@@ -19,7 +19,10 @@ class ScreenTitleBarOffsetTests(unittest.TestCase):
         source = read_source(CLOCK_TASK_C)
 
         self.assertIn("struct ClockTitleBarMetrics", source)
-        self.assertIn("clock_titlebar_set_metrics(struct Screen *screen, struct RastPort *rp)", source)
+        self.assertIn(
+            "clock_titlebar_set_metrics(struct Screen *screen, struct RastPort *rp, struct DrawInfo *drawinfo)",
+            source,
+        )
         self.assertIn("((struct Library *)IntuitionBase)->lib_Version >= 47", source)
         self.assertIn("height = screen->BarHeight + 1", source)
         self.assertIn("fill_top = (height - rp->TxHeight) >> 1", source)
@@ -30,7 +33,7 @@ class ScreenTitleBarOffsetTests(unittest.TestCase):
         source = read_source(CLOCK_TASK_C)
 
         self.assertIn("struct ClockTitleBarMetrics clock_titlebar_metrics", source)
-        self.assertIn("clock_titlebar_set_metrics(screen, &clock_rp)", source)
+        self.assertIn("clock_titlebar_set_metrics(screen, &clock_rp, drawinfo)", source)
         self.assertIn("clock_titlebar_metrics.height = height", source)
         self.assertIn("clock_titlebar_metrics.text_y = text_y", source)
         self.assertIn("clock_titlebar_metrics.fill_top = fill_top", source)
@@ -72,6 +75,20 @@ class ScreenTitleBarOffsetTests(unittest.TestCase):
         centering_check = source.index("if (height > rp->TxHeight)", height_from_screen)
 
         self.assertLess(trim_preserve, centering_check)
+
+    def test_os3_visualprefs_contour_preserves_top_row(self):
+        source = read_source(CLOCK_TASK_C)
+
+        self.assertIn("clock_titlebar_has_contour_pen(struct DrawInfo *drawinfo)", source)
+        self.assertIn("drawinfo->dri_NumPens > BARCONTOURPEN", source)
+        self.assertIn("drawinfo->dri_Pens[BARCONTOURPEN] != drawinfo->dri_Pens[BARBLOCKPEN]", source)
+        self.assertIn("if (clock_titlebar_has_contour_pen(drawinfo) && fill_top == 0)", source)
+        self.assertIn("fill_top = 1", source)
+
+        metrics_call = source.index("clock_titlebar_set_metrics(screen, &clock_rp, drawinfo)")
+        free_drawinfo = source.index("FreeScreenDrawInfo(screen, drawinfo)", metrics_call)
+
+        self.assertLess(metrics_call, free_drawinfo)
 
     def test_titlebar_render_functions_do_not_recompute_screen_metrics(self):
         source = read_source(CLOCK_TASK_C)
