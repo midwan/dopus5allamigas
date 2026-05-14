@@ -157,7 +157,8 @@ that item and then press the help key before selecting it.
   @{" Opus, About                    " link "Project - About"}  @{" Opus, Backdrop                 " link "Project - Backdrop"}
   @{" Opus, Execute Command          " link "Project - Execute Command"}  @{" Opus, Help                     " link "Project - Help"}
   @{" Opus, Hide                     " link "Project - Hide"}  @{" Opus, KeyFinder                " link "Project - KeyFinder"}
-  @{" Opus, Quit                     " link "Project - Quit"}  @{" Parent                         " link "Parent"}
+  @{" Opus, NewShell                 " link "Project - NewShell"}  @{" Opus, Quit                     " link "Project - Quit"}
+  @{" Parent                         " link "Parent"}
   @{" PathHistory                    " link "PathHistory"}
   @{" Play                           " link "Play"}  @{" Print                          " link "Print"}
   @{" Print Requester                " link "Print Requester"}  @{" PrintDir                       " link "PrintDir"}
@@ -2177,6 +2178,15 @@ The CLI button causes a new @{" Opus Command Line Interface " link "CLI"} to be 
 
 This requester has a history of the last 20 commands you have entered.  Use
 the cursor up / cursor down keys to move through the history.
+
+@endnode
+
+@node "Project - NewShell" "Menu Opus - NewShell"
+ Menu Opus - NewShell
+
+NewShell opens a new AmigaDOS Shell window using the window position, size,
+device and stack settings from the Environment editor's CLI Launching
+section.
 
 @endnode
 
@@ -5012,6 +5022,7 @@ Name Mode Pop-up                  5.5 - 80
 Network Timeout                                                5.8 - 100
 Newer - Copy Command                                           5.8 - 62
 NewIcons                                                       5.8 - 4, 23, 36, 43
+NewShell
 Noscreentofront                                                5.8 - 10
 Notes                                                          5.8 - 109
 @endnode

@@ -20,6 +20,8 @@ Lister UI:
   window, each with its own path field, scrollbar state, title fields and
   close/menu controls; the active panel is the source and the inactive
   panel supplies the default destination path.
+- Opus menu now offers `NewShell...`, opening an AmigaDOS Shell with the
+  configured CLI Launching window/device/stack settings (issue #104).
 - Function argument expansion can now read selected entries from the
   destination lister with `{df}` / `{dF}` (with paths) and `{do}` / `{dO}`
   (names only), including the inactive panel in Dual Lister mode (issue #77).

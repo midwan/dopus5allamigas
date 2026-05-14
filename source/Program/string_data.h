@@ -242,6 +242,7 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_EXECUTE_MENU 2705
 	#define MSG_HELP_MENU 2706
 	#define MSG_KEYFINDER_MENU 2707
+	#define MSG_NEWSHELL_MENU 2708
 	#define MSG_WINDOW_MENU 2800
 	#define MSG_NEW_LISTER_MENU 2801
 	#define MSG_CLOSE_LISTER_MENU 2802
@@ -782,6 +783,7 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_EXECUTE_MENU_STR "Execute Command..."
 	#define MSG_HELP_MENU_STR "Help!"
 	#define MSG_KEYFINDER_MENU_STR "Key Finder..."
+	#define MSG_NEWSHELL_MENU_STR "NewShell..."
 	#define MSG_WINDOW_MENU_STR "Listers"
 	#define MSG_NEW_LISTER_MENU_STR "New"
 	#define MSG_CLOSE_LISTER_MENU_STR "Close"
@@ -1339,6 +1341,7 @@ static const struct CatCompArrayType CatCompArray[] = {
 	{MSG_EXECUTE_MENU, (STRPTR)MSG_EXECUTE_MENU_STR},
 	{MSG_HELP_MENU, (STRPTR)MSG_HELP_MENU_STR},
 	{MSG_KEYFINDER_MENU, (STRPTR)MSG_KEYFINDER_MENU_STR},
+	{MSG_NEWSHELL_MENU, (STRPTR)MSG_NEWSHELL_MENU_STR},
 	{MSG_WINDOW_MENU, (STRPTR)MSG_WINDOW_MENU_STR},
 	{MSG_NEW_LISTER_MENU, (STRPTR)MSG_NEW_LISTER_MENU_STR},
 	{MSG_CLOSE_LISTER_MENU, (STRPTR)MSG_CLOSE_LISTER_MENU_STR},
@@ -2069,6 +2072,8 @@ static const char CatCompBlock[] = {"\x00\x00\x00\x00\x00\x0C" MSG_ABORTED_STR
 									"\x00\x00\x0A\x92\x00\x06" MSG_HELP_MENU_STR
 									"\x00"
 									"\x00\x00\x0A\x93\x00\x0E" MSG_KEYFINDER_MENU_STR
+									"\x00"
+									"\x00\x00\x0A\x94\x00\x0C" MSG_NEWSHELL_MENU_STR
 									"\x00"
 									"\x00\x00\x0A\xF0\x00\x08" MSG_WINDOW_MENU_STR
 									"\x00"

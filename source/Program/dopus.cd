@@ -631,6 +631,9 @@ Help!
 MSG_KEYFINDER_MENU (//)
 Key Finder...
 ;
+MSG_NEWSHELL_MENU (2708//)
+NewShell...
+;
 ;
 ;
 ; Lister menu
