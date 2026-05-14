@@ -979,6 +979,7 @@ int mlsd_line_to_entryinfo(struct entry_info *entry, const char *line, ULONG fla
 	char *pair;
 	struct ClockData filedate = {0};
 	int length;
+	BOOL skip_entry = FALSE;
 
 	if (!str || !strchr(str, ';'))
 		return 0;
@@ -1011,10 +1012,19 @@ int mlsd_line_to_entryinfo(struct entry_info *entry, const char *line, ULONG fla
 
 		if (!value)
 		{
+			size_t name_len;
+
 			// skip the leading space separator
-			factname++;
+			if (*factname == ' ')
+				factname++;
+
 			// copy the name minus the linefeeds
-			strncpy(entry->ei_name, factname, min(strlen(factname) - 2, FILENAMELEN + 1));
+			name_len = strlen(factname);
+			while (name_len && (factname[name_len - 1] == '\n' || factname[name_len - 1] == '\r'))
+				--name_len;
+			name_len = min(name_len, FILENAMELEN);
+			memcpy(entry->ei_name, factname, name_len);
+			entry->ei_name[name_len] = 0;
 			D(bug(" -> filename '%s'\n", entry->ei_name));
 		}
 		else if (!stricmp(factname, "size"))
@@ -1029,10 +1039,16 @@ int mlsd_line_to_entryinfo(struct entry_info *entry, const char *line, ULONG fla
 				entry->ei_type = -1;
 				D(bug(" -> file (type %d)\n", entry->ei_type));
 			}
-			else if (!stricmp(value, "dir") || !stricmp(value, "cdir") || !stricmp(value, "pdir"))
+			else if (!stricmp(value, "dir"))
 			{
 				entry->ei_type = 1;
 				D(bug(" -> directory (type %d)\n", entry->ei_type));
+			}
+			else if (!stricmp(value, "cdir") || !stricmp(value, "pdir"))
+			{
+				// MLSD cdir/pdir describe the listed directory and its parent, not children.
+				skip_entry = TRUE;
+				D(bug(" -> current/parent directory marker\n"));
 			}
 		}
 		else if (!stricmp(factname, "modify"))
@@ -1068,6 +1084,9 @@ int mlsd_line_to_entryinfo(struct entry_info *entry, const char *line, ULONG fla
 	}
 
 	FreeVec(pair);
+
+	if (skip_entry)
+		return 0;
 
 	// . and .. are not supported!
 	if (!strcmp(entry->ei_name, ".") || !strcmp(entry->ei_name, ".."))
