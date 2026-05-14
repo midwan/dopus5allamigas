@@ -1124,6 +1124,12 @@ BOOL menu_process_event(IPTR id, struct MenuItem *item, struct Window *window)
 	}
 	break;
 
+	// Open a new AmigaDOS Shell
+	case MENU_NEWSHELL: {
+		misc_startup("dopus_newshell", MENU_NEWSHELL, window, 0, 1);
+	}
+	break;
+
 	// Hide
 	case MENU_HIDE:
 		hide_display();

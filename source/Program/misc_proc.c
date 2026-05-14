@@ -187,6 +187,52 @@ IPC_EntryCode(misc_proc)
 			break;
 		}
 
+		// NewShell
+		case MENU_NEWSHELL: {
+			char *command;
+			char *screen;
+			char *window;
+			ULONG command_size;
+			ULONG window_size;
+			BPTR input;
+
+			screen = get_our_pubscreen();
+			window_size = strlen(environment->env->output_device) + strlen(environment->env->output_window) +
+						  strlen(screen) + 24;
+			command_size = window_size + 12;
+
+			if (!(window = AllocVec(window_size, 0)))
+				break;
+			if (!(command = AllocVec(command_size, 0)))
+			{
+				FreeVec(window);
+				break;
+			}
+
+			// Use the configured CLI output window as the Shell window template.
+			lsprintf(window,
+					 "%s%s/AUTO/CLOSE/SCREEN %s",
+					 environment->env->output_device,
+					 environment->env->output_window,
+					 screen);
+			lsprintf(command, "NewShell \"%s\"", window);
+
+			if ((input = Open("nil:", MODE_OLDFILE)))
+			{
+				CLI_Launch(command,
+						   (struct Screen *)-1,
+						   0,
+						   input,
+						   0,
+						   LAUNCHF_USE_STACK,
+						   environment->env->default_stack);
+			}
+
+			FreeVec(command);
+			FreeVec(window);
+		}
+		break;
+
 		// About
 		case MENU_ABOUT: {
 			// Display about text
