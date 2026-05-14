@@ -48,3 +48,6 @@ Quit
 MSG_MENU_ABOUT (//)
 About...
 ;
+MSG_FONT_EXTENDED (//)
+_Extended chars
+;

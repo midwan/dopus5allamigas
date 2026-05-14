@@ -1,6 +1,6 @@
 @database dopus5
 @master dopus5.guide
-@$VER: Dopus5Guide 58.2 (7.5.2026)
+@$VER: Dopus5Guide 58.3 (14.5.2026)
 @author "Mark Anderson, Andrew Dunbar, Dr Greg Perry, Leo Davidson and Dave Clarke"
 @(c) "Directory Opus 5 Help Guide (c) GPSoftware 1999"
 @(c) "Directory Opus 5 Help Guide (c) DOPUS5 Open Source Team 2012-2026"
@@ -30,6 +30,8 @@
 @remark v58.2 - Format Requester follow-up: Long File Names is only
                 offered when the selected FastFileSystem is new enough
                 to support DOS\7 / LNFS.
+@remark v58.3 - ViewFont now documents the optional extended-character
+                preview and how Save Settings persists it.
 
 @node "Main" "dopus5.guide"
 Help Introduction for Directory Opus 5
@@ -186,7 +188,7 @@ that item and then press the help key before selecting it.
   @{" ToolBar Button                 " link "ToolbarButton"}  @{" User                           " link "User"}
   @{" User1                          " link "User1"}  @{" User2                          " link "User2"}
   @{" User3                          " link "User3"}  @{" User4                          " link "User4"}
-  @{" UserMenu                       " link "UserMenu"}
+  @{" UserMenu                       " link "UserMenu"}  @{" ViewFont                       " link "ViewFont"}
 @endnode
 
 @node "Commands" "Commands"
@@ -2120,6 +2122,22 @@ This is a user-editable user menu entry.  It currently has either no
 function set or has a custom function calling external programs.
 
 To @{" Edit " link "Menu Editor"} this entry, select "User Menu" from the Settings menu.
+
+@endnode
+
+@node "ViewFont" "ViewFont"
+ViewFont is the font viewer installed in DOpus5:C.  It can be used to
+preview Amiga bitmap fonts at different sizes and styles.
+
+The font name and size gadgets select the font to preview.  The B, I and U
+buttons preview bold, italic and underlined styles.  The Extended chars
+checkbox adds the high printable character range to the preview, so fonts
+with international characters can be checked without changing the default
+ASCII-only display.
+
+The Save Settings menu item stores the ViewFont window position and size.
+It also stores whether Extended chars is enabled, so the checkbox state is
+restored the next time ViewFont opens.
 
 @endnode
 

@@ -65,6 +65,7 @@ typedef struct
 	struct RDArgs *args;
 	BOOL resized;
 	BOOL first;
+	BOOL extended;
 
 	struct Hook refresh_hook;
 
@@ -98,6 +99,7 @@ enum {
 	GAD_FONT_BOLD,
 	GAD_FONT_ITALIC,
 	GAD_FONT_ULINE,
+	GAD_FONT_EXTENDED,
 	GAD_FONT_DISPLAY,
 	GAD_FONT_FONT_POPUP,
 	GAD_FONT_CYCLE,

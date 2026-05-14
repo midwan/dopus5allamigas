@@ -141,6 +141,8 @@ Documentation:
 - Refreshed every per-tab Environment editor description in
   DOpus5.guide; full @$VER bump and 2026 copyright extension
   (issue #58).
+- Added a ViewFont help node covering the optional extended-character
+  preview and the Save Settings behaviour (issue #124).
 - Refreshed Format Requester for FFS-LNFS + PFS-family detection
   and File Type Editor for the icon-menu Up/Down + drag rework.
 - Documented dopus/PopUpDelay, dopus/CommandLineLength and the
@@ -167,6 +169,9 @@ AROS portability:
 Other fixes:
 - DOpus5: path casing normalised across hardcoded literals
   (issue #36 / PR #43).
+- ViewFont: optional "Extended chars" preview shows printable high
+  characters for international-font checks and is persisted by Save
+  Settings (issue #124).
 - xadopus: unstick lister after view / doubleclick commands.
 - Lister free space display and Edit menu behaviour fix.
 - Button image fallback length guard.
@@ -199,6 +204,31 @@ Versioning notes:
 
 Detailed per-feature entries and late-cycle maintenance notes follow.
 2026-05-09 by Dimitris Panokostas <midwan@gmail.com>
+
+[dopus5 5.101] ViewFont: optional extended character preview
+Ships in 5.101.  Commands remain at v65r3 under the existing 5.101
+release bump.
+
+source/Misc/C/ViewFont:
+- Added an opt-in "Extended chars" checkbox to ViewFont.  The default
+  preview remains the existing printable ASCII range; when enabled, the
+  preview also includes printable character codes 160-255, avoiding the
+  127-159 control range.
+- Save Settings now persists the checkbox in the existing
+  "dopus/Font Viewer" environment setting as an optional fifth flags
+  field.  Existing four-field geometry settings remain valid and read
+  as before.
+- Updated built-in catalog strings and the checked-in French ViewFont
+  catalog translations.
+
+Documentation:
+- Added a ViewFont help node in DOpus5.guide and bumped the guide to
+  v58.3.
+
+Build verification:
+- Built ViewFont for AmigaOS 3, AmigaOS 4, MorphOS, AROS i386 and
+  AROS x86_64 with the project Docker/Podman compiler images.
+2026-05-14 by Dimitris Panokostas <midwan@gmail.com>
 
 [dopus5 5.101] os3-68000: fix odd-aligned CatComp string lookup
 Ships in 5.101.  dopus5.library at v73r5 (with the global
