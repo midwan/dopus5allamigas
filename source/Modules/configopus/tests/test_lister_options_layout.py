@@ -133,6 +133,22 @@ class ListerOptionsLayoutTests(unittest.TestCase):
                 source = (CONFIGOPUS_DIR / makefile).read_text(encoding="latin-1")
                 self.assertRegex(source, r"\$\(OBJDIR\)/string_data\.o\s*:\s*string_data\.h")
 
+    def test_icon_layout_title_keeps_panel_title_ellipsis(self):
+        cd_source = (CONFIGOPUS_DIR / "configopus.cd").read_text(encoding="latin-1")
+        string_source = CONFIGOPUS_STRINGS_H.read_text(encoding="latin-1")
+
+        self.assertIn("Desktop Icon Arrangement...", cd_source)
+        self.assertIn(
+            '#define MSG_ENVIRONMENT_ICON_LAYOUT_TITLE_STR "Desktop Icon Arrangement..."',
+            string_source,
+        )
+        self.assertRegex(
+            string_source,
+            r'"\\x00\\x00\\x59\\xF4\\x00\\x1D" MSG_ENVIRONMENT_ICON_LAYOUT_TITLE_STR\s*\n'
+            r'\s*"\\x00\\x00"\s*\n'
+            r'\s*"\\x00\\x00\\x59\\xF5\\x00\\x12" MSG_ENVIRONMENT_ICON_SPACE_X_STR',
+        )
+
     def test_dual_lister_default_catalog_block_has_even_string_padding(self):
         source = CONFIGOPUS_STRINGS_H.read_text(encoding="latin-1")
 

@@ -910,7 +910,7 @@
 	#define MSG_ENVIRONMENT_OPTIONS_WB_TITLE_STR "_Workbench-Compatible Title Bar"
 	#define MSG_ENVIRONMENT_OPTIONS_USE_WBINFO_STR "_Use Workbench Icon Information"
 	#define MSG_ENVIRONMENT_SUB_ICON_LAYOUT_STR "Icon Layout"
-	#define MSG_ENVIRONMENT_ICON_LAYOUT_TITLE_STR "Desktop Icon Arrangement"
+	#define MSG_ENVIRONMENT_ICON_LAYOUT_TITLE_STR "Desktop Icon Arrangement..."
 	#define MSG_ENVIRONMENT_ICON_SPACE_X_STR "Icon Spacing _X:"
 	#define MSG_ENVIRONMENT_ICON_SPACE_Y_STR "Icon Spacing _Y:"
 	#define MSG_ENVIRONMENT_ICON_GRID_X_STR "Icon Grid X:"
@@ -2396,7 +2396,7 @@ STATIC CONST UBYTE CatCompBlock[] = {"\x00\x00\x00\x01\x00\x04" MSG_OKAY_STR
 									 "\x00\x00"
 									 "\x00\x00\x59\xF3\x00\x0D" MSG_ENVIRONMENT_SUB_ICON_LAYOUT_STR
 									 "\x00\x00"
-									 "\x00\x00\x59\xF4\x00\x1A" MSG_ENVIRONMENT_ICON_LAYOUT_TITLE_STR
+									 "\x00\x00\x59\xF4\x00\x1D" MSG_ENVIRONMENT_ICON_LAYOUT_TITLE_STR
 									 "\x00\x00"
 									 "\x00\x00\x59\xF5\x00\x12" MSG_ENVIRONMENT_ICON_SPACE_X_STR
 									 "\x00\x00"
