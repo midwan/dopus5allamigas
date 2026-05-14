@@ -61,10 +61,15 @@ class ListerTooltipColourTests(unittest.TestCase):
 
         self.assertIn("lister_init_colour(lister, ENVCOL_TOOLTIP, FALSE);", toolbar_source)
         self.assertIn("lister_init_colour(lister, ENVCOL_TOOLTIP, TRUE);", toolbar_source)
+        self.assertIn("lister_toolbar_tooltip_close(lister);", toolbar_source)
         self.assertIn("tip_fpen = lister->lst_Colours[ENVCOL_TOOLTIP].cr_Pen[0];", toolbar_source)
         self.assertIn("tip_bpen = lister->lst_Colours[ENVCOL_TOOLTIP].cr_Pen[1];", toolbar_source)
         self.assertRegex(toolbar_source, r"(?s)SetAPen\(rp, tip_bpen\);\s*RectFill")
         self.assertRegex(toolbar_source, r"(?s)SetAPen\(rp, tip_fpen\);\s*SetBPen\(rp, tip_bpen\);")
+        tick_body = toolbar_source.split("void lister_toolbar_tooltip_tick", 1)[1].split(
+            "static void lister_toolbar_tooltip_show", 1
+        )[0]
+        self.assertNotIn("CloseWindow", tick_body)
         self.assertIn("case ENVCOL_TOOLTIP:", window_source)
         self.assertIn("environment->env->tooltip_col[a]", window_source)
 

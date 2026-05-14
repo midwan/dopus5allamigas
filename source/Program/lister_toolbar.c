@@ -880,8 +880,7 @@ void lister_toolbar_edit(short which)
 
 static void lister_toolbar_tooltip_show(Lister *lister, short but);
 
-// Close the tooltip window (if any) and reset hover state
-void lister_toolbar_tooltip_hide(Lister *lister)
+static void lister_toolbar_tooltip_close(Lister *lister)
 {
 	if (!lister)
 		return;
@@ -892,6 +891,15 @@ void lister_toolbar_tooltip_hide(Lister *lister)
 		lister->tool_tip_window = 0;
 	}
 	lister_init_colour(lister, ENVCOL_TOOLTIP, TRUE);
+}
+
+// Close the tooltip window (if any) and reset hover state
+void lister_toolbar_tooltip_hide(Lister *lister)
+{
+	if (!lister)
+		return;
+
+	lister_toolbar_tooltip_close(lister);
 	lister->tool_hover_but = -1;
 	lister->tool_hover_ticks = 0;
 }
@@ -922,10 +930,7 @@ void lister_toolbar_tooltip_tick(Lister *lister)
 	if (but != lister->tool_hover_but)
 	{
 		if (lister->tool_tip_window)
-		{
-			CloseWindow(lister->tool_tip_window);
-			lister->tool_tip_window = 0;
-		}
+			lister_toolbar_tooltip_close(lister);
 		lister->tool_hover_but = but;
 		lister->tool_hover_ticks = 0;
 		return;
