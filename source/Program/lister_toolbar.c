@@ -880,8 +880,7 @@ void lister_toolbar_edit(short which)
 
 static void lister_toolbar_tooltip_show(Lister *lister, short but);
 
-// Close the tooltip window (if any) and reset hover state
-void lister_toolbar_tooltip_hide(Lister *lister)
+static void lister_toolbar_tooltip_close(Lister *lister)
 {
 	if (!lister)
 		return;
@@ -891,6 +890,16 @@ void lister_toolbar_tooltip_hide(Lister *lister)
 		CloseWindow(lister->tool_tip_window);
 		lister->tool_tip_window = 0;
 	}
+	lister_init_colour(lister, ENVCOL_TOOLTIP, TRUE);
+}
+
+// Close the tooltip window (if any) and reset hover state
+void lister_toolbar_tooltip_hide(Lister *lister)
+{
+	if (!lister)
+		return;
+
+	lister_toolbar_tooltip_close(lister);
 	lister->tool_hover_but = -1;
 	lister->tool_hover_ticks = 0;
 }
@@ -921,10 +930,7 @@ void lister_toolbar_tooltip_tick(Lister *lister)
 	if (but != lister->tool_hover_but)
 	{
 		if (lister->tool_tip_window)
-		{
-			CloseWindow(lister->tool_tip_window);
-			lister->tool_tip_window = 0;
-		}
+			lister_toolbar_tooltip_close(lister);
 		lister->tool_hover_but = but;
 		lister->tool_hover_ticks = 0;
 		return;
@@ -954,6 +960,7 @@ static void lister_toolbar_tooltip_show(Lister *lister, short but)
 	Cfg_Button *button;
 	Cfg_ButtonFunction *func;
 	short i, num, width, height, line_h, baseline, x, y, pw, lw;
+	short tip_fpen, tip_bpen;
 	LONG screen_w, screen_h;
 
 	// Walk buttons list to find the hovered one
@@ -1029,6 +1036,9 @@ static void lister_toolbar_tooltip_show(Lister *lister, short but)
 							   TAG_END)))
 		return;
 
+	lister_init_colour(lister, ENVCOL_TOOLTIP, FALSE);
+	tip_fpen = lister->lst_Colours[ENVCOL_TOOLTIP].cr_Pen[0];
+	tip_bpen = lister->lst_Colours[ENVCOL_TOOLTIP].cr_Pen[1];
 	lister->tool_tip_window = win;
 
 	// Render tooltip contents
@@ -1036,7 +1046,7 @@ static void lister_toolbar_tooltip_show(Lister *lister, short but)
 	SetFont(rp, font);
 
 	// Fill background
-	SetAPen(rp, GUI->draw_info->dri_Pens[BACKGROUNDPEN]);
+	SetAPen(rp, tip_bpen);
 	RectFill(rp, 0, 0, width - 1, height - 1);
 
 	// Draw 1px shadow-coloured frame
@@ -1048,8 +1058,8 @@ static void lister_toolbar_tooltip_show(Lister *lister, short but)
 	Draw(rp, 0, 0);
 
 	// Draw text lines
-	SetAPen(rp, GUI->draw_info->dri_Pens[TEXTPEN]);
-	SetBPen(rp, GUI->draw_info->dri_Pens[BACKGROUNDPEN]);
+	SetAPen(rp, tip_fpen);
+	SetBPen(rp, tip_bpen);
 	SetDrMd(rp, JAM1);
 
 	y = 2 + baseline;

@@ -42,6 +42,7 @@ For more information on Directory Opus for Windows please see:
 #define CONFIG_VERSION_13 13
 #define CONFIG_VERSION_14 14
 #define CONFIG_VERSION_15 15
+#define CONFIG_VERSION_16 16
 
 // Sort format
 typedef struct
@@ -487,7 +488,12 @@ typedef struct
 	UWORD env_wheel_scroll_lines;  // Mouse wheel lines per notch (was dopus/WheelScrollLines)
 	UWORD env_pad_15;			   // Pad to keep ULONG alignment
 
-	ULONG pad[14];	// Save recompilation
+	// Promoted in CONFIG_VERSION_16. Steals 4 reserved bytes so the on-disk
+	// layout after pad stays compatible.
+	UBYTE tooltip_col[2];	// Lister toolbar tooltip colours
+	UBYTE env_pad_16[2];	// Pad to keep ULONG alignment
+
+	ULONG pad[13];	// Save recompilation
 
 	char env_BackgroundPic[4][256];	 // Background pictures
 	UWORD env_BackgroundFlags[4];	 // Background flags
@@ -566,6 +572,7 @@ enum {
 	ENVCOL_DEVICES,
 	ENVCOL_VOLUMES,
 	ENVCOL_GAUGE,
+	ENVCOL_TOOLTIP,
 
 	ENVCOL_MAX = 16
 };

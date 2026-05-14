@@ -1839,6 +1839,8 @@ int convert_env(struct _IFFHandle *iff, CFG_ENVR *env)
 	env->version = oldenv->version;
 	env->gauge_col[0] = oldenv->gauge_col[0];
 	env->gauge_col[1] = oldenv->gauge_col[1];
+	env->tooltip_col[0] = 1;
+	env->tooltip_col[1] = 0;
 	env->icon_fpen = oldenv->icon_fpen;
 	env->icon_bpen = oldenv->icon_bpen;
 	env->icon_style = oldenv->icon_style;

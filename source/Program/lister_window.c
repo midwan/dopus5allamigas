@@ -1058,6 +1058,10 @@ void lister_init_colour(Lister *lister, short col, short free)
 				case ENVCOL_GAUGE:
 					lister->lst_Colours[col].cr_Pen[a] = environment->env->gauge_col[a];
 					break;
+
+				case ENVCOL_TOOLTIP:
+					lister->lst_Colours[col].cr_Pen[a] = environment->env->tooltip_col[a];
+					break;
 				}
 
 				// Fix pen

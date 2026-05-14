@@ -3616,12 +3616,16 @@ user/system pens. It can be configured individually for each element,
 providing there are free pens available.
 
 At the moment, the custom pen is only implemented by the free space
-gauge, but the other elements will be using it in the next version.
+gauge and lister toolbar tooltips, but the other elements will be using it
+in the next version.
 
 When setting the colours for the free space gauge, the foreground colour
 is used when the bar shows less than 90% full, and the background colour
 is used when the bar is at 90% or above. This lets you have a warning
 colour when the disk is getting full.
+
+The 'Tool tip' item controls the foreground and background colours used by
+lister toolbar tooltips.
 
 @endnode
 

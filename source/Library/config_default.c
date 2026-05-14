@@ -33,6 +33,12 @@ static ULONG default_palette[] = {0xefffffff, 0xafffffff, 0x4fffffff, 0x7fffffff
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
+static void set_default_tooltip_colours(CFG_ENVR *env)
+{
+	env->tooltip_col[0] = 1;
+	env->tooltip_col[1] = 0;
+}
+
 #ifdef __AROS__
 static void set_default_list_display(ListFormat *format)
 {
@@ -293,6 +299,7 @@ void LIBFUNC L_DefaultEnvironment(REG(a0, CFG_ENVR *env))
 	// Gauge colour
 	env->gauge_col[0] = 3;
 	env->gauge_col[1] = 3;
+	set_default_tooltip_colours(env);
 
 	// Initialise custom colours
 	for (a = 0; a < 16; a++)
@@ -331,7 +338,7 @@ void LIBFUNC L_DefaultEnvironment(REG(a0, CFG_ENVR *env))
 	env->env_wheel_scroll_lines = 3;
 
 	// Set version
-	env->version = CONFIG_VERSION_15;
+	env->version = CONFIG_VERSION_16;
 
 	// Get default settings
 	L_DefaultSettings(&env->settings);
@@ -630,11 +637,15 @@ void LIBFUNC L_UpdateEnvironment(REG(a0, CFG_ENVR *env))
 			env->display_options |= DISPOPTF_SHOW_DATATYPES_FIRST;
 	}
 
+	// Pre-version 16
+	if (env->version < CONFIG_VERSION_16)
+		set_default_tooltip_colours(env);
+
 	fix_list_format_display(&env->list_format);
 	fix_list_format_colours(&env->list_format, env->version < CONFIG_VERSION_12);
 
 	// Fix version
-	env->version = CONFIG_VERSION_15;
+	env->version = CONFIG_VERSION_16;
 
 	// Is themes path empty?
 	if (!env->themes_location[0])
