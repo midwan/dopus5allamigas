@@ -154,6 +154,7 @@ Cfg_Function *def_function_rename = 0;
 Cfg_Function *def_function_delete = 0;
 Cfg_Function *def_function_delete_quiet = 0;
 Cfg_Function *def_function_makedir = 0;
+Cfg_Function *def_function_makefile = 0;
 Cfg_Function *def_function_copy = 0;
 Cfg_Function *def_function_move = 0;
 Cfg_Function *def_function_assign = 0;

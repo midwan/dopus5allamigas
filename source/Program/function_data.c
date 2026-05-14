@@ -268,6 +268,15 @@ CommandList commandlist_internal[] = {
 	 "S0"},
 
 	{{0, 0},
+	 FUNC_MAKEFILE,
+	 "MakeFile",
+	 MSG_FUNC_DESC_MAKEFILE,
+	 FUNCF_NEED_SOURCE | FUNCF_SINGLE_SOURCE,
+	 function_makefile,
+	 "NAME,NOICON/S,SELECT/S",
+	 "S0"},
+
+	{{0, 0},
 	 FUNC_MAKELINK,
 	 "MakeLink",
 	 MSG_FUNC_DESC_MAKELINK,

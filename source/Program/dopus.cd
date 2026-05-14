@@ -545,6 +545,12 @@ Without icon
 MSG_DIRECTORY_CREATED (//)
 Directory created.
 ;
+MSG_ENTER_FILE_NAME (//)
+Enter file name
+;
+MSG_FILE_CREATED (//)
+File created.
+;
 ;
 ;
 ; AddIcon
@@ -737,6 +743,9 @@ Resize to Fit
 MSG_LISTER_DUAL (//)
 Dual Lister
 ;
+MSG_LISTER_NEW_FILE (//)
+New File...
+;
 ;
 ;
 ;
@@ -840,6 +849,9 @@ Snapshot All
 ;
 MSG_ICON_SNAPSHOT_WINDOW (//)
 Snapshot Window
+;
+MSG_ICONS_MAKEFILE_MENU (//)
+File...
 ;
 ;
 ;
@@ -1067,6 +1079,9 @@ New
 ;
 MSG_FILE_EXISTS (//)
 File '%s' already exists!
+;
+MSG_ERROR_CREATING_FILE (//)
+creating the file
 ;
 ;
 ;
@@ -1406,6 +1421,9 @@ Reset Things
 ;
 MSG_FUNC_DESC_STOPSNIFFER (//)
 Stop Filetype Sniffer
+;
+MSG_FUNC_DESC_MAKEFILE (//)
+Make a new empty file
 ;
 ;
 ;

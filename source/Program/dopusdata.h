@@ -58,6 +58,7 @@ extern Cfg_Function *def_function_rename;
 extern Cfg_Function *def_function_delete;
 extern Cfg_Function *def_function_delete_quiet;
 extern Cfg_Function *def_function_makedir;
+extern Cfg_Function *def_function_makefile;
 extern Cfg_Function *def_function_copy;
 extern Cfg_Function *def_function_move;
 extern Cfg_Function *def_function_assign;

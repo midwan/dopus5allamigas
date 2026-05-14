@@ -217,6 +217,8 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_MAKEDIR_ICON 2301
 	#define MSG_MAKEDIR_NOICON 2302
 	#define MSG_DIRECTORY_CREATED 2303
+	#define MSG_ENTER_FILE_NAME 2304
+	#define MSG_FILE_CREATED 2305
 	#define MSG_PROGRESS_ADDING_ICONS 2400
 	#define MSG_ICON_ALREADY_EXISTS 2401
 	#define MSG_ICON_REPLACE_IMAGE 2402
@@ -276,6 +278,7 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_LISTER_RESTORE 2833
 	#define MSG_LISTER_RESIZE_FIT 2834
 	#define MSG_LISTER_DUAL 2835
+	#define MSG_LISTER_NEW_FILE 2836
 	#define MSG_ICONS_MENU 2900
 	#define MSG_ICON_OPEN_MENU 2901
 	#define MSG_ICON_INFO_MENU 2902
@@ -309,6 +312,7 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_ICON_SNAPSHOT_ICONS 2931
 	#define MSG_ICON_SNAPSHOT_ALL 2932
 	#define MSG_ICON_SNAPSHOT_WINDOW 2933
+	#define MSG_ICONS_MAKEFILE_MENU 2934
 	#define MSG_BUTTONS_MENU 3000
 	#define MSG_NEW_BUTTONS_MENU 3001
 	#define MSG_CLOSE_BUTTONS_MENU 3002
@@ -378,6 +382,7 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_OLD 3320
 	#define MSG_NEW 3321
 	#define MSG_FILE_EXISTS 3322
+	#define MSG_ERROR_CREATING_FILE 3323
 	#define MSG_PROGRESS_OPERATION_DELETING 3400
 	#define MSG_DELETE_CONFIRM 3401
 	#define MSG_DELETE 3402
@@ -482,6 +487,7 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_FUNC_DESC_SETBACKGROUND 3958
 	#define MSG_FUNC_DESC_RESET 3959
 	#define MSG_FUNC_DESC_STOPSNIFFER 3960
+	#define MSG_FUNC_DESC_MAKEFILE 3961
 	#define MSG_ICON_GROUP 4000
 	#define MSG_GROUP_ENTER_NAME 4003
 	#define MSG_RXERR_1 4500
@@ -751,6 +757,8 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_MAKEDIR_ICON_STR "With icon"
 	#define MSG_MAKEDIR_NOICON_STR "Without icon"
 	#define MSG_DIRECTORY_CREATED_STR "Directory created."
+	#define MSG_ENTER_FILE_NAME_STR "Enter file name"
+	#define MSG_FILE_CREATED_STR "File created."
 	#define MSG_PROGRESS_ADDING_ICONS_STR "Adding icons..."
 	#define MSG_ICON_ALREADY_EXISTS_STR "An icon already exists for '%s'.\nDo you wish to replace it?"
 	#define MSG_ICON_REPLACE_IMAGE_STR "Image Only"
@@ -810,6 +818,7 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_LISTER_RESTORE_STR "Restore"
 	#define MSG_LISTER_RESIZE_FIT_STR "Resize to Fit"
 	#define MSG_LISTER_DUAL_STR "Dual Lister"
+	#define MSG_LISTER_NEW_FILE_STR "New File..."
 	#define MSG_ICONS_MENU_STR "Icons"
 	#define MSG_ICON_OPEN_MENU_STR "Open"
 	#define MSG_ICON_INFO_MENU_STR "Information..."
@@ -843,6 +852,7 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_ICON_SNAPSHOT_ICONS_STR "Snapshot Icons"
 	#define MSG_ICON_SNAPSHOT_ALL_STR "Snapshot All"
 	#define MSG_ICON_SNAPSHOT_WINDOW_STR "Snapshot Window"
+	#define MSG_ICONS_MAKEFILE_MENU_STR "File..."
 	#define MSG_BUTTONS_MENU_STR "Buttons"
 	#define MSG_NEW_BUTTONS_MENU_STR "New"
 	#define MSG_CLOSE_BUTTONS_MENU_STR "Close"
@@ -915,6 +925,7 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_OLD_STR "Old"
 	#define MSG_NEW_STR "New"
 	#define MSG_FILE_EXISTS_STR "File '%s' already exists!"
+	#define MSG_ERROR_CREATING_FILE_STR "creating the file"
 	#define MSG_PROGRESS_OPERATION_DELETING_STR "Deleting..."
 	#define MSG_DELETE_CONFIRM_STR                                                                                   \
 		"Warning: you cannot get back\nwhat you delete! OK to delete:\n\n%ld file(s) and\n%ld drawer(s) (and their " \
@@ -1021,6 +1032,7 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_FUNC_DESC_SETBACKGROUND_STR "Set as background picture"
 	#define MSG_FUNC_DESC_RESET_STR "Reset Things"
 	#define MSG_FUNC_DESC_STOPSNIFFER_STR "Stop Filetype Sniffer"
+	#define MSG_FUNC_DESC_MAKEFILE_STR "Make a new empty file"
 	#define MSG_ICON_GROUP_STR "Program Groups"
 	#define MSG_GROUP_ENTER_NAME_STR "Enter Program Group Name"
 	#define MSG_RXERR_1_STR "File rejected by filters"
@@ -1302,6 +1314,8 @@ static const struct CatCompArrayType CatCompArray[] = {
 	{MSG_MAKEDIR_ICON, (STRPTR)MSG_MAKEDIR_ICON_STR},
 	{MSG_MAKEDIR_NOICON, (STRPTR)MSG_MAKEDIR_NOICON_STR},
 	{MSG_DIRECTORY_CREATED, (STRPTR)MSG_DIRECTORY_CREATED_STR},
+	{MSG_ENTER_FILE_NAME, (STRPTR)MSG_ENTER_FILE_NAME_STR},
+	{MSG_FILE_CREATED, (STRPTR)MSG_FILE_CREATED_STR},
 	{MSG_PROGRESS_ADDING_ICONS, (STRPTR)MSG_PROGRESS_ADDING_ICONS_STR},
 	{MSG_ICON_ALREADY_EXISTS, (STRPTR)MSG_ICON_ALREADY_EXISTS_STR},
 	{MSG_ICON_REPLACE_IMAGE, (STRPTR)MSG_ICON_REPLACE_IMAGE_STR},
@@ -1361,6 +1375,7 @@ static const struct CatCompArrayType CatCompArray[] = {
 	{MSG_LISTER_RESTORE, (STRPTR)MSG_LISTER_RESTORE_STR},
 	{MSG_LISTER_RESIZE_FIT, (STRPTR)MSG_LISTER_RESIZE_FIT_STR},
 	{MSG_LISTER_DUAL, (STRPTR)MSG_LISTER_DUAL_STR},
+	{MSG_LISTER_NEW_FILE, (STRPTR)MSG_LISTER_NEW_FILE_STR},
 	{MSG_ICONS_MENU, (STRPTR)MSG_ICONS_MENU_STR},
 	{MSG_ICON_OPEN_MENU, (STRPTR)MSG_ICON_OPEN_MENU_STR},
 	{MSG_ICON_INFO_MENU, (STRPTR)MSG_ICON_INFO_MENU_STR},
@@ -1394,6 +1409,7 @@ static const struct CatCompArrayType CatCompArray[] = {
 	{MSG_ICON_SNAPSHOT_ICONS, (STRPTR)MSG_ICON_SNAPSHOT_ICONS_STR},
 	{MSG_ICON_SNAPSHOT_ALL, (STRPTR)MSG_ICON_SNAPSHOT_ALL_STR},
 	{MSG_ICON_SNAPSHOT_WINDOW, (STRPTR)MSG_ICON_SNAPSHOT_WINDOW_STR},
+	{MSG_ICONS_MAKEFILE_MENU, (STRPTR)MSG_ICONS_MAKEFILE_MENU_STR},
 	{MSG_BUTTONS_MENU, (STRPTR)MSG_BUTTONS_MENU_STR},
 	{MSG_NEW_BUTTONS_MENU, (STRPTR)MSG_NEW_BUTTONS_MENU_STR},
 	{MSG_CLOSE_BUTTONS_MENU, (STRPTR)MSG_CLOSE_BUTTONS_MENU_STR},
@@ -1463,6 +1479,7 @@ static const struct CatCompArrayType CatCompArray[] = {
 	{MSG_OLD, (STRPTR)MSG_OLD_STR},
 	{MSG_NEW, (STRPTR)MSG_NEW_STR},
 	{MSG_FILE_EXISTS, (STRPTR)MSG_FILE_EXISTS_STR},
+	{MSG_ERROR_CREATING_FILE, (STRPTR)MSG_ERROR_CREATING_FILE_STR},
 	{MSG_PROGRESS_OPERATION_DELETING, (STRPTR)MSG_PROGRESS_OPERATION_DELETING_STR},
 	{MSG_DELETE_CONFIRM, (STRPTR)MSG_DELETE_CONFIRM_STR},
 	{MSG_DELETE, (STRPTR)MSG_DELETE_STR},
@@ -1567,6 +1584,7 @@ static const struct CatCompArrayType CatCompArray[] = {
 	{MSG_FUNC_DESC_SETBACKGROUND, (STRPTR)MSG_FUNC_DESC_SETBACKGROUND_STR},
 	{MSG_FUNC_DESC_RESET, (STRPTR)MSG_FUNC_DESC_RESET_STR},
 	{MSG_FUNC_DESC_STOPSNIFFER, (STRPTR)MSG_FUNC_DESC_STOPSNIFFER_STR},
+	{MSG_FUNC_DESC_MAKEFILE, (STRPTR)MSG_FUNC_DESC_MAKEFILE_STR},
 	{MSG_ICON_GROUP, (STRPTR)MSG_ICON_GROUP_STR},
 	{MSG_GROUP_ENTER_NAME, (STRPTR)MSG_GROUP_ENTER_NAME_STR},
 	{MSG_RXERR_1, (STRPTR)MSG_RXERR_1_STR},
@@ -2002,6 +2020,10 @@ static const char CatCompBlock[] = {"\x00\x00\x00\x00\x00\x0C" MSG_ABORTED_STR
 									"\x00\x00"
 									"\x00\x00\x08\xFF\x00\x14" MSG_DIRECTORY_CREATED_STR
 									"\x00\x00"
+									"\x00\x00\x09\x00\x00\x10" MSG_ENTER_FILE_NAME_STR
+									"\x00"
+									"\x00\x00\x09\x01\x00\x0E" MSG_FILE_CREATED_STR
+									"\x00"
 									"\x00\x00\x09\x60\x00\x10" MSG_PROGRESS_ADDING_ICONS_STR
 									"\x00"
 									"\x00\x00\x09\x61\x00\x3C" MSG_ICON_ALREADY_EXISTS_STR
@@ -2120,6 +2142,8 @@ static const char CatCompBlock[] = {"\x00\x00\x00\x00\x00\x0C" MSG_ABORTED_STR
 									"\x00"
 									"\x00\x00\x0B\x13\x00\x0C" MSG_LISTER_DUAL_STR
 									"\x00"
+									"\x00\x00\x0B\x14\x00\x0C" MSG_LISTER_NEW_FILE_STR
+									"\x00"
 									"\x00\x00\x0B\x54\x00\x06" MSG_ICONS_MENU_STR
 									"\x00"
 									"\x00\x00\x0B\x55\x00\x06" MSG_ICON_OPEN_MENU_STR
@@ -2185,6 +2209,8 @@ static const char CatCompBlock[] = {"\x00\x00\x00\x00\x00\x0C" MSG_ABORTED_STR
 									"\x00\x00\x0B\x74\x00\x0E" MSG_ICON_SNAPSHOT_ALL_STR
 									"\x00\x00"
 									"\x00\x00\x0B\x75\x00\x10" MSG_ICON_SNAPSHOT_WINDOW_STR
+									"\x00"
+									"\x00\x00\x0B\x76\x00\x08" MSG_ICONS_MAKEFILE_MENU_STR
 									"\x00"
 									"\x00\x00\x0B\xB8\x00\x08" MSG_BUTTONS_MENU_STR
 									"\x00"
@@ -2323,6 +2349,8 @@ static const char CatCompBlock[] = {"\x00\x00\x00\x00\x00\x0C" MSG_ABORTED_STR
 									"\x00\x00\x0C\xF9\x00\x04" MSG_NEW_STR
 									"\x00"
 									"\x00\x00\x0C\xFA\x00\x1A" MSG_FILE_EXISTS_STR
+									"\x00"
+									"\x00\x00\x0C\xFB\x00\x12" MSG_ERROR_CREATING_FILE_STR
 									"\x00"
 									"\x00\x00\x0D\x48\x00\x0C" MSG_PROGRESS_OPERATION_DELETING_STR
 									"\x00"
@@ -2531,6 +2559,8 @@ static const char CatCompBlock[] = {"\x00\x00\x00\x00\x00\x0C" MSG_ABORTED_STR
 									"\x00\x00\x0F\x77\x00\x0E" MSG_FUNC_DESC_RESET_STR
 									"\x00\x00"
 									"\x00\x00\x0F\x78\x00\x16" MSG_FUNC_DESC_STOPSNIFFER_STR
+									"\x00"
+									"\x00\x00\x0F\x79\x00\x16" MSG_FUNC_DESC_MAKEFILE_STR
 									"\x00"
 									"\x00\x00\x0F\xA0\x00\x10" MSG_ICON_GROUP_STR
 									"\x00\x00"

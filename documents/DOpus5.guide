@@ -150,14 +150,15 @@ that item and then press the help key before selecting it.
   @{" Lister, View As                " link "Lister - View As"}
   @{" LoadButtons                    " link "LoadButtons"}  @{" LoadEnvironment                " link "LoadEnvironment"}
   @{" LoadFonts                      " link "LoadFonts"}  @{" LoadTheme                      " link "LoadTheme"}
-  @{" MakeDir                        " link "MakeDir"}  @{" MakeLink                       " link "MakeLink"}
-  @{" MakeLinkAs                     " link "MakeLinkAs"}  @{" Menu Editor                    " link "Menu Editor"}
-  @{" Move                           " link "Move"}  @{" MoveAs                         " link "MoveAs"}
-  @{" None                           " link "None"}  @{" Opus, About                    " link "Project - About"}
-  @{" Opus, Backdrop                 " link "Project - Backdrop"}  @{" Opus, Execute Command          " link "Project - Execute Command"}
-  @{" Opus, Help                     " link "Project - Help"}  @{" Opus, Hide                     " link "Project - Hide"}
-  @{" Opus, KeyFinder                " link "Project - KeyFinder"}  @{" Opus, Quit                     " link "Project - Quit"}
-  @{" Parent                         " link "Parent"}  @{" PathHistory                    " link "PathHistory"}
+  @{" MakeDir                        " link "MakeDir"}  @{" MakeFile                       " link "MakeFile"}
+  @{" MakeLink                       " link "MakeLink"}  @{" MakeLinkAs                     " link "MakeLinkAs"}
+  @{" Menu Editor                    " link "Menu Editor"}  @{" Move                           " link "Move"}
+  @{" MoveAs                         " link "MoveAs"}  @{" None                           " link "None"}
+  @{" Opus, About                    " link "Project - About"}  @{" Opus, Backdrop                 " link "Project - Backdrop"}
+  @{" Opus, Execute Command          " link "Project - Execute Command"}  @{" Opus, Help                     " link "Project - Help"}
+  @{" Opus, Hide                     " link "Project - Hide"}  @{" Opus, KeyFinder                " link "Project - KeyFinder"}
+  @{" Opus, Quit                     " link "Project - Quit"}  @{" Parent                         " link "Parent"}
+  @{" PathHistory                    " link "PathHistory"}
   @{" Play                           " link "Play"}  @{" Print                          " link "Print"}
   @{" Print Requester                " link "Print Requester"}  @{" PrintDir                       " link "PrintDir"}
   @{" Program Group                  " link "Program Group"}  @{" Protect                        " link "Protect"}
@@ -205,10 +206,11 @@ Opus 5 supports the following internal commands:
 @{" FTPOptions      " link "FTPOptions"} @{" FTPQuit         " link "FTPQuit"} @{" FTPSetVar       " link "FTPSetVar"} @{" GetSizes        " link "GetSizes"}
 @{" HexRead         " link "HexRead"} @{" Hide            " link "Hide"} @{" IconInfo        " link "IconInfo"} @{" Join            " link "Join"}
 @{" LeaveOut        " link "LeaveOut"} @{" LoadButtons     " link "LoadButtons"} @{" LoadEnvironment " link "LoadEnvironment"} @{" LoadFonts       " link "LoadFonts"}
-@{" LoadTheme       " link "LoadTheme"} @{" MakeDir         " link "MakeDir"} @{" MakeLink        " link "MakeLink"} @{" MakeLinkAs      " link "MakeLinkAs"}
-@{" Move            " link "Move"} @{" MoveAs          " link "MoveAs"} @{" None            " link "None"} @{" Parent          " link "Parent"}
-@{" Play            " link "Play"} @{" Print           " link "Print"} @{" PrintDir        " link "PrintDir"} @{" Protect         " link "Protect"}
-@{" Quit            " link "Quit"} @{" Read            " link "Read"} @{" Rename          " link "Rename"} @{" ReSelect        " link "Reselect"}
+@{" LoadTheme       " link "LoadTheme"} @{" MakeDir         " link "MakeDir"} @{" MakeFile        " link "MakeFile"} @{" MakeLink        " link "MakeLink"}
+@{" MakeLinkAs      " link "MakeLinkAs"} @{" Move            " link "Move"} @{" MoveAs          " link "MoveAs"} @{" None            " link "None"}
+@{" Parent          " link "Parent"} @{" Play            " link "Play"} @{" Print           " link "Print"} @{" PrintDir        " link "PrintDir"}
+@{" Protect         " link "Protect"} @{" Quit            " link "Quit"} @{" Read            " link "Read"} @{" Rename          " link "Rename"}
+@{" ReSelect        " link "Reselect"}
 @{" Reveal          " link "Reveal"} @{" Root            " link "Root"} @{" Run             " link "Run"} @{" SaveTheme       " link "SaveTheme"}
 @{" ScanDir         " link "ScanDir"} @{" Search          " link "Search"} @{" Select          " link "Select"} @{" Set             " link "Set"}
 @{" SetAsBackground " link "SetAsBackground"} @{" Show            " link "Show"} @{" SmartRead       " link "SmartRead"} @{" Split           " link "Split"}
@@ -1228,6 +1230,29 @@ current lister.
 The MakeDir command works on the first @{" SRCE " link "Source"} directory ONLY.
 
             5.8 - 107
+@endnode
+
+@node "MakeFile" "MakeFile"
+MakeFile              NAME, NOICON/S, SELECT/S
+
+MakeFile allows you to create a new empty file in the @{" SRCE " link "Source"} directory
+window.  From the displayed requester you can choose whether to create an
+icon with the new file or not.
+Entering a name and just pressing RETURN follows the status of the global
+Settings menu, @{" Create Icons " link "Settings - Create Icons"}.
+
+If the optional NAME is used, the command will not ask for the file name
+but will make it immediately in the current @{" SRCE " link "Source"} directory.
+
+If the optional NOICON switch is used, the file will be made without an
+associated '.info' file.  Otherwise, the command obeys the global Create
+Icons setting.
+
+The SELECT option causes the new file to be selected automatically.
+
+The MakeFile command works on the first @{" SRCE " link "Source"} directory ONLY.
+
+            5.101
 @endnode
 
 @node "MakeLink" "MakeLink"

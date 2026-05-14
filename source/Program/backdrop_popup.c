@@ -725,6 +725,7 @@ BOOL backdrop_popup(BackdropInfo *info, short x, short y, UWORD qual, long bpfla
 			case MENU_LISTER_ARRANGE_SIZE:
 			case MENU_LISTER_ARRANGE_DATE:
 			case MENU_ICON_MAKEDIR:
+			case MENU_ICON_MAKEFILE:
 			case MENU_LISTER_ICONIFY:
 			case MENU_LISTER_CLOSE:
 			case MENU_LISTER_RESTORE:
@@ -1457,6 +1458,9 @@ void popup_default_menu(BackdropInfo *info, PopUpHandle *menu, short *extnum)
 
 	// New drawer
 	PopUpNewItem(menu, MSG_LISTER_NEW_DRAWER, MENU_ICON_MAKEDIR, flags & ~POPUPF_DISABLED);
+
+	// New file
+	PopUpNewItem(menu, MSG_LISTER_NEW_FILE, MENU_ICON_MAKEFILE, flags & ~POPUPF_DISABLED);
 
 	// Clear 'separator' flag
 	menu->ph_Flags &= ~POPHF_SEP;

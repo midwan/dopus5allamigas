@@ -535,6 +535,8 @@ void display_fix_menu(struct Window *window, long type, APTR spec)
 
 static ULONG menu_disable_keys[] = {WINDOW_BACKDROP | WINDOW_LISTER | WINDOW_LISTER_ICONS,
 									MENU_ICON_MAKEDIR,
+									WINDOW_BACKDROP | WINDOW_LISTER | WINDOW_LISTER_ICONS,
+									MENU_ICON_MAKEFILE,
 									WINDOW_BACKDROP | WINDOW_GROUP | WINDOW_LISTER_ICONS,
 									MENU_ICON_OPEN,
 									WINDOW_ALL,
