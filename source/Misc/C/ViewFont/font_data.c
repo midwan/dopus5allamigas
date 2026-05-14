@@ -2,7 +2,7 @@
 
 const char USED_VAR version[] = "\0$VER: ViewFont " CMD_STRING;
 
-const ConfigWindow font_window = {{POS_CENTER, POS_CENTER, 40, 9}, {0, 0, 44, 67}};
+const ConfigWindow font_window = {{POS_CENTER, POS_CENTER, 48, 9}, {0, 0, 44, 67}};
 
 const static char *dummy_labels[] = {"", 0};
 
@@ -79,6 +79,16 @@ const ObjectDef
 
 		// Size cycle
 		{OD_GADGET, CYCLE_KIND, {POS_REL_RIGHT, 1, 6, 1}, {0, 14, 28, 6}, 0, 0, GAD_FONT_CYCLE, font_cycle_tags},
+
+		// Extended characters
+		{OD_GADGET,
+		 CHECKBOX_KIND,
+		 {POS_REL_RIGHT, 1, 0, 1},
+		 {2, 14, 26, 6},
+		 MSG_FONT_EXTENDED,
+		 PLACETEXT_RIGHT,
+		 GAD_FONT_EXTENDED,
+		 0},
 
 		// Bold
 		{OD_GADGET,

@@ -47,6 +47,7 @@
 #define MSG_MENU_SAVE_SETTINGS 1012
 #define MSG_MENU_QUIT 1013
 #define MSG_MENU_ABOUT 1014
+#define MSG_FONT_EXTENDED 1015
 
 #endif /* CATCOMP_NUMBERS */
 
@@ -71,6 +72,7 @@
 #define MSG_MENU_SAVE_SETTINGS_STR "Save Settings"
 #define MSG_MENU_QUIT_STR "Quit"
 #define MSG_MENU_ABOUT_STR "About..."
+#define MSG_FONT_EXTENDED_STR "_Extended chars"
 
 #endif /* CATCOMP_STRINGS */
 
@@ -103,6 +105,7 @@ static const struct CatCompArrayType CatCompArray[] =
     {MSG_MENU_SAVE_SETTINGS,(STRPTR)MSG_MENU_SAVE_SETTINGS_STR},
     {MSG_MENU_QUIT,(STRPTR)MSG_MENU_QUIT_STR},
     {MSG_MENU_ABOUT,(STRPTR)MSG_MENU_ABOUT_STR},
+    {MSG_FONT_EXTENDED,(STRPTR)MSG_FONT_EXTENDED_STR},
 };
 
 #endif /* CATCOMP_ARRAY */
@@ -145,6 +148,8 @@ static const char CatCompBlock[] =
     MSG_MENU_QUIT_STR "\x00\x00"
     "\x00\x00\x03\xF6\x00\x0A"
     MSG_MENU_ABOUT_STR "\x00\x00"
+    "\x00\x00\x03\xF7\x00\x10"
+    MSG_FONT_EXTENDED_STR "\x00"
 };
 
 #endif /* CATCOMP_BLOCK */

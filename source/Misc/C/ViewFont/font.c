@@ -25,6 +25,11 @@ For more information on Directory Opus for Windows please see:
 
 #include "font.h"
 
+#define FONT_SETTINGF_EXTENDED (1 << 0)
+
+static void font_build_text(font_data *data);
+static void font_append_text(font_data *data, short *pos, short first, short last);
+
 int main(int argc, char **argv)
 {
 	font_data *data;
@@ -291,6 +296,15 @@ int main(int argc, char **argv)
 						font_show_font(data, FALSE);
 						break;
 
+					// Extended characters changed
+					case GAD_FONT_EXTENDED:
+
+						// Rebuild preview and redraw font
+						data->extended = (BOOL)GetGadgetValue(data->list, GAD_FONT_EXTENDED);
+						font_build_text(data);
+						font_show_font(data, FALSE);
+						break;
+
 					// Save settings
 					case MENU_SAVE_SETTINGS:
 						font_save_settings(data);
@@ -367,6 +381,7 @@ int main(int argc, char **argv)
 BOOL font_open(font_data *data)
 {
 	struct Screen *screen = NULL;
+	short min_width, min_height;
 
 	// Screen supplied?
 	if (data->arg_array[ARG_SCREEN])
@@ -396,12 +411,24 @@ BOOL font_open(font_data *data)
 	if (!data->list)
 		return FALSE;
 
+	// Restore saved settings
+	SetGadgetValue(data->list, GAD_FONT_EXTENDED, data->extended);
+
 	// Fix sizing limits
-	WindowLimits(data->window,
-				 (font_window.char_dim.Width * data->window->RPort->TxWidth) + font_window.fine_dim.Width,
-				 (font_window.char_dim.Height * data->window->RPort->TxHeight) + font_window.fine_dim.Height,
-				 ~0,
-				 ~0);
+	min_width = (font_window.char_dim.Width * data->window->RPort->TxWidth) + font_window.fine_dim.Width;
+	min_height = (font_window.char_dim.Height * data->window->RPort->TxHeight) + font_window.fine_dim.Height;
+	WindowLimits(data->window, min_width, min_height, ~0, ~0);
+
+	// Expand older saved settings that are now below the minimum
+	if (data->window->Width < min_width || data->window->Height < min_height)
+	{
+		ChangeWindowBox(data->window,
+						data->window->LeftEdge,
+						data->window->TopEdge,
+						(data->window->Width < min_width) ? min_width : data->window->Width,
+						(data->window->Height < min_height) ? min_height : data->window->Height);
+		LayoutResize(data->window);
+	}
 
 	// Add menus
 	AddWindowMenus(data->window, font_menus);
@@ -556,22 +583,10 @@ void font_get_font(font_data *data)
 	// Got font?
 	if (data->font)
 	{
-		short ch, pos, hi;
-
-		// First character
-		ch = data->font->tf_LoChar;
-		if (ch < 33)
-			ch = 33;
-
-		// Hi character
-		hi = data->font->tf_HiChar;
-		if (hi > 126 && ch < 127)
-			hi = 127;
+		short pos;
 
 		// Build display text
-		for (pos = 0; ch < hi; ch++, pos++)
-			data->font_text[pos] = ch;
-		data->font_text[pos] = 0;
+		font_build_text(data);
 
 		// Got labels?
 		if (data->size_labels)
@@ -601,6 +616,67 @@ void font_get_font(font_data *data)
 
 	// Clear window busy
 	ClearWindowBusy(data->window);
+}
+
+// Build display text
+static void font_build_text(font_data *data)
+{
+	short pos = 0, ch, hi;
+
+	data->font_text[0] = 0;
+
+	// Got font?
+	if (!data->font)
+		return;
+
+	// Extended range?
+	if (data->extended)
+	{
+		// Keep the normal printable ASCII sample, and add high printable characters
+		font_append_text(data, &pos, 33, 126);
+		font_append_text(data, &pos, 160, 255);
+	}
+
+	// Normal range
+	else
+	{
+		// First character
+		ch = data->font->tf_LoChar;
+		if (ch < 33)
+			ch = 33;
+
+		// Hi character
+		hi = data->font->tf_HiChar;
+		if (hi > 126 && ch < 127)
+			hi = 127;
+
+		// Add existing preview range
+		font_append_text(data, &pos, ch, hi - 1);
+	}
+
+	data->font_text[pos] = 0;
+}
+
+// Append a character range to the display text
+static void font_append_text(font_data *data, short *pos, short first, short last)
+{
+	short ch;
+
+	// Clamp to font range
+	if (first < data->font->tf_LoChar)
+		first = data->font->tf_LoChar;
+	if (last > data->font->tf_HiChar)
+		last = data->font->tf_HiChar;
+	if (last > 255)
+		last = 255;
+
+	// Valid range?
+	if (first > last)
+		return;
+
+	// Append characters
+	for (ch = first; ch <= last && *pos < (short)sizeof(data->font_text) - 1; ch++, (*pos)++)
+		data->font_text[*pos] = ch;
 }
 
 // Show font example
@@ -1010,17 +1086,24 @@ void font_show_about(font_data *data)
 void font_save_settings(font_data *data)
 {
 	char buf[80];
+	ULONG flags = 0;
 
 	// Set busy pointer
 	SetWindowBusy(data->window);
 
+	// Get settings
+	data->extended = (BOOL)GetGadgetValue(data->list, GAD_FONT_EXTENDED);
+	if (data->extended)
+		flags |= FONT_SETTINGF_EXTENDED;
+
 	// Build settings string
 	lsprintf(buf,
-			 "%ld/%ld/%ld/%ld\n",
+			 "%ld/%ld/%ld/%ld/%ld\n",
 			 data->window->LeftEdge,
 			 data->window->TopEdge,
 			 data->window->GZZWidth,
-			 data->window->Height - data->window->BorderTop - 2);
+			 data->window->Height - data->window->BorderTop - 2,
+			 flags);
 
 	// Set variable
 	if (SetVar("dopus/Font Viewer", buf, -1, GVF_GLOBAL_ONLY))
@@ -1038,6 +1121,7 @@ void font_read_settings(font_data *data)
 {
 	char buf[80], *ptr;
 	struct IBox dims;
+	UWORD flags = 0;
 
 	// Get environment variable
 	if (GetVar("dopus/Font Viewer", buf, sizeof(buf), GVF_GLOBAL_ONLY) <= 0)
@@ -1051,6 +1135,8 @@ void font_read_settings(font_data *data)
 	read_parse_set(&ptr, (UWORD *)&dims.Top);
 	read_parse_set(&ptr, (UWORD *)&dims.Width);
 	read_parse_set(&ptr, (UWORD *)&dims.Height);
+	read_parse_set(&ptr, &flags);
+	data->extended = (BOOL)(flags & FONT_SETTINGF_EXTENDED);
 
 	// Got valid size?
 	if (dims.Height > 0)
