@@ -387,7 +387,7 @@ void function_parse_instruction(FunctionHandle *handle, char *string, unsigned c
 					// Current file
 					else
 					{
-						buffer[parse_pos] = FUNC_ONE_FILE;
+						buffer[parse_pos] = FUNC_ONE_FILE_NO_UNSELECT;
 						handle->func_flags |= FUNCF_LAST_FILE_FLAG;
 
 						// Need or want?
@@ -500,7 +500,7 @@ void function_parse_instruction(FunctionHandle *handle, char *string, unsigned c
 					// Current file
 					else
 					{
-						buffer[parse_pos] = FUNC_ONE_PATH;
+						buffer[parse_pos] = FUNC_ONE_PATH_NO_UNSELECT;
 						handle->func_flags |= FUNCF_LAST_FILE_FLAG;
 
 						// Need or want?
@@ -1042,10 +1042,12 @@ int function_build_instruction(FunctionHandle *handle,
 		break;
 
 		// Single pathname
+		case FUNC_ONE_PATH_NO_UNSELECT:
 		case FUNC_ONE_PATH:
 			path_str = handle->source_path;
 
 		// Single filename
+		case FUNC_ONE_FILE_NO_UNSELECT:
 		case FUNC_ONE_FILE:
 
 			// Quotes?
@@ -1089,6 +1091,8 @@ int function_build_instruction(FunctionHandle *handle,
 				}
 
 				// Say we're done with this entry
+				if (ch == FUNC_ONE_PATH_NO_UNSELECT || ch == FUNC_ONE_FILE_NO_UNSELECT)
+					entry->flags |= FUNCENTF_NO_UNSELECT;
 				function_end_entry(handle, entry, 1);
 			}
 

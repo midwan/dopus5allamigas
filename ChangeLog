@@ -23,6 +23,8 @@ Lister UI:
 - Function argument expansion can now read selected entries from the
   destination lister with `{df}` / `{dF}` (with paths) and `{do}` / `{dO}`
   (names only), including the inactive panel in Dual Lister mode (issue #77).
+- Fix `{fu}` and `{ou}` source argument expansion so consumed entries remain
+  selected after the function completes (issue #113).
 - Dual Lister setup now rolls back partially-created path field and
   scrollbar gadgets if allocation fails.
 - Environment / Lister Display now has an "Open New Listers in Dual Mode"

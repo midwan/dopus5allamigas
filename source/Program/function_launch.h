@@ -96,6 +96,7 @@ typedef struct _InstructionParsed
 #define FUNCENTF_ICON_ONLY (1 << 10)
 #define FUNCENTF_LINK (1 << 11)	 // Link
 #define FUNCENTF_FAKE_ICON (1 << 12)
+#define FUNCENTF_NO_UNSELECT (1 << 13)
 
 #ifndef __amigaos3__
 	#pragma pack(2)

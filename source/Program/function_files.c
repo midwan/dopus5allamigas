@@ -1282,8 +1282,9 @@ int function_end_entry(FunctionHandle *handle, FunctionEntry *entry, int deselec
 		else
 		{
 			// Deselect if required
-			if (deselect)
+			if (deselect && !(entry->flags & FUNCENTF_NO_UNSELECT))
 				entry->flags |= FUNCENTF_UNSELECT;
+			entry->flags &= ~FUNCENTF_NO_UNSELECT;
 
 			// Clear entered flag
 			entry->flags &= ~FUNCENTF_ENTERED;
