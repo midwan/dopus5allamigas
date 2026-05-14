@@ -1502,6 +1502,7 @@ MatchHandle *popup_build_icon_menu(BackdropInfo *info,
 								   PopUpHandle *menu)
 {
 	unsigned short bad, app, group, leftout, assign, nosnap, noinfo, templeft, realleft, nodev;
+	BOOL command = 0;
 	long object_type = 0;
 	PopUpExt *ext;
 	MatchHandle *handle = 0;
@@ -1565,6 +1566,7 @@ MatchHandle *popup_build_icon_menu(BackdropInfo *info,
 				? POPUPF_DISABLED
 				: 0;
 		templeft = (realleft && object->flags & BDOF_TEMP_LEFTOUT) ? POPUPF_DISABLED : 0;
+		command = (realleft && !templeft && command_filetype_match(object));
 		assign = (object->flags & BDOF_ASSIGN) ? POPUPF_DISABLED : 0;
 		nosnap = (flags & BPF_DISK && info->lister) ? POPUPF_DISABLED : 0;
 		noinfo = (object->type == BDO_APP_ICON && !(flags & BPF_CANINFO)) ? POPUPF_DISABLED : 0;
@@ -1692,10 +1694,17 @@ MatchHandle *popup_build_icon_menu(BackdropInfo *info,
 	{
 		// Delete
 		if (!(flags & BPF_TRASH))
-			PopUpNewItem(menu,
-						 (realleft) ? MSG_ICON_PUT_AWAY_MENU : MSG_DELETE,
-						 (realleft) ? MENU_ICON_PUT_AWAY : MENU_ICON_DELETE,
-						 0);
+		{
+			if (realleft)
+			{
+				PopUpNewItem(menu, MSG_ICON_PUT_AWAY_MENU, MENU_ICON_PUT_AWAY, 0);
+
+				if (command)
+					PopUpNewItem(menu, MSG_DELETE, MENU_ICON_DELETE, 0);
+			}
+			else
+				PopUpNewItem(menu, MSG_DELETE, MENU_ICON_DELETE, 0);
+		}
 	}
 
 	// Disk?

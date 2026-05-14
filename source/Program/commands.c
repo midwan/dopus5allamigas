@@ -786,6 +786,17 @@ void command_new(BackdropInfo *info, IPCData *ipc, char *filename)
 		// Set the comment
 		SetComment(buffer, fib->fib_Comment);
 
+		// Write the default command icon if there isn't one already
+		{
+			BPTR icon_lock;
+
+			StrCombine(info->buffer, buffer, ".info", sizeof(info->buffer));
+			if ((icon_lock = Lock(info->buffer, ACCESS_READ)))
+				UnLock(icon_lock);
+			else
+				icon_write(ICONTYPE_PROJECT, buffer, 0, 0, 0, 0);
+		}
+
 		// Only add as a leftout if not editing an existing function
 		if (!edit_func)
 		{
@@ -838,4 +849,34 @@ void command_remove(char *name)
 
 	// Unlock command list
 	unlock_listlock(&GUI->command_list);
+}
+
+// See if a backdrop object is an Opus command file
+BOOL command_filetype_match(BackdropObject *object)
+{
+	BPTR lock, old, commands_lock;
+	BOOL match = 0;
+
+	if (!object || object->type != BDO_LEFT_OUT || object->flags & BDOF_DESKTOP_FOLDER)
+		return 0;
+
+	if ((lock = backdrop_icon_lock(object)))
+	{
+		old = CurrentDir(lock);
+
+		if (command_filetype)
+			match = filetype_match_type(object->name, command_filetype);
+
+		if (!match && object->icon && object->icon->do_Type == WBPROJECT &&
+			(commands_lock = Lock("DOpus5:Commands", ACCESS_READ)))
+		{
+			if (SameLock(lock, commands_lock) == LOCK_SAME)
+				match = 1;
+			UnLock(commands_lock);
+		}
+
+		UnLock(CurrentDir(old));
+	}
+
+	return match;
 }
