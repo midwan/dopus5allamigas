@@ -27,7 +27,7 @@ class ListerTooltipColourTests(unittest.TestCase):
         for header in (DOPUS5_H, DOPUS_CONFIG_H):
             with self.subTest(header=header.name):
                 source = read_source(header)
-                self.assertIn("#define CONFIG_VERSION_16 16", source)
+                self.assertIn("#define CONFIG_VERSION_17 17", source)
                 self.assertIn("UBYTE tooltip_col[2];", source)
                 self.assertRegex(source, r"(?s)ENVCOL_GAUGE,\s*\n\s*ENVCOL_TOOLTIP,")
                 self.assertIn("ULONG pad[13];", source)
@@ -38,7 +38,7 @@ class ListerTooltipColourTests(unittest.TestCase):
         self.assertIn("env->tooltip_col[0] = 1;", source)
         self.assertIn("env->tooltip_col[1] = 0;", source)
         self.assertIn("if (env->version < CONFIG_VERSION_16)", source)
-        self.assertIn("env->version = CONFIG_VERSION_16;", source)
+        self.assertIn("env->version = CONFIG_VERSION_17;", source)
 
     def test_lister_colours_editor_exposes_tooltip_item(self):
         config_source = read_source(CONFIG_ENVIRONMENT_C)

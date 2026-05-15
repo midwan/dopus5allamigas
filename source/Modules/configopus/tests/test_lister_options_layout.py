@@ -167,6 +167,7 @@ class ListerOptionsLayoutTests(unittest.TestCase):
         self.assertIn("{5, 48, 8, 6}", layout)
         self.assertIn("{5, 62, 28, 6}", layout)
         self.assertIn("{33, 62, -8, 6}", layout)
+        self.assertNotIn("GAD_ENVIRONMENT_CLOCK_FORMAT", layout)
         self.assertNotIn("{5, 70, 28, 6}", layout)
 
 

@@ -155,6 +155,7 @@ void _config_env_reset_palette(config_env_data *data);
 void _config_env_grabwb(config_env_data *data);
 void _config_env_update_listersize(config_env_data *data);
 void _config_env_status_list(ObjectList *list, ULONG id, long, long);
+void _config_env_clock_format_list(ObjectList *list, ULONG id, long, long);
 void _config_env_fix_font_pens(config_env_data *data);
 unsigned char _env_map_font_colour(config_env_data *data, unsigned char col);
 void _config_env_build_drive_list(config_env_data *data, short);

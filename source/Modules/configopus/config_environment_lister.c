@@ -2,8 +2,64 @@
 #include "config_environment.h"
 #include <proto/module.h>
 
-// Show list of status bar options
-void _config_env_status_list(ObjectList *objlist, ULONG id, long first, long last)
+static void config_env_insert_raw_string(ObjectList *list, ULONG id, char *string)
+{
+	char buffer[256], tempbuf[256];
+	struct Gadget *gadget;
+	struct StringInfo *info;
+	GL_Object *object;
+	short len, buflen, maxlen, insert_len;
+
+	// Get gadget
+	if (!(object = GetObject(list, id)) || !(gadget = GADGET(object)) ||
+		!(info = (struct StringInfo *)gadget->SpecialInfo))
+		return;
+
+	// Get current string
+	maxlen = sizeof(buffer) - 1;
+	if (info->MaxChars > 0 && info->MaxChars - 1 < maxlen)
+		maxlen = info->MaxChars - 1;
+	stccpy(buffer, info->Buffer, maxlen + 1);
+	buflen = strlen(buffer);
+	len = info->BufferPos;
+	if (len < 0)
+		len = 0;
+	else if (len > buflen)
+		len = buflen;
+
+	// Copy from current position into second buffer
+	stccpy(tempbuf, buffer + len, sizeof(tempbuf));
+	buffer[len] = 0;
+
+	// Insert new string
+	insert_len = strlen(string);
+	if (insert_len > maxlen - len)
+		insert_len = maxlen - len;
+	if (insert_len > 0)
+	{
+		stccpy(buffer + len, string, insert_len + 1);
+		len += insert_len;
+	}
+	if (len < maxlen)
+		stccpy(buffer + len, tempbuf, maxlen - len + 1);
+	else
+		buffer[len] = 0;
+
+	// Set new string in gadget
+	SetGadgetValue(list, id, (IPTR)buffer);
+
+	// Bump buffer position
+	buflen = strlen(info->Buffer);
+	if (len > buflen)
+		len = buflen;
+	info->BufferPos = len;
+
+	// Activate gadget
+	ActivateGadget(gadget, list->window, 0);
+}
+
+// Show list of text format codes
+static void config_env_code_list(ObjectList *objlist, ULONG id, long first, long last, BOOL raw_insert)
 {
 	Att_List *list;
 	short a, b;
@@ -60,10 +116,25 @@ void _config_env_status_list(ObjectList *objlist, ULONG id, long first, long las
 				stccpy(buf, node->node.ln_Name, sizeof(buf));
 
 			// Insert into gadget
-			funced_edit_insertstring(objlist, id, buf, DOpusBase, (struct Library *)IntuitionBase);
+			if (raw_insert)
+				config_env_insert_raw_string(objlist, id, buf);
+			else
+				funced_edit_insertstring(objlist, id, buf, DOpusBase, (struct Library *)IntuitionBase);
 		}
 	}
 
 	// Free list
 	Att_RemList(list, 0);
+}
+
+// Show list of status bar options
+void _config_env_status_list(ObjectList *objlist, ULONG id, long first, long last)
+{
+	config_env_code_list(objlist, id, first, last, FALSE);
+}
+
+// Show list of clock format options
+void _config_env_clock_format_list(ObjectList *objlist, ULONG id, long first, long last)
+{
+	config_env_code_list(objlist, id, first, last, TRUE);
 }

@@ -30,13 +30,18 @@ For more information on Directory Opus for Windows please see:
 
 #define TITLE_ERROR 1
 #define ERROR_TIMEOUT 4
+#define TITLE_SIZE 256
+
+#if defined(__amigaos3__) || defined(USE_SCREENTITLE)
+#define CLOCK_USE_SCREENTITLE
+#endif
 
 void calc_daymonyr(long days, long *day, long *month, long *year);
 
 #define MOON_BIG_SIZE 13
 #define MOON_SMALL_SIZE 9
 
-#ifndef USE_SCREENTITLE
+#ifndef CLOCK_USE_SCREENTITLE
 struct ClockTitleBarMetrics
 {
 	short height;
@@ -99,17 +104,197 @@ static short clock_titlebar_image_y(short image_height)
 }
 #endif
 
+#if defined(__amigaos3__) && defined(CLOCK_USE_SCREENTITLE)
+static void clock_append_screen_title_clock(struct RastPort *rp, short clock_x, char *titlebuf)
+{
+	short title_len = strlen(GUI->screen_title);
+
+	if (title_len >= TITLE_SIZE - 1)
+		return;
+
+	if (rp && clock_x > 0)
+	{
+		short title_width = TextLength(rp, GUI->screen_title, title_len);
+		short space_width = TextLength(rp, " ", 1);
+		short target_x = clock_x - 5;
+
+		if (space_width > 0)
+		{
+			while (title_len < TITLE_SIZE - 1 && title_width + space_width < target_x)
+			{
+				GUI->screen_title[title_len++] = ' ';
+				GUI->screen_title[title_len] = 0;
+				title_width += space_width;
+			}
+		}
+	}
+
+	if (title_len < TITLE_SIZE - 1)
+	{
+		GUI->screen_title[title_len++] = ' ';
+		GUI->screen_title[title_len] = 0;
+		stccpy(GUI->screen_title + title_len, titlebuf, TITLE_SIZE - title_len);
+	}
+}
+#endif
+
+struct ClockFormatBuffer
+{
+	char *buffer;
+	short size;
+	short pos;
+};
+
+static unsigned long ASM clock_format_hook(REG(a0, struct Hook *hook), REG(a1, ULONG ch), REG(a2, APTR dummy))
+{
+	struct ClockFormatBuffer *data = (struct ClockFormatBuffer *)hook->h_Data;
+
+	if (data && data->pos < data->size - 1)
+	{
+		data->buffer[data->pos++] = (char)ch;
+		data->buffer[data->pos] = 0;
+	}
+	return 0;
+}
+
+static BOOL clock_format_date(char *buffer, short size, char *format, struct DateStamp *stamp)
+{
+	struct Hook hook;
+	struct ClockFormatBuffer data;
+
+	if (!buffer || size < 1)
+		return FALSE;
+	buffer[0] = 0;
+
+	if (!format || !format[0] || !stamp || !locale.li_LocaleBase)
+		return FALSE;
+
+	data.buffer = buffer;
+	data.size = size;
+	data.pos = 0;
+
+#if defined(__MORPHOS__)
+	hook.h_Entry = (HOOKFUNC)HookEntry;
+	hook.h_SubEntry = (HOOKFUNC)clock_format_hook;
+#else
+	hook.h_Entry = (ULONG(*)())clock_format_hook;
+#endif
+	hook.h_Data = (APTR)&data;
+
+#define LocaleBase locale.li_LocaleBase
+	FormatDate(locale.li_Locale, format, stamp, &hook);
+#undef LocaleBase
+
+	return (buffer[0] != 0);
+}
+
+static void clock_build_manual_time(struct DateStamp *stamp, char *timebuf, BOOL show_seconds)
+{
+	short hours = stamp->ds_Minute / 60;
+	short minutes = stamp->ds_Minute % 60;
+	short seconds = stamp->ds_Tick / TICKS_PER_SECOND;
+
+	if (environment->env->settings.date_flags & DATE_12HOUR)
+	{
+		char *ampm = 0;
+		char *ampm_sep;
+
+		if (locale.li_LocaleBase)
+		{
+#define LocaleBase locale.li_LocaleBase
+			ampm = (char *)GetLocaleStr(locale.li_Locale, (hours > 11) ? PM_STR : AM_STR);
+#undef LocaleBase
+		}
+		if (hours > 11)
+			hours -= 12;
+		if (hours == 0)
+			hours = 12;
+		if (!ampm)
+			ampm = "";
+		ampm_sep = (ampm[0]) ? " " : "";
+
+		if (show_seconds)
+			lsprintf(timebuf, "%2ld:%02ld:%02ld%s%s", hours, minutes, seconds, ampm_sep, ampm);
+		else
+			lsprintf(timebuf, "%2ld:%02ld%s%s", hours, minutes, ampm_sep, ampm);
+	}
+	else if (show_seconds)
+		lsprintf(timebuf, "%02ld:%02ld:%02ld", hours, minutes, seconds);
+	else
+		lsprintf(timebuf, "%02ld:%02ld", hours, minutes);
+}
+
+static void clock_build_title_text(struct DateTime *date, char *datebuf, char *titlebuf, BOOL show_seconds)
+{
+	char timebuf[80];
+	char *format = environment->env->clock_format;
+
+	if (format[0] && clock_format_date(titlebuf, TITLE_SIZE, format, &date->dat_Stamp))
+		return;
+
+	format = 0;
+	if (environment->env->settings.date_flags & DATE_12HOUR)
+		format = (show_seconds) ? "%Q:%M:%S %p" : "%Q:%M %p";
+	else
+		format = (show_seconds) ? "%H:%M:%S" : "%H:%M";
+
+	if (!clock_format_date(timebuf, sizeof(timebuf), format, &date->dat_Stamp))
+		clock_build_manual_time(&date->dat_Stamp, timebuf, show_seconds);
+
+	lsprintf(titlebuf, "%s  %s  ", datebuf, timebuf);
+}
+
+static BOOL clock_title_format_uses_clock(char *format)
+{
+	char *ptr;
+
+	for (ptr = format; ptr && *ptr; ptr++)
+	{
+		if (*ptr != '%')
+			continue;
+
+		if (*(ptr + 1) == '%')
+		{
+			++ptr;
+			continue;
+		}
+
+		if (*(ptr + 1) == 't' && *(ptr + 2) != 'm' && *(ptr + 2) != 'c' && *(ptr + 2) != 'f' &&
+			*(ptr + 2) != 'a')
+			return TRUE;
+	}
+	return FALSE;
+}
+
+static long clock_memory_message(struct RastPort *rp, short clock_x)
+{
+	short width;
+	char *ptr;
+
+	if (!rp)
+		return MSG_MEMORY_COUNTER;
+
+	ptr = GetString(&locale, MSG_MEMORY_COUNTER);
+	width = TextLength(rp, ptr, (WORD)strlen(ptr));
+	width += TextLength(rp, "9999999999", 10);
+	width += TextLength(rp, dopus_name, strlen(dopus_name));
+
+	return (5 + width >= clock_x) ? MSG_MEMORY_COUNTER_CLOCK : MSG_MEMORY_COUNTER;
+}
+
 #ifdef __amigaos4__
-APTR clock_show_custom_title(struct RastPort *rp,
+BOOL clock_show_custom_title(struct RastPort *rp,
 							 long clock_x,
 							 long days,
+							 char *clock_text,
 							 struct SysInfo *si,
 							 struct Library *SysInfoBase,
 							 struct SysInfoIFace *ISysInfo);
 #else
-APTR clock_show_custom_title(struct RastPort *rp,
+BOOL clock_show_custom_title(struct RastPort *rp,
 							 long clock_x,
 							 long days,
+							 char *clock_text,
 							 struct SysInfo *si,
 							 struct Library *SysInfoBase);
 #endif
@@ -122,7 +307,7 @@ IPC_EntryCode(clock_proc)
 	struct AppWindow *appwindow = 0;
 	struct Layer *layer = 0;
 	TimerHandle *timer;
-	char datebuf[12], titlebuf[28];
+	char datebuf[LEN_DATSTRING], titlebuf[TITLE_SIZE];
 	struct DateTime date;
 	BOOL hide_clock;
 	short clock_x = 0;
@@ -136,6 +321,11 @@ IPC_EntryCode(clock_proc)
 	struct SysInfoIFace *ISysInfo;
 #endif
 	struct SysInfo *si = 0;
+	BOOL titlebar = FALSE;
+#if defined(__amigaos3__) && defined(CLOCK_USE_SCREENTITLE)
+	char last_screen_title[TITLE_SIZE] = {0};
+	struct Window *last_title_window = 0;
+#endif
 
 	// Do startup
 	if ((ipc = IPC_ProcStartup(0, 0)))
@@ -179,9 +369,10 @@ IPC_EntryCode(clock_proc)
 						// D(bug("IPC_SHOW received\n"));
 
 						// Not already open?
-						if (!window && !layer)
+						if (!window && !titlebar)
 						{
 							short len;
+							BOOL show_seconds = TRUE;
 							struct Screen *screen;
 
 							// Get screen pointer
@@ -203,6 +394,9 @@ IPC_EntryCode(clock_proc)
 							// Otherwise, lock screen if using title bar
 							else if (!hide_clock)
 							{
+#if defined(__amigaos3__) && defined(CLOCK_USE_SCREENTITLE)
+								// Screen title mode does not touch the screen layers directly.
+#else
 								// Try to lock screen
 								if (FindPubScreen(screen, TRUE))
 									pubscreen = screen;
@@ -213,18 +407,50 @@ IPC_EntryCode(clock_proc)
 									quit = 1;
 									break;
 								}
+#endif
 							}
 
 							// Calculate length of window we need
 							len = TextLength(&screen->RastPort, "88:88:88pm  88-WWW-88 ", 21);
+#if defined(__amigaos3__) && defined(CLOCK_USE_SCREENTITLE)
+							if (!hide_clock)
+								show_seconds = FALSE;
+#endif
+							if (environment->env->clock_format[0])
+							{
+								struct DateTime now;
+								char now_date[LEN_DATSTRING], now_title[TITLE_SIZE];
+
+								DateStamp(&now.dat_Stamp);
+								now.dat_Format = environment->env->settings.date_format;
+								now.dat_Flags = 0;
+								now.dat_StrDay = 0;
+								now.dat_StrDate = now_date;
+								now.dat_StrTime = 0;
+								DateToStr(&now);
+								clock_build_title_text(&now, now_date, now_title, show_seconds);
+								len = TextLength(&screen->RastPort, now_title, (WORD)strlen(now_title));
+							}
 
 							// Displaying in title bar?
 							if (!hide_clock)
 							{
+#if defined(__amigaos3__) && defined(CLOCK_USE_SCREENTITLE)
+								struct Gadget *gadget;
+								// Get position to render clock
+								bar_x = screen->Width - 16;
+								if ((gadget = FindGadgetType(screen->FirstGadget, GTYP_SDEPTH)))
+									bar_x -= gadget->Width;
+								clock_x = bar_x - len;
+
+								titlebar = TRUE;
+								last_screen_title[0] = 0;
+								last_title_window = 0;
+
+								mem_msg = clock_memory_message(&screen->RastPort, clock_x);
+#else
 								struct DrawInfo *drawinfo;
 								struct Gadget *gadget;
-								short a;
-								char *ptr;
 
 								// Copy rastport
 								layer = screen->BarLayer;
@@ -240,7 +466,7 @@ IPC_EntryCode(clock_proc)
 										drawinfo->dri_Pens[(drawinfo->dri_Version >= 2) ? BARBLOCKPEN : BLOCKPEN]);
 								SetDrMd(&clock_rp, JAM2);
 
-#ifndef USE_SCREENTITLE
+#ifndef CLOCK_USE_SCREENTITLE
 								clock_titlebar_set_metrics(screen, &clock_rp, drawinfo);
 #endif
 
@@ -253,21 +479,10 @@ IPC_EntryCode(clock_proc)
 									bar_x -= gadget->Width;
 								clock_x = bar_x - len;
 
-								// Get memory message
-								mem_msg = MSG_MEMORY_COUNTER;
+								mem_msg = clock_memory_message(&screen->RastPort, clock_x);
 
-								// Get length of memory text
-								ptr = GetString(&locale, mem_msg);
-								a = TextLength(&screen->RastPort, ptr, (WORD)strlen(ptr));
-								a += TextLength(&screen->RastPort, "9999999999", 10);
-								a += TextLength(&screen->RastPort, dopus_name, strlen(dopus_name));
-
-								// Is there room for the full message?
-								if (5 + a >= clock_x)
-								{
-									// Use short message
-									mem_msg = MSG_MEMORY_COUNTER_CLOCK;
-								}
+								titlebar = TRUE;
+#endif
 							}
 
 							// Otherwise, open window
@@ -356,6 +571,11 @@ IPC_EntryCode(clock_proc)
 							pubscreen = 0;
 						}
 						layer = 0;
+						titlebar = FALSE;
+#if defined(__amigaos3__) && defined(CLOCK_USE_SCREENTITLE)
+						last_screen_title[0] = 0;
+						last_title_window = 0;
+#endif
 						// D(bug("IPC_HIDE done\n"));
 
 						break;
@@ -448,14 +668,17 @@ IPC_EntryCode(clock_proc)
 							// Free text
 							FreeVec(error_txt);
 							error_txt = 0;
+#if defined(__amigaos3__) && defined(CLOCK_USE_SCREENTITLE)
+							last_screen_title[0] = 0;
+							last_title_window = 0;
+#endif
 						}
 					}
 
 					// Valid window?
-					if (window || layer)
+					if (window || titlebar)
 					{
-						short hours, seconds;
-						ULONG minutes;
+						BOOL show_seconds = TRUE;
 
 						// Get current datestamp
 						DateStamp(&date.dat_Stamp);
@@ -473,33 +696,21 @@ IPC_EntryCode(clock_proc)
 						// Save days value
 						days = date.dat_Stamp.ds_Days;
 
-						// Get hours, minutes and seconds
-						hours = DivideU(date.dat_Stamp.ds_Minute, 60, &minutes, UtilityBase);
-						seconds = UDivMod32(date.dat_Stamp.ds_Tick, TICKS_PER_SECOND);
+#if defined(__amigaos3__) && defined(CLOCK_USE_SCREENTITLE)
+						if (titlebar)
+							show_seconds = FALSE;
+#endif
+						clock_build_title_text(&date, datebuf, titlebuf, show_seconds);
 
-						// Build time string. 12 hour clock?
-						if (environment->env->settings.date_flags & DATE_12HOUR)
+#if defined(__amigaos3__) && defined(CLOCK_USE_SCREENTITLE)
+						if (titlebar && GUI->screen_pointer)
 						{
-							char ampm = 'a';
+							short clock_width =
+								TextLength(&GUI->screen_pointer->RastPort, titlebuf, (WORD)strlen(titlebuf));
 
-							// Convert to 12 hour clock
-							if (hours > 11)
-							{
-								ampm = 'p';
-								hours -= 12;
-							}
-							if (hours == 0)
-								hours = 12;
-
-							// Build time string
-							lsprintf(titlebuf, "%s  %2ld:%02ld:%02ld%lcm  ", datebuf, hours, minutes, seconds, ampm);
+							clock_x = (clock_width < bar_x) ? bar_x - clock_width : 0;
 						}
-
-						// 24 hour clock
-						else
-						{
-							lsprintf(titlebuf, "%s  %02ld:%02ld:%02ld  ", datebuf, hours, minutes, seconds);
-						}
+#endif
 
 						// Update window?
 						if (window)
@@ -509,17 +720,19 @@ IPC_EntryCode(clock_proc)
 						}
 
 						// Or render to screen bar?
-						else if (layer)
+						else if (titlebar)
 						{
 							ULONG lock;
 							BOOL ok = 0;
+							struct Window *active_window = 0;
 							struct Window *tit_window = 0;
 
 							// Lock Intuition
 							lock = LockIBase(0);
 
 							// Check that the active window is an Opus window
-							if (GetWindowID(IntuitionBase->ActiveWindow) != WINDOW_UNKNOWN)
+							active_window = IntuitionBase->ActiveWindow;
+							if (active_window && GetWindowID(active_window) != WINDOW_UNKNOWN)
 							{
 								// Set ok flag
 								ok = 1;
@@ -528,7 +741,7 @@ IPC_EntryCode(clock_proc)
 								if (environment->env->display_options & DISPOPTF_WB_TITLE)
 								{
 									// Save window pointer
-									tit_window = IntuitionBase->ActiveWindow;
+									tit_window = active_window;
 								}
 							}
 
@@ -551,7 +764,7 @@ IPC_EntryCode(clock_proc)
 									if (done_tit++ >= 10)
 									{
 										// Call SetWindowTitles which will be patched
-										SetWindowTitles(IntuitionBase->ActiveWindow, (char *)-1, "Amiga Workbench");
+										SetWindowTitles(tit_window, (char *)-1, "Amiga Workbench");
 										done_tit = 0;
 									}
 								}
@@ -559,13 +772,17 @@ IPC_EntryCode(clock_proc)
 								// Rendering as usual
 								else
 								{
+									BOOL custom_title_uses_clock = FALSE;
+
 									// Reset title flag
 									done_tit = 0;
+									if (environment->env->scr_title_text[0] && !error_txt)
+										custom_title_uses_clock = clock_title_format_uses_clock(environment->env->scr_title_text);
 
 									// Is clock on?
-									if (GUI->flags & GUIF_CLOCK)
+									if ((GUI->flags & GUIF_CLOCK) && !custom_title_uses_clock)
 									{
-#ifndef USE_SCREENTITLE
+#ifndef CLOCK_USE_SCREENTITLE
 										Move(&clock_rp, clock_x, clock_titlebar_metrics.text_y);
 										Text(&clock_rp, titlebuf, strlen(titlebuf));
 #endif
@@ -581,21 +798,27 @@ IPC_EntryCode(clock_proc)
 										last_x = bar_x;
 									}
 
+									mem_msg = clock_memory_message(
+										(GUI->screen_pointer) ? &GUI->screen_pointer->RastPort : &clock_rp,
+										(clock_on) ? clock_x : last_x);
+
 									// Custom title?
 									if (environment->env->scr_title_text[0] && !error_txt)
 									{
 										// Show custom title
 #ifdef __amigaos4__
 										clock_show_custom_title(&clock_rp,
-																(GUI->flags & GUIF_CLOCK) ? clock_x : last_x,
+																(clock_on) ? clock_x : last_x,
 																days,
+																(custom_title_uses_clock) ? titlebuf : 0,
 																si,
 																SysInfoBase,
 																ISysInfo);
 #else
 										clock_show_custom_title(&clock_rp,
-																(GUI->flags & GUIF_CLOCK) ? clock_x : last_x,
+																(clock_on) ? clock_x : last_x,
 																days,
+																(custom_title_uses_clock) ? titlebuf : 0,
 																si,
 																SysInfoBase);
 #endif
@@ -607,17 +830,31 @@ IPC_EntryCode(clock_proc)
 										// Show free memory count
 										clock_show_memory(&clock_rp,
 														  mem_msg,
-														  (GUI->flags & GUIF_CLOCK) ? clock_x : last_x,
+														  (clock_on) ? clock_x : last_x,
 														  error_txt);
 									}
 
-#ifdef USE_SCREENTITLE
+#ifdef CLOCK_USE_SCREENTITLE
 									if (clock_on)
 									{
+#if defined(__amigaos3__)
+										clock_append_screen_title_clock(
+											(GUI->screen_pointer) ? &GUI->screen_pointer->RastPort : 0, clock_x, titlebuf);
+#else
 										strcat(GUI->screen_title, " - ");
 										strcat(GUI->screen_title, titlebuf);
+#endif
 									}
+#if defined(__amigaos3__)
+									if (strcmp(last_screen_title, GUI->screen_title) != 0 || last_title_window != active_window)
+									{
+										SetWindowTitles(active_window, (char *)-1, (char *)GUI->screen_title);
+										stccpy(last_screen_title, GUI->screen_title, TITLE_SIZE);
+										last_title_window = active_window;
+									}
+#else
 									SetWindowTitles(IntuitionBase->ActiveWindow, (char *)-1, (char *)GUI->screen_title);
+#endif
 #endif
 
 									// Remember position
@@ -715,7 +952,7 @@ void clock_show_memory(struct RastPort *rp, long msg, long clock_x, char *error)
 #endif
 	}
 
-#ifndef USE_SCREENTITLE
+#ifndef CLOCK_USE_SCREENTITLE
 	// Render text
 	Move(rp, 5, clock_titlebar_metrics.text_y);
 	Text(rp, GUI->screen_title, strlen(GUI->screen_title));
@@ -762,36 +999,40 @@ void title_error(char *txt, short time)
 	FreeSemaphore(&GUI->process_list.lock);
 }
 
-#define TITLE_SIZE 256
-
 // Show custom title
 #ifdef __amigaos4__
-APTR clock_show_custom_title(struct RastPort *rp,
+BOOL clock_show_custom_title(struct RastPort *rp,
 							 long clock_x,
 							 long days,
+							 char *clock_text,
 							 struct SysInfo *si,
 							 struct Library *SysInfoBase,
 							 struct SysInfoIFace *ISysInfo)
 #else
-APTR clock_show_custom_title(struct RastPort *rp,
+BOOL clock_show_custom_title(struct RastPort *rp,
 							 long clock_x,
 							 long days,
+							 char *clock_text,
 							 struct SysInfo *si,
 							 struct Library *SysInfoBase)
 #endif
 {
 	char *ptr, *title_buffer;
-	short pos = 0, moon_day = -1, moon_pos = 0;
+	short pos = 0;
+	BOOL used_clock = FALSE;
+#ifndef CLOCK_USE_SCREENTITLE
+	short moon_day = -1, moon_pos = 0;
 	struct BitMap bm;
+#endif
 
 	title_buffer = GUI->screen_title;
 
 	// Go through title text
-	for (ptr = environment->env->scr_title_text; *ptr && pos < TITLE_SIZE; ptr++)
+	for (ptr = environment->env->scr_title_text; *ptr && pos < TITLE_SIZE - 1; ptr++)
 	{
 		short esc = 0;
 		unsigned long memval = (unsigned long)-1, memtotal = (unsigned long)-1;
-		char buf[80];  // let's hope that is always big enough, as there doesn't seem to be any length checking here.
+		char buf[TITLE_SIZE];
 
 		// Clear buffer
 		buf[0] = 0;
@@ -847,6 +1088,18 @@ APTR clock_show_custom_title(struct RastPort *rp,
 			{
 				strcpy(buf, GUI->ver_chips);
 				esc = 2;
+			}
+
+			// Clock text
+			else if (*(ptr + 1) == 't' && *(ptr + 2) != 'm' && *(ptr + 2) != 'c' && *(ptr + 2) != 'f' &&
+					 *(ptr + 2) != 'a')
+			{
+				if (clock_text)
+				{
+					stccpy(buf, clock_text, sizeof(buf));
+					used_clock = TRUE;
+				}
+				esc = 1;
 			}
 
 			// Total memory
@@ -996,7 +1249,7 @@ APTR clock_show_custom_title(struct RastPort *rp,
 				year -= (year / 30) * 30;				  // Reduce modulo 30 to give 0>=y>=29
 
 				// If font is big enough, we have a graphical moon
-#ifndef USE_SCREENTITLE
+#ifndef CLOCK_USE_SCREENTITLE
 				if (rp->TxHeight >= 8)
 				{
 					// Save moon day and position
@@ -1107,7 +1360,7 @@ APTR clock_show_custom_title(struct RastPort *rp,
 	title_buffer[pos] = 0;
 
 	// Render text
-#ifndef USE_SCREENTITLE
+#ifndef CLOCK_USE_SCREENTITLE
 	Move(rp, 5, clock_titlebar_metrics.text_y);
 	Text(rp, title_buffer, (moon_day > -1) ? moon_pos : strlen(title_buffer));
 
@@ -1189,7 +1442,7 @@ APTR clock_show_custom_title(struct RastPort *rp,
 	}
 #endif
 
-	return NULL;
+	return used_clock;
 }
 
 static char mondays[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
