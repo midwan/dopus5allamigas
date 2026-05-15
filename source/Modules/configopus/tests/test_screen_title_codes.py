@@ -24,16 +24,23 @@ class ScreenTitleCodeTests(unittest.TestCase):
         self.assertNotIn("*(ptr + 1) == 'i' && *(ptr + 2) == 't'", source)
         self.assertNotIn("struct DateStamp *date", source)
 
-    def test_internet_time_is_not_advertised_in_configopus(self):
-        self.assertNotIn("*it\\tInternet Time", read_source(CONFIGOPUS_CD))
-        self.assertNotIn("MSG_SCREENTITLE_CODE_21", read_source(STRING_DATA_H))
-        self.assertNotIn("*it\\tInternet Time", read_source(STRING_DATA_H))
+    def test_clock_text_is_advertised_but_internet_time_is_not(self):
+        cd_source = read_source(CONFIGOPUS_CD)
+        string_source = read_source(STRING_DATA_H)
+
+        self.assertIn("MSG_SCREENTITLE_CODE_21", cd_source)
+        self.assertIn("*t\\tClock text", cd_source)
+        self.assertIn("#define MSG_SCREENTITLE_CODE_21 23021", string_source)
+        self.assertIn("#define MSG_SCREENTITLE_CODE_LAST 23022", string_source)
+        self.assertIn('#define MSG_SCREENTITLE_CODE_21_STR "*t\\tClock text"', string_source)
+        self.assertIn("MSG_SCREENTITLE_CODE_21, (CONST_STRPTR)MSG_SCREENTITLE_CODE_21_STR", string_source)
+        self.assertNotIn("*it\\tInternet Time", cd_source)
+        self.assertNotIn("*it\\tInternet Time", string_source)
 
     def test_translated_configopus_catalogs_do_not_advertise_internet_time(self):
         for catalog in CATALOG_DIR.glob("*/configopus.ct"):
             with self.subTest(catalog=catalog.relative_to(ROOT)):
                 source = read_source(catalog)
-                self.assertNotIn("MSG_SCREENTITLE_CODE_21", source)
                 self.assertNotIn("*it\\tInternet Time", source)
 
 

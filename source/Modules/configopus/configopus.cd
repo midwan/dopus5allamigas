@@ -1211,6 +1211,9 @@ MSG_SCREENTITLE_CODE_19 (//)
 MSG_SCREENTITLE_CODE_20 (//)
 *pm\tPhase of the Moon
 ;
+MSG_SCREENTITLE_CODE_21 (//)
+*t\tClock text
+;
 MSG_SCREENTITLE_CODE_LAST (//)
 -
 ;

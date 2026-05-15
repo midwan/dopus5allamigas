@@ -56,6 +56,16 @@ class OS3ScreenTitleClockTests(unittest.TestCase):
         self.assertNotIn("refresh_titlebar", source)
         self.assertNotIn("last_title_minute", source)
 
+    def test_os3_screen_title_updates_when_active_window_changes(self):
+        source = read_source(CLOCK_TASK_C)
+
+        self.assertIn("struct Window *last_title_window = 0;", source)
+        self.assertIn("active_window = IntuitionBase->ActiveWindow;", source)
+        self.assertIn("tit_window = active_window;", source)
+        self.assertIn("last_title_window != active_window", source)
+        self.assertIn("SetWindowTitles(active_window, (char *)-1, (char *)GUI->screen_title);", source)
+        self.assertIn("last_title_window = active_window;", source)
+
     def test_custom_clock_format_and_screen_title_token_use_locale_formatter(self):
         source = read_source(CLOCK_TASK_C)
 

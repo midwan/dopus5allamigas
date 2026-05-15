@@ -324,6 +324,7 @@ IPC_EntryCode(clock_proc)
 	BOOL titlebar = FALSE;
 #if defined(__amigaos3__) && defined(CLOCK_USE_SCREENTITLE)
 	char last_screen_title[TITLE_SIZE] = {0};
+	struct Window *last_title_window = 0;
 #endif
 
 	// Do startup
@@ -444,6 +445,7 @@ IPC_EntryCode(clock_proc)
 
 								titlebar = TRUE;
 								last_screen_title[0] = 0;
+								last_title_window = 0;
 
 								mem_msg = clock_memory_message(&screen->RastPort, clock_x);
 #else
@@ -572,6 +574,7 @@ IPC_EntryCode(clock_proc)
 						titlebar = FALSE;
 #if defined(__amigaos3__) && defined(CLOCK_USE_SCREENTITLE)
 						last_screen_title[0] = 0;
+						last_title_window = 0;
 #endif
 						// D(bug("IPC_HIDE done\n"));
 
@@ -667,6 +670,7 @@ IPC_EntryCode(clock_proc)
 							error_txt = 0;
 #if defined(__amigaos3__) && defined(CLOCK_USE_SCREENTITLE)
 							last_screen_title[0] = 0;
+							last_title_window = 0;
 #endif
 						}
 					}
@@ -720,13 +724,15 @@ IPC_EntryCode(clock_proc)
 						{
 							ULONG lock;
 							BOOL ok = 0;
+							struct Window *active_window = 0;
 							struct Window *tit_window = 0;
 
 							// Lock Intuition
 							lock = LockIBase(0);
 
 							// Check that the active window is an Opus window
-							if (GetWindowID(IntuitionBase->ActiveWindow) != WINDOW_UNKNOWN)
+							active_window = IntuitionBase->ActiveWindow;
+							if (active_window && GetWindowID(active_window) != WINDOW_UNKNOWN)
 							{
 								// Set ok flag
 								ok = 1;
@@ -735,7 +741,7 @@ IPC_EntryCode(clock_proc)
 								if (environment->env->display_options & DISPOPTF_WB_TITLE)
 								{
 									// Save window pointer
-									tit_window = IntuitionBase->ActiveWindow;
+									tit_window = active_window;
 								}
 							}
 
@@ -758,7 +764,7 @@ IPC_EntryCode(clock_proc)
 									if (done_tit++ >= 10)
 									{
 										// Call SetWindowTitles which will be patched
-										SetWindowTitles(IntuitionBase->ActiveWindow, (char *)-1, "Amiga Workbench");
+										SetWindowTitles(tit_window, (char *)-1, "Amiga Workbench");
 										done_tit = 0;
 									}
 								}
@@ -840,10 +846,11 @@ IPC_EntryCode(clock_proc)
 #endif
 									}
 #if defined(__amigaos3__)
-									if (strcmp(last_screen_title, GUI->screen_title) != 0)
+									if (strcmp(last_screen_title, GUI->screen_title) != 0 || last_title_window != active_window)
 									{
-										SetWindowTitles(IntuitionBase->ActiveWindow, (char *)-1, (char *)GUI->screen_title);
+										SetWindowTitles(active_window, (char *)-1, (char *)GUI->screen_title);
 										stccpy(last_screen_title, GUI->screen_title, TITLE_SIZE);
+										last_title_window = active_window;
 									}
 #else
 									SetWindowTitles(IntuitionBase->ActiveWindow, (char *)-1, (char *)GUI->screen_title);

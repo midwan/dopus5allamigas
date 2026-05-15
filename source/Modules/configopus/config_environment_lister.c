@@ -8,7 +8,7 @@ static void config_env_insert_raw_string(ObjectList *list, ULONG id, char *strin
 	struct Gadget *gadget;
 	struct StringInfo *info;
 	GL_Object *object;
-	short len, buflen;
+	short len, buflen, maxlen, insert_len;
 
 	// Get gadget
 	if (!(object = GetObject(list, id)) || !(gadget = GADGET(object)) ||
@@ -16,7 +16,10 @@ static void config_env_insert_raw_string(ObjectList *list, ULONG id, char *strin
 		return;
 
 	// Get current string
-	stccpy(buffer, info->Buffer, sizeof(buffer));
+	maxlen = sizeof(buffer) - 1;
+	if (info->MaxChars > 0 && info->MaxChars - 1 < maxlen)
+		maxlen = info->MaxChars - 1;
+	stccpy(buffer, info->Buffer, maxlen + 1);
 	buflen = strlen(buffer);
 	len = info->BufferPos;
 	if (len < 0)
@@ -29,15 +32,27 @@ static void config_env_insert_raw_string(ObjectList *list, ULONG id, char *strin
 	buffer[len] = 0;
 
 	// Insert new string
-	StrConcat(buffer, string, 255);
-	len += strlen(string);
-	StrConcat(buffer, tempbuf, 255);
+	insert_len = strlen(string);
+	if (insert_len > maxlen - len)
+		insert_len = maxlen - len;
+	if (insert_len > 0)
+	{
+		stccpy(buffer + len, string, insert_len + 1);
+		len += insert_len;
+	}
+	if (len < maxlen)
+		stccpy(buffer + len, tempbuf, maxlen - len + 1);
+	else
+		buffer[len] = 0;
 
 	// Set new string in gadget
 	SetGadgetValue(list, id, (IPTR)buffer);
 
 	// Bump buffer position
-	((struct StringInfo *)gadget->SpecialInfo)->BufferPos = len;
+	buflen = strlen(info->Buffer);
+	if (len > buflen)
+		len = buflen;
+	info->BufferPos = len;
 
 	// Activate gadget
 	ActivateGadget(gadget, list->window, 0);
