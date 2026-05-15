@@ -152,7 +152,7 @@ enum {
 	RECURF_SKIPALL = 1 << 1,	 // Like pressing 'Skip' on each requester
 	RECURF_RESUMEALL = 1 << 2,	 // Like pressing 'Resume' on each requester
 	RECURF_NORECUR = 1 << 3,	 // Act on dir only, not subentries
-	RECURF_BROKEN_LS = 1 << 4,	 // Workaround for server where names containing spaces break their ls
+	RECURF_BROKEN_LS = 1 << 4,	 // Workaround for servers that need cwd-before-list recursion
 };
 
 //

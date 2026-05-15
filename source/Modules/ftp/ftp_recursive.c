@@ -37,6 +37,7 @@ For more information on Directory Opus for Windows please see:
 #include "ftp_opusftp.h"
 #include "ftp_util.h"
 #include "ftp_list.h"
+#include "ftp_listcmd.h"
 #include "ftp_ipc.h"
 #include "ftp_utf8.h"
 
@@ -952,6 +953,26 @@ struct copy_locals
 	char myfulldirname[PATHLEN + 1];
 };
 
+static int recursive_use_cwd_first(struct hook_rec_data *hc)
+{
+	if (!hc)
+		return 0;
+
+	if (hc->hc_recur_flags & RECURF_BROKEN_LS)
+		return 1;
+
+	if (!hc->hc_source || hc->hc_source->ep_type != ENDPOINT_FTP || !hc->hc_source->ep_ftpnode)
+		return 0;
+
+	/*
+	 * Some MLSD servers return names prefixed by the directory argument.
+	 * The cwd-first path lists the current directory instead, so recursive
+	 * children are handled as basenames.
+	 */
+	return hc->hc_source->ep_ftpnode->fn_protocol != FTP_PROTOCOL_SFTP &&
+		   ftp_listcmd_is_mlsd(hc->hc_source->ep_ftpnode->fn_lscmd);
+}
+
 //
 //	The faster, less accurate method
 //
@@ -1402,7 +1423,7 @@ int recursive_copy(struct hook_rec_data *hc,
 			l->destname = entry->ei_name;
 		}
 
-		if (hc->hc_recur_flags & RECURF_BROKEN_LS)
+		if (recursive_use_cwd_first(hc))
 			retval = do_broken_rec_copy(hc, l, entry, dest_list, retval);
 		else
 			retval = do_normal_rec_copy(hc, l, entry, dest_list, retval);
@@ -1823,7 +1844,7 @@ int recursive_delete(struct hook_rec_data *hc, char *startdir, struct entry_info
 			break;
 		}
 
-		if (hc->hc_recur_flags & RECURF_BROKEN_LS)
+		if (recursive_use_cwd_first(hc))
 			retval = do_broken_rec_delete(hc, l, entry, retval);
 		else
 			retval = do_normal_rec_delete(hc, l, entry, retval);
@@ -2022,7 +2043,7 @@ int recursive_protect(struct hook_rec_data *hc, struct entry_info *entry, LONG s
 		// If recursive, get list of entry_infos from FTP server
 		if (!(hc->hc_recur_flags & RECURF_NORECUR))
 		{
-			if (hc->hc_recur_flags & RECURF_BROKEN_LS)
+			if (recursive_use_cwd_first(hc))
 				retval = do_broken_rec_protect(hc, l, entry, set, clr, retval);
 			else
 				retval = do_normal_rec_protect(hc, l, entry, set, clr, retval);
@@ -2228,7 +2249,7 @@ int recursive_getsizes(struct hook_rec_data *hc, struct entry_info *entry)
 			break;
 		}
 
-		if (hc->hc_recur_flags & RECURF_BROKEN_LS)
+		if (recursive_use_cwd_first(hc))
 			retval = do_broken_rec_getsizes(hc, l, entry, retval);
 		else
 			retval = do_normal_rec_getsizes(hc, l, entry, retval);
@@ -2527,7 +2548,7 @@ int recursive_findfile(struct hook_rec_data *hc, char *fulldirname, struct entry
 			break;
 		}
 
-		if (hc->hc_recur_flags & RECURF_BROKEN_LS)
+		if (recursive_use_cwd_first(hc))
 			retval = do_broken_rec_findfile(hc, l, entry, retval);
 		else
 			retval = do_normal_rec_findfile(hc, l, entry, retval);
@@ -2560,6 +2581,12 @@ free_locals:
 /**
  }{	Support functions for recursive stuff
  **/
+
+static void rec_filesys_set_ioerr(endpoint *ep, LONG ioerr)
+{
+	if (ep && ep->ep_ftpnode)
+		ep->ep_ftpnode->fn_ftp.fi_ioerr = ioerr;
+}
 
 //
 //	Get a list of entries from a file system
@@ -2847,6 +2874,7 @@ int rec_filesys_cwd(endpoint *ep, char *dirname)
 	BPTR lock;
 
 	D(bug("FS  CWD  %s\n", dirname));
+	rec_filesys_set_ioerr(ep, 0);
 
 	if ((lock = Lock(dirname, ACCESS_READ)))
 	{
@@ -2854,6 +2882,7 @@ int rec_filesys_cwd(endpoint *ep, char *dirname)
 		return 1;
 	}
 
+	rec_filesys_set_ioerr(ep, IoErr());
 	return 0;
 }
 
@@ -2891,6 +2920,8 @@ int rec_filesys_cdup(endpoint *ep)
 	if (!ep)
 		return 0;
 
+	rec_filesys_set_ioerr(ep, 0);
+
 	/******************************
 	Problems with this code. It does not check first lock is 0 i.e. on a root
 	 filesystem. This results in the currentdir being set to sys:
@@ -2911,6 +2942,9 @@ int rec_filesys_cdup(endpoint *ep)
 		}
 		UnLock(lock);
 	}
+
+	if (!ret_val)
+		rec_filesys_set_ioerr(ep, IoErr());
 
 	return (ret_val);
 }
@@ -2977,8 +3011,10 @@ int rec_filesys_mkdir(endpoint *ep, char *dirname)
 	BPTR lock;
 	D_S(struct FileInfoBlock, fib)
 	int retval = 0;
+	LONG ioerr = 0;
 
 	D(bug("FS  MKD  <%s>\n", dirname));
+	rec_filesys_set_ioerr(ep, 0);
 
 	// Try to create dir
 	if ((lock = CreateDir(dirname)))
@@ -2990,7 +3026,10 @@ int rec_filesys_mkdir(endpoint *ep, char *dirname)
 	// Already existed?
 	else
 	{
-		if (IoErr() == ERROR_OBJECT_EXISTS)
+		ioerr = IoErr();
+		rec_filesys_set_ioerr(ep, ioerr);
+
+		if (ioerr == ERROR_OBJECT_EXISTS)
 		{
 			// Yes but is it a dir?
 			if ((lock = Lock(dirname, ACCESS_READ)))
@@ -3003,8 +3042,13 @@ int rec_filesys_mkdir(endpoint *ep, char *dirname)
 				}
 				UnLock(lock);
 			}
+			else
+				rec_filesys_set_ioerr(ep, IoErr());
 		}
 	}
+
+	if (retval)
+		rec_filesys_set_ioerr(ep, 0);
 
 	D(bug("** FS MKDIR = %ld\n", (long)retval));
 
@@ -3523,7 +3567,18 @@ int rec_ftp_errorreq(endpoint *ep, struct ftp_node *prognode, ULONG flags)
 //
 int rec_filesys_errorreq(endpoint *ep, struct ftp_node *prognode, ULONG flags)
 {
-	return lst_dos_err(prognode->fn_og, prognode, flags, prognode->fn_ftp.fi_ioerr);
+	LONG ioerr = 0;
+
+	if (!prognode)
+		return 0;
+
+	if (ep && ep->ep_ftpnode)
+		ioerr = ep->ep_ftpnode->fn_ftp.fi_ioerr;
+
+	if (!ioerr)
+		ioerr = prognode->fn_ftp.fi_ioerr;
+
+	return lst_dos_err(prognode->fn_og, prognode, flags, ioerr);
 }
 
 //
