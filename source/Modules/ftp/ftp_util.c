@@ -975,13 +975,16 @@ void fileinfoblock_to_entryinfo(struct entry_info *ei, struct FileInfoBlock *fib
 int mlsd_line_to_entryinfo(struct entry_info *entry, const char *line, ULONG flags)
 {
 	const char *str = line;
+	const char *facts_end;
+	const char *name;
 	// char pair[256];
 	char *pair;
 	struct ClockData filedate = {0};
 	int length;
 	BOOL skip_entry = FALSE;
+	size_t name_len;
 
-	if (!str || !strchr(str, ';'))
+	if (!str || !strchr(str, ';') || !(facts_end = strchr(str, ' ')))
 		return 0;
 
 	length = strlen(line) + 1;
@@ -992,10 +995,27 @@ int mlsd_line_to_entryinfo(struct entry_info *entry, const char *line, ULONG fla
 	D(bug("line <%s>\n", line));
 
 	// partially based on the yafc parser
-	while (str && stptok(str, pair, length, ";"))
+	while (str < facts_end)
 	{
+		const char *next = strchr(str, ';');
 		char *factname;
 		char *value;
+		size_t pair_len;
+
+		if (!next || next > facts_end)
+			next = facts_end;
+
+		pair_len = min((size_t)(next - str), (size_t)length - 1);
+		memcpy(pair, str, pair_len);
+		pair[pair_len] = 0;
+
+		if (next < facts_end && *next == ';')
+			str = next + 1;
+		else
+			str = next;
+
+		if (!*pair)
+			continue;
 
 		D(bug("pair '%s'\n", pair));
 
@@ -1011,22 +1031,7 @@ int mlsd_line_to_entryinfo(struct entry_info *entry, const char *line, ULONG fla
 		D(bug("factname '%s' value '%s'\n", factname, value));
 
 		if (!value)
-		{
-			size_t name_len;
-
-			// skip the leading space separator
-			if (*factname == ' ')
-				factname++;
-
-			// copy the name minus the linefeeds
-			name_len = strlen(factname);
-			while (name_len && (factname[name_len - 1] == '\n' || factname[name_len - 1] == '\r'))
-				--name_len;
-			name_len = min(name_len, FILENAMELEN);
-			memcpy(entry->ei_name, factname, name_len);
-			entry->ei_name[name_len] = 0;
-			D(bug(" -> filename '%s'\n", entry->ei_name));
-		}
+			continue;
 		else if (!stricmp(factname, "size"))
 		{
 			entry->ei_size = atoi(value);
@@ -1078,14 +1083,23 @@ int mlsd_line_to_entryinfo(struct entry_info *entry, const char *line, ULONG fla
 			// entry->ei_prot = FIBF_READ|FIBF_WRITE|FIBF_EXECUTE|FIBF_DELETE;
 			D(bug(" -> unix protection bits %d amiga protection bits %d\n", entry->ei_unixprot, entry->ei_prot));
 		}
-
-		if ((str = strchr(str, ';')))
-			str++;
 	}
 
 	FreeVec(pair);
 
 	if (skip_entry)
+		return 0;
+
+	name = facts_end + 1;
+	name_len = strlen(name);
+	while (name_len && (name[name_len - 1] == '\n' || name[name_len - 1] == '\r'))
+		--name_len;
+	name_len = min(name_len, FILENAMELEN);
+	memcpy(entry->ei_name, name, name_len);
+	entry->ei_name[name_len] = 0;
+	D(bug(" -> filename '%s'\n", entry->ei_name));
+
+	if (!entry->ei_name[0])
 		return 0;
 
 	// . and .. are not supported!
