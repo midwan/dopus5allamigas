@@ -27,6 +27,7 @@ For more information on Directory Opus for Windows please see:
 static int function_change_get_comment(FunctionHandle *handle, char *file, char *buffer);
 static int function_change_get_protect(FunctionHandle *handle, char *file, ULONG old_prot, unsigned char *masks);
 static int function_change_get_date(FunctionHandle *handle, char *file, struct DateStamp *date);
+static BOOL function_change_date_arg_empty(char *date);
 
 #ifndef __amigaos3__
 	#pragma pack(2)
@@ -139,7 +140,7 @@ DOPUS_FUNC(function_change)
 			if (instruction->funcargs->FA_Arguments[2])
 			{
 				// Null date?
-				if (((char *)instruction->funcargs->FA_Arguments[2])[0] == 0)
+				if (function_change_date_arg_empty((char *)instruction->funcargs->FA_Arguments[2]))
 					DateStamp(&data->date);
 
 				// Otherwise
@@ -758,6 +759,40 @@ static int function_change_get_protect(FunctionHandle *handle, char *file, ULONG
 	if (break_flag == GAD_PROTECT_ALL)
 		return 2;
 	return 1;
+}
+
+// Check for an empty date argument, including DATE="" if quotes survive parsing
+static BOOL function_change_date_arg_empty(char *date)
+{
+	char *end;
+
+	if (!date)
+		return 0;
+
+	while (*date && isspace(*date))
+		++date;
+
+	end = date + strlen(date);
+	while (end > date && isspace(*(end - 1)))
+		--end;
+
+	if (end == date)
+		return 1;
+
+	if ((*date == '"' || *date == '\'') && end > date && *(end - 1) == *date)
+	{
+		++date;
+		--end;
+
+		while (date < end && isspace(*date))
+			++date;
+		while (end > date && isspace(*(end - 1)))
+			--end;
+
+		return (end == date);
+	}
+
+	return 0;
 }
 
 // Get date

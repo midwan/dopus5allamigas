@@ -42,6 +42,17 @@ class DateLocaleParsingTests(unittest.TestCase):
         self.assertIn("ABMON_1 + month", source)
         self.assertIn("date_is_token_boundary", source)
 
+    def test_date_token_limit_allows_localised_full_month_names(self):
+        source = read_source(DATES_C)
+        parse_function = source[
+            source.index("char *LIBFUNC L_ParseDateStrings") :
+            source.index("// Convert a string to a datestamp")
+        ]
+
+        self.assertIn("#define DATE_PARSE_MAX_CHARS 30", source)
+        self.assertIn("strlen(date_ptr)) < DATE_PARSE_MAX_CHARS", parse_function)
+        self.assertNotIn("strlen(date_ptr)) < 12", parse_function)
+
 
 if __name__ == "__main__":
     unittest.main()

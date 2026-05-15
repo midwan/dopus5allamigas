@@ -25,6 +25,8 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopuslib.h"
 
+#define DATE_PARSE_MAX_CHARS 30
+
 static char *date_english_months[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
 										"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 
@@ -241,7 +243,7 @@ getout:
 	temp = 0;
 
 	// Valid date string supplied?
-	if (date_ptr && (str_pos = strlen(date_ptr)) < 12 && str_pos > 4)
+	if (date_ptr && (str_pos = strlen(date_ptr)) < DATE_PARSE_MAX_CHARS && str_pos > 4)
 		strcpy(date_buffer, date_ptr);
 
 	// Otherwise
