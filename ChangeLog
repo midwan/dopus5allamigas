@@ -31,7 +31,7 @@ Lister UI:
   scrollbar gadgets if allocation fails.
 - Environment / Lister Display now has an "Open New Listers in Dual Mode"
   option so newly-opened listers can default to the two-panel layout.
-- Environment / Lister Colours now includes a "Tool tip" entry for lister
+- Environment / Lister Colours now includes a "Tooltips" entry for lister
   toolbar tooltip foreground/background colours (issue #110).
 
 FTP / file transfer:

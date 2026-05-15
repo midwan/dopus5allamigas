@@ -47,13 +47,13 @@ class ListerTooltipColourTests(unittest.TestCase):
         guide_source = read_source(GUIDE)
 
         self.assertIn("MSG_ENVIRONMENT_TOOLTIP_COLOUR", cd_source)
-        self.assertIn("Tool tip", cd_source)
-        self.assertIn('#define MSG_ENVIRONMENT_TOOLTIP_COLOUR_STR "Tool tip"', string_source)
+        self.assertIn("Tooltips", cd_source)
+        self.assertIn('#define MSG_ENVIRONMENT_TOOLTIP_COLOUR_STR "Tooltips"', string_source)
         self.assertIn("MSG_ENVIRONMENT_TOOLTIP_COLOUR, (CONST_STRPTR)MSG_ENVIRONMENT_TOOLTIP_COLOUR_STR", string_source)
         self.assertIn("MSG_ENVIRONMENT_TOOLTIP_COLOUR", config_source)
         self.assertIn("ptr = data->config->tooltip_col;", config_source)
         self.assertIn("data->config->tooltip_col[a] != env->env->tooltip_col[a]", config_source)
-        self.assertIn("'Tool tip' item controls", guide_source)
+        self.assertIn("'Tooltips' item controls", guide_source)
 
     def test_toolbar_tooltip_uses_lister_colour_slot(self):
         toolbar_source = read_source(LISTER_TOOLBAR_C)

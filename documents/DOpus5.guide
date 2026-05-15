@@ -3642,7 +3642,7 @@ is used when the bar shows less than 90% full, and the background colour
 is used when the bar is at 90% or above. This lets you have a warning
 colour when the disk is getting full.
 
-The 'Tool tip' item controls the foreground and background colours used by
+The 'Tooltips' item controls the foreground and background colours used by
 lister toolbar tooltips.
 
 @endnode
