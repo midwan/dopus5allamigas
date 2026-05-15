@@ -3799,6 +3799,13 @@ The different things that can be changed are:
     This allows you to have a separator between the hundreds and thousands
     when a number is displayed.
 
+  Clock Format:
+    Lets you override the titlebar clock text with a locale.library
+    FormatDate string.  For example, "%a %d-%b-%y  %H:%M" displays an
+    abbreviated weekday, date, and 24-hour time.  Leave this empty to use the
+    normal Date Format and 12 hour clock settings.  The button beside the
+    field lists the common FormatDate codes.
+
 @endnode
 
 @node "Environment - Miscellaneous" "Environment - Miscellaneous"
@@ -3855,7 +3862,8 @@ This enables you to set a few miscellaneous options.
     the left of the string gadget displays a list of allowable command
     sequences.  Memory values shown with the memory control codes use the
     Locale page's Thousands separator option for plain byte values and for
-    the kilobyte, megabyte, gigabyte and smart-size forms.
+    the kilobyte, megabyte, gigabyte and smart-size forms.  Use %t to insert
+    the current clock text into a custom screen title.
 
 @endnode
 

@@ -926,6 +926,9 @@ Mouse _Wheel Scroll Lines:
 MSG_ENVIRONMENT_DOS_PATCH (//)
 _Live Folder Updates (DOS Patches)
 ;
+MSG_ENVIRONMENT_CLOCK_FORMAT (23038//)
+_Clock Format...
+;
 ;
 MSG_ENVIRONMENT_PICTURE_STRETCHED (//)
 Stretch Picture
@@ -1209,6 +1212,100 @@ MSG_SCREENTITLE_CODE_20 (//)
 *pm\tPhase of the Moon
 ;
 MSG_SCREENTITLE_CODE_LAST (//)
+-
+;
+;
+;
+; Clock format control codes
+;
+MSG_CLOCKFORMAT_CODE_FIRST (23039//)
+*H\t24-hour with leading 0
+;
+MSG_CLOCKFORMAT_CODE_1 (//)
+*q\t24-hour
+;
+MSG_CLOCKFORMAT_CODE_2 (//)
+*I\t12-hour with leading 0
+;
+MSG_CLOCKFORMAT_CODE_3 (//)
+*Q\t12-hour
+;
+MSG_CLOCKFORMAT_CODE_4 (//)
+*M\tMinute with leading 0
+;
+MSG_CLOCKFORMAT_CODE_5 (//)
+*S\tSecond with leading 0
+;
+MSG_CLOCKFORMAT_CODE_6 (//)
+*p\tAM/PM string
+;
+MSG_CLOCKFORMAT_CODE_7 (//)
+*R\t24-hour time HH:MM
+;
+MSG_CLOCKFORMAT_CODE_8 (//)
+*T\t24-hour time HH:MM:SS
+;
+MSG_CLOCKFORMAT_CODE_9 (//)
+*r\t12-hour time HH:MM:SS AM/PM
+;
+MSG_CLOCKFORMAT_CODE_10 (//)
+*X\tTime HH:MM:SS
+;
+MSG_CLOCKFORMAT_CODE_11 (//)
+*a\tAbbreviated weekday
+;
+MSG_CLOCKFORMAT_CODE_12 (//)
+*A\tWeekday name
+;
+MSG_CLOCKFORMAT_CODE_13 (//)
+*b\tAbbreviated month
+;
+MSG_CLOCKFORMAT_CODE_14 (//)
+*B\tMonth name
+;
+MSG_CLOCKFORMAT_CODE_15 (//)
+*d\tDay with leading 0
+;
+MSG_CLOCKFORMAT_CODE_16 (//)
+*e\tDay with leading space
+;
+MSG_CLOCKFORMAT_CODE_17 (//)
+*m\tMonth number with leading 0
+;
+MSG_CLOCKFORMAT_CODE_18 (//)
+*y\tTwo-digit year
+;
+MSG_CLOCKFORMAT_CODE_19 (//)
+*Y\tFour-digit year
+;
+MSG_CLOCKFORMAT_CODE_20 (//)
+*D\tDate MM/DD/YY
+;
+MSG_CLOCKFORMAT_CODE_21 (//)
+*x\tDate MM/DD/YY
+;
+MSG_CLOCKFORMAT_CODE_22 (//)
+*c\tDate and time
+;
+MSG_CLOCKFORMAT_CODE_23 (//)
+*C\tDate, time, zone, year
+;
+MSG_CLOCKFORMAT_CODE_24 (//)
+*j\tJulian day
+;
+MSG_CLOCKFORMAT_CODE_25 (//)
+*U\tWeek number, Sunday first
+;
+MSG_CLOCKFORMAT_CODE_26 (//)
+*W\tWeek number, Monday first
+;
+MSG_CLOCKFORMAT_CODE_27 (//)
+*w\tWeekday number
+;
+MSG_CLOCKFORMAT_CODE_28 (//)
+*h\tAbbreviated month
+;
+MSG_CLOCKFORMAT_CODE_LAST (//)
 -
 ;
 ;

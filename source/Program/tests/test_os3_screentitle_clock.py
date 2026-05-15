@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+"""Regression checks for the OS3 screen-title clock path."""
+
+from pathlib import Path
+import unittest
+
+
+ROOT = Path(__file__).resolve().parents[3]
+CLOCK_TASK_C = ROOT / "source" / "Program" / "clock_task.c"
+MAKEFILE_COMMON = ROOT / "source" / "makefile.common"
+
+
+def read_source(path):
+    return path.read_text(encoding="latin-1")
+
+
+class OS3ScreenTitleClockTests(unittest.TestCase):
+    def test_os3_uses_clock_local_screen_title_mode(self):
+        clock_source = read_source(CLOCK_TASK_C)
+        make_source = read_source(MAKEFILE_COMMON)
+
+        self.assertIn("#if defined(__amigaos3__) || defined(USE_SCREENTITLE)", clock_source)
+        self.assertIn("#define CLOCK_USE_SCREENTITLE", clock_source)
+        self.assertNotIn("-DUSE_SCREENTITLE", make_source)
+
+    def test_os3_screen_title_setup_skips_public_screen_lock(self):
+        source = read_source(CLOCK_TASK_C)
+
+        os3_branch = source.index("#if defined(__amigaos3__) && defined(CLOCK_USE_SCREENTITLE)")
+        lock_branch = source.index("if (FindPubScreen(screen, TRUE))", os3_branch)
+
+        self.assertLess(os3_branch, lock_branch)
+        self.assertIn("Screen title mode does not touch the screen layers directly.", source)
+
+    def test_os3_screen_title_path_keeps_clock_right_aligned(self):
+        source = read_source(CLOCK_TASK_C)
+
+        self.assertIn("clock_append_screen_title_clock(struct RastPort *rp, short clock_x, char *titlebuf)", source)
+        self.assertIn("short title_width = TextLength(rp, GUI->screen_title, title_len);", source)
+        self.assertIn("short target_x = clock_x - 5;", source)
+        self.assertIn("TextLength(&GUI->screen_pointer->RastPort, titlebuf, (WORD)strlen(titlebuf))", source)
+        self.assertIn("clock_x = (clock_width < bar_x) ? bar_x - clock_width : 0", source)
+        self.assertIn("clock_append_screen_title_clock(", source)
+
+    def test_os3_screen_title_clock_omits_seconds_without_throttling_ram_counter(self):
+        source = read_source(CLOCK_TASK_C)
+
+        self.assertIn("show_seconds = FALSE;", source)
+        self.assertIn("clock_build_title_text(&date, datebuf, titlebuf, show_seconds);", source)
+        self.assertIn('format = (show_seconds) ? "%Q:%M:%S %p" : "%Q:%M %p";', source)
+        self.assertIn("FormatDate(locale.li_Locale, format, stamp, &hook);", source)
+        self.assertIn("REG(a1, ULONG ch)", source)
+        self.assertIn("GetLocaleStr(locale.li_Locale, (hours > 11) ? PM_STR : AM_STR)", source)
+        self.assertNotIn("%lcm", source)
+        self.assertIn("strcmp(last_screen_title, GUI->screen_title) != 0", source)
+        self.assertNotIn("refresh_titlebar", source)
+        self.assertNotIn("last_title_minute", source)
+
+    def test_custom_clock_format_and_screen_title_token_use_locale_formatter(self):
+        source = read_source(CLOCK_TASK_C)
+
+        self.assertIn("char *format = environment->env->clock_format;", source)
+        self.assertIn("clock_format_date(titlebuf, TITLE_SIZE, format, &date->dat_Stamp)", source)
+        self.assertIn("FormatDate(locale.li_Locale, format, stamp, &hook);", source)
+        self.assertIn("clock_title_format_uses_clock(environment->env->scr_title_text)", source)
+        self.assertIn("(custom_title_uses_clock) ? titlebuf : 0", source)
+        self.assertIn("Clock text", source)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -337,8 +337,11 @@ void LIBFUNC L_DefaultEnvironment(REG(a0, CFG_ENVR *env))
 	// Mouse wheel scroll lines (matches the legacy startup default)
 	env->env_wheel_scroll_lines = 3;
 
+	// Title bar clock format
+	env->clock_format[0] = 0;
+
 	// Set version
-	env->version = CONFIG_VERSION_16;
+	env->version = CONFIG_VERSION_17;
 
 	// Get default settings
 	L_DefaultSettings(&env->settings);
@@ -641,11 +644,15 @@ void LIBFUNC L_UpdateEnvironment(REG(a0, CFG_ENVR *env))
 	if (env->version < CONFIG_VERSION_16)
 		set_default_tooltip_colours(env);
 
+	// Pre-version 17
+	if (env->version < CONFIG_VERSION_17)
+		env->clock_format[0] = 0;
+
 	fix_list_format_display(&env->list_format);
 	fix_list_format_colours(&env->list_format, env->version < CONFIG_VERSION_12);
 
 	// Fix version
-	env->version = CONFIG_VERSION_16;
+	env->version = CONFIG_VERSION_17;
 
 	// Is themes path empty?
 	if (!env->themes_location[0])

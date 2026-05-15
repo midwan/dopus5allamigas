@@ -2,8 +2,49 @@
 #include "config_environment.h"
 #include <proto/module.h>
 
-// Show list of status bar options
-void _config_env_status_list(ObjectList *objlist, ULONG id, long first, long last)
+static void config_env_insert_raw_string(ObjectList *list, ULONG id, char *string)
+{
+	char buffer[256], tempbuf[256];
+	struct Gadget *gadget;
+	struct StringInfo *info;
+	GL_Object *object;
+	short len, buflen;
+
+	// Get gadget
+	if (!(object = GetObject(list, id)) || !(gadget = GADGET(object)) ||
+		!(info = (struct StringInfo *)gadget->SpecialInfo))
+		return;
+
+	// Get current string
+	stccpy(buffer, info->Buffer, sizeof(buffer));
+	buflen = strlen(buffer);
+	len = info->BufferPos;
+	if (len < 0)
+		len = 0;
+	else if (len > buflen)
+		len = buflen;
+
+	// Copy from current position into second buffer
+	stccpy(tempbuf, buffer + len, sizeof(tempbuf));
+	buffer[len] = 0;
+
+	// Insert new string
+	StrConcat(buffer, string, 255);
+	len += strlen(string);
+	StrConcat(buffer, tempbuf, 255);
+
+	// Set new string in gadget
+	SetGadgetValue(list, id, (IPTR)buffer);
+
+	// Bump buffer position
+	((struct StringInfo *)gadget->SpecialInfo)->BufferPos = len;
+
+	// Activate gadget
+	ActivateGadget(gadget, list->window, 0);
+}
+
+// Show list of text format codes
+static void config_env_code_list(ObjectList *objlist, ULONG id, long first, long last, BOOL raw_insert)
 {
 	Att_List *list;
 	short a, b;
@@ -60,10 +101,25 @@ void _config_env_status_list(ObjectList *objlist, ULONG id, long first, long las
 				stccpy(buf, node->node.ln_Name, sizeof(buf));
 
 			// Insert into gadget
-			funced_edit_insertstring(objlist, id, buf, DOpusBase, (struct Library *)IntuitionBase);
+			if (raw_insert)
+				config_env_insert_raw_string(objlist, id, buf);
+			else
+				funced_edit_insertstring(objlist, id, buf, DOpusBase, (struct Library *)IntuitionBase);
 		}
 	}
 
 	// Free list
 	Att_RemList(list, 0);
+}
+
+// Show list of status bar options
+void _config_env_status_list(ObjectList *objlist, ULONG id, long first, long last)
+{
+	config_env_code_list(objlist, id, first, last, FALSE);
+}
+
+// Show list of clock format options
+void _config_env_clock_format_list(ObjectList *objlist, ULONG id, long first, long last)
+{
+	config_env_code_list(objlist, id, first, last, TRUE);
 }

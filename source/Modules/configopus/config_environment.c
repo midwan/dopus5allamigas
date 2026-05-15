@@ -840,6 +840,16 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 							data->objlist, GAD_ENVIRONMENT_SCREEN_TITLE, MSG_SCREENTITLE_CODE_FIRST, 0);
 						break;
 
+					// Pop-up list for clock format text
+					case GAD_ENVIRONMENT_CLOCK_FORMAT_LIST:
+
+						// Display list
+						_config_env_clock_format_list(data->objlist,
+													  GAD_ENVIRONMENT_CLOCK_FORMAT,
+													  MSG_CLOCKFORMAT_CODE_FIRST,
+													  MSG_CLOCKFORMAT_CODE_LAST);
+						break;
+
 					// Edit pattern
 					case GAD_ENVIRONMENT_EDIT_PATTERN: {
 						char func[256];
@@ -1278,7 +1288,9 @@ unsigned long LIBFUNC L_Config_Environment(REG(a0, Cfg_Environment *env),
 		}
 
 		// Lister title changed?
-		if (stricmp(data->config->status_text, env->env->status_text) != 0)
+		if (stricmp(data->config->status_text, env->env->status_text) != 0 ||
+			stricmp(data->config->scr_title_text, env->env->scr_title_text) != 0 ||
+			stricmp(data->config->clock_format, env->env->clock_format) != 0)
 			change_flags[0] |= CONFIG_CHANGE_LOCALE;
 
 		// Field titles?
@@ -2205,6 +2217,7 @@ void _config_env_set(config_env_data *data, short option)
 		SetGadgetValue(data->option_list, GAD_SETTINGS_DATE_12HOUR, data->config->settings.date_flags & DATE_12HOUR);
 		SetGadgetValue(
 			data->option_list, GAD_SETTINGS_THOUSANDS_SEPS, data->config->settings.date_flags & DATE_1000SEP);
+		SetGadgetValue(data->option_list, GAD_ENVIRONMENT_CLOCK_FORMAT, (IPTR)data->config->clock_format);
 		break;
 
 	// Hide method
@@ -2760,6 +2773,9 @@ void _config_env_store(config_env_data *data, short option)
 			data->config->settings.date_flags |= DATE_12HOUR;
 		if (GetGadgetValue(data->option_list, GAD_SETTINGS_THOUSANDS_SEPS))
 			data->config->settings.date_flags |= DATE_1000SEP;
+		stccpy(data->config->clock_format,
+			   (char *)GetGadgetValue(data->option_list, GAD_ENVIRONMENT_CLOCK_FORMAT),
+			   sizeof(data->config->clock_format));
 		break;
 
 	// Hide method

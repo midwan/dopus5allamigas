@@ -43,6 +43,7 @@ For more information on Directory Opus for Windows please see:
 #define CONFIG_VERSION_14 14
 #define CONFIG_VERSION_15 15
 #define CONFIG_VERSION_16 16
+#define CONFIG_VERSION_17 17
 
 // Sort format
 typedef struct
@@ -505,7 +506,11 @@ typedef struct
 
 	char themes_location[256];	// Themes folder location
 
-	ULONG pad_big[296];
+	// Promoted in CONFIG_VERSION_17. Steals 80 reserved bytes so the on-disk
+	// layout stays compatible.
+	char clock_format[80];  // Title bar clock format string
+
+	ULONG pad_big[276];
 } CFG_ENVR;
 
 #define SCRFLAGS_DEFWIDTH (1 << 0)	 // Default width
