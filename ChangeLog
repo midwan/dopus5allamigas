@@ -68,6 +68,8 @@ Environment editor / configopus.module:
 - Requester control labels in Environment and ftp.module configs no
   longer paint flat backdrops over patterned backgrounds, while the
   checkbox controls keep their normal fill (issue #101 / PR #102).
+- Listview titles in config requesters now preserve patterned requester
+  backfills instead of painting a flat text background (issue #129).
 - ftp.module's NoBeeGees migration is one-shot now: imported on
   first launch and then DeleteVar'd from ENV: / ENVARC:.
 - configopus: clean up ghost filetype data, surface missing icons,
