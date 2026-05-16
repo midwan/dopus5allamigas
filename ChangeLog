@@ -159,6 +159,9 @@ AROS portability:
 - Fix AROS x86_64 FTP lister handles, AROS menu data IPTR casts,
   AROS-converted image data writable mapping, AROS debug builds
   and runtime init.
+- Fix AROS x86_64 XADOpen and internal CLI crashes caused by
+  pointer-sized ARexx message metadata and RawDoFmt string varargs
+  (issue #90).
 - diskinfo: resolve PI at runtime to dodge an AROS x86_64
   cross-compiler ICE under Rosetta.
 - ftp / diskinfo / icon / library: fix AROS x86_64 format-string

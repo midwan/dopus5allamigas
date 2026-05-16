@@ -48,6 +48,40 @@ BOOL cli_open(CLIData *);
 void cli_close(CLIData *);
 void cli_free(CLIData *);
 
+static void cli_ulong_to_string(ULONG value, char *buffer, int buffer_size)
+{
+	int pos = buffer_size - 1;
+
+	if (buffer_size < 2)
+		return;
+
+	buffer[pos] = 0;
+	do
+	{
+		buffer[--pos] = '0' + (value % 10);
+		value /= 10;
+	} while (value && pos > 0);
+
+	strcpy(buffer, buffer + pos);
+}
+
+static void cli_build_window_name(char *buffer, int buffer_size)
+{
+	char top[12];
+	char *screen = get_our_pubscreen();
+	ULONG top_edge = (GUI->screen_pointer) ? GUI->screen_pointer->BarHeight + 1 : 20;
+
+	cli_ulong_to_string(top_edge, top, sizeof(top));
+
+	buffer[0] = 0;
+	StrConcat(buffer, environment->env->output_device, buffer_size);
+	StrConcat(buffer, "0/", buffer_size);
+	StrConcat(buffer, top, buffer_size);
+	StrConcat(buffer, "/512/150/DOpus 5 CLI/CLOSE/SCREEN ", buffer_size);
+	if (screen)
+		StrConcat(buffer, screen, buffer_size);
+}
+
 // Internal command line interpreter
 DOPUS_FUNC(function_cli)
 {
@@ -59,11 +93,7 @@ DOPUS_FUNC(function_cli)
 	short eliza_state = 0;
 
 	// Output filename
-	lsprintf(handle->temp_buffer,
-			 "%s0/%ld/512/150/DOpus 5 CLI/CLOSE/SCREEN %s",
-			 environment->env->output_device,
-			 (GUI->screen_pointer) ? GUI->screen_pointer->BarHeight + 1 : 20,
-			 get_our_pubscreen());
+	cli_build_window_name(handle->temp_buffer, sizeof(handle->temp_buffer));
 
 	// Allocate name copy
 	if (!(data.name = AllocVec(strlen(handle->temp_buffer) + 1, 0)))

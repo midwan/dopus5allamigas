@@ -28,6 +28,15 @@ class CLIConsoleCleanupTests(unittest.TestCase):
 
         self.assertIn("CLIData data = {0};", source)
 
+    def test_cli_window_name_avoids_rawdofmt_string_varargs(self):
+        source = read_source()
+
+        self.assertIn("static void cli_build_window_name(char *buffer, int buffer_size)", source)
+        self.assertIn("cli_build_window_name(handle->temp_buffer, sizeof(handle->temp_buffer));", source)
+        self.assertIn('StrConcat(buffer, "/512/150/DOpus 5 CLI/CLOSE/SCREEN ", buffer_size);', source)
+        self.assertIn("char *screen = get_our_pubscreen();", source)
+        self.assertNotIn('"%s0/%ld/512/150/DOpus 5 CLI/CLOSE/SCREEN %s"', source)
+
     def test_input_open_failure_restores_console_state(self):
         source = read_source()
         body = function_body(source, "cli_open")

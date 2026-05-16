@@ -24,10 +24,6 @@ For more information on Directory Opus for Windows please see:
 #include "dopuslib.h"
 #include "rexx.h"
 
-#ifdef __AROS__
-	#define rm_avail rm_Unused1
-#endif
-
 #ifdef __amigaos4__
 /* OS4 newlib does not provide amiga.lib's SetRexxVar/GetRexxVar. Wrap the
  * rexxsyslib interface (IRexxSys->Set/GetRexxVarFromMsg) to preserve the
@@ -76,6 +72,92 @@ LONG GetRexxVar(CONST struct RexxMsg *rexxmsg, CONST_STRPTR name, STRPTR *result
 
 static char *RexxMsgIdentifier = "DOPUS";
 
+#ifdef __AROS__
+struct DOpusRexxMsgTracker
+{
+	struct Node node;
+	struct RexxMsg *msg;
+	struct List *stems;
+};
+
+static struct List DOpusRexxMsgTrackers;
+static BOOL DOpusRexxMsgTrackersReady;
+
+static void rexx_init_stem_tracking(void)
+{
+	if (!DOpusRexxMsgTrackersReady)
+	{
+		NewList(&DOpusRexxMsgTrackers);
+		DOpusRexxMsgTrackersReady = TRUE;
+	}
+}
+
+static BOOL rexx_track_stem_list(struct RexxMsg *msg, struct List *list)
+{
+	struct DOpusRexxMsgTracker *tracker;
+
+	if (!(tracker = AllocVec(sizeof(*tracker), MEMF_CLEAR)))
+		return FALSE;
+
+	tracker->msg = msg;
+	tracker->stems = list;
+
+	Forbid();
+	rexx_init_stem_tracking();
+	AddTail(&DOpusRexxMsgTrackers, (struct Node *)tracker);
+	Permit();
+
+	return TRUE;
+}
+
+static struct List *rexx_find_stem_list(struct RexxMsg *msg, BOOL detach)
+{
+	struct DOpusRexxMsgTracker *tracker, *next;
+	struct List *list = 0;
+	struct DOpusRexxMsgTracker *found = 0;
+
+	Forbid();
+	if (DOpusRexxMsgTrackersReady)
+	{
+		for (tracker = (struct DOpusRexxMsgTracker *)DOpusRexxMsgTrackers.lh_Head; tracker->node.ln_Succ;
+			 tracker = next)
+		{
+			next = (struct DOpusRexxMsgTracker *)tracker->node.ln_Succ;
+			if (tracker->msg == msg)
+			{
+				list = tracker->stems;
+				if (detach)
+				{
+					Remove((struct Node *)tracker);
+					found = tracker;
+				}
+				break;
+			}
+		}
+	}
+	Permit();
+
+	if (found)
+		FreeVec(found);
+
+	return list;
+}
+
+static struct List *rexx_get_stem_list(struct RexxMsg *msg)
+{
+	return rexx_find_stem_list(msg, FALSE);
+}
+
+static struct List *rexx_detach_stem_list(struct RexxMsg *msg)
+{
+	return rexx_find_stem_list(msg, TRUE);
+}
+#else
+	#define rexx_track_stem_list(msg, list) ((msg)->rm_avail = (IPTR)(list), TRUE)
+	#define rexx_get_stem_list(msg) ((struct List *)(IPTR)(msg)->rm_avail)
+	#define rexx_detach_stem_list(msg) ((struct List *)(IPTR)(msg)->rm_avail)
+#endif
+
 // Free an ARexx message
 void LIBFUNC L_FreeRexxMsgEx(REG(a0, struct RexxMsg *msg))
 {
@@ -83,6 +165,9 @@ void LIBFUNC L_FreeRexxMsgEx(REG(a0, struct RexxMsg *msg))
 
 	// Need rexx library
 	if (!RexxSysBase)
+		return;
+
+	if (!msg)
 		return;
 
 	// Get argument count
@@ -101,7 +186,7 @@ void LIBFUNC L_FreeRexxMsgEx(REG(a0, struct RexxMsg *msg))
 		struct List *list;
 
 		// Get list pointer
-		if ((list = (struct List *)(IPTR)msg->rm_avail))
+		if ((list = rexx_detach_stem_list(msg)))
 		{
 			struct RexxStem *node, *next;
 
@@ -144,12 +229,17 @@ struct RexxMsg *LIBFUNC L_CreateRexxMsgEx(REG(a0, struct MsgPort *port),
 	if (!(list = AllocVec(sizeof(struct List), MEMF_CLEAR)))
 		return msg;
 
-	// Turn message into a special Opus one
-	msg->rm_Node.mn_Node.ln_Name = RexxMsgIdentifier;
-	msg->rm_avail = (IPTR)list;
-
 	// Initialise list
 	NewList(list);
+
+	if (!rexx_track_stem_list(msg, list))
+	{
+		FreeVec(list);
+		return msg;
+	}
+
+	// Turn message into a special Opus one
+	msg->rm_Node.mn_Node.ln_Name = RexxMsgIdentifier;
 
 	return msg;
 }
@@ -190,7 +280,7 @@ long LIBFUNC L_SetRexxVarEx(REG(a0, struct RexxMsg *msg),
 		return 10;
 
 	// Get list pointer
-	if (!(list = (struct List *)(IPTR)msg->rm_avail))
+	if (!(list = rexx_get_stem_list(msg)))
 		return 10;
 
 	// See if variable already exists
@@ -248,7 +338,7 @@ long LIBFUNC L_GetRexxVarEx(REG(a0, struct RexxMsg *msg), REG(a1, char *varname)
 		return 10;
 
 	// Get list pointer
-	if (!(list = (struct List *)(IPTR)msg->rm_avail))
+	if (!(list = rexx_get_stem_list(msg)))
 		return 10;
 
 	// See if variable exists
