@@ -1465,20 +1465,20 @@ Försöker starta "%s"...
 ; Attempting to launch '%s'...
 ;
 MSG_MEMORY_COUNTER
-%s  %ld grafikminne  %ld övrigt minne
-; %s  %ld graphics mem  %ld other mem
+%s  %s grafikminne  %s övrigt minne
+; %s  %s graphics mem  %s other mem
 ;
 MSG_MEMORY_COUNTER_LOC
-%s  %lU grafikminne  %lU övrigt minne
-; %s  %lU graphics mem  %lU other mem
+%s  %s grafikminne  %s övrigt minne
+; %s  %s graphics mem  %s other mem
 ;
 MSG_MEMORY_COUNTER_CLOCK
-%s  %ld grafik  %ld övrigt
-; %s  %ld graphics  %ld other
+%s  %s grafik  %s övrigt
+; %s  %s graphics  %s other
 ;
 MSG_MEMORY_COUNTER_LOC_CLOCK
-%s  %lU grafik  %lU övrigt
-; %s  %lU graphics  %lU other
+%s  %s grafik  %s övrigt
+; %s  %s graphics  %s other
 ;
 MSG_LISTER_STATUS_SOURCE
 FRÅN

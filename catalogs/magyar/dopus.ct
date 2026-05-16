@@ -1454,20 +1454,20 @@ Megpróbálom elindítani a(z) "%s" programot...
 ; Attempting to launch '%s'...
 ;
 MSG_MEMORY_COUNTER
-%s  %ld grafikus memória  %ld egyéb memória
-; %s  %ld graphics mem  %ld other mem
+%s  %s grafikus memória  %s egyéb memória
+; %s  %s graphics mem  %s other mem
 ;
 MSG_MEMORY_COUNTER_LOC
-%s  %lU grafikus memória  %lU egyéb memória
-; %s  %lU graphics mem  %lU other mem
+%s  %s grafikus memória  %s egyéb memória
+; %s  %s graphics mem  %s other mem
 ;
 MSG_MEMORY_COUNTER_CLOCK
-%s  %ld grafikus  %ld egyéb
-; %s  %ld graphics  %ld other
+%s  %s grafikus  %s egyéb
+; %s  %s graphics  %s other
 ;
 MSG_MEMORY_COUNTER_LOC_CLOCK
-%s  %lU grafikus  %lU egyéb
-; %s  %lU graphics  %lU other
+%s  %s grafikus  %s egyéb
+; %s  %s graphics  %s other
 ;
 MSG_LISTER_STATUS_SOURCE
 FORR

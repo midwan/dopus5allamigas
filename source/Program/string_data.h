@@ -960,10 +960,10 @@ For more information on Directory Opus for Windows please see:
 	#define MSG_ERROR_SAVING_ENV_STR "Error saving environment file!"
 	#define MSG_ERROR_SAVING_OPTS_STR "Error saving options file!"
 	#define MSG_LAUNCHING_PROGRAM_STR "Attempting to launch '%s'..."
-	#define MSG_MEMORY_COUNTER_STR "%s  %ld graphics mem  %ld other mem"
-	#define MSG_MEMORY_COUNTER_LOC_STR "%s  %lU graphics mem  %lU other mem"
-	#define MSG_MEMORY_COUNTER_CLOCK_STR "%s  %ld graphics  %ld other"
-	#define MSG_MEMORY_COUNTER_LOC_CLOCK_STR "%s  %lU graphics  %lU other"
+	#define MSG_MEMORY_COUNTER_STR "%s  %s graphics mem  %s other mem"
+	#define MSG_MEMORY_COUNTER_LOC_STR "%s  %s graphics mem  %s other mem"
+	#define MSG_MEMORY_COUNTER_CLOCK_STR "%s  %s graphics  %s other"
+	#define MSG_MEMORY_COUNTER_LOC_CLOCK_STR "%s  %s graphics  %s other"
 #define MSG_MEMORY_FREE_OS4_STR "%s  %s free"
 	#define MSG_LISTER_STATUS_SOURCE_STR "SRCE"
 	#define MSG_LISTER_STATUS_DEST_STR "DEST"
@@ -2417,13 +2417,13 @@ static const char CatCompBlock[] = {"\x00\x00\x00\x00\x00\x0C" MSG_ABORTED_STR
 									"\x00\x00"
 									"\x00\x00\x0E\x12\x00\x1E" MSG_LAUNCHING_PROGRAM_STR
 									"\x00\x00"
-									"\x00\x00\x0E\x13\x00\x24" MSG_MEMORY_COUNTER_STR
+									"\x00\x00\x0E\x13\x00\x22" MSG_MEMORY_COUNTER_STR
 									"\x00"
-									"\x00\x00\x0E\x14\x00\x24" MSG_MEMORY_COUNTER_LOC_STR
+									"\x00\x00\x0E\x14\x00\x22" MSG_MEMORY_COUNTER_LOC_STR
 									"\x00"
-									"\x00\x00\x0E\x15\x00\x1C" MSG_MEMORY_COUNTER_CLOCK_STR
+									"\x00\x00\x0E\x15\x00\x1A" MSG_MEMORY_COUNTER_CLOCK_STR
 									"\x00"
-									"\x00\x00\x0E\x16\x00\x1C" MSG_MEMORY_COUNTER_LOC_CLOCK_STR
+									"\x00\x00\x0E\x16\x00\x1A" MSG_MEMORY_COUNTER_LOC_CLOCK_STR
 									"\x00"
 									"\x00\x00\x0E\x17\x00\x0C" MSG_MEMORY_FREE_OS4_STR
 									"\x00"

@@ -1454,20 +1454,20 @@ MSG_LAUNCHING_PROGRAM
 ; Attempting to launch '%s'...
 ;
 MSG_MEMORY_COUNTER
-%s  %ld μνήμη γραφικών  %ld άλλη μνήμη
-; %s  %ld graphics mem  %ld other mem
+%s  %s μνήμη γραφικών  %s άλλη μνήμη
+; %s  %s graphics mem  %s other mem
 ;
 MSG_MEMORY_COUNTER_LOC
-%s  %lU μνήμη γραφικών  %lU άλλη μνήμη
-; %s  %lU graphics mem  %lU other mem
+%s  %s μνήμη γραφικών  %s άλλη μνήμη
+; %s  %s graphics mem  %s other mem
 ;
 MSG_MEMORY_COUNTER_CLOCK
-%s  %ld γραφική  %ld άλλη
-; %s  %ld graphics  %ld other
+%s  %s γραφική  %s άλλη
+; %s  %s graphics  %s other
 ;
 MSG_MEMORY_COUNTER_LOC_CLOCK
-%s  %lU γραφική  %lU άλλη
-; %s  %lU graphics  %lU other
+%s  %s γραφική  %s άλλη
+; %s  %s graphics  %s other
 ;
 MSG_LISTER_STATUS_SOURCE
 ΑΡΧΙΚΟ

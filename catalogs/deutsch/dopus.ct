@@ -1454,20 +1454,20 @@ Versuche '%s' zu starten ...
 ; Attempting to launch '%s'...
 ;
 MSG_MEMORY_COUNTER
-%s  %ld Chip-RAM  %ld sonstiges RAM
-; %s  %ld graphics mem  %ld other mem
+%s  %s Chip-RAM  %s sonstiges RAM
+; %s  %s graphics mem  %s other mem
 ;
 MSG_MEMORY_COUNTER_LOC
-%s  %lU Chip-RAM  %lU sonstiges RAM
-; %s  %lU graphics mem  %lU other mem
+%s  %s Chip-RAM  %s sonstiges RAM
+; %s  %s graphics mem  %s other mem
 ;
 MSG_MEMORY_COUNTER_CLOCK
-%s  %ld Chip-RAM  %ld Fast-RAM
-; %s  %ld graphics  %ld other
+%s  %s Chip-RAM  %s Fast-RAM
+; %s  %s graphics  %s other
 ;
 MSG_MEMORY_COUNTER_LOC_CLOCK
-%s  %lU Chip-RAM  %lU Fast-RAM
-; %s  %lU graphics  %lU other
+%s  %s Chip-RAM  %s Fast-RAM
+; %s  %s graphics  %s other
 ;
 MSG_LISTER_STATUS_SOURCE
 QUEL

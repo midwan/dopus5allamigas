@@ -7,6 +7,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
 CLOCK_TASK_C = ROOT / "source" / "Program" / "clock_task.c"
+PROGRAM_STRINGS_H = ROOT / "source" / "Program" / "string_data.h"
 
 
 def read_source(path):
@@ -44,6 +45,32 @@ class ClockTaskWarningTests(unittest.TestCase):
         self.assertIn("fast_mem = AvailMem(MEMF_FAST);", source)
         self.assertIn("clock_other_free_memory(graphics_mem)", source)
         self.assertNotIn("AvailMem(MEMF_ANY) - chipmem", source)
+
+    def test_default_title_memory_values_are_formatted_before_lsprintf(self):
+        source = read_source(CLOCK_TASK_C)
+
+        self.assertIn("static void clock_memory_value_string(char *buf, int buf_size, IPTR memory, char sep)", source)
+        self.assertIn("static void clock_memory_format_string(char *buf, int buf_size, char *format)", source)
+        self.assertIn("(*(format + 2) == 'd' || *(format + 2) == 'u' || *(format + 2) == 'U')", source)
+        self.assertIn("clock_memory_value_string(graphics_buf, sizeof(graphics_buf), graphics_mem, sep);", source)
+        self.assertIn(
+            "clock_memory_value_string(other_buf, sizeof(other_buf), clock_other_free_memory(graphics_mem), sep);",
+            source,
+        )
+        self.assertIn("clock_memory_format_string(format, sizeof(format), GetString(&locale, msg));", source)
+        self.assertIn("graphics_buf,", source)
+        self.assertIn("other_buf);", source)
+        self.assertNotIn("dopus_name,\n\t\t\t\t graphics_mem,", source)
+
+    def test_default_title_memory_catalog_uses_string_placeholders(self):
+        source = read_source(PROGRAM_STRINGS_H)
+
+        self.assertIn('MSG_MEMORY_COUNTER_STR "%s  %s graphics mem  %s other mem"', source)
+        self.assertIn('MSG_MEMORY_COUNTER_LOC_STR "%s  %s graphics mem  %s other mem"', source)
+        self.assertIn('MSG_MEMORY_COUNTER_CLOCK_STR "%s  %s graphics  %s other"', source)
+        self.assertIn('MSG_MEMORY_COUNTER_LOC_CLOCK_STR "%s  %s graphics  %s other"', source)
+        self.assertNotIn("%ld graphics mem", source)
+        self.assertNotIn("%lU graphics mem", source)
 
     def test_custom_title_memory_values_use_64_bit_formatters(self):
         source = read_source(CLOCK_TASK_C)

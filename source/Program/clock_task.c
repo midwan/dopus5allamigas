@@ -305,6 +305,44 @@ static UQUAD clock_used_memory(UQUAD total_mem, UQUAD free_mem)
 	return (total_mem > free_mem) ? total_mem - free_mem : 0;
 }
 
+static void clock_memory_value_string(char *buf, int buf_size, IPTR memory, char sep)
+{
+	UQUAD value = memory;
+
+	ItoaU64(&value, buf, buf_size, sep);
+}
+
+static void clock_memory_format_string(char *buf, int buf_size, char *format)
+{
+	char *out = buf;
+	char *end;
+
+	if (buf_size < 1)
+		return;
+
+	end = buf + buf_size - 1;
+
+	while (*format && out < end)
+	{
+		if (*format == '%' && *(format + 1) == '%' && out + 1 < end)
+		{
+			*out++ = *format++;
+			*out++ = *format++;
+		}
+		else if (*format == '%' && *(format + 1) == 'l' &&
+				 (*(format + 2) == 'd' || *(format + 2) == 'u' || *(format + 2) == 'U') && out + 1 < end)
+		{
+			*out++ = '%';
+			*out++ = 's';
+			format += 3;
+		}
+		else
+			*out++ = *format++;
+	}
+
+	*out = 0;
+}
+
 static void clock_memory_percent_string(char *buf, int buf_size, UQUAD memval, UQUAD memtotal)
 {
 	UQUAD percent;
@@ -960,6 +998,9 @@ void clock_show_memory(struct RastPort *rp, long msg, long clock_x, char *error)
 {
 #ifndef __amigaos4__
 	IPTR graphics_mem;
+	char graphics_buf[32], other_buf[32];
+	char format[TITLE_SIZE];
+	char sep = 0;
 #endif
 
 	// Error text?
@@ -980,15 +1021,21 @@ void clock_show_memory(struct RastPort *rp, long msg, long clock_x, char *error)
 #else
 		// Thousands separator?
 		if (environment->env->settings.date_flags & DATE_1000SEP && GUI->flags & GUIF_LOCALE_OK)
+		{
 			++msg;
+			sep = GUI->decimal_sep;
+		}
 
 		// Get graphics/chip memory and build title string
 		graphics_mem = AvailMem(MEMF_CHIP);
+		clock_memory_value_string(graphics_buf, sizeof(graphics_buf), graphics_mem, sep);
+		clock_memory_value_string(other_buf, sizeof(other_buf), clock_other_free_memory(graphics_mem), sep);
+		clock_memory_format_string(format, sizeof(format), GetString(&locale, msg));
 		lsprintf(GUI->screen_title,
-				 GetString(&locale, msg),
+				 format,
 				 dopus_name,
-				 graphics_mem,
-				 clock_other_free_memory(graphics_mem));
+				 graphics_buf,
+				 other_buf);
 #endif
 	}
 
