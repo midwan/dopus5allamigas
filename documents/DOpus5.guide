@@ -2505,9 +2505,12 @@ RMB popup menu. This will not delete the command itself; you must delete
 it manually from the DOpus5:Commands directory if you want to get rid of
 it permanently.
 
-Left-out commands use the default icon command.info from DOpus5:Icons but
-you can give individual commands their own icons by just adding an icon
-(.info) to the file in the DOpus5:Commands directory.
+When the @{" Create Icons " link "Settings - Create Icons"} setting is enabled,
+Opus writes the default command.info icon from DOpus5:Icons for new command
+files that do not already have an icon. If the setting is disabled, the
+left-out is still created but no on-disk .info file is written. You can give
+individual commands their own icons by just adding an icon (.info) to the file
+in the DOpus5:Commands directory.
 
 Command files may also be added to a standard Opus group.
 @endnode
