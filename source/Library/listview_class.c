@@ -27,6 +27,16 @@ For more information on Directory Opus for Windows please see:
 
 char *lv_FilePart(char *name);
 
+static BOOL listview_has_custom_backfill(struct gpRender *render)
+{
+	struct Window *window;
+
+	if (!render || !render->gpr_GInfo || !(window = render->gpr_GInfo->gi_Window) || !window->WLayer)
+		return FALSE;
+
+	return (window->WLayer->BackFill && window->WLayer->BackFill != LAYERS_BACKFILL);
+}
+
 // Listview dispatcher
 IPTR LIBFUNC listview_dispatch(REG(a0, Class *cl), REG(a2, Object *obj), REG(a1, Msg msg))
 {
@@ -1195,15 +1205,18 @@ void listview_render(Class *cl, struct Gadget *gadget, ListViewData *data, struc
 		// Valid title?
 		if (data->title[0])
 		{
-			short y, x, len;
+			BOOL custom_backfill_title;
+			short y, x, len, str_len;
 
 			// Get title length
-			len = strlen(data->title);
+			str_len = strlen(data->title);
+			len = TextLength(rp, data->title, str_len);
+			custom_backfill_title = listview_has_custom_backfill(render);
 
 			// Get x and y position for title
 			if (data->layout_flags & PLACETEXT_LEFT)
 			{
-				x = gadget->LeftEdge - TextLength(rp, data->title, len) - 8;
+				x = gadget->LeftEdge - len - 8;
 				y = gadget->TopEdge + 2 + rp->TxBaseline;
 			}
 			else
@@ -1215,9 +1228,11 @@ void listview_render(Class *cl, struct Gadget *gadget, ListViewData *data, struc
 			// Draw title
 			SetAPen(rp, pens[TEXTPEN]);
 			SetBPen(rp, pens[BACKGROUNDPEN]);
-			SetDrMd(rp, JAM2);
+			SetDrMd(rp, (custom_backfill_title) ? JAM1 : JAM2);
+			if (custom_backfill_title)
+				EraseRect(rp, x, y - rp->TxBaseline, x + len - 1, y - rp->TxBaseline + rp->TxHeight - 1);
 			Move(rp, x, y);
-			Text(rp, data->title, len);
+			Text(rp, data->title, str_len);
 
 			// Underscore?
 			if (data->title_uscore > -1)
