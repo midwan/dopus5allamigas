@@ -1418,6 +1418,14 @@ BOOL menu_process_event(IPTR id, struct MenuItem *item, struct Window *window)
 		backdrop_cleanup(GUI->backdrop, 0, CLEANUPF_ALIGN_OK);
 		break;
 
+	// Arrange icons
+	case MENU_LISTER_ARRANGE_NAME:
+	case MENU_LISTER_ARRANGE_TYPE:
+	case MENU_LISTER_ARRANGE_SIZE:
+	case MENU_LISTER_ARRANGE_DATE:
+		backdrop_cleanup(GUI->backdrop, BSORT_NAME + (id - MENU_LISTER_ARRANGE_NAME), CLEANUPF_ALIGN_OK);
+		break;
+
 	// Line up
 	case MENU_ICON_LINEUP:
 		backdrop_lineup_objects(GUI->backdrop);
