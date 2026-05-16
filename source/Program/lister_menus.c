@@ -182,6 +182,20 @@ void lister_fix_menus(Lister *lister, BOOL sel_only)
 			off_item(item, busy);
 		}
 
+		// Arrange icons (disabled when busy or not in icon mode)
+		if ((item = find_menu_item(menu, MENU_ICON_ARRANGE)))
+		{
+			off_item(item, busy || !icon);
+		}
+
+		for (a = MENU_LISTER_ARRANGE_NAME; a <= MENU_LISTER_ARRANGE_DATE; a++)
+		{
+			if ((item = find_menu_item(menu, a)))
+			{
+				off_item(item, busy || !icon);
+			}
+		}
+
 		// Clean up (disabled when busy or not in icon mode)
 		if ((item = find_menu_item(menu, MENU_ICON_CLEANUP)))
 		{

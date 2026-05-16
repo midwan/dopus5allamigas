@@ -471,7 +471,7 @@ IPC_EntryCode(backdrop_group_handler, static)
 				case LISTER_DO_FUNCTION:
 
 					// Arrange icons?
-					if (msg->data >= (APTR)MENU_LISTER_ARRANGE_NAME && msg->data <= (APTR)MENU_LISTER_ARRANGE_SIZE)
+					if (msg->data >= (APTR)MENU_LISTER_ARRANGE_NAME && msg->data <= (APTR)MENU_LISTER_ARRANGE_DATE)
 					{
 						// Do cleanup
 						backdrop_cleanup(group->info, BSORT_NAME + (((IPTR)msg->data) - MENU_LISTER_ARRANGE_NAME), 0);
@@ -1294,6 +1294,16 @@ BOOL backdrop_group_do_function(GroupData *group, IPTR id, struct MenuItem *item
 	// Clean Up
 	case MENU_ICON_CLEANUP:
 		backdrop_cleanup(group->info, 0, 0);
+		break;
+
+	// Arrange icons
+	case MENU_LISTER_ARRANGE_NAME:
+	case MENU_LISTER_ARRANGE_TYPE:
+	case MENU_LISTER_ARRANGE_SIZE:
+	case MENU_LISTER_ARRANGE_DATE:
+		SetBusyPointer(group->window);
+		backdrop_cleanup(group->info, BSORT_NAME + (id - MENU_LISTER_ARRANGE_NAME), 0);
+		ClearPointer(group->window);
 		break;
 
 	// Resize the group window to fit its icons (mirrors the lister command)
