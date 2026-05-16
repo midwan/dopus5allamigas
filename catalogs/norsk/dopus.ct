@@ -1454,20 +1454,20 @@ Forsøker å kjøre program '%s'...
 ; Attempting to launch '%s'...
 ;
 MSG_MEMORY_COUNTER
-%s  %ld grafikkminne  %ld annet minne
-; %s  %ld graphics mem  %ld other mem
+%s  %s grafikkminne  %s annet minne
+; %s  %s graphics mem  %s other mem
 ;
 MSG_MEMORY_COUNTER_LOC
-%s  %lU grafikkminne  %lU annet minne
-; %s  %lU graphics mem  %lU other mem
+%s  %s grafikkminne  %s annet minne
+; %s  %s graphics mem  %s other mem
 ;
 MSG_MEMORY_COUNTER_CLOCK
-%s  %ld grafikk  %ld annet
-; %s  %ld graphics  %ld other
+%s  %s grafikk  %s annet
+; %s  %s graphics  %s other
 ;
 MSG_MEMORY_COUNTER_LOC_CLOCK
-%s  %lU grafikk  %lU annet
-; %s  %lU graphics  %lU other
+%s  %s grafikk  %s annet
+; %s  %s graphics  %s other
 ;
 MSG_LISTER_STATUS_SOURCE
 KILDE

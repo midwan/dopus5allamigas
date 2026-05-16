@@ -1453,20 +1453,20 @@ A tentar lançar '%s'...
 ; Attempting to launch '%s'...
 ;
 MSG_MEMORY_COUNTER
-%s  %ld de memória gráfica  %ld de outra memória
-; %s  %ld graphics mem  %ld other mem
+%s  %s de memória gráfica  %s de outra memória
+; %s  %s graphics mem  %s other mem
 ;
 MSG_MEMORY_COUNTER_LOC
-%s  %lU de memória gráfica  %lU de outra memória
-; %s  %lU graphics mem  %lU other mem
+%s  %s de memória gráfica  %s de outra memória
+; %s  %s graphics mem  %s other mem
 ;
 MSG_MEMORY_COUNTER_CLOCK
-%s  %ld gráfica  %ld outra
-; %s  %ld graphics  %ld other
+%s  %s gráfica  %s outra
+; %s  %s graphics  %s other
 ;
 MSG_MEMORY_COUNTER_LOC_CLOCK
-%s  %lU gráfica  %lU outra
-; %s  %lU graphics  %lU other
+%s  %s gráfica  %s outra
+; %s  %s graphics  %s other
 ;
 MSG_LISTER_STATUS_SOURCE
 FONT

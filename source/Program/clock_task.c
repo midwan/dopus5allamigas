@@ -145,7 +145,7 @@ struct ClockFormatBuffer
 	short pos;
 };
 
-static unsigned long ASM clock_format_hook(REG(a0, struct Hook *hook), REG(a1, ULONG ch), REG(a2, APTR dummy))
+static unsigned long clock_format_append(struct Hook *hook, ULONG ch)
 {
 	struct ClockFormatBuffer *data = (struct ClockFormatBuffer *)hook->h_Data;
 
@@ -157,7 +157,21 @@ static unsigned long ASM clock_format_hook(REG(a0, struct Hook *hook), REG(a1, U
 	return 0;
 }
 
-static BOOL clock_format_date(char *buffer, short size, char *format, struct DateStamp *stamp)
+#ifdef __AROS__
+static unsigned long clock_format_hook(struct Hook *hook, APTR dummy, IPTR ch)
+{
+	(void)dummy;
+	return clock_format_append(hook, (ULONG)ch);
+}
+#else
+static unsigned long ASM clock_format_hook(REG(a0, struct Hook *hook), REG(a1, ULONG ch), REG(a2, APTR dummy))
+{
+	(void)dummy;
+	return clock_format_append(hook, ch);
+}
+#endif
+
+static BOOL clock_format_date_raw(char *buffer, short size, char *format, struct DateStamp *stamp)
 {
 	struct Hook hook;
 	struct ClockFormatBuffer data;
@@ -173,7 +187,7 @@ static BOOL clock_format_date(char *buffer, short size, char *format, struct Dat
 	data.size = size;
 	data.pos = 0;
 
-#if defined(__MORPHOS__)
+#if defined(__AROS__) || defined(__MORPHOS__)
 	hook.h_Entry = (HOOKFUNC)HookEntry;
 	hook.h_SubEntry = (HOOKFUNC)clock_format_hook;
 #else
@@ -186,6 +200,124 @@ static BOOL clock_format_date(char *buffer, short size, char *format, struct Dat
 #undef LocaleBase
 
 	return (buffer[0] != 0);
+}
+
+#ifdef __AROS__
+static void clock_format_append_text(char *buffer, short size, short *pos, char *text)
+{
+	if (!buffer || !pos || !text)
+		return;
+
+	while (*text && *pos < size - 1)
+	{
+		buffer[(*pos)++] = *text++;
+		buffer[*pos] = 0;
+	}
+}
+
+static void clock_format_append_12hour(char *buffer, short size, short *pos, struct DateStamp *stamp, BOOL leading_zero)
+{
+	char timebuf[8];
+	short hour = (stamp->ds_Minute / 60) % 12;
+
+	if (hour == 0)
+		hour = 12;
+
+	if (leading_zero)
+		lsprintf(timebuf, "%02ld", (long)hour);
+	else
+		lsprintf(timebuf, "%ld", (long)hour);
+
+	clock_format_append_text(buffer, size, pos, timebuf);
+}
+
+static void clock_format_append_ampm(char *buffer, short size, short *pos, struct DateStamp *stamp)
+{
+	char *ampm = 0;
+
+#define LocaleBase locale.li_LocaleBase
+	ampm = (char *)GetLocaleStr(locale.li_Locale, ((stamp->ds_Minute / 60) > 11) ? PM_STR : AM_STR);
+#undef LocaleBase
+	if (!ampm)
+		ampm = "";
+
+	clock_format_append_text(buffer, size, pos, ampm);
+}
+
+// AROS locale.library expands 12-hour tokens as 0-11; patch those and delegate the rest.
+static BOOL clock_format_date_aros(char *buffer, short size, char *format, struct DateStamp *stamp)
+{
+	char *ptr;
+	short pos = 0;
+
+	if (!buffer || size < 1)
+		return FALSE;
+	buffer[0] = 0;
+
+	if (!format || !format[0] || !stamp || !locale.li_LocaleBase)
+		return FALSE;
+
+	for (ptr = format; *ptr && pos < size - 1; ptr++)
+	{
+		char token_format[3];
+		char tokenbuf[TITLE_SIZE];
+
+		if (*ptr != '%')
+		{
+			buffer[pos++] = *ptr;
+			buffer[pos] = 0;
+			continue;
+		}
+
+		if (!*(++ptr))
+			break;
+
+		switch (*ptr)
+		{
+		case '%':
+			buffer[pos++] = '%';
+			buffer[pos] = 0;
+			break;
+
+		case 'I':
+			clock_format_append_12hour(buffer, size, &pos, stamp, TRUE);
+			break;
+
+		case 'Q':
+			clock_format_append_12hour(buffer, size, &pos, stamp, FALSE);
+			break;
+
+		case 'r': {
+			char timebuf[16];
+
+			clock_format_append_12hour(buffer, size, &pos, stamp, TRUE);
+			lsprintf(timebuf, ":%02ld:%02ld ", stamp->ds_Minute % 60, stamp->ds_Tick / TICKS_PER_SECOND);
+			clock_format_append_text(buffer, size, &pos, timebuf);
+			clock_format_append_ampm(buffer, size, &pos, stamp);
+			break;
+		}
+
+		default:
+			token_format[0] = '%';
+			token_format[1] = *ptr;
+			token_format[2] = 0;
+			if (clock_format_date_raw(tokenbuf, sizeof(tokenbuf), token_format, stamp))
+				clock_format_append_text(buffer, size, &pos, tokenbuf);
+			break;
+		}
+	}
+
+	return (buffer[0] != 0);
+}
+#endif
+
+static BOOL clock_format_date(char *buffer, short size, char *format, struct DateStamp *stamp)
+{
+#ifdef __AROS__
+	return clock_format_date_aros(buffer, size, format, stamp);
+#else
+	return clock_format_date_raw(buffer, size, format, stamp);
+#endif
 }
 
 static void clock_build_manual_time(struct DateStamp *stamp, char *timebuf, BOOL show_seconds)
@@ -276,10 +408,86 @@ static long clock_memory_message(struct RastPort *rp, short clock_x)
 
 	ptr = GetString(&locale, MSG_MEMORY_COUNTER);
 	width = TextLength(rp, ptr, (WORD)strlen(ptr));
-	width += TextLength(rp, "9999999999", 10);
+	width += TextLength(rp, "999999999999", 12);
 	width += TextLength(rp, dopus_name, strlen(dopus_name));
 
 	return (5 + width >= clock_x) ? MSG_MEMORY_COUNTER_CLOCK : MSG_MEMORY_COUNTER;
+}
+
+static IPTR clock_other_free_memory(IPTR graphics_mem)
+{
+	IPTR any_mem;
+#ifdef __AROS__
+	IPTR fast_mem;
+
+	fast_mem = AvailMem(MEMF_FAST);
+	if (fast_mem > 0)
+		return fast_mem;
+#endif
+
+	any_mem = AvailMem(MEMF_ANY);
+	if (any_mem > graphics_mem)
+		return any_mem - graphics_mem;
+
+	return AvailMem(MEMF_FAST);
+}
+
+static UQUAD clock_used_memory(UQUAD total_mem, UQUAD free_mem)
+{
+	return (total_mem > free_mem) ? total_mem - free_mem : 0;
+}
+
+static void clock_memory_value_string(char *buf, int buf_size, IPTR memory, char sep)
+{
+	UQUAD value = memory;
+
+	ItoaU64(&value, buf, buf_size, sep);
+}
+
+static void clock_memory_format_string(char *buf, int buf_size, char *format)
+{
+	char *out = buf;
+	char *end;
+
+	if (buf_size < 1)
+		return;
+
+	end = buf + buf_size - 1;
+
+	while (*format && out < end)
+	{
+		if (*format == '%' && *(format + 1) == '%' && out + 1 < end)
+		{
+			*out++ = *format++;
+			*out++ = *format++;
+		}
+		else if (*format == '%' && *(format + 1) == 'l' &&
+				 (*(format + 2) == 'd' || *(format + 2) == 'u' || *(format + 2) == 'U') && out + 1 < end)
+		{
+			*out++ = '%';
+			*out++ = 's';
+			format += 3;
+		}
+		else
+			*out++ = *format++;
+	}
+
+	*out = 0;
+}
+
+static void clock_memory_percent_string(char *buf, int buf_size, UQUAD memval, UQUAD memtotal)
+{
+	UQUAD percent;
+
+	if (memtotal == 0)
+	{
+		strcpy(buf, "0");
+		return;
+	}
+
+	percent = (memval / memtotal) * 100;
+	percent += ((memval % memtotal) * 100) / memtotal;
+	ItoaU64(&percent, buf, buf_size, 0);
 }
 
 #ifdef __amigaos4__
@@ -921,7 +1129,10 @@ IPC_EntryCode(clock_proc)
 void clock_show_memory(struct RastPort *rp, long msg, long clock_x, char *error)
 {
 #ifndef __amigaos4__
-	unsigned long chipmem;
+	IPTR graphics_mem;
+	char graphics_buf[32], other_buf[32];
+	char format[TITLE_SIZE];
+	char sep = 0;
 #endif
 
 	// Error text?
@@ -942,13 +1153,21 @@ void clock_show_memory(struct RastPort *rp, long msg, long clock_x, char *error)
 #else
 		// Thousands separator?
 		if (environment->env->settings.date_flags & DATE_1000SEP && GUI->flags & GUIF_LOCALE_OK)
+		{
 			++msg;
+			sep = GUI->decimal_sep;
+		}
 
-		// Get chip memory
-		chipmem = AvailMem(MEMF_CHIP);
-
-		// Build string
-		lsprintf(GUI->screen_title, GetString(&locale, msg), dopus_name, chipmem, AvailMem(MEMF_ANY) - chipmem);
+		// Get graphics/chip memory and build title string
+		graphics_mem = AvailMem(MEMF_CHIP);
+		clock_memory_value_string(graphics_buf, sizeof(graphics_buf), graphics_mem, sep);
+		clock_memory_value_string(other_buf, sizeof(other_buf), clock_other_free_memory(graphics_mem), sep);
+		clock_memory_format_string(format, sizeof(format), GetString(&locale, msg));
+		lsprintf(GUI->screen_title,
+				 format,
+				 dopus_name,
+				 graphics_buf,
+				 other_buf);
 #endif
 	}
 
@@ -1031,7 +1250,8 @@ BOOL clock_show_custom_title(struct RastPort *rp,
 	for (ptr = environment->env->scr_title_text; *ptr && pos < TITLE_SIZE - 1; ptr++)
 	{
 		short esc = 0;
-		unsigned long memval = (unsigned long)-1, memtotal = (unsigned long)-1;
+		UQUAD memval = 0, memtotal = 0;
+		BOOL got_memval = FALSE, got_memtotal = FALSE;
 		char buf[TITLE_SIZE];
 
 		// Clear buffer
@@ -1106,6 +1326,7 @@ BOOL clock_show_custom_title(struct RastPort *rp,
 			else if (*(ptr + 1) == 't' && *(ptr + 2) == 'm')
 			{
 				memval = AvailMem(MEMF_TOTAL | MEMF_ANY);
+				got_memval = TRUE;
 				esc = 2;
 			}
 
@@ -1113,6 +1334,7 @@ BOOL clock_show_custom_title(struct RastPort *rp,
 			else if (*(ptr + 1) == 't' && *(ptr + 2) == 'c')
 			{
 				memval = AvailMem(MEMF_TOTAL | MEMF_CHIP);
+				got_memval = TRUE;
 				esc = 2;
 			}
 
@@ -1120,6 +1342,7 @@ BOOL clock_show_custom_title(struct RastPort *rp,
 			else if (*(ptr + 1) == 't' && *(ptr + 2) == 'f')
 			{
 				memval = AvailMem(MEMF_TOTAL | MEMF_FAST);
+				got_memval = TRUE;
 				esc = 2;
 			}
 
@@ -1128,7 +1351,11 @@ BOOL clock_show_custom_title(struct RastPort *rp,
 			{
 				memval = AvailMem(MEMF_ANY);
 				if (*(ptr + 3) == '%')
+				{
 					memtotal = AvailMem(MEMF_ANY | MEMF_TOTAL);
+					got_memtotal = TRUE;
+				}
+				got_memval = TRUE;
 				esc = 2;
 			}
 
@@ -1137,7 +1364,11 @@ BOOL clock_show_custom_title(struct RastPort *rp,
 			{
 				memval = AvailMem(MEMF_CHIP);
 				if (*(ptr + 3) == '%')
+				{
 					memtotal = AvailMem(MEMF_CHIP | MEMF_TOTAL);
+					got_memtotal = TRUE;
+				}
+				got_memval = TRUE;
 				esc = 2;
 			}
 
@@ -1146,28 +1377,41 @@ BOOL clock_show_custom_title(struct RastPort *rp,
 			{
 				memval = AvailMem(MEMF_FAST);
 				if (*(ptr + 3) == '%')
+				{
 					memtotal = AvailMem(MEMF_FAST | MEMF_TOTAL);
+					got_memtotal = TRUE;
+				}
+				got_memval = TRUE;
 				esc = 2;
 			}
 
 			// Used memory
 			else if (*(ptr + 1) == 'u' && *(ptr + 2) == 'm')
 			{
-				memval = (memtotal = AvailMem(MEMF_TOTAL | MEMF_ANY)) - AvailMem(MEMF_ANY);
+				memtotal = AvailMem(MEMF_TOTAL | MEMF_ANY);
+				memval = clock_used_memory(memtotal, AvailMem(MEMF_ANY));
+				got_memval = TRUE;
+				got_memtotal = TRUE;
 				esc = 2;
 			}
 
 			// Used chip memory
 			else if (*(ptr + 1) == 'u' && *(ptr + 2) == 'c')
 			{
-				memval = (memtotal - AvailMem(MEMF_TOTAL | MEMF_CHIP)) - AvailMem(MEMF_CHIP);
+				memtotal = AvailMem(MEMF_TOTAL | MEMF_CHIP);
+				memval = clock_used_memory(memtotal, AvailMem(MEMF_CHIP));
+				got_memval = TRUE;
+				got_memtotal = TRUE;
 				esc = 2;
 			}
 
 			// Used fast memory
 			else if (*(ptr + 1) == 'u' && *(ptr + 2) == 'f')
 			{
-				memval = (memtotal - AvailMem(MEMF_TOTAL | MEMF_FAST)) - AvailMem(MEMF_FAST);
+				memtotal = AvailMem(MEMF_TOTAL | MEMF_FAST);
+				memval = clock_used_memory(memtotal, AvailMem(MEMF_FAST));
+				got_memval = TRUE;
+				got_memtotal = TRUE;
 				esc = 2;
 			}
 
@@ -1284,57 +1528,64 @@ BOOL clock_show_custom_title(struct RastPort *rp,
 			}
 
 			// Memory value?
-			if (memval != (unsigned long)-1)
+			if (got_memval)
 			{
 				// As kilobytes/megabytes/smart/bytes
 				if (*(ptr + 3) == 'K' || *(ptr + 3) == 'k')
 				{
-					DivideToString(buf,
-								   memval,
-								   1024,
-								   (*(ptr + 3) == 'K') ? 1 : 0,
-								   (environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
+					DivideToString64(
+						buf,
+						sizeof(buf),
+						&memval,
+						1024,
+						(*(ptr + 3) == 'K') ? 1 : 0,
+						(environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
 					++esc;
 				}
 				else if (*(ptr + 3) == 'M' || *(ptr + 3) == 'm')
 				{
-					DivideToString(buf,
-								   memval,
-								   1024 * 1024,
-								   (*(ptr + 3) == 'M') ? 1 : 0,
-								   (environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
+					DivideToString64(
+						buf,
+						sizeof(buf),
+						&memval,
+						1024 * 1024,
+						(*(ptr + 3) == 'M') ? 1 : 0,
+						(environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
 					++esc;
 				}
 				else if (*(ptr + 3) == 'G' || *(ptr + 3) == 'g')
 				{
-					DivideToString(buf,
-								   memval,
-								   1024 * 1024 * 1024,
-								   (*(ptr + 3) == 'G') ? 1 : 0,
-								   (environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
+					DivideToString64(
+						buf,
+						sizeof(buf),
+						&memval,
+						1024 * 1024 * 1024,
+						(*(ptr + 3) == 'G') ? 1 : 0,
+						(environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
 					++esc;
 				}
 				else if (*(ptr + 3) == 'S' || *(ptr + 3) == 's')
 				{
-					BytesToString(memval,
-								  buf,
-								  (*(ptr + 3) == 'S') ? 1 : 0,
-								  (environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
+					BytesToString64(&memval,
+									buf,
+									sizeof(buf),
+									(*(ptr + 3) == 'S') ? 1 : 0,
+									(environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
 					++esc;
 				}
-				else if (*(ptr + 3) == '%' && memtotal != (unsigned long)-1)
+				else if (*(ptr + 3) == '%' && got_memtotal)
 				{
 					// Get percentage string
-					if (memtotal < 100)
-						strcpy(buf, "100");
-					else
-						DivideToString(buf, memval, memtotal / 100, 0, 0);
+					clock_memory_percent_string(buf, sizeof(buf), memval, memtotal);
 					++esc;
 				}
 				else
 				{
 					// memory values should always be unsigned
-					ItoaU(memval, buf, (environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
+					ItoaU64(&memval,
+							buf,
+							sizeof(buf),
+							(environment->env->settings.date_flags & DATE_1000SEP) ? GUI->decimal_sep : 0);
 				}
 			}
 

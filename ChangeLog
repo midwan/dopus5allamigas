@@ -162,6 +162,13 @@ AROS portability:
 - Fix AROS x86_64 XADOpen and internal CLI crashes caused by
   pointer-sized ARexx message metadata and RawDoFmt string varargs
   (issue #90).
+- Fix AROS x86_64 title-bar memory reporting so the default title
+  shows fast/system memory as "other mem" instead of collapsing it
+  into zero (issue #128).
+- Fix AROS title-bar clock formatting so locale `FormatDate()` hook
+  output does not repeat one bogus character (issue #128).
+- Fix AROS title-bar clock 12-hour `%I`, `%Q` and `%r` format
+  tokens so noon and midnight render as 12 instead of 00.
 - diskinfo: resolve PI at runtime to dodge an AROS x86_64
   cross-compiler ICE under Rosetta.
 - ftp / diskinfo / icon / library: fix AROS x86_64 format-string
