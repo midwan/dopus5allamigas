@@ -76,6 +76,16 @@ class OS3ScreenTitleClockTests(unittest.TestCase):
         self.assertIn("(custom_title_uses_clock) ? titlebuf : 0", source)
         self.assertIn("Clock text", source)
 
+    def test_aros_clock_format_uses_hookentry_argument_order(self):
+        source = read_source(CLOCK_TASK_C)
+
+        self.assertIn("#ifdef __AROS__", source)
+        self.assertIn("clock_format_hook(struct Hook *hook, APTR dummy, IPTR ch)", source)
+        self.assertIn("return clock_format_append(hook, (ULONG)ch);", source)
+        self.assertIn("#if defined(__AROS__) || defined(__MORPHOS__)", source)
+        self.assertIn("hook.h_Entry = (HOOKFUNC)HookEntry;", source)
+        self.assertIn("hook.h_SubEntry = (HOOKFUNC)clock_format_hook;", source)
+
 
 if __name__ == "__main__":
     unittest.main()

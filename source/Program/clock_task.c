@@ -145,7 +145,7 @@ struct ClockFormatBuffer
 	short pos;
 };
 
-static unsigned long ASM clock_format_hook(REG(a0, struct Hook *hook), REG(a1, ULONG ch), REG(a2, APTR dummy))
+static unsigned long clock_format_append(struct Hook *hook, ULONG ch)
 {
 	struct ClockFormatBuffer *data = (struct ClockFormatBuffer *)hook->h_Data;
 
@@ -156,6 +156,20 @@ static unsigned long ASM clock_format_hook(REG(a0, struct Hook *hook), REG(a1, U
 	}
 	return 0;
 }
+
+#ifdef __AROS__
+static unsigned long clock_format_hook(struct Hook *hook, APTR dummy, IPTR ch)
+{
+	(void)dummy;
+	return clock_format_append(hook, (ULONG)ch);
+}
+#else
+static unsigned long ASM clock_format_hook(REG(a0, struct Hook *hook), REG(a1, ULONG ch), REG(a2, APTR dummy))
+{
+	(void)dummy;
+	return clock_format_append(hook, ch);
+}
+#endif
 
 static BOOL clock_format_date(char *buffer, short size, char *format, struct DateStamp *stamp)
 {
@@ -173,7 +187,7 @@ static BOOL clock_format_date(char *buffer, short size, char *format, struct Dat
 	data.size = size;
 	data.pos = 0;
 
-#if defined(__MORPHOS__)
+#if defined(__AROS__) || defined(__MORPHOS__)
 	hook.h_Entry = (HOOKFUNC)HookEntry;
 	hook.h_SubEntry = (HOOKFUNC)clock_format_hook;
 #else
