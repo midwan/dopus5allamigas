@@ -786,7 +786,8 @@ void command_new(BackdropInfo *info, IPCData *ipc, char *filename)
 		// Set the comment
 		SetComment(buffer, fib->fib_Comment);
 
-		// Write the default command icon if there isn't one already
+		// Write the default command icon if enabled and there isn't one already
+		if (GUI->flags & GUIF_SAVE_ICONS)
 		{
 			BPTR icon_lock;
 
