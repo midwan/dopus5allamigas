@@ -2439,19 +2439,21 @@ which do not have real icons, using filetype icons wherever possible.
 @node "Lister - Filter" "Lister - Filter"
  Lister - Filter
 
-Opens a live filter requester anchored over the active lister's path field.
-As you type, the lister's show pattern is updated on the fly and display
-rejection is re-applied against the already-buffered entries, so filtering
-is instant and does not trigger a directory re-read.
+Opens a live filter requester in the active lister's top name/title area.
+The normal path field must be available, but the requester is not drawn on
+top of the bottom path string gadget. As you type, the lister's show pattern
+is updated on the fly and display rejection is re-applied against the
+already-buffered entries, so filtering is instant and does not trigger a
+directory re-read.
 
 Standard Amiga wildcards are supported (for example "#?.info" to hide all
 but .info files, or "~(#?.info)" to hide them).  The pattern persists in
 the lister's format, exactly like the @{" Show " link "Set"} setting - closing the requester
 leaves the filter in effect.
 
-The requester closes when you click outside it, click on the path field,
-or select another menu item.  The filter is only available in name-mode
-listers; icon mode uses a different path widget.
+The requester closes when you click outside it, click on the bottom path
+field, or select another menu item.  The filter is only available in
+name-mode listers; icon mode uses a different path widget.
 
 Available as: View menu -> Filter... (right-Amiga + F).
 

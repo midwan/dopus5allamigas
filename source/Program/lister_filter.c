@@ -27,7 +27,7 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopus.h"
 
-// Open the live filter requester over the path field.
+// Open the live filter requester in the lister's top name/title area.
 void lister_add_filter(Lister *lister)
 {
 	struct Gadget *gadget;
@@ -38,7 +38,7 @@ void lister_add_filter(Lister *lister)
 	if (lister->filter_name_req)
 		return;
 
-	// Need a path field to anchor over
+	// Need the normal path field to be present for GAD_PATH handling
 	if (!(lister->flags & LISTERF_PATH_FIELD))
 		return;
 
@@ -97,7 +97,7 @@ void lister_add_filter(Lister *lister)
 
 	gadget->GadgetType |= GTYP_REQGADGET;
 
-	// Position the requester over the path field
+	// Position the requester in the disk-name/title area
 	lister->filter_name_req->LeftEdge = lister->name_area.box.Left + (lister->name_area.box.Height >> 1);
 	lister->filter_name_req->TopEdge = lister->name_area.box.Top + (lister->name_area.box.Height >> 1);
 	lister->filter_name_req->Width = lister->name_area.box.Width;
