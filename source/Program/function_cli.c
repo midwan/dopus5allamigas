@@ -50,19 +50,26 @@ void cli_free(CLIData *);
 
 static void cli_ulong_to_string(ULONG value, char *buffer, int buffer_size)
 {
-	int pos = buffer_size - 1;
+	int pos;
+	int len = 0;
 
 	if (buffer_size < 2)
 		return;
 
-	buffer[pos] = 0;
 	do
 	{
-		buffer[--pos] = '0' + (value % 10);
+		buffer[len++] = '0' + (value % 10);
 		value /= 10;
-	} while (value && pos > 0);
+	} while (value && len < buffer_size - 1);
 
-	strcpy(buffer, buffer + pos);
+	buffer[len] = 0;
+	for (pos = 0; pos < len / 2; pos++)
+	{
+		char ch = buffer[pos];
+
+		buffer[pos] = buffer[len - pos - 1];
+		buffer[len - pos - 1] = ch;
+	}
 }
 
 static void cli_build_window_name(char *buffer, int buffer_size)

@@ -37,6 +37,12 @@ class CLIConsoleCleanupTests(unittest.TestCase):
         self.assertIn("char *screen = get_our_pubscreen();", source)
         self.assertNotIn('"%s0/%ld/512/150/DOpus 5 CLI/CLOSE/SCREEN %s"', source)
 
+    def test_cli_top_edge_conversion_avoids_overlapping_copy(self):
+        source = read_source()
+
+        self.assertNotIn("strcpy(buffer, buffer + pos);", source)
+        self.assertIn("buffer[len - pos - 1]", source)
+
     def test_input_open_failure_restores_console_state(self):
         source = read_source()
         body = function_body(source, "cli_open")
