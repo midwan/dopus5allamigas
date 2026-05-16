@@ -164,6 +164,8 @@ AROS portability:
   into zero (issue #128).
 - Fix AROS title-bar clock formatting so locale `FormatDate()` hook
   output does not repeat one bogus character (issue #128).
+- Fix AROS title-bar clock 12-hour `%I`, `%Q` and `%r` format
+  tokens so noon and midnight render as 12 instead of 00.
 - diskinfo: resolve PI at runtime to dodge an AROS x86_64
   cross-compiler ICE under Rosetta.
 - ftp / diskinfo / icon / library: fix AROS x86_64 format-string

@@ -171,7 +171,7 @@ static unsigned long ASM clock_format_hook(REG(a0, struct Hook *hook), REG(a1, U
 }
 #endif
 
-static BOOL clock_format_date(char *buffer, short size, char *format, struct DateStamp *stamp)
+static BOOL clock_format_date_raw(char *buffer, short size, char *format, struct DateStamp *stamp)
 {
 	struct Hook hook;
 	struct ClockFormatBuffer data;
@@ -200,6 +200,124 @@ static BOOL clock_format_date(char *buffer, short size, char *format, struct Dat
 #undef LocaleBase
 
 	return (buffer[0] != 0);
+}
+
+#ifdef __AROS__
+static void clock_format_append_text(char *buffer, short size, short *pos, char *text)
+{
+	if (!buffer || !pos || !text)
+		return;
+
+	while (*text && *pos < size - 1)
+	{
+		buffer[(*pos)++] = *text++;
+		buffer[*pos] = 0;
+	}
+}
+
+static void clock_format_append_12hour(char *buffer, short size, short *pos, struct DateStamp *stamp, BOOL leading_zero)
+{
+	char timebuf[8];
+	short hour = (stamp->ds_Minute / 60) % 12;
+
+	if (hour == 0)
+		hour = 12;
+
+	if (leading_zero)
+		lsprintf(timebuf, "%02ld", (long)hour);
+	else
+		lsprintf(timebuf, "%ld", (long)hour);
+
+	clock_format_append_text(buffer, size, pos, timebuf);
+}
+
+static void clock_format_append_ampm(char *buffer, short size, short *pos, struct DateStamp *stamp)
+{
+	char *ampm = 0;
+
+#define LocaleBase locale.li_LocaleBase
+	ampm = (char *)GetLocaleStr(locale.li_Locale, ((stamp->ds_Minute / 60) > 11) ? PM_STR : AM_STR);
+#undef LocaleBase
+	if (!ampm)
+		ampm = "";
+
+	clock_format_append_text(buffer, size, pos, ampm);
+}
+
+// AROS locale.library expands 12-hour tokens as 0-11; patch those and delegate the rest.
+static BOOL clock_format_date_aros(char *buffer, short size, char *format, struct DateStamp *stamp)
+{
+	char *ptr;
+	short pos = 0;
+
+	if (!buffer || size < 1)
+		return FALSE;
+	buffer[0] = 0;
+
+	if (!format || !format[0] || !stamp || !locale.li_LocaleBase)
+		return FALSE;
+
+	for (ptr = format; *ptr && pos < size - 1; ptr++)
+	{
+		char token_format[3];
+		char tokenbuf[TITLE_SIZE];
+
+		if (*ptr != '%')
+		{
+			buffer[pos++] = *ptr;
+			buffer[pos] = 0;
+			continue;
+		}
+
+		if (!*(++ptr))
+			break;
+
+		switch (*ptr)
+		{
+		case '%':
+			buffer[pos++] = '%';
+			buffer[pos] = 0;
+			break;
+
+		case 'I':
+			clock_format_append_12hour(buffer, size, &pos, stamp, TRUE);
+			break;
+
+		case 'Q':
+			clock_format_append_12hour(buffer, size, &pos, stamp, FALSE);
+			break;
+
+		case 'r': {
+			char timebuf[16];
+
+			clock_format_append_12hour(buffer, size, &pos, stamp, TRUE);
+			lsprintf(timebuf, ":%02ld:%02ld ", stamp->ds_Minute % 60, stamp->ds_Tick / TICKS_PER_SECOND);
+			clock_format_append_text(buffer, size, &pos, timebuf);
+			clock_format_append_ampm(buffer, size, &pos, stamp);
+			break;
+		}
+
+		default:
+			token_format[0] = '%';
+			token_format[1] = *ptr;
+			token_format[2] = 0;
+			if (clock_format_date_raw(tokenbuf, sizeof(tokenbuf), token_format, stamp))
+				clock_format_append_text(buffer, size, &pos, tokenbuf);
+			break;
+		}
+	}
+
+	return (buffer[0] != 0);
+}
+#endif
+
+static BOOL clock_format_date(char *buffer, short size, char *format, struct DateStamp *stamp)
+{
+#ifdef __AROS__
+	return clock_format_date_aros(buffer, size, format, stamp);
+#else
+	return clock_format_date_raw(buffer, size, format, stamp);
+#endif
 }
 
 static void clock_build_manual_time(struct DateStamp *stamp, char *timebuf, BOOL show_seconds)

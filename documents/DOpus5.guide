@@ -3805,9 +3805,10 @@ The different things that can be changed are:
   Clock Format:
     Lets you override the titlebar clock text with a locale.library
     FormatDate string.  For example, "%a %d-%b-%y  %H:%M" displays an
-    abbreviated weekday, date, and 24-hour time.  Leave this empty to use the
-    normal Date Format and 12 hour clock settings.  The button beside the
-    field lists the common FormatDate codes.
+    abbreviated weekday, date, and 24-hour time.  A time-only string such as
+    "%r" intentionally hides the date.  Leave this empty to use the normal
+    Date Format and 12 hour clock settings.  The button beside the field
+    lists the common FormatDate codes.
 
 @endnode
 

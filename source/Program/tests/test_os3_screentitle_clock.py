@@ -86,6 +86,18 @@ class OS3ScreenTitleClockTests(unittest.TestCase):
         self.assertIn("hook.h_Entry = (HOOKFUNC)HookEntry;", source)
         self.assertIn("hook.h_SubEntry = (HOOKFUNC)clock_format_hook;", source)
 
+    def test_aros_clock_format_corrects_12_hour_tokens(self):
+        source = read_source(CLOCK_TASK_C)
+
+        self.assertIn("static BOOL clock_format_date_aros", source)
+        self.assertIn("AROS locale.library expands 12-hour tokens as 0-11", source)
+        self.assertIn("clock_format_append_12hour(buffer, size, &pos, stamp, TRUE);", source)
+        self.assertIn("clock_format_append_12hour(buffer, size, &pos, stamp, FALSE);", source)
+        self.assertIn("case 'r':", source)
+        self.assertIn('lsprintf(timebuf, ":%02ld:%02ld "', source)
+        self.assertIn("clock_format_append_ampm(buffer, size, &pos, stamp);", source)
+        self.assertIn("return clock_format_date_aros(buffer, size, format, stamp);", source)
+
 
 if __name__ == "__main__":
     unittest.main()
