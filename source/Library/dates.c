@@ -25,6 +25,89 @@ For more information on Directory Opus for Windows please see:
 
 #include "dopuslib.h"
 
+#define DATE_PARSE_MAX_CHARS 30
+
+static char *date_english_months[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+										"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
+static BOOL date_is_token_boundary(struct Locale *locale, char ch)
+{
+	if (!ch)
+		return 1;
+
+	if (LocaleBase)
+		return !IsAlNum(locale, (UBYTE)ch);
+
+	return !isalnum((unsigned char)ch);
+}
+
+static BOOL date_replace_locale_month(struct Locale *locale,
+									  char *date,
+									  char *buffer,
+									  ULONG buffer_size,
+									  ULONG locale_id,
+									  char *english)
+{
+	char *month, *ptr;
+	long month_len, prefix_len, replace_len, suffix_len;
+
+	if (!date || !buffer || !buffer_size)
+		return 0;
+
+	if (!(month = (char *)GetLocaleStr(locale, locale_id)) || !*month)
+		return 0;
+
+	month_len = strlen(month);
+	replace_len = strlen(english);
+
+	for (ptr = date; *ptr; ptr++)
+	{
+		if (!date_is_token_boundary(locale, (ptr == date) ? 0 : *(ptr - 1)) ||
+			strnicmp(ptr, month, month_len) != 0 || !date_is_token_boundary(locale, ptr[month_len]))
+			continue;
+
+		prefix_len = ptr - date;
+		suffix_len = strlen(ptr + month_len);
+		if (prefix_len + replace_len + suffix_len >= buffer_size)
+			return 0;
+
+		strncpy(buffer, date, prefix_len);
+		buffer[prefix_len] = 0;
+		strcat(buffer, english);
+		strcat(buffer, ptr + month_len);
+		return 1;
+	}
+
+	return 0;
+}
+
+static BOOL date_normalise_locale_month(char *date, char *buffer, ULONG buffer_size)
+{
+	struct Locale *locale;
+	short month;
+	BOOL ret = 0;
+
+	if (!LocaleBase || !(locale = OpenLocale(0)))
+		return 0;
+
+	for (month = 0; month < 12 && !ret; month++)
+	{
+		ret = date_replace_locale_month(locale, date, buffer, buffer_size, MON_1 + month, date_english_months[month]);
+
+#ifdef ALTMON_1
+		if (!ret)
+			ret = date_replace_locale_month(
+				locale, date, buffer, buffer_size, ALTMON_1 + month, date_english_months[month]);
+#endif
+
+		if (!ret)
+			ret = date_replace_locale_month(locale, date, buffer, buffer_size, ABMON_1 + month, date_english_months[month]);
+	}
+
+	CloseLocale(locale);
+	return ret;
+}
+
 // Parse a date/time string into separate date and time buffers
 char *LIBFUNC L_ParseDateStrings(REG(a0, char *string),
 								 REG(a1, char *date_buffer),
@@ -160,7 +243,7 @@ getout:
 	temp = 0;
 
 	// Valid date string supplied?
-	if (date_ptr && (str_pos = strlen(date_ptr)) < 12 && str_pos > 4)
+	if (date_ptr && (str_pos = strlen(date_ptr)) < DATE_PARSE_MAX_CHARS && str_pos > 4)
 		strcpy(date_buffer, date_ptr);
 
 	// Otherwise
@@ -219,7 +302,7 @@ BOOL LIBFUNC L_DateFromStringsNew(REG(a0, char *date),
 								  REG(d0, ULONG method))
 {
 	struct DateTime datetime;
-	char temptime[12], *ptr;
+	char tempdate[80], temptime[12], *ptr;
 	BOOL ret;
 
 	// Initialise DateTime structure
@@ -260,6 +343,15 @@ BOOL LIBFUNC L_DateFromStringsNew(REG(a0, char *date),
 
 	// Do conversion
 	ret = StrToDate(&datetime);
+	if (!ret && date_normalise_locale_month(date, tempdate, sizeof(tempdate)))
+	{
+#if defined(__amigaos4__)
+		datetime.dat_StrDate = (STRPTR)tempdate;
+#else
+		datetime.dat_StrDate = (UBYTE *)tempdate;
+#endif
+		ret = StrToDate(&datetime);
+	}
 
 	// Copy stamp
 	*ds = datetime.dat_Stamp;
